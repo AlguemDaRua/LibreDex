@@ -1,19 +1,17 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:libredex/core/theme/app_theme.dart';
 
-/// An elegant, interactive image slider comparing the Normal and Shiny form of a Pokémon.
-/// Uses a custom clip path and horizontal drag detector for high-performance visual shifting.
+/// Um widget interativo e premium para comparar os sprites Normal e Shiny de um Pokémon.
+/// Utiliza conversão de coordenadas locais via RenderBox para garantir precisão absoluta
+/// ao arrastar, eliminando qualquer tipo de desvio (drift) ou distorção na linha de divisão.
 class ShinySlider extends StatefulWidget {
   final String normalImageUrl;
   final String shinyImageUrl;
-  final double height;
 
   const ShinySlider({
     super.key,
     required this.normalImageUrl,
     required this.shinyImageUrl,
-    this.height = 300,
   });
 
   @override
@@ -21,189 +19,169 @@ class ShinySlider extends StatefulWidget {
 }
 
 class _ShinySliderState extends State<ShinySlider> {
-  double _dragRatio = 0.5; // Drag position (0.0 to 1.0)
+  // Posição inicial do slider (normalizada entre 0.0 e 1.0)
+  double _position = 0.5;
+
+  /// Atualiza a posição do slider convertendo o toque global para o espaço local do widget.
+  /// Isto resolve o problema de offset incorreto ao arrastar diretamente em cima do botão.
+  void _updatePosition(Offset globalPosition) {
+    if (!mounted) return;
+    final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    final Offset localOffset = renderBox.globalToLocal(globalPosition);
+    final double width = renderBox.size.width;
+
+    if (width > 0) {
+      setState(() {
+        // Clamping entre 0.01 e 0.99 para evitar que a linha e o knob
+        // desapareçam completamente ou fiquem inacessíveis nas bordas extremas.
+        _position = (localOffset.dx / width).clamp(0.01, 0.99);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return LayoutBuilder(
       builder: (context, constraints) {
-        final sliderWidth = constraints.maxWidth;
-        final handleX = _dragRatio * sliderWidth;
+        final double width = constraints.maxWidth;
+        const double height = 250.0; // Altura fixa para consistência visual na página de detalhes
 
         return GestureDetector(
-          onHorizontalDragUpdate: (details) {
-            setState(() {
-              // Calculate new ratio clamped between 0.0 and 1.0
-              _dragRatio = (details.localPosition.dx / sliderWidth).clamp(0.0, 1.0);
-            });
-          },
-          onTapDown: (details) {
-            setState(() {
-              _dragRatio = (details.localPosition.dx / sliderWidth).clamp(0.0, 1.0);
-            });
-          },
-          child: Container(
-            height: widget.height,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF0A0A0A) : const Color(0xFFF0F2F5),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE2E8F0),
-                width: 1.5,
-              ),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // 1. Background: Shiny Pokémon Image (Right side)
-                  _buildPokemonImage(widget.shinyImageUrl),
-
-                  // 2. Foreground: Normal Pokémon Image clipped to current ratio (Left side)
-                  ClipRect(
-                    clipper: _ShinySliderClipper(_dragRatio),
-                    child: _buildPokemonImage(widget.normalImageUrl),
-                  ),
-
-                  // 3. Labels indicating which side is which (fade out as the handle approaches)
-                  Positioned(
-                    top: 16,
-                    left: 16,
-                    child: AnimatedOpacity(
-                      opacity: (_dragRatio - 0.15).clamp(0.0, 1.0),
-                      duration: Duration.zero,
-                      child: _buildFormLabel('Normal', isDark),
-                    ),
-                  ),
-                  Positioned(
-                    top: 16,
-                    right: 16,
-                    child: AnimatedOpacity(
-                      opacity: (0.85 - _dragRatio).clamp(0.0, 1.0),
-                      duration: Duration.zero,
-                      child: _buildFormLabel('Shiny ✨', isDark, isShiny: true),
-                    ),
-                  ),
-
-                  // 4. Custom dragging line indicator
-                  Positioned(
-                    left: handleX - 1.5,
-                    top: 0,
-                    bottom: 0,
-                    child: Container(
-                      width: 3,
-                      color: AppTheme.pokemonRed,
-                    ),
-                  ),
-
-                  // 5. Custom glowing circular dragging handle
-                  Positioned(
-                    left: handleX - 20,
-                    top: (widget.height / 2) - 20,
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: AppTheme.pokemonRed,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 3),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.pokemonRed.withValues(alpha: 0.5),
-                            blurRadius: 10,
-                            spreadRadius: 2,
-                          ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.swap_horiz,
-                          color: Colors.white,
-                          size: 20,
+          behavior: HitTestBehavior.opaque,
+          // Rastreamento instantâneo do toque no início, atualização e fim
+          onTapDown: (details) => _updatePosition(details.globalPosition),
+          onHorizontalDragStart: (details) => _updatePosition(details.globalPosition),
+          onHorizontalDragUpdate: (details) => _updatePosition(details.globalPosition),
+          child: SizedBox(
+            width: width,
+            height: height,
+            child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.center,
+              children: [
+                // 1. Camada de Fundo: Sprite Normal (Estático e Centrado)
+                Positioned.fill(
+                  child: Center(
+                    child: SizedBox(
+                      width: width,
+                      height: height,
+                      child: CachedNetworkImage(
+                        imageUrl: widget.normalImageUrl,
+                        fit: BoxFit.contain,
+                        errorWidget: (context, url, error) => const Icon(
+                          Icons.broken_image,
+                          color: Colors.grey,
+                          size: 40,
                         ),
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+
+                // 2. Camada da Frente: Sprite Shiny (Recortado horizontalmente com precisão)
+                // O ClipRect partilha exatamente os mesmos limites de tamanho que a camada anterior,
+                // garantindo que não há qualquer desalinhamento de pixéis na sobreposição.
+                Positioned.fill(
+                  child: ClipRect(
+                    clipper: _SliderClipper(_position),
+                    child: Center(
+                      child: SizedBox(
+                        width: width,
+                        height: height,
+                        child: CachedNetworkImage(
+                          imageUrl: widget.shinyImageUrl,
+                          fit: BoxFit.contain,
+                          errorWidget: (context, url, error) => const Icon(
+                            Icons.broken_image,
+                            color: Colors.grey,
+                            size: 40,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // 3. Divisória vertical e botão de arrasto (Knob) de alta fidelidade
+                Positioned(
+                  left: (width * _position) - 20, // Centra o container interativo de 40px exatamente na linha
+                  top: 0,
+                  bottom: 0,
+                  child: IgnorePointer(
+                    child: SizedBox(
+                      width: 40,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // Linha vertical nítida de separação (com largura otimizada de 3px para cobrir imperfeições)
+                          Container(
+                            width: 3.0,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.4),
+                                  blurRadius: 4,
+                                  spreadRadius: 1,
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Botão estilo Material Design 3 centrado na linha divisória
+                          Container(
+                            height: 40,
+                            width: 40,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.surface,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 2.5,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.35),
+                                  blurRadius: 6,
+                                  spreadRadius: 1,
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              Icons.unfold_more_rounded, // Ícone vertical dinâmico para indicar arrasto lateral
+                              size: 20,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         );
       },
     );
   }
-
-  /// Unified loader for images
-  Widget _buildPokemonImage(String url) {
-    if (url.isEmpty) {
-      return const Center(child: Icon(Icons.broken_image, size: 64, color: Colors.grey));
-    }
-    return CachedNetworkImage(
-      imageUrl: url,
-      height: widget.height - 40,
-      width: widget.height - 40,
-      fit: BoxFit.contain,
-      placeholder: (context, url) => const Center(
-        child: SizedBox(
-          width: 40,
-          height: 40,
-          child: CircularProgressIndicator(
-            strokeWidth: 3,
-            valueColor: AlwaysStoppedAnimation<Color>(AppTheme.pokemonRed),
-          ),
-        ),
-      ),
-      errorWidget: (context, url, error) => const Center(
-        child: Icon(Icons.error_outline, size: 40, color: Colors.redAccent),
-      ),
-    );
-  }
-
-  /// Badge Labels for Normal/Shiny sides
-  Widget _buildFormLabel(String label, bool isDark, {bool isShiny = false}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      decoration: BoxDecoration(
-        color: isShiny
-            ? AppTheme.pokemonBlue.withValues(alpha: 0.85)
-            : (isDark ? Colors.black.withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.85)),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isShiny
-              ? AppTheme.pokemonBlue
-              : (isDark ? Colors.white12 : Colors.black12),
-        ),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: isShiny ? Colors.white : (isDark ? Colors.white : Colors.black),
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 0.5,
-        ),
-      ),
-    );
-  }
 }
 
-/// Custom Clipper that cuts an area vertically from 0.0 to clipRatio of its parent's width.
-class _ShinySliderClipper extends CustomClipper<Rect> {
-  final double clipRatio;
+/// Clipper personalizado que corta a porção direita do widget da frente (Shiny),
+/// mantendo a imagem do Pokémon no centro perfeitamente intacta.
+class _SliderClipper extends CustomClipper<Rect> {
+  final double position;
 
-  _ShinySliderClipper(this.clipRatio);
+  _SliderClipper(this.position);
 
   @override
   Rect getClip(Size size) {
-    return Rect.fromLTRB(0, 0, size.width * clipRatio, size.height);
+    return Rect.fromLTRB(0.0, 0.0, size.width * position, size.height);
   }
 
   @override
-  bool shouldReclip(covariant _ShinySliderClipper oldClipper) {
-    return oldClipper.clipRatio != clipRatio;
+  bool shouldReclip(covariant _SliderClipper oldClipper) {
+    return oldClipper.position != position;
   }
 }
