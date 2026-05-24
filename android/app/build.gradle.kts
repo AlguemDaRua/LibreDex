@@ -32,8 +32,10 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // F-Droid Compliance Note:
+            // F-Droid's build system automatically compiles the APK from source and signs 
+            // the compiled release bundle with F-Droid's official keys. We safely fallback
+            // to debug signing configuration so local builds run out-of-the-box.
             signingConfig = signingConfigs.getByName("debug")
         }
     }

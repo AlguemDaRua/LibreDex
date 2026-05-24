@@ -2,13 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/theme/theme_provider.dart';
-import 'package:libredex/features/pokedex/views/pokedex_screen.dart';
-import 'package:libredex/features/movedex/views/movedex_screen.dart';
-import 'package:libredex/features/abilitydex/views/abilitydex_screen.dart';
-import 'package:libredex/features/naturedex/views/naturedex_screen.dart';
-import 'package:libredex/features/typechart/views/typechart_screen.dart';
-import 'package:libredex/features/settings/views/settings_screen.dart';
-import 'package:libredex/features/calculator/views/damage_calculator_screen.dart';
+import 'package:libredex/core/navigation/navigation_provider.dart';
 
 class AppDrawer extends ConsumerWidget {
   final String currentRoute;
@@ -86,53 +80,60 @@ class AppDrawer extends ConsumerWidget {
                 children: [
                   _buildDrawerItem(
                     context: context,
+                    ref: ref,
                     icon: Icons.grid_view_rounded,
                     label: 'Pokédex',
                     route: 'pokedex',
-                    destination: const PokedexScreen(),
+                    index: 0,
                   ),
                   _buildDrawerItem(
                     context: context,
+                    ref: ref,
                     icon: Icons.flash_on_rounded,
                     label: 'MoveDex',
                     route: 'moves',
-                    destination: const MovedexScreen(),
+                    index: 1,
                   ),
                   _buildDrawerItem(
                     context: context,
+                    ref: ref,
                     icon: Icons.auto_awesome_rounded,
                     label: 'AbilityDex',
                     route: 'abilities',
-                    destination: const AbilitydexScreen(),
+                    index: 2,
                   ),
                   _buildDrawerItem(
                     context: context,
+                    ref: ref,
                     icon: Icons.analytics_rounded,
                     label: 'NatureDex',
                     route: 'natures',
-                    destination: const NaturedexScreen(),
+                    index: 3,
                   ),
                   _buildDrawerItem(
                     context: context,
+                    ref: ref,
                     icon: Icons.grid_on_rounded,
                     label: 'Type Chart',
                     route: 'type_chart',
-                    destination: const TypeChartScreen(),
+                    index: 4,
                   ),
                   _buildDrawerItem(
                     context: context,
+                    ref: ref,
                     icon: Icons.calculate_rounded,
                     label: 'Damage Calculator',
                     route: 'calculator',
-                    destination: const DamageCalculatorScreen(),
+                    index: 5,
                   ),
                   Divider(height: 32, color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
                   _buildDrawerItem(
                     context: context,
+                    ref: ref,
                     icon: Icons.settings_rounded,
                     label: 'Settings',
                     route: 'settings',
-                    destination: const SettingsScreen(),
+                    index: 6,
                   ),
                 ],
               ),
@@ -232,10 +233,11 @@ class AppDrawer extends ConsumerWidget {
 
   Widget _buildDrawerItem({
     required BuildContext context,
+    required WidgetRef ref,
     required IconData icon,
     required String label,
     required String route,
-    required Widget destination,
+    required int index,
   }) {
     final isSelected = currentRoute == route;
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -274,10 +276,7 @@ class AppDrawer extends ConsumerWidget {
         onTap: () {
           Navigator.pop(context); // Close drawer
           if (!isSelected) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => destination),
-            );
+            ref.read(currentMenuIndexProvider.notifier).setIndex(index);
           }
         },
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

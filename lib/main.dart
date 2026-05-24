@@ -3,9 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
-import 'package:libredex/features/pokedex/views/pokedex_screen.dart';
 import 'package:libredex/features/splash/views/initial_sync_screen.dart';
-
+import 'package:libredex/features/home/views/home_screen.dart';
 import 'package:libredex/core/theme/theme_provider.dart';
 
 void main() {
@@ -60,7 +59,7 @@ class StartupGate extends ConsumerWidget {
         if (list.isEmpty) {
           return const InitialSyncScreen();
         } else {
-          return const PokedexScreen();
+          return const HomeScreen();
         }
       },
     );

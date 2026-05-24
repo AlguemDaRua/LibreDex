@@ -111,9 +111,9 @@ class SettingsScreen extends ConsumerWidget {
                 children: [
                   _buildInfoRow('App Name', 'LibreDex', isDark),
                   const Divider(height: 1),
-                  _buildInfoRow('Version', '1.0.0+Offline', isDark),
+                  _buildInfoRow('Version', '1.0.0 (F-Droid Public Beta)', isDark),
                   const Divider(height: 1),
-                  _buildInfoRow('Source Code', 'Open Source (GPL)', isDark),
+                  _buildInfoRow('Source Code', 'Open Source (MIT)', isDark),
                 ],
               ),
             ),
