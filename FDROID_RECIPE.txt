@@ -1,0 +1,35 @@
+==================================================
+LIBREDEX - F-DROID PUBLIC BETA BUILD RECIPE
+==================================================
+
+Use the following recipe when submitting LibreDex to the official
+f-droid/fdroiddata repository. 
+
+For the initial Merge Request, you can use the instructions below to
+declare the build commands for the F-Droid build servers.
+
+--------------------------------------------------
+F-DROID BUILD RECIPE (YAML FORMAT)
+--------------------------------------------------
+
+Build:
+  - versionName: '1.0.0'
+    versionCode: 1
+    commit: 'COLOQUE_O_SHA_DO_COMMIT_AQUI'
+    subdir: android/app
+    gradle: [ yes ]
+    flutter: yes
+
+--------------------------------------------------
+SUBMISSION GUIDELINES
+--------------------------------------------------
+
+1. Replace 'COLOQUE_O_SHA_DO_COMMIT_AQUI' with the exact git commit SHA
+   representing your release (e.g. your 'v1.0.0' tag commit).
+2. F-Droid's compiler automatically installs the Flutter SDK and runs
+   compilation in a secure offline-ready sandbox.
+3. The build outputs the signed release APK to the public catalog.
+
+No proprietary binary blobs, dependencies or trackers are present in the
+source code, ensuring 100% compliance with F-Droid's open-source policies.
+==================================================

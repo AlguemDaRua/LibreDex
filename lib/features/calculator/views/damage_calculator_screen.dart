@@ -22,8 +22,8 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
   Pokemon? _attacker;
   Pokemon? _defender;
 
-  // Active Move
-  Map<String, dynamic>? _calcSelectedMove;
+  // Active Move (stored by name for safe matching)
+  String? _calcSelectedMoveName;
 
   // Attacker Options
   String _calcAttackerItem = 'None';
@@ -135,26 +135,26 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
       data: (movesList) {
         final movesWithPower = movesList.where((m) => (m['power'] ?? 0) > 0).toList();
         final displayMoves = movesWithPower.isNotEmpty ? movesWithPower : movesList;
-        if (_calcSelectedMove == null && displayMoves.isNotEmpty) {
-          _calcSelectedMove = displayMoves.first;
-        }
 
-        // Check if selected move is in this attacker's learned list
-        final bool moveFound = displayMoves.any((m) => m['name'] == _calcSelectedMove?['name']);
+        // Resolve selected move by name, fallback to first
+        final bool moveFound = displayMoves.any((m) => m['name'] == _calcSelectedMoveName);
         if (!moveFound && displayMoves.isNotEmpty) {
-          _calcSelectedMove = displayMoves.first;
+          _calcSelectedMoveName = displayMoves.first['name']?.toString();
         }
+        final Map<String, dynamic>? resolvedMove = displayMoves.cast<Map<String, dynamic>?>().firstWhere(
+          (m) => m?['name'] == _calcSelectedMoveName, orElse: () => displayMoves.isNotEmpty ? displayMoves.first : null,
+        );
 
         return abilitiesAsync.when(
           data: (abilitiesList) {
             final activeAbilities = ['None'] + abilitiesList.map((a) => a['name'].toString()).toList();
-            if (_calcAttackerAbility == 'None' && abilitiesList.isNotEmpty) {
-              _calcAttackerAbility = abilitiesList.first['name'].toString();
+            if (!activeAbilities.contains(_calcAttackerAbility)) {
+              _calcAttackerAbility = abilitiesList.isNotEmpty ? abilitiesList.first['name'].toString() : 'None';
             }
 
-            final double basePower = (_calcSelectedMove?['power'] ?? 0).toDouble();
-            final String moveType = (_calcSelectedMove?['type'] ?? 'normal').toString().toLowerCase();
-            final String moveName = (_calcSelectedMove?['name'] ?? 'Pound').toString().toLowerCase();
+            final double basePower = (resolvedMove?['power'] ?? 0).toDouble();
+            final String moveType = (resolvedMove?['type'] ?? 'normal').toString().toLowerCase();
+            final String moveName = (resolvedMove?['name'] ?? 'Pound').toString().toLowerCase();
 
             // Calculate modified base power
             double modifiedPower = basePower;
@@ -227,9 +227,9 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
             }
             if (moveName == 'hurricane' || moveName == 'thunder') {
               if (_calcWeather == 'Rain') {
-                activeEffects.add('${_calcSelectedMove?['name']} has 100% ACCURACY under Rain.');
+                activeEffects.add('${resolvedMove?['name']} has 100% ACCURACY under Rain.');
               } else if (_calcWeather == 'Sun') {
-                activeEffects.add('${_calcSelectedMove?['name']} accuracy drops to 50% under harsh Sunlight.');
+                activeEffects.add('${resolvedMove?['name']} accuracy drops to 50% under harsh Sunlight.');
               }
             }
             if (moveName == 'solar beam') {
@@ -302,24 +302,25 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                             border: Border.all(color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE5E7EB)),
                           ),
                           child: DropdownButtonHideUnderline(
-                            child: DropdownButton<Map<String, dynamic>>(
+                            child: DropdownButton<String>(
                               isExpanded: true,
                               dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                              value: _calcSelectedMove,
+                              value: _calcSelectedMoveName,
                               items: displayMoves.map((m) {
+                                final String mName = m['name']?.toString() ?? '';
                                 final int powerVal = m['power'] ?? 0;
                                 final String categoryStr = (m['damage_class'] ?? 'Status').toString();
-                                return DropdownMenuItem<Map<String, dynamic>>(
-                                  value: m,
+                                return DropdownMenuItem<String>(
+                                  value: mName,
                                   child: Text(
-                                    '${m['name'].toString().toUpperCase()} (Power: $powerVal, $categoryStr)',
+                                    '${mName.toUpperCase()} (Power: $powerVal, $categoryStr)',
                                     style: TextStyle(fontSize: 13, color: primaryColor, fontWeight: FontWeight.bold),
                                   ),
                                 );
                               }).toList(),
                               onChanged: (val) {
                                 setState(() {
-                                  _calcSelectedMove = val;
+                                  _calcSelectedMoveName = val;
                                 });
                               },
                             ),
@@ -530,28 +531,28 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
       data: (movesList) {
         final movesWithPower = movesList.where((m) => (m['power'] ?? 0) > 0).toList();
         final displayMoves = movesWithPower.isNotEmpty ? movesWithPower : movesList;
-        if (_calcSelectedMove == null && displayMoves.isNotEmpty) {
-          _calcSelectedMove = displayMoves.first;
-        }
 
-        // Check if selected move is in this attacker's learned list
-        final bool moveFound = displayMoves.any((m) => m['name'] == _calcSelectedMove?['name']);
+        // Resolve selected move by name, fallback to first
+        final bool moveFound = displayMoves.any((m) => m['name'] == _calcSelectedMoveName);
         if (!moveFound && displayMoves.isNotEmpty) {
-          _calcSelectedMove = displayMoves.first;
+          _calcSelectedMoveName = displayMoves.first['name']?.toString();
         }
+        final Map<String, dynamic>? resolvedMove = displayMoves.cast<Map<String, dynamic>?>().firstWhere(
+          (m) => m?['name'] == _calcSelectedMoveName, orElse: () => displayMoves.isNotEmpty ? displayMoves.first : null,
+        );
 
         return abilitiesAsync.when(
           data: (abilitiesList) {
             final activeAbilities = ['None'] + abilitiesList.map((a) => a['name'].toString()).toList();
-            if (_calcAttackerAbility == 'None' && abilitiesList.isNotEmpty) {
-              _calcAttackerAbility = abilitiesList.first['name'].toString();
+            if (!activeAbilities.contains(_calcAttackerAbility)) {
+              _calcAttackerAbility = abilitiesList.isNotEmpty ? abilitiesList.first['name'].toString() : 'None';
             }
 
             // --- MATH ENGINE CALCULATIONS ---
             final int attackerLevel = statsState.level;
-            final String moveCategory = (_calcSelectedMove?['damage_class'] ?? 'physical').toString().toLowerCase();
-            final String moveType = (_calcSelectedMove?['type'] ?? 'normal').toString().toLowerCase();
-            final double basePower = (_calcSelectedMove?['power'] ?? 0).toDouble();
+            final String moveCategory = (resolvedMove?['damage_class'] ?? 'physical').toString().toLowerCase();
+            final String moveType = (resolvedMove?['type'] ?? 'normal').toString().toLowerCase();
+            final double basePower = (resolvedMove?['power'] ?? 0).toDouble();
 
             // Attacker Stats
             int activeAttackingStat = 100;
@@ -772,24 +773,25 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                             border: Border.all(color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE5E7EB)),
                           ),
                           child: DropdownButtonHideUnderline(
-                            child: DropdownButton<Map<String, dynamic>>(
+                            child: DropdownButton<String>(
                               isExpanded: true,
                               dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                              value: _calcSelectedMove,
+                              value: _calcSelectedMoveName,
                               items: displayMoves.map((m) {
+                                final String mName = m['name']?.toString() ?? '';
                                 final int powerVal = m['power'] ?? 0;
                                 final String categoryStr = (m['damage_class'] ?? 'Status').toString();
-                                return DropdownMenuItem<Map<String, dynamic>>(
-                                  value: m,
+                                return DropdownMenuItem<String>(
+                                  value: mName,
                                   child: Text(
-                                    '${m['name'].toString().toUpperCase()} (Power: $powerVal, $categoryStr)',
+                                    '${mName.toUpperCase()} (Power: $powerVal, $categoryStr)',
                                     style: TextStyle(fontSize: 13, color: primaryColor, fontWeight: FontWeight.bold),
                                   ),
                                 );
                               }).toList(),
                               onChanged: (val) {
                                 setState(() {
-                                  _calcSelectedMove = val;
+                                  _calcSelectedMoveName = val;
                                 });
                               },
                             ),
@@ -1173,41 +1175,49 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                         const SizedBox(height: 16),
 
                         // Double Overlay Custom Health Bar
-                        Stack(
-                          children: [
-                            Container(
-                              height: 12,
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE5E7EB),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                            ),
-                            // Safe range (remaining HP)
-                            FractionallySizedBox(
-                              widthFactor: ((defenderHP - maxDamageRounded).clamp(0, defenderHP) / defenderHP).toDouble(),
-                              child: Container(
-                                height: 12,
-                                decoration: BoxDecoration(
-                                  color: Colors.green,
-                                  borderRadius: BorderRadius.circular(6),
+                        LayoutBuilder(
+                          builder: (context, barConstraints) {
+                            final double barWidth = barConstraints.maxWidth;
+                            final double remainFraction = defenderHP > 0
+                                ? ((defenderHP - maxDamageRounded).clamp(0, defenderHP) / defenderHP).toDouble()
+                                : 1.0;
+                            final double dmgFraction = defenderHP > 0
+                                ? ((maxDamageRounded - minDamageRounded).clamp(0, defenderHP) / defenderHP).toDouble()
+                                : 0.0;
+                            return Stack(
+                              children: [
+                                Container(
+                                  height: 12,
+                                  width: barWidth,
+                                  decoration: BoxDecoration(
+                                    color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE5E7EB),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
                                 ),
-                              ),
-                            ),
-                            // Damage range overlay (Orange/Red bar)
-                            Positioned(
-                              right: 0,
-                              left: ((defenderHP - maxDamageRounded).clamp(0, defenderHP) / defenderHP) * MediaQuery.of(context).size.width * 0.75,
-                              child: Container(
-                                height: 12,
-                                width: ((maxDamageRounded - minDamageRounded).clamp(0, defenderHP) / defenderHP) * MediaQuery.of(context).size.width * 0.75,
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(colors: [Colors.orange, AppTheme.pokemonRed]),
-                                  borderRadius: BorderRadius.circular(6),
+                                // Remaining HP (green)
+                                Container(
+                                  height: 12,
+                                  width: barWidth * remainFraction,
+                                  decoration: BoxDecoration(
+                                    color: Colors.green,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
                                 ),
-                              ),
-                            ),
-                          ],
+                                // Damage range overlay
+                                Positioned(
+                                  left: barWidth * remainFraction,
+                                  child: Container(
+                                    height: 12,
+                                    width: (barWidth * dmgFraction).clamp(0, barWidth - barWidth * remainFraction),
+                                    decoration: BoxDecoration(
+                                      gradient: const LinearGradient(colors: [Colors.orange, AppTheme.pokemonRed]),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -1479,6 +1489,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
   void _showPokemonSelectionSheet(BuildContext context, List<Pokemon> allPokemons, bool isAttacker) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? Colors.white : Colors.black;
+    final searchController = TextEditingController();
 
     showModalBottomSheet(
       context: context,
@@ -1496,8 +1507,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
           builder: (context, scrollController) {
             return StatefulBuilder(
               builder: (context, setModalState) {
-                // Internal search state
-                String query = '';
+                final query = searchController.text;
                 final filteredPokemons = allPokemons
                     .where((p) => p.name.toLowerCase().contains(query.toLowerCase()))
                     .toList();
@@ -1521,6 +1531,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                       ),
                       const SizedBox(height: 12),
                       TextField(
+                        controller: searchController,
                         decoration: InputDecoration(
                           hintText: 'Search Pokémon by name...',
                           hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
@@ -1535,9 +1546,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                         ),
                         style: TextStyle(color: primaryColor, fontSize: 13),
                         onChanged: (val) {
-                          setModalState(() {
-                            query = val;
-                          });
+                          setModalState(() {});
                         },
                       ),
                       const SizedBox(height: 12),
@@ -1578,8 +1587,9 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                                 setState(() {
                                   if (isAttacker) {
                                     _attacker = p;
-                                    // Reset active move so it forces update on next load
-                                    _calcSelectedMove = null;
+                                    // Reset active move and ability so it forces update on next load
+                                    _calcSelectedMoveName = null;
+                                    _calcAttackerAbility = 'None';
                                   } else {
                                     _defender = p;
                                     // Reset defender stats for new pick
