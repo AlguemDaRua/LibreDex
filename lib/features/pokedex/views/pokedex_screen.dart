@@ -189,7 +189,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
     );
   }
 
-  /// Grid Card representating each Pokémon
+  /// Grid Card representing each Pokémon
   Widget _buildPokemonCard(Pokemon pokemon, bool isDark) {
     final typeColor = _getTypeColor(pokemon.type1);
 

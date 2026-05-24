@@ -8,15 +8,12 @@ part of 'stats_calculator_viewmodel.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// State notifier utilizing Riverpod codegen to manage individual competitive custom statistics.
 
 @ProviderFor(StatsCalculator)
 final statsCalculatorProvider = StatsCalculatorProvider._();
 
-/// State notifier utilizing Riverpod codegen to manage individual competitive custom statistics.
 final class StatsCalculatorProvider
     extends $NotifierProvider<StatsCalculator, StatsCalculatorState> {
-  /// State notifier utilizing Riverpod codegen to manage individual competitive custom statistics.
   StatsCalculatorProvider._()
     : super(
         from: null,
@@ -44,9 +41,7 @@ final class StatsCalculatorProvider
   }
 }
 
-String _$statsCalculatorHash() => r'92e4fc2ed0808ab44ed3b7403d17d812c5e0de04';
-
-/// State notifier utilizing Riverpod codegen to manage individual competitive custom statistics.
+String _$statsCalculatorHash() => r'1ec5bff839d75da8d0376582d7f1bc5a9fcc349c';
 
 abstract class _$StatsCalculator extends $Notifier<StatsCalculatorState> {
   StatsCalculatorState build();

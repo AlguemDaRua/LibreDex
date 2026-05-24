@@ -1,39 +1,10 @@
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:libredex/features/pokedex/models/stat_calculator.dart';
 import 'package:libredex/core/database/app_database.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'stats_calculator_viewmodel.g.dart';
 
-/// Mapping of all 25 natures and their 10% beneficial (+10%) and hindering (-10%) stat modifiers.
-const Map<String, Map<String, double>> natureModifiers = {
-  'Hardy': {'Atk': 1.0, 'Def': 1.0, 'SpA': 1.0, 'SpD': 1.0, 'Spe': 1.0},
-  'Lonely': {'Atk': 1.1, 'Def': 0.9, 'SpA': 1.0, 'SpD': 1.0, 'Spe': 1.0},
-  'Brave': {'Atk': 1.1, 'Def': 1.0, 'SpA': 1.0, 'SpD': 1.0, 'Spe': 0.9},
-  'Adamant': {'Atk': 1.1, 'Def': 1.0, 'SpA': 0.9, 'SpD': 1.0, 'Spe': 1.0},
-  'Naughty': {'Atk': 1.1, 'Def': 1.0, 'SpA': 1.0, 'SpD': 0.9, 'Spe': 1.0},
-  'Bold': {'Atk': 0.9, 'Def': 1.1, 'SpA': 1.0, 'SpD': 1.0, 'Spe': 1.0},
-  'Docile': {'Atk': 1.0, 'Def': 1.0, 'SpA': 1.0, 'SpD': 1.0, 'Spe': 1.0},
-  'Relaxed': {'Atk': 1.0, 'Def': 1.1, 'SpA': 1.0, 'SpD': 1.0, 'Spe': 0.9},
-  'Impish': {'Atk': 1.0, 'Def': 1.1, 'SpA': 0.9, 'SpD': 1.0, 'Spe': 1.0},
-  'Lax': {'Atk': 1.0, 'Def': 1.1, 'SpA': 1.0, 'SpD': 0.9, 'Spe': 1.0},
-  'Modest': {'Atk': 0.9, 'Def': 1.0, 'SpA': 1.1, 'SpD': 1.0, 'Spe': 1.0},
-  'Mild': {'Atk': 1.0, 'Def': 0.9, 'SpA': 1.1, 'SpD': 1.0, 'Spe': 1.0},
-  'Quiet': {'Atk': 1.0, 'Def': 1.0, 'SpA': 1.1, 'SpD': 1.0, 'Spe': 0.9},
-  'Bashful': {'Atk': 1.0, 'Def': 1.0, 'SpA': 1.0, 'SpD': 1.0, 'Spe': 1.0},
-  'Rash': {'Atk': 1.0, 'Def': 1.0, 'SpA': 1.1, 'SpD': 0.9, 'Spe': 1.0},
-  'Calm': {'Atk': 0.9, 'Def': 1.0, 'SpA': 1.0, 'SpD': 1.1, 'Spe': 1.0},
-  'Gentle': {'Atk': 1.0, 'Def': 0.9, 'SpA': 1.0, 'SpD': 1.1, 'Spe': 1.0},
-  'Sassy': {'Atk': 1.0, 'Def': 1.0, 'SpA': 1.0, 'SpD': 1.1, 'Spe': 0.9},
-  'Careful': {'Atk': 1.0, 'Def': 1.0, 'SpA': 0.9, 'SpD': 1.1, 'Spe': 1.0},
-  'Quirky': {'Atk': 1.0, 'Def': 1.0, 'SpA': 1.0, 'SpD': 1.0, 'Spe': 1.0},
-  'Timid': {'Atk': 0.9, 'Def': 1.0, 'SpA': 1.0, 'SpD': 1.0, 'Spe': 1.1},
-  'Hasty': {'Atk': 1.0, 'Def': 0.9, 'SpA': 1.0, 'SpD': 1.0, 'Spe': 1.1},
-  'Jolly': {'Atk': 1.0, 'Def': 1.0, 'SpA': 0.9, 'SpD': 1.0, 'Spe': 1.1},
-  'Naive': {'Atk': 1.0, 'Def': 1.0, 'SpA': 1.0, 'SpD': 0.9, 'Spe': 1.1},
-  'Serious': {'Atk': 1.0, 'Def': 1.0, 'SpA': 1.0, 'SpD': 1.0, 'Spe': 1.0},
-};
-
-/// Immutable state containing IVs, EVs, Level, and Active Nature for competitive calculations.
+/// Estado imutável para a calculadora reativa do Pokémon Showdown.
 class StatsCalculatorState {
   final int level;
   final Map<String, int> ivs;
@@ -47,25 +18,8 @@ class StatsCalculatorState {
     required this.nature,
   });
 
-  StatsCalculatorState.initial()
-      : level = 100,
-        ivs = {
-          'HP': 31,
-          'Atk': 31,
-          'Def': 31,
-          'SpA': 31,
-          'SpD': 31,
-          'Spe': 31,
-        },
-        evs = {
-          'HP': 0,
-          'Atk': 0,
-          'Def': 0,
-          'SpA': 0,
-          'SpD': 0,
-          'Spe': 0,
-        },
-        nature = 'Serious';
+  /// Getter reativo que soma todos os EVs aplicados.
+  int get totalEvs => evs.values.fold(0, (sum, val) => sum + val);
 
   StatsCalculatorState copyWith({
     int? level,
@@ -80,116 +34,199 @@ class StatsCalculatorState {
       nature: nature ?? this.nature,
     );
   }
-
-  /// Calculates total Effort Values sum (max 508).
-  int get totalEvs => evs.values.fold(0, (sum, val) => sum + val);
 }
 
-/// State notifier utilizing Riverpod codegen to manage individual competitive custom statistics.
 @riverpod
 class StatsCalculator extends _$StatsCalculator {
   @override
   StatsCalculatorState build() {
-    return StatsCalculatorState.initial();
+    return StatsCalculatorState(
+      level: 100, // Nível padrão Showdown
+      ivs: {
+        'hp': 31,
+        'atk': 31,
+        'def': 31,
+        'spa': 31,
+        'spd': 31,
+        'spe': 31,
+      },
+      evs: {
+        'hp': 0,
+        'atk': 0,
+        'def': 0,
+        'spa': 0,
+        'spd': 0,
+        'spe': 0,
+      },
+      nature: 'serious', // Natureza neutra inicial
+    );
   }
 
-  /// Updates Level (1 to 100).
-  void updateLevel(int newLevel) {
-    state = state.copyWith(level: newLevel.clamp(1, 100));
+  void updateLevel(int level) {
+    state = state.copyWith(level: level);
   }
 
-  /// Updates Individual Value (0 to 31).
-  void updateIv(String statName, int newValue) {
-    final newIvs = Map<String, int>.from(state.ivs);
-    newIvs[statName] = newValue.clamp(0, 31);
-    state = state.copyWith(ivs: newIvs);
+  void updateIv(String statKey, int value) {
+    final updatedIvs = Map<String, int>.from(state.ivs);
+    updatedIvs[statKey] = value.clamp(0, 31);
+    state = state.copyWith(ivs: updatedIvs);
   }
 
-  /// Updates Effort Value (0 to 252, total EV sum limited strictly to 508).
-  void updateEv(String statName, int newValue) {
-    final currentEvs = Map<String, int>.from(state.evs);
-    currentEvs[statName] = 0; // Temporarily subtract current value to assess max cap
-    final currentSum = currentEvs.values.fold(0, (sum, val) => sum + val);
+  void updateEv(String statKey, int value) {
+    final updatedEvs = Map<String, int>.from(state.evs);
+    final int otherEvsSum = updatedEvs.entries
+        .where((entry) => entry.key != statKey)
+        .fold(0, (sum, entry) => sum + entry.value);
 
-    final maxAllowedValue = (508 - currentSum).clamp(0, 252);
-    final finalValue = newValue.clamp(0, maxAllowedValue);
-
-    final newEvs = Map<String, int>.from(state.evs);
-    newEvs[statName] = finalValue;
-    state = state.copyWith(evs: newEvs);
-  }
-
-  /// Updates nature.
-  void updateNature(String natureName) {
-    if (natureModifiers.containsKey(natureName)) {
-      state = state.copyWith(nature: natureName);
+    int allowedValue = value.clamp(0, 252);
+    if (otherEvsSum + allowedValue > 508) {
+      allowedValue = 508 - otherEvsSum;
     }
+
+    updatedEvs[statKey] = allowedValue;
+    state = state.copyWith(evs: updatedEvs);
   }
 
-  /// Resets state.
+  void updateNature(String natureId) {
+    state = state.copyWith(nature: natureId);
+  }
+
   void reset() {
-    state = StatsCalculatorState.initial();
+    state = build();
   }
 
-  /// Returns final calculated stats based on current state values and standard Pokémon formulas.
+  /// Retorna o multiplicador da Natureza oficial do Pokémon para cada atributo.
+  double getNatureMultiplier(String nature, String stat) {
+    if (stat == 'HP') return 1.0;
+    final String n = nature.toLowerCase();
+    
+    if (n == 'adamant') {
+      if (stat == 'Attack') return 1.1;
+      if (stat == 'Sp. Atk') return 0.9;
+    }
+    if (n == 'bold') {
+      if (stat == 'Defense') return 1.1;
+      if (stat == 'Attack') return 0.9;
+    }
+    if (n == 'brave') {
+      if (stat == 'Attack') return 1.1;
+      if (stat == 'Speed') return 0.9;
+    }
+    if (n == 'calm') {
+      if (stat == 'Sp. Def') return 1.1;
+      if (stat == 'Attack') return 0.9;
+    }
+    if (n == 'careful') {
+      if (stat == 'Sp. Def') return 1.1;
+      if (stat == 'Sp. Atk') return 0.9;
+    }
+    if (n == 'gentle') {
+      if (stat == 'Sp. Def') return 1.1;
+      if (stat == 'Defense') return 0.9;
+    }
+    if (n == 'hasty') {
+      if (stat == 'Speed') return 1.1;
+      if (stat == 'Defense') return 0.9;
+    }
+    if (n == 'impish') {
+      if (stat == 'Defense') return 1.1;
+      if (stat == 'Sp. Atk') return 0.9;
+    }
+    if (n == 'jolly') {
+      if (stat == 'Speed') return 1.1;
+      if (stat == 'Sp. Atk') return 0.9;
+    }
+    if (n == 'lax') {
+      if (stat == 'Defense') return 1.1;
+      if (stat == 'Sp. Def') return 0.9;
+    }
+    if (n == 'lonely') {
+      if (stat == 'Attack') return 1.1;
+      if (stat == 'Defense') return 0.9;
+    }
+    if (n == 'mild') {
+      if (stat == 'Sp. Atk') return 1.1;
+      if (stat == 'Defense') return 0.9;
+    }
+    if (n == 'modest') {
+      if (stat == 'Sp. Atk') return 1.1;
+      if (stat == 'Attack') return 0.9;
+    }
+    if (n == 'naive') {
+      if (stat == 'Speed') return 1.1;
+      if (stat == 'Sp. Def') return 0.9;
+    }
+    if (n == 'naughty') {
+      if (stat == 'Attack') return 1.1;
+      if (stat == 'Sp. Def') return 0.9;
+    }
+    if (n == 'quiet') {
+      if (stat == 'Sp. Atk') return 1.1;
+      if (stat == 'Speed') return 0.9;
+    }
+    if (n == 'rash') {
+      if (stat == 'Sp. Atk') return 1.1;
+      if (stat == 'Sp. Def') return 0.9;
+    }
+    if (n == 'relaxed') {
+      if (stat == 'Defense') return 1.1;
+      if (stat == 'Speed') return 0.9;
+    }
+    if (n == 'sassy') {
+      if (stat == 'Sp. Def') return 1.1;
+      if (stat == 'Speed') return 0.9;
+    }
+    if (n == 'timid') {
+      if (stat == 'Speed') return 1.1;
+      if (stat == 'Attack') return 0.9;
+    }
+    return 1.0; // Neutro
+  }
+
+  /// Calcula todos os stats de uma só vez para expor à UI de detalhes.
   Map<String, int> getCalculatedStats(Pokemon pokemon) {
-    final hp = StatCalculator.calculateHp(
-      base: pokemon.baseHp,
-      iv: state.ivs['HP'] ?? 31,
-      ev: state.evs['HP'] ?? 0,
-      level: state.level,
-      isShedinja: pokemon.name.toLowerCase() == 'shedinja',
-    );
-
-    final modifiers = natureModifiers[state.nature] ?? {};
-
-    final atk = StatCalculator.calculateOtherStat(
-      base: pokemon.baseAtk,
-      iv: state.ivs['Atk'] ?? 31,
-      ev: state.evs['Atk'] ?? 0,
-      level: state.level,
-      natureModifier: modifiers['Atk'] ?? 1.0,
-    );
-
-    final def = StatCalculator.calculateOtherStat(
-      base: pokemon.baseDef,
-      iv: state.ivs['Def'] ?? 31,
-      ev: state.evs['Def'] ?? 0,
-      level: state.level,
-      natureModifier: modifiers['Def'] ?? 1.0,
-    );
-
-    final spa = StatCalculator.calculateOtherStat(
-      base: pokemon.baseSpAtk,
-      iv: state.ivs['SpA'] ?? 31,
-      ev: state.evs['SpA'] ?? 0,
-      level: state.level,
-      natureModifier: modifiers['SpA'] ?? 1.0,
-    );
-
-    final spd = StatCalculator.calculateOtherStat(
-      base: pokemon.baseSpDef,
-      iv: state.ivs['SpD'] ?? 31,
-      ev: state.evs['SpD'] ?? 0,
-      level: state.level,
-      natureModifier: modifiers['SpD'] ?? 1.0,
-    );
-
-    final spe = StatCalculator.calculateOtherStat(
-      base: pokemon.baseSpd,
-      iv: state.ivs['Spe'] ?? 31,
-      ev: state.evs['Spe'] ?? 0,
-      level: state.level,
-      natureModifier: modifiers['Spe'] ?? 1.0,
-    );
-
     return {
-      'HP': hp,
-      'Atk': atk,
-      'Def': def,
-      'SpA': spa,
-      'SpD': spd,
-      'Spe': spe,
+      'hp': StatCalculator.calculateHp(
+        base: pokemon.baseHp,
+        iv: state.ivs['hp'] ?? 31,
+        ev: state.evs['hp'] ?? 0,
+        level: state.level,
+      ),
+      'atk': StatCalculator.calculateOtherStat(
+        base: pokemon.baseAtk,
+        iv: state.ivs['atk'] ?? 31,
+        ev: state.evs['atk'] ?? 0,
+        level: state.level,
+        natureModifier: getNatureMultiplier(state.nature, 'Attack'),
+      ),
+      'def': StatCalculator.calculateOtherStat(
+        base: pokemon.baseDef,
+        iv: state.ivs['def'] ?? 31,
+        ev: state.evs['def'] ?? 0,
+        level: state.level,
+        natureModifier: getNatureMultiplier(state.nature, 'Defense'),
+      ),
+      'spa': StatCalculator.calculateOtherStat(
+        base: pokemon.baseSpAtk,
+        iv: state.ivs['spa'] ?? 31,
+        ev: state.evs['spa'] ?? 0,
+        level: state.level,
+        natureModifier: getNatureMultiplier(state.nature, 'Sp. Atk'),
+      ),
+      'spd': StatCalculator.calculateOtherStat(
+        base: pokemon.baseSpDef,
+        iv: state.ivs['spd'] ?? 31,
+        ev: state.evs['spd'] ?? 0,
+        level: state.level,
+        natureModifier: getNatureMultiplier(state.nature, 'Sp. Def'),
+      ),
+      'spe': StatCalculator.calculateOtherStat(
+        base: pokemon.baseSpd,
+        iv: state.ivs['spe'] ?? 31,
+        ev: state.evs['spe'] ?? 0,
+        level: state.level,
+        natureModifier: getNatureMultiplier(state.nature, 'Speed'),
+      ),
     };
   }
 }
