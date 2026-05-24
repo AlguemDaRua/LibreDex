@@ -1,0 +1,123 @@
+import 'dart:io';
+import 'package:drift/drift.dart';
+import 'package:drift/native.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
+import 'package:sqlite3_flutter_libs/sqlite3_flutter_libs.dart';
+
+part 'app_database.g.dart';
+
+/// Database Table for Pokémons.
+@DataClassName('Pokemon')
+class PokemonTable extends Table {
+  IntColumn get id => integer()();
+  TextColumn get name => text()();
+  TextColumn get form => text()();
+  TextColumn get type1 => text()();
+  TextColumn get type2 => text().nullable()();
+  IntColumn get baseHp => integer()();
+  IntColumn get baseAtk => integer()();
+  IntColumn get baseDef => integer()();
+  IntColumn get baseSpAtk => integer()();
+  IntColumn get baseSpDef => integer()();
+  IntColumn get baseSpd => integer()();
+  BoolColumn get isLegendary => boolean()();
+  BoolColumn get isMythical => boolean()();
+  BoolColumn get isParadox => boolean()();
+  BoolColumn get isUltraBeast => boolean()();
+  TextColumn get spriteUrl => text()();
+  TextColumn get shinySpriteUrl => text()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Database Table for Moves.
+@DataClassName('Move')
+class MoveTable extends Table {
+  IntColumn get id => integer()();
+  TextColumn get name => text()();
+  TextColumn get type => text()();
+  IntColumn get power => integer().nullable()();
+  IntColumn get accuracy => integer().nullable()();
+  IntColumn get pp => integer()();
+  TextColumn get damageClass => text()(); // physical, special, status
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Database Table for Abilities.
+@DataClassName('Ability')
+class AbilityTable extends Table {
+  IntColumn get id => integer()();
+  TextColumn get name => text()();
+  TextColumn get description => text()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Junction Table for Pokémon <-> Moves Many-to-Many Relationship.
+@DataClassName('PokemonMove')
+class PokemonMovesTable extends Table {
+  IntColumn get pokemonId => integer().references(PokemonTable, #id, onDelete: KeyAction.cascade)();
+  IntColumn get moveId => integer().references(MoveTable, #id, onDelete: KeyAction.cascade)();
+  TextColumn get learnMethod => text()(); // level, tm, egg, tutor
+  IntColumn get levelLearned => integer().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {pokemonId, moveId, learnMethod};
+}
+
+/// Junction Table for Pokémon <-> Abilities Many-to-Many Relationship.
+@DataClassName('PokemonAbility')
+class PokemonAbilitiesTable extends Table {
+  IntColumn get pokemonId => integer().references(PokemonTable, #id, onDelete: KeyAction.cascade)();
+  IntColumn get abilityId => integer().references(AbilityTable, #id, onDelete: KeyAction.cascade)();
+  BoolColumn get isHidden => boolean()();
+
+  @override
+  Set<Column> get primaryKey => {pokemonId, abilityId};
+}
+
+/// The local Drift SQLite database setup.
+/// Handles asynchronous connections, automated migrations and foreign key constraints.
+@DriftDatabase(tables: [
+  PokemonTable,
+  MoveTable,
+  AbilityTable,
+  PokemonMovesTable,
+  PokemonAbilitiesTable,
+])
+class AppDatabase extends _$AppDatabase {
+  AppDatabase() : super(_openConnection());
+
+  @override
+  int get schemaVersion => 1;
+
+  @override
+  MigrationStrategy get migration {
+    return MigrationStrategy(
+      beforeOpen: (details) async {
+        // Enable Foreign Key support in SQLite
+        await customStatement('PRAGMA foreign_keys = ON');
+      },
+    );
+  }
+}
+
+/// Helper method to open connection on modern/background thread.
+LazyDatabase _openConnection() {
+  return LazyDatabase(() async {
+    final dbFolder = await getApplicationDocumentsDirectory();
+    final file = File(p.join(dbFolder.path, 'libredex.db'));
+
+    // SQLite workaround for older Android devices (minSdkVersion 29 and below)
+    if (Platform.isAndroid) {
+      await applyWorkaroundToOpenSqlite3OnOldAndroidVersions();
+    }
+
+    return NativeDatabase.createInBackground(file);
+  });
+}
