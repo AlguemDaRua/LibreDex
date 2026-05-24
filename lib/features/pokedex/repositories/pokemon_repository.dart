@@ -21,22 +21,6 @@ PokemonRepository pokemonRepository(Ref ref) {
   return PokemonRepository(db: db);
 }
 
-/// Wrapper for Pokémon Abilities with full entity details.
-class PokemonAbilityWithDetails {
-  final PokemonAbility junction;
-  final Ability ability;
-
-  PokemonAbilityWithDetails({required this.junction, required this.ability});
-}
-
-/// Wrapper for Pokémon Moves with full entity details.
-class PokemonMoveWithDetails {
-  final PokemonMove junction;
-  final Move move;
-
-  PokemonMoveWithDetails({required this.junction, required this.move});
-}
-
 /// Repository responsible for syncing and retrieving offline-first Pokémon data.
 class PokemonRepository {
   final AppDatabase db;
@@ -123,7 +107,6 @@ class PokemonRepository {
       await db.into(db.pokemonTable).insertOnConflictUpdate(pokemon);
     } catch (e) {
       // Individual pokemon failure should not break entire sync, but log it
-      // Omitted print for production code standards
     }
   }
 
@@ -146,7 +129,7 @@ class PokemonRepository {
   /// Lazily fetches abilities and moves for a given Pokémon, caching them locally in SQLite
   Future<void> syncAbilitiesAndMoves(int pokemonId) async {
     try {
-      // Check if already cached locally
+      // Check if already cached locally in junction table
       final existingAbilities = await (db.select(db.pokemonAbilitiesTable)
             ..where((tbl) => tbl.pokemonId.equals(pokemonId)))
           .get();
@@ -162,90 +145,203 @@ class PokemonRepository {
       final List<dynamic> abilitiesJson = data['abilities'] ?? [];
       final List<dynamic> movesJson = data['moves'] ?? [];
 
-      // Execute all inserts atomically in a fast local transaction
-      await db.transaction(() async {
-        // 1. Process Abilities
-        for (final item in abilitiesJson) {
-          final abilityData = item['ability'];
-          final String name = abilityData['name'];
-          final String url = abilityData['url'];
-          final int abilityId = _extractIdFromUrl(url);
-          final bool isHidden = item['is_hidden'] ?? false;
+      // 1. Process and Sync Abilities concurrently
+      final List<Future<void>> abilitySyncFutures = [];
+      for (final item in abilitiesJson) {
+        final abilityData = item['ability'];
+        final String name = abilityData['name'];
+        final String url = abilityData['url'];
+        final int abilityId = _extractIdFromUrl(url);
+        final bool isHidden = item['is_hidden'] ?? false;
 
-          final cleanName = name.replaceAll('-', ' ').split(' ').map((word) {
-            if (word.isEmpty) return '';
-            return word[0].toUpperCase() + word.substring(1);
-          }).join(' ');
+        abilitySyncFutures.add(_syncSingleAbility(abilityId, name, pokemonId, isHidden));
+      }
+      await Future.wait(abilitySyncFutures);
 
-          // Insert Ability entry if not already existing
-          await db.into(db.abilityTable).insertOnConflictUpdate(Ability(
-                id: abilityId,
-                name: cleanName,
-                description: 'Special ability of this Pokémon.',
-              ));
+      // 2. Gather Moves and Check Cache before API fetching
+      final List<Map<String, dynamic>> movesToSync = [];
+      for (final item in movesJson) {
+        final moveData = item['move'];
+        final String name = moveData['name'];
+        final String url = moveData['url'];
+        final int moveId = _extractIdFromUrl(url);
 
-          // Insert junction association
-          await db.into(db.pokemonAbilitiesTable).insertOnConflictUpdate(PokemonAbility(
-                pokemonId: pokemonId,
-                abilityId: abilityId,
-                isHidden: isHidden,
-              ));
+        // Gather learning details
+        final List<dynamic> versionDetails = item['version_group_details'] ?? [];
+        if (versionDetails.isEmpty) continue;
+
+        // Extract first available learning details
+        final detail = versionDetails.first;
+        final int levelLearned = detail['level_learned_at'] ?? 0;
+        final String rawMethod = detail['move_learn_method']['name'] ?? 'level-up';
+
+        String method = 'level';
+        if (rawMethod == 'machine') {
+          method = 'tm';
+        } else if (rawMethod == 'egg') {
+          method = 'egg';
+        } else if (rawMethod == 'tutor') {
+          method = 'tutor';
         }
 
-        // 2. Process Moves
-        for (final item in movesJson) {
-          final moveData = item['move'];
-          final String name = moveData['name'];
-          final String url = moveData['url'];
-          final int moveId = _extractIdFromUrl(url);
+        movesToSync.add({
+          'id': moveId,
+          'name': name,
+          'method': method,
+          'level': levelLearned,
+        });
+      }
 
-          final cleanName = name.replaceAll('-', ' ').split(' ').map((word) {
-            if (word.isEmpty) return '';
-            return word[0].toUpperCase() + word.substring(1);
-          }).join(' ');
+      // Pull existing moves in SQLite to check what needs detailed API fetching
+      final existingMoves = await db.select(db.moveTable).get();
+      final Map<int, Move> existingMoveMap = {for (var m in existingMoves) m.id: m};
 
-          // Gather learning details
-          final List<dynamic> versionDetails = item['version_group_details'] ?? [];
-          if (versionDetails.isEmpty) continue;
+      // 3. Process and Sync Moves in highly optimized parallel chunks of 15
+      const int moveChunkSize = 15;
+      for (int i = 0; i < movesToSync.length; i += moveChunkSize) {
+        final chunk = movesToSync.sublist(
+          i,
+          i + moveChunkSize > movesToSync.length ? movesToSync.length : i + moveChunkSize,
+        );
 
-          // Extract first available learning details
-          final detail = versionDetails.first;
-          final int levelLearned = detail['level_learned_at'] ?? 0;
-          final String rawMethod = detail['move_learn_method']['name'] ?? 'level-up';
+        await Future.wait(chunk.map((m) async {
+          final int moveId = m['id'];
+          final String name = m['name'];
+          final String method = m['method'];
+          final int levelLearned = m['level'];
 
-          String method = 'level';
-          if (rawMethod == 'machine') {
-            method = 'tm';
-          } else if (rawMethod == 'egg') {
-            method = 'egg';
-          } else if (rawMethod == 'tutor') {
-            method = 'tutor';
+          // Skip detailed fetching if move details are already cached in MoveTable
+          final existing = existingMoveMap[moveId];
+          if (existing != null && existing.description != null && existing.type != 'Normal') {
+            // Just insert the junction directly
+            await db.into(db.pokemonMovesTable).insertOnConflictUpdate(PokemonMove(
+              pokemonId: pokemonId,
+              moveId: moveId,
+              learnMethod: method,
+              levelLearned: levelLearned,
+            ));
+            return;
           }
 
-          // Insert base Move entry if not already existing
-          await db.into(db.moveTable).insertOnConflictUpdate(Move(
-                id: moveId,
-                name: cleanName,
-                type: 'Normal', // Cache placeholder type, lazy filled
-                damageClass: 'physical',
-                pp: 15,
-              ));
-
-          // Insert junction association
-          await db.into(db.pokemonMovesTable).insertOnConflictUpdate(PokemonMove(
-                pokemonId: pokemonId,
-                moveId: moveId,
-                learnMethod: method,
-                levelLearned: levelLearned,
-              ));
-        }
-      });
+          // Otherwise fetch deep move details from PokeAPI
+          await _fetchAndSaveSingleMove(moveId, name, pokemonId, method, levelLearned);
+        }));
+      }
     } catch (e) {
       // Background sync errors should not crash the view, let UI fallback gracefully
     }
   }
 
-  /// Watch abilities with full details for a given Pokémon
+  /// Helper to fetch and insert a single Ability with English description
+  Future<void> _syncSingleAbility(int abilityId, String name, int pokemonId, bool isHidden) async {
+    try {
+      final existing = await (db.select(db.abilityTable)..where((tbl) => tbl.id.equals(abilityId))).getSingleOrNull();
+
+      if (existing == null || existing.description == 'Special ability of this Pokémon.' || existing.description.isEmpty) {
+        final response = await ApiClient.get('ability/$abilityId');
+        final data = response.data;
+
+        final effectEntries = data['effect_entries'] as List<dynamic>? ?? [];
+        String description = 'No description available.';
+        for (final entry in effectEntries) {
+          if (entry['language']['name'] == 'en') {
+            description = entry['short_effect'] ?? entry['effect'] ?? description;
+            break;
+          }
+        }
+        if (description == 'No description available.') {
+          final flavorTexts = data['flavor_text_entries'] as List<dynamic>? ?? [];
+          for (final entry in flavorTexts) {
+            if (entry['language']['name'] == 'en') {
+              description = entry['flavor_text'] ?? description;
+              break;
+            }
+          }
+        }
+
+        final cleanName = name.replaceAll('-', ' ').split(' ').map((word) {
+          if (word.isEmpty) return '';
+          return word[0].toUpperCase() + word.substring(1);
+        }).join(' ');
+
+        await db.into(db.abilityTable).insertOnConflictUpdate(Ability(
+          id: abilityId,
+          name: cleanName,
+          description: description,
+        ));
+      }
+
+      // Insert junction entry
+      await db.into(db.pokemonAbilitiesTable).insertOnConflictUpdate(PokemonAbility(
+        pokemonId: pokemonId,
+        abilityId: abilityId,
+        isHidden: isHidden,
+      ));
+    } catch (_) {
+      // Graceful error isolation
+    }
+  }
+
+  /// Helper to fetch and insert a single Move with damageClass, type, pp, accuracy, power, and description
+  Future<void> _fetchAndSaveSingleMove(int moveId, String name, int pokemonId, String method, int levelLearned) async {
+    try {
+      final response = await ApiClient.get('move/$moveId');
+      final data = response.data;
+
+      final int pp = data['pp'] ?? 15;
+      final int? power = data['power'];
+      final int? accuracy = data['accuracy'];
+      final String type = data['type']['name'] ?? 'normal';
+      final String damageClass = data['damage_class']['name'] ?? 'physical';
+
+      final effectEntries = data['effect_entries'] as List<dynamic>? ?? [];
+      String description = 'No description available.';
+      for (final entry in effectEntries) {
+        if (entry['language']['name'] == 'en') {
+          description = entry['short_effect'] ?? entry['effect'] ?? description;
+          break;
+        }
+      }
+      if (description == 'No description available.') {
+        final flavorTexts = data['flavor_text_entries'] as List<dynamic>? ?? [];
+        for (final entry in flavorTexts) {
+          if (entry['language']['name'] == 'en') {
+            description = entry['flavor_text'] ?? description;
+            break;
+          }
+        }
+      }
+
+      final cleanName = name.replaceAll('-', ' ').split(' ').map((word) {
+        if (word.isEmpty) return '';
+        return word[0].toUpperCase() + word.substring(1);
+      }).join(' ');
+
+      // Insert Move
+      await db.into(db.moveTable).insertOnConflictUpdate(Move(
+        id: moveId,
+        name: cleanName,
+        type: type,
+        power: power,
+        accuracy: accuracy,
+        pp: pp,
+        damageClass: damageClass,
+        description: description,
+      ));
+
+      // Insert junction entry
+      await db.into(db.pokemonMovesTable).insertOnConflictUpdate(PokemonMove(
+        pokemonId: pokemonId,
+        moveId: moveId,
+        learnMethod: method,
+        levelLearned: levelLearned,
+      ));
+    } catch (_) {
+      // Graceful error isolation
+    }
+  }
+
+  /// Watch abilities with full details for a given Pokémon using JOIN
   Stream<List<PokemonAbilityWithDetails>> watchAbilitiesForPokemon(int pokemonId) {
     final query = db.select(db.pokemonAbilitiesTable).join([
       innerJoin(db.abilityTable, db.abilityTable.id.equalsExp(db.pokemonAbilitiesTable.abilityId)),
@@ -260,7 +356,7 @@ class PokemonRepository {
     });
   }
 
-  /// Watch moves with full details for a given Pokémon
+  /// Watch moves with full details for a given Pokémon using JOIN
   Stream<List<PokemonMoveWithDetails>> watchMovesForPokemon(int pokemonId) {
     final query = db.select(db.pokemonMovesTable).join([
       innerJoin(db.moveTable, db.moveTable.id.equalsExp(db.pokemonMovesTable.moveId)),

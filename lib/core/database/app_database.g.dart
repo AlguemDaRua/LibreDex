@@ -1025,6 +1025,17 @@ class $MoveTableTable extends MoveTable with TableInfo<$MoveTableTable, Move> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1034,6 +1045,7 @@ class $MoveTableTable extends MoveTable with TableInfo<$MoveTableTable, Move> {
     accuracy,
     pp,
     damageClass,
+    description,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1094,6 +1106,15 @@ class $MoveTableTable extends MoveTable with TableInfo<$MoveTableTable, Move> {
     } else if (isInserting) {
       context.missing(_damageClassMeta);
     }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1131,6 +1152,10 @@ class $MoveTableTable extends MoveTable with TableInfo<$MoveTableTable, Move> {
         DriftSqlType.string,
         data['${effectivePrefix}damage_class'],
       )!,
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      ),
     );
   }
 
@@ -1148,6 +1173,7 @@ class Move extends DataClass implements Insertable<Move> {
   final int? accuracy;
   final int pp;
   final String damageClass;
+  final String? description;
   const Move({
     required this.id,
     required this.name,
@@ -1156,6 +1182,7 @@ class Move extends DataClass implements Insertable<Move> {
     this.accuracy,
     required this.pp,
     required this.damageClass,
+    this.description,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1171,6 +1198,9 @@ class Move extends DataClass implements Insertable<Move> {
     }
     map['pp'] = Variable<int>(pp);
     map['damage_class'] = Variable<String>(damageClass);
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
     return map;
   }
 
@@ -1187,6 +1217,9 @@ class Move extends DataClass implements Insertable<Move> {
           : Value(accuracy),
       pp: Value(pp),
       damageClass: Value(damageClass),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
     );
   }
 
@@ -1203,6 +1236,7 @@ class Move extends DataClass implements Insertable<Move> {
       accuracy: serializer.fromJson<int?>(json['accuracy']),
       pp: serializer.fromJson<int>(json['pp']),
       damageClass: serializer.fromJson<String>(json['damageClass']),
+      description: serializer.fromJson<String?>(json['description']),
     );
   }
   @override
@@ -1216,6 +1250,7 @@ class Move extends DataClass implements Insertable<Move> {
       'accuracy': serializer.toJson<int?>(accuracy),
       'pp': serializer.toJson<int>(pp),
       'damageClass': serializer.toJson<String>(damageClass),
+      'description': serializer.toJson<String?>(description),
     };
   }
 
@@ -1227,6 +1262,7 @@ class Move extends DataClass implements Insertable<Move> {
     Value<int?> accuracy = const Value.absent(),
     int? pp,
     String? damageClass,
+    Value<String?> description = const Value.absent(),
   }) => Move(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -1235,6 +1271,7 @@ class Move extends DataClass implements Insertable<Move> {
     accuracy: accuracy.present ? accuracy.value : this.accuracy,
     pp: pp ?? this.pp,
     damageClass: damageClass ?? this.damageClass,
+    description: description.present ? description.value : this.description,
   );
   Move copyWithCompanion(MoveTableCompanion data) {
     return Move(
@@ -1247,6 +1284,9 @@ class Move extends DataClass implements Insertable<Move> {
       damageClass: data.damageClass.present
           ? data.damageClass.value
           : this.damageClass,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
     );
   }
 
@@ -1259,14 +1299,23 @@ class Move extends DataClass implements Insertable<Move> {
           ..write('power: $power, ')
           ..write('accuracy: $accuracy, ')
           ..write('pp: $pp, ')
-          ..write('damageClass: $damageClass')
+          ..write('damageClass: $damageClass, ')
+          ..write('description: $description')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, name, type, power, accuracy, pp, damageClass);
+  int get hashCode => Object.hash(
+    id,
+    name,
+    type,
+    power,
+    accuracy,
+    pp,
+    damageClass,
+    description,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1277,7 +1326,8 @@ class Move extends DataClass implements Insertable<Move> {
           other.power == this.power &&
           other.accuracy == this.accuracy &&
           other.pp == this.pp &&
-          other.damageClass == this.damageClass);
+          other.damageClass == this.damageClass &&
+          other.description == this.description);
 }
 
 class MoveTableCompanion extends UpdateCompanion<Move> {
@@ -1288,6 +1338,7 @@ class MoveTableCompanion extends UpdateCompanion<Move> {
   final Value<int?> accuracy;
   final Value<int> pp;
   final Value<String> damageClass;
+  final Value<String?> description;
   const MoveTableCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -1296,6 +1347,7 @@ class MoveTableCompanion extends UpdateCompanion<Move> {
     this.accuracy = const Value.absent(),
     this.pp = const Value.absent(),
     this.damageClass = const Value.absent(),
+    this.description = const Value.absent(),
   });
   MoveTableCompanion.insert({
     this.id = const Value.absent(),
@@ -1305,6 +1357,7 @@ class MoveTableCompanion extends UpdateCompanion<Move> {
     this.accuracy = const Value.absent(),
     required int pp,
     required String damageClass,
+    this.description = const Value.absent(),
   }) : name = Value(name),
        type = Value(type),
        pp = Value(pp),
@@ -1317,6 +1370,7 @@ class MoveTableCompanion extends UpdateCompanion<Move> {
     Expression<int>? accuracy,
     Expression<int>? pp,
     Expression<String>? damageClass,
+    Expression<String>? description,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1326,6 +1380,7 @@ class MoveTableCompanion extends UpdateCompanion<Move> {
       if (accuracy != null) 'accuracy': accuracy,
       if (pp != null) 'pp': pp,
       if (damageClass != null) 'damage_class': damageClass,
+      if (description != null) 'description': description,
     });
   }
 
@@ -1337,6 +1392,7 @@ class MoveTableCompanion extends UpdateCompanion<Move> {
     Value<int?>? accuracy,
     Value<int>? pp,
     Value<String>? damageClass,
+    Value<String?>? description,
   }) {
     return MoveTableCompanion(
       id: id ?? this.id,
@@ -1346,6 +1402,7 @@ class MoveTableCompanion extends UpdateCompanion<Move> {
       accuracy: accuracy ?? this.accuracy,
       pp: pp ?? this.pp,
       damageClass: damageClass ?? this.damageClass,
+      description: description ?? this.description,
     );
   }
 
@@ -1373,6 +1430,9 @@ class MoveTableCompanion extends UpdateCompanion<Move> {
     if (damageClass.present) {
       map['damage_class'] = Variable<String>(damageClass.value);
     }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
     return map;
   }
 
@@ -1385,7 +1445,8 @@ class MoveTableCompanion extends UpdateCompanion<Move> {
           ..write('power: $power, ')
           ..write('accuracy: $accuracy, ')
           ..write('pp: $pp, ')
-          ..write('damageClass: $damageClass')
+          ..write('damageClass: $damageClass, ')
+          ..write('description: $description')
           ..write(')'))
         .toString();
   }
@@ -2964,6 +3025,7 @@ typedef $$MoveTableTableCreateCompanionBuilder =
       Value<int?> accuracy,
       required int pp,
       required String damageClass,
+      Value<String?> description,
     });
 typedef $$MoveTableTableUpdateCompanionBuilder =
     MoveTableCompanion Function({
@@ -2974,6 +3036,7 @@ typedef $$MoveTableTableUpdateCompanionBuilder =
       Value<int?> accuracy,
       Value<int> pp,
       Value<String> damageClass,
+      Value<String?> description,
     });
 
 final class $$MoveTableTableReferences
@@ -3049,6 +3112,11 @@ class $$MoveTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
   Expression<bool> pokemonMovesTableRefs(
     Expression<bool> Function($$PokemonMovesTableTableFilterComposer f) f,
   ) {
@@ -3118,6 +3186,11 @@ class $$MoveTableTableOrderingComposer
     column: $table.damageClass,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$MoveTableTableAnnotationComposer
@@ -3149,6 +3222,11 @@ class $$MoveTableTableAnnotationComposer
 
   GeneratedColumn<String> get damageClass => $composableBuilder(
     column: $table.damageClass,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
     builder: (column) => column,
   );
 
@@ -3214,6 +3292,7 @@ class $$MoveTableTableTableManager
                 Value<int?> accuracy = const Value.absent(),
                 Value<int> pp = const Value.absent(),
                 Value<String> damageClass = const Value.absent(),
+                Value<String?> description = const Value.absent(),
               }) => MoveTableCompanion(
                 id: id,
                 name: name,
@@ -3222,6 +3301,7 @@ class $$MoveTableTableTableManager
                 accuracy: accuracy,
                 pp: pp,
                 damageClass: damageClass,
+                description: description,
               ),
           createCompanionCallback:
               ({
@@ -3232,6 +3312,7 @@ class $$MoveTableTableTableManager
                 Value<int?> accuracy = const Value.absent(),
                 required int pp,
                 required String damageClass,
+                Value<String?> description = const Value.absent(),
               }) => MoveTableCompanion.insert(
                 id: id,
                 name: name,
@@ -3240,6 +3321,7 @@ class $$MoveTableTableTableManager
                 accuracy: accuracy,
                 pp: pp,
                 damageClass: damageClass,
+                description: description,
               ),
           withReferenceMapper: (p0) => p0
               .map(

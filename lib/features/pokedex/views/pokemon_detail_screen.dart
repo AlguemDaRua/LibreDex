@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/features/pokedex/models/type_efficiency_calculator.dart';
+import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
 import 'package:libredex/features/pokedex/viewmodels/stats_calculator_viewmodel.dart';
 import 'package:libredex/features/pokedex/widgets/shiny_slider.dart';
 
@@ -52,9 +53,10 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    // Reset calculator state to defaults upon entering details screen
+    // Reset calculator state and lazy sync background abilities & moves
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(statsCalculatorProvider.notifier).reset();
+      ref.read(pokemonRepositoryProvider).syncAbilitiesAndMoves(widget.pokemon.id);
     });
   }
 
@@ -270,20 +272,7 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
 
   Widget _buildAbilitiesCard() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // Relational caching placeholder simulated in English
-    final List<Map<String, dynamic>> dummyAbilities = [
-      {
-        'name': 'Overgrow', 
-        'desc': "Increases the power of Grass-type moves by 50% when the Pokémon's HP is low.", 
-        'isHidden': false
-      },
-      {
-        'name': 'Chlorophyll', 
-        'desc': 'Doubles the Speed of the Pokémon in harsh sunlight conditions.', 
-        'isHidden': true
-      },
-    ];
+    final abilitiesAsync = ref.watch(pokemonAbilitiesProvider(widget.pokemon.id));
 
     return Container(
       width: double.infinity,
@@ -304,60 +293,88 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black),
           ),
           Divider(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB), height: 24),
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: dummyAbilities.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              final ability = dummyAbilities[index];
-              final bool isHidden = ability['isHidden'];
-              return Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF9FAFB),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFF3F4F6)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+          abilitiesAsync.when(
+            data: (abilities) {
+              if (abilities.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12.0),
+                  child: Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Colors.grey)),
+                    ),
+                  ),
+                );
+              }
+              return ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: abilities.length,
+                separatorBuilder: (context, index) => const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  final item = abilities[index];
+                  final ability = item.ability;
+                  final bool isHidden = item.junction.isHidden;
+                  return Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF9FAFB),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFF3F4F6)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          ability['name'],
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold, 
-                            fontSize: 14, 
-                            color: isDark ? Colors.white : Colors.black
-                          ),
+                        Row(
+                          children: [
+                            Text(
+                              ability.name,
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, 
+                                  fontSize: 14, 
+                                  color: isDark ? Colors.white : Colors.black
+                              ),
+                            ),
+                            if (isHidden) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.purple.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: Colors.purpleAccent, width: 0.8),
+                                ),
+                                child: const Text(
+                                  'HIDDEN',
+                                  style: TextStyle(color: Colors.purpleAccent, fontSize: 8, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
-                        if (isHidden) ...[
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.purple.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: Colors.purpleAccent, width: 0.8),
-                            ),
-                            child: const Text(
-                              'HIDDEN',
-                              style: TextStyle(color: Colors.purpleAccent, fontSize: 8, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ],
+                        const SizedBox(height: 6),
+                        Text(
+                          ability.description,
+                          style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 12, height: 1.4),
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      ability['desc'],
-                      style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 12, height: 1.4),
-                    ),
-                  ],
-                ),
+                  );
+                },
               );
             },
+            loading: () => const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(AppTheme.pokemonRed)),
+                ),
+              ),
+            ),
+            error: (err, stack) => Text('Error loading abilities: $err', style: const TextStyle(color: Colors.redAccent)),
           ),
         ],
       ),
@@ -807,22 +824,7 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
   /// -------------------------------------------------------------
   Widget _buildMovesTab() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // Relational caching placeholder simulated in English
-    final List<Map<String, dynamic>> dummyMoves = [
-      {'name': 'Tackle', 'type': 'normal', 'method': 'level', 'lvl': 1, 'power': 40, 'pp': 35},
-      {'name': 'Vine Whip', 'type': 'grass', 'method': 'level', 'lvl': 3, 'power': 45, 'pp': 25},
-      {'name': 'Razor Leaf', 'type': 'grass', 'method': 'level', 'lvl': 15, 'power': 55, 'pp': 25},
-      {'name': 'Energy Ball', 'type': 'grass', 'method': 'machine', 'power': 90, 'pp': 10},
-      {'name': 'Giga Drain', 'type': 'grass', 'method': 'tutor', 'power': 75, 'pp': 10},
-      {'name': 'Grassy Glide', 'type': 'grass', 'method': 'tutor', 'power': 55, 'pp': 20},
-      {'name': 'Petal Dance', 'type': 'grass', 'method': 'egg', 'power': 120, 'pp': 10},
-    ];
-
-    final filteredMoves = dummyMoves.where((move) {
-      if (_moveFilter == 'all') return true;
-      return move['method'] == _moveFilter;
-    }).toList();
+    final movesAsync = ref.watch(pokemonMovesProvider(widget.pokemon.id));
 
     return Column(
       children: [
@@ -844,106 +846,309 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
           ),
         ),
         Expanded(
-          child: filteredMoves.isEmpty
-              ? const Center(
+          child: movesAsync.when(
+            data: (movesList) {
+              final filteredMoves = movesList.where((item) {
+                if (_moveFilter == 'all') return true;
+                return item.junction.learnMethod == _moveFilter;
+              }).toList();
+
+              if (filteredMoves.isEmpty) {
+                return const Center(
                   child: Text(
                     'No moves found.',
                     style: TextStyle(color: Colors.grey),
                   ),
-                )
-              : ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  itemCount: filteredMoves.length,
-                  separatorBuilder: (context, index) => Divider(
-                    color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB),
-                    height: 1,
-                  ),
-                  itemBuilder: (context, index) {
-                    final move = filteredMoves[index];
-                    final moveType = move['type'];
-                    final color = _getTypeColor(moveType);
-                    final hasPower = move['power'] != null;
+                );
+              }
 
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12.0),
-                      child: Row(
-                        children: [
-                          SizedBox(
-                            width: 50,
-                            child: Center(
-                              child: move['method'] == 'level'
-                                  ? Text(
-                                      'Lvl ${move['lvl']}',
-                                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.amberAccent, fontSize: 11),
-                                    )
-                                  : Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey.withValues(alpha: 0.15),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(
-                                        move['method'].toString().toUpperCase(),
-                                        style: const TextStyle(color: Colors.grey, fontSize: 8, fontWeight: FontWeight.bold),
-                                      ),
+              return ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                itemCount: filteredMoves.length,
+                separatorBuilder: (context, index) => Divider(
+                  color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB),
+                  height: 1,
+                ),
+                itemBuilder: (context, index) {
+                  final item = filteredMoves[index];
+                  final move = item.move;
+                  final junction = item.junction;
+
+                  final moveType = move.type;
+                  final color = _getTypeColor(moveType);
+                  final hasPower = move.power != null && move.power! > 0;
+
+                  // Competitive Modifiers Math (Showdown Style)
+                  double sunPower = move.power?.toDouble() ?? 0.0;
+                  double rainPower = move.power?.toDouble() ?? 0.0;
+                  double overgrowPower = move.power?.toDouble() ?? 0.0;
+
+                  if (hasPower) {
+                    final pType = moveType.toLowerCase();
+                    if (pType == 'fire') {
+                      sunPower *= 1.5;
+                      rainPower *= 0.5;
+                    } else if (pType == 'water') {
+                      sunPower *= 0.5;
+                      rainPower *= 1.5;
+                    }
+
+                    if (pType == 'grass') {
+                      overgrowPower *= 1.5;
+                    }
+                  }
+
+                  return ExpansionTile(
+                    collapsedBackgroundColor: Colors.transparent,
+                    backgroundColor: Colors.transparent,
+                    shape: const RoundedRectangleBorder(side: BorderSide.none),
+                    tilePadding: EdgeInsets.zero,
+                    title: Row(
+                      children: [
+                        SizedBox(
+                          width: 50,
+                          child: Center(
+                            child: junction.learnMethod == 'level'
+                                ? Text(
+                                    'Lvl ${junction.levelLearned ?? 1}',
+                                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.amberAccent, fontSize: 11),
+                                  )
+                                : Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(4),
                                     ),
-                            ),
+                                    child: Text(
+                                      junction.learnMethod.toUpperCase(),
+                                      style: const TextStyle(color: Colors.grey, fontSize: 8, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  move['name'],
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold, 
-                                    fontSize: 14, 
-                                    color: isDark ? Colors.white : Colors.black
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: color.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    moveType.toUpperCase(),
-                                    style: TextStyle(color: color, fontSize: 8, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                hasPower ? 'Power: ${move['power']}' : 'Status',
+                                move.name,
                                 style: TextStyle(
-                                  color: hasPower 
-                                      ? (isDark ? Colors.white : Colors.black87)
-                                      : Colors.grey,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: FontWeight.bold, 
+                                  fontSize: 14, 
+                                  color: isDark ? Colors.white : Colors.black
                                 ),
                               ),
                               const SizedBox(height: 4),
-                              Text(
-                                'PP: ${move['pp']}',
-                                style: const TextStyle(color: Colors.grey, fontSize: 10),
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: color.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      moveType.toUpperCase(),
+                                      style: TextStyle(color: color, fontSize: 8, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  // Category Badge
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: move.damageClass.toLowerCase() == 'physical'
+                                          ? const Color(0xFFF87171).withValues(alpha: 0.15)
+                                          : move.damageClass.toLowerCase() == 'special'
+                                              ? const Color(0xFF60A5FA).withValues(alpha: 0.15)
+                                              : Colors.grey.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      move.damageClass.toUpperCase(),
+                                      style: TextStyle(
+                                        color: move.damageClass.toLowerCase() == 'physical'
+                                            ? const Color(0xFFF87171)
+                                            : move.damageClass.toLowerCase() == 'special'
+                                                ? const Color(0xFF60A5FA)
+                                                : Colors.grey,
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                        ],
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              hasPower ? 'Power: ${move.power}' : 'Status',
+                              style: TextStyle(
+                                color: hasPower 
+                                    ? (isDark ? Colors.white : Colors.black87)
+                                    : Colors.grey,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'PP: ${move.pp}',
+                              style: const TextStyle(color: Colors.grey, fontSize: 10),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Divider(color: Color(0xFF2D2D2D), height: 12),
+                            // Description
+                            Text(
+                              move.description ?? 'No information available.',
+                              style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 12, height: 1.4),
+                            ),
+                            const SizedBox(height: 12),
+                            // Accuracy, PP and category stats row
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Accuracy: ${move.accuracy != null ? "${move.accuracy}%" : "—"}',
+                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey),
+                                ),
+                                Text(
+                                  'PP: ${move.pp}/${move.pp}',
+                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey),
+                                ),
+                                Text(
+                                  'Category: ${move.damageClass[0].toUpperCase() + move.damageClass.substring(1)}',
+                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey),
+                                ),
+                              ],
+                            ),
+                            if (hasPower) ...[
+                              const SizedBox(height: 12),
+                              // Battle Modifiers Table
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Competitive Modifiers & Conditions:',
+                                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    if (moveType.toLowerCase() == 'grass') ...[
+                                      _buildModifierRow('Overgrow Ability (Low HP)', move.power!, overgrowPower.toInt()),
+                                    ],
+                                    if (moveType.toLowerCase() == 'fire' || moveType.toLowerCase() == 'water') ...[
+                                      _buildModifierRow('Sunny Weather / Solar Intens.', move.power!, sunPower.toInt()),
+                                      _buildModifierRow('Rainy Weather / Downpour', move.power!, rainPower.toInt()),
+                                    ],
+                                    if (moveType.toLowerCase() == 'electric') ...[
+                                      _buildModifierRow('Electric Terrain (Active)', move.power!, (move.power! * 1.3).toInt()),
+                                    ],
+                                    if (moveType.toLowerCase() == 'psychic') ...[
+                                      _buildModifierRow('Psychic Terrain (Active)', move.power!, (move.power! * 1.3).toInt()),
+                                    ],
+                                    if (moveType.toLowerCase() != 'grass' &&
+                                        moveType.toLowerCase() != 'fire' &&
+                                        moveType.toLowerCase() != 'water' &&
+                                        moveType.toLowerCase() != 'electric' &&
+                                        moveType.toLowerCase() != 'psychic') ...[
+                                      Text(
+                                        'No active climate/ability influences for ${moveType.toUpperCase()} moves.',
+                                        style: const TextStyle(fontSize: 9, color: Colors.grey, fontStyle: FontStyle.italic),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
-                    );
-                  },
+                    ],
+                  );
+                },
+              );
+            },
+            loading: () => const Center(
+              child: Padding(
+                padding: EdgeInsets.all(32.0),
+                child: SizedBox(
+                  width: 32,
+                  height: 32,
+                  child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(AppTheme.pokemonRed)),
                 ),
+              ),
+            ),
+            error: (err, stack) => Center(
+              child: Text(
+                'Error loading moves: $err',
+                style: const TextStyle(color: Colors.redAccent),
+              ),
+            ),
+          ),
         ),
       ],
+    );
+  }
+
+  Widget _buildModifierRow(String label, int originalPower, int modifiedPower) {
+    final double changePercent = ((modifiedPower - originalPower) / originalPower) * 100;
+    final isBoost = modifiedPower > originalPower;
+    final isReduced = modifiedPower < originalPower;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 9, color: Colors.grey)),
+          Row(
+            children: [
+              Text('$originalPower → ', style: const TextStyle(fontSize: 9, color: Colors.grey)),
+              Text(
+                '$modifiedPower',
+                style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    color: isBoost 
+                        ? Colors.greenAccent 
+                        : isReduced ? Colors.redAccent : Colors.grey
+                ),
+              ),
+              if (changePercent != 0.0) ...[
+                const SizedBox(width: 4),
+                Text(
+                  '(${isBoost ? "+" : ""}${changePercent.toInt()}%)',
+                  style: TextStyle(
+                    fontSize: 8,
+                    fontWeight: FontWeight.bold,
+                    color: isBoost ? Colors.greenAccent : Colors.redAccent,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
     );
   }
 

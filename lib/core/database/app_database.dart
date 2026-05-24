@@ -42,6 +42,7 @@ class MoveTable extends Table {
   IntColumn get accuracy => integer().nullable()();
   IntColumn get pp => integer()();
   TextColumn get damageClass => text()(); // physical, special, status
+  TextColumn get description => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -81,6 +82,22 @@ class PokemonAbilitiesTable extends Table {
   Set<Column> get primaryKey => {pokemonId, abilityId};
 }
 
+/// Wrapper for Pokémon Abilities with full entity details.
+class PokemonAbilityWithDetails {
+  final PokemonAbility junction;
+  final Ability ability;
+
+  PokemonAbilityWithDetails({required this.junction, required this.ability});
+}
+
+/// Wrapper for Pokémon Moves with full entity details.
+class PokemonMoveWithDetails {
+  final PokemonMove junction;
+  final Move move;
+
+  PokemonMoveWithDetails({required this.junction, required this.move});
+}
+
 /// The local Drift SQLite database setup.
 /// Handles asynchronous connections, automated migrations and foreign key constraints.
 @DriftDatabase(tables: [
@@ -94,7 +111,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration {
@@ -103,7 +120,40 @@ class AppDatabase extends _$AppDatabase {
         // Enable Foreign Key support in SQLite
         await customStatement('PRAGMA foreign_keys = ON');
       },
+      onUpgrade: (m, from, to) async {
+        if (from < 2) {
+          await m.addColumn(moveTable, moveTable.description);
+        }
+      },
     );
+  }
+
+  /// Fetch relational Abilities of a specific Pokémon using JOIN.
+  Future<List<PokemonAbilityWithDetails>> getPokemonAbilities(int pokemonId) async {
+    final query = select(pokemonAbilitiesTable).join([
+      innerJoin(abilityTable, abilityTable.id.equalsExp(pokemonAbilitiesTable.abilityId)),
+    ])..where(pokemonAbilitiesTable.pokemonId.equals(pokemonId));
+
+    final rows = await query.get();
+    return rows.map((row) {
+      final junction = row.readTable(pokemonAbilitiesTable);
+      final ability = row.readTable(abilityTable);
+      return PokemonAbilityWithDetails(junction: junction, ability: ability);
+    }).toList();
+  }
+
+  /// Fetch relational Moves of a specific Pokémon using JOIN.
+  Future<List<PokemonMoveWithDetails>> getPokemonMoves(int pokemonId) async {
+    final query = select(pokemonMovesTable).join([
+      innerJoin(moveTable, moveTable.id.equalsExp(pokemonMovesTable.moveId)),
+    ])..where(pokemonMovesTable.pokemonId.equals(pokemonId));
+
+    final rows = await query.get();
+    return rows.map((row) {
+      final junction = row.readTable(pokemonMovesTable);
+      final move = row.readTable(moveTable);
+      return PokemonMoveWithDetails(junction: junction, move: move);
+    }).toList();
   }
 }
 
