@@ -518,7 +518,7 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
             // Defending Effectiveness List
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.only(left: 16, right: 16, top: 0, bottom: 80),
                 children: [
                   _buildSectionHeader('DEFENSIVE COVERAGE', 'Incoming damage multipliers', isDark),
                   const SizedBox(height: 10),

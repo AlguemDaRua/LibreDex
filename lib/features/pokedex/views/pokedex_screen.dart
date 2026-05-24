@@ -170,7 +170,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                                     ),
                                   )
                                 : GridView.builder(
-                                    padding: const EdgeInsets.all(12),
+                                    padding: const EdgeInsets.only(left: 12, right: 12, top: 12, bottom: 80),
                                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                                       crossAxisCount: 2,
                                       crossAxisSpacing: 10,

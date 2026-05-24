@@ -117,7 +117,7 @@ class NaturedexScreen extends StatelessWidget {
               // Nature list
               Expanded(
                 child: ListView.separated(
-                  padding: const EdgeInsets.only(top: 8, bottom: 20),
+                  padding: const EdgeInsets.only(top: 8, bottom: 80),
                   itemCount: natures.length,
                   separatorBuilder: (context, index) => Divider(
                     color: isDark ? const Color(0xFF161616) : const Color(0xFFE5E7EB),

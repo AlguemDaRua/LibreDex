@@ -25,7 +25,7 @@ class SettingsScreen extends ConsumerWidget {
       body: SafeArea(
         bottom: true,
         child: ListView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 80),
           children: [
             // Section Header
             Text(

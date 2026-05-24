@@ -138,7 +138,7 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
                     child: _filteredAbilities.isEmpty
                         ? const Center(child: Text('No abilities found.', style: TextStyle(color: Colors.grey)))
                         : ListView.separated(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 80),
                             itemCount: _filteredAbilities.length,
                             separatorBuilder: (context, index) => Divider(
                               color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB),

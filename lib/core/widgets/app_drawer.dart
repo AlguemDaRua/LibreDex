@@ -8,6 +8,7 @@ import 'package:libredex/features/abilitydex/views/abilitydex_screen.dart';
 import 'package:libredex/features/naturedex/views/naturedex_screen.dart';
 import 'package:libredex/features/typechart/views/typechart_screen.dart';
 import 'package:libredex/features/settings/views/settings_screen.dart';
+import 'package:libredex/features/calculator/views/damage_calculator_screen.dart';
 
 class AppDrawer extends ConsumerWidget {
   final String currentRoute;
@@ -117,6 +118,13 @@ class AppDrawer extends ConsumerWidget {
                     label: 'Type Chart',
                     route: 'type_chart',
                     destination: const TypeChartScreen(),
+                  ),
+                  _buildDrawerItem(
+                    context: context,
+                    icon: Icons.calculate_rounded,
+                    label: 'Damage Calculator',
+                    route: 'calculator',
+                    destination: const DamageCalculatorScreen(),
                   ),
                   Divider(height: 32, color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
                   _buildDrawerItem(
