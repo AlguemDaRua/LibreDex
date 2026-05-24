@@ -53,10 +53,10 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    // Reset calculator state and lazy sync background abilities & moves
+    // Reset calculator state and lazily trigger background database sync
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(statsCalculatorProvider.notifier).reset();
-      ref.read(pokemonRepositoryProvider).syncAbilitiesAndMoves(widget.pokemon.id);
+      ref.read(pokemonRepositoryProvider).syncPokemonDetails(widget.pokemon.id, widget.pokemon.name);
     });
   }
 
@@ -272,7 +272,7 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
 
   Widget _buildAbilitiesCard() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final abilitiesAsync = ref.watch(pokemonAbilitiesProvider(widget.pokemon.id));
+    final abilitiesAsync = ref.watch(pokemonAbilitiesStreamProvider(widget.pokemon.id));
 
     return Container(
       width: double.infinity,
@@ -313,9 +313,11 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                 itemCount: abilities.length,
                 separatorBuilder: (context, index) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
-                  final item = abilities[index];
-                  final ability = item.ability;
-                  final bool isHidden = item.junction.isHidden;
+                  final ability = abilities[index];
+                  final String name = ability['name'] ?? '';
+                  final String effect = ability['effect'] ?? 'No description available.';
+                  final bool isHidden = ability['isHidden'] ?? false;
+
                   return Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -329,7 +331,7 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                         Row(
                           children: [
                             Text(
-                              ability.name,
+                              name,
                               style: TextStyle(
                                   fontWeight: FontWeight.bold, 
                                   fontSize: 14, 
@@ -355,7 +357,7 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          ability.description,
+                          effect,
                           style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 12, height: 1.4),
                         ),
                       ],
@@ -824,7 +826,7 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
   /// -------------------------------------------------------------
   Widget _buildMovesTab() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final movesAsync = ref.watch(pokemonMovesProvider(widget.pokemon.id));
+    final movesAsync = ref.watch(pokemonMovesStreamProvider(widget.pokemon.id));
 
     return Column(
       children: [
@@ -850,7 +852,7 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
             data: (movesList) {
               final filteredMoves = movesList.where((item) {
                 if (_moveFilter == 'all') return true;
-                return item.junction.learnMethod == _moveFilter;
+                return item['learnMethod'] == _moveFilter;
               }).toList();
 
               if (filteredMoves.isEmpty) {
@@ -870,18 +872,24 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                   height: 1,
                 ),
                 itemBuilder: (context, index) {
-                  final item = filteredMoves[index];
-                  final move = item.move;
-                  final junction = item.junction;
+                  final move = filteredMoves[index];
+                  final String name = move['name'] ?? '';
+                  final String moveType = move['type'] ?? 'normal';
+                  final String damageClass = move['damageClass'] ?? 'physical';
+                  final int? power = move['power'];
+                  final int pp = move['pp'] ?? 15;
+                  final int? accuracy = move['accuracy'];
+                  final String description = move['description'] ?? 'No information available.';
+                  final String learnMethod = move['learnMethod'] ?? 'level';
+                  final int? levelLearned = move['levelLearned'];
 
-                  final moveType = move.type;
                   final color = _getTypeColor(moveType);
-                  final hasPower = move.power != null && move.power! > 0;
+                  final hasPower = power != null && power > 0;
 
                   // Competitive Modifiers Math (Showdown Style)
-                  double sunPower = move.power?.toDouble() ?? 0.0;
-                  double rainPower = move.power?.toDouble() ?? 0.0;
-                  double overgrowPower = move.power?.toDouble() ?? 0.0;
+                  double sunPower = power?.toDouble() ?? 0.0;
+                  double rainPower = power?.toDouble() ?? 0.0;
+                  double overgrowPower = power?.toDouble() ?? 0.0;
 
                   if (hasPower) {
                     final pType = moveType.toLowerCase();
@@ -908,9 +916,9 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                         SizedBox(
                           width: 50,
                           child: Center(
-                            child: junction.learnMethod == 'level'
+                            child: learnMethod == 'level'
                                 ? Text(
-                                    'Lvl ${junction.levelLearned ?? 1}',
+                                    'Lvl ${levelLearned ?? 1}',
                                     style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.amberAccent, fontSize: 11),
                                   )
                                 : Container(
@@ -920,7 +928,7 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Text(
-                                      junction.learnMethod.toUpperCase(),
+                                      learnMethod.toUpperCase(),
                                       style: const TextStyle(color: Colors.grey, fontSize: 8, fontWeight: FontWeight.bold),
                                     ),
                                   ),
@@ -932,7 +940,7 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                move.name,
+                                name,
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold, 
                                   fontSize: 14, 
@@ -958,19 +966,19 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: move.damageClass.toLowerCase() == 'physical'
+                                      color: damageClass.toLowerCase() == 'physical'
                                           ? const Color(0xFFF87171).withValues(alpha: 0.15)
-                                          : move.damageClass.toLowerCase() == 'special'
+                                          : damageClass.toLowerCase() == 'special'
                                               ? const Color(0xFF60A5FA).withValues(alpha: 0.15)
                                               : Colors.grey.withValues(alpha: 0.15),
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Text(
-                                      move.damageClass.toUpperCase(),
+                                      damageClass.toUpperCase(),
                                       style: TextStyle(
-                                        color: move.damageClass.toLowerCase() == 'physical'
+                                        color: damageClass.toLowerCase() == 'physical'
                                             ? const Color(0xFFF87171)
-                                            : move.damageClass.toLowerCase() == 'special'
+                                            : damageClass.toLowerCase() == 'special'
                                                 ? const Color(0xFF60A5FA)
                                                 : Colors.grey,
                                         fontSize: 8,
@@ -987,7 +995,7 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
-                              hasPower ? 'Power: ${move.power}' : 'Status',
+                              hasPower ? 'Power: $power' : 'Status',
                               style: TextStyle(
                                 color: hasPower 
                                     ? (isDark ? Colors.white : Colors.black87)
@@ -998,7 +1006,7 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'PP: ${move.pp}',
+                              'PP: $pp',
                               style: const TextStyle(color: Colors.grey, fontSize: 10),
                             ),
                           ],
@@ -1014,7 +1022,7 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                             const Divider(color: Color(0xFF2D2D2D), height: 12),
                             // Description
                             Text(
-                              move.description ?? 'No information available.',
+                              description,
                               style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 12, height: 1.4),
                             ),
                             const SizedBox(height: 12),
@@ -1023,15 +1031,15 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  'Accuracy: ${move.accuracy != null ? "${move.accuracy}%" : "—"}',
+                                  'Accuracy: ${accuracy != null ? "$accuracy%" : "—"}',
                                   style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey),
                                 ),
                                 Text(
-                                  'PP: ${move.pp}/${move.pp}',
+                                  'PP: $pp/$pp',
                                   style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey),
                                 ),
                                 Text(
-                                  'Category: ${move.damageClass[0].toUpperCase() + move.damageClass.substring(1)}',
+                                  'Category: ${damageClass[0].toUpperCase() + damageClass.substring(1)}',
                                   style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey),
                                 ),
                               ],
@@ -1054,17 +1062,17 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                                     ),
                                     const SizedBox(height: 6),
                                     if (moveType.toLowerCase() == 'grass') ...[
-                                      _buildModifierRow('Overgrow Ability (Low HP)', move.power!, overgrowPower.toInt()),
+                                      _buildModifierRow('Overgrow Ability (Low HP)', power, overgrowPower.toInt()),
                                     ],
                                     if (moveType.toLowerCase() == 'fire' || moveType.toLowerCase() == 'water') ...[
-                                      _buildModifierRow('Sunny Weather / Solar Intens.', move.power!, sunPower.toInt()),
-                                      _buildModifierRow('Rainy Weather / Downpour', move.power!, rainPower.toInt()),
+                                      _buildModifierRow('Sunny Weather / Solar Intens.', power, sunPower.toInt()),
+                                      _buildModifierRow('Rainy Weather / Downpour', power, rainPower.toInt()),
                                     ],
                                     if (moveType.toLowerCase() == 'electric') ...[
-                                      _buildModifierRow('Electric Terrain (Active)', move.power!, (move.power! * 1.3).toInt()),
+                                      _buildModifierRow('Electric Terrain (Active)', power, (power * 1.3).toInt()),
                                     ],
                                     if (moveType.toLowerCase() == 'psychic') ...[
-                                      _buildModifierRow('Psychic Terrain (Active)', move.power!, (move.power! * 1.3).toInt()),
+                                      _buildModifierRow('Psychic Terrain (Active)', power, (power * 1.3).toInt()),
                                     ],
                                     if (moveType.toLowerCase() != 'grass' &&
                                         moveType.toLowerCase() != 'fire' &&

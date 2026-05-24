@@ -266,3 +266,160 @@ final class PokemonMovesFamily extends $Family
   @override
   String toString() => r'pokemonMovesProvider';
 }
+
+@ProviderFor(pokemonAbilitiesStream)
+final pokemonAbilitiesStreamProvider = PokemonAbilitiesStreamFamily._();
+
+final class PokemonAbilitiesStreamProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<Map<String, dynamic>>>,
+          List<Map<String, dynamic>>,
+          Stream<List<Map<String, dynamic>>>
+        >
+    with
+        $FutureModifier<List<Map<String, dynamic>>>,
+        $StreamProvider<List<Map<String, dynamic>>> {
+  PokemonAbilitiesStreamProvider._({
+    required PokemonAbilitiesStreamFamily super.from,
+    required int super.argument,
+  }) : super(
+         retry: null,
+         name: r'pokemonAbilitiesStreamProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$pokemonAbilitiesStreamHash();
+
+  @override
+  String toString() {
+    return r'pokemonAbilitiesStreamProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<Map<String, dynamic>>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<Map<String, dynamic>>> create(Ref ref) {
+    final argument = this.argument as int;
+    return pokemonAbilitiesStream(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is PokemonAbilitiesStreamProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$pokemonAbilitiesStreamHash() =>
+    r'f8fbbc2247671659c40c3d1b6f310e8942102b75';
+
+final class PokemonAbilitiesStreamFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<Map<String, dynamic>>>, int> {
+  PokemonAbilitiesStreamFamily._()
+    : super(
+        retry: null,
+        name: r'pokemonAbilitiesStreamProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  PokemonAbilitiesStreamProvider call(int pokemonId) =>
+      PokemonAbilitiesStreamProvider._(argument: pokemonId, from: this);
+
+  @override
+  String toString() => r'pokemonAbilitiesStreamProvider';
+}
+
+@ProviderFor(pokemonMovesStream)
+final pokemonMovesStreamProvider = PokemonMovesStreamFamily._();
+
+final class PokemonMovesStreamProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<Map<String, dynamic>>>,
+          List<Map<String, dynamic>>,
+          Stream<List<Map<String, dynamic>>>
+        >
+    with
+        $FutureModifier<List<Map<String, dynamic>>>,
+        $StreamProvider<List<Map<String, dynamic>>> {
+  PokemonMovesStreamProvider._({
+    required PokemonMovesStreamFamily super.from,
+    required int super.argument,
+  }) : super(
+         retry: null,
+         name: r'pokemonMovesStreamProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$pokemonMovesStreamHash();
+
+  @override
+  String toString() {
+    return r'pokemonMovesStreamProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<Map<String, dynamic>>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<Map<String, dynamic>>> create(Ref ref) {
+    final argument = this.argument as int;
+    return pokemonMovesStream(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is PokemonMovesStreamProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$pokemonMovesStreamHash() =>
+    r'165e5aa9be6061e37f597facbb36fc35ccc93bc4';
+
+final class PokemonMovesStreamFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<Map<String, dynamic>>>, int> {
+  PokemonMovesStreamFamily._()
+    : super(
+        retry: null,
+        name: r'pokemonMovesStreamProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  PokemonMovesStreamProvider call(int pokemonId) =>
+      PokemonMovesStreamProvider._(argument: pokemonId, from: this);
+
+  @override
+  String toString() => r'pokemonMovesStreamProvider';
+}

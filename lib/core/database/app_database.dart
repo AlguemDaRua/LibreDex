@@ -128,6 +128,49 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  /// Watch relational Abilities of a specific Pokémon using JOIN returning Map objects.
+  Stream<List<Map<String, dynamic>>> watchPokemonAbilities(int pokemonId) {
+    final query = select(pokemonAbilitiesTable).join([
+      innerJoin(abilityTable, abilityTable.id.equalsExp(pokemonAbilitiesTable.abilityId)),
+    ])..where(pokemonAbilitiesTable.pokemonId.equals(pokemonId));
+
+    return query.watch().map((rows) {
+      return rows.map((row) {
+        final junction = row.readTable(pokemonAbilitiesTable);
+        final ability = row.readTable(abilityTable);
+        return {
+          'name': ability.name,
+          'effect': ability.description,
+          'isHidden': junction.isHidden,
+        };
+      }).toList();
+    });
+  }
+
+  /// Watch relational Moves of a specific Pokémon using JOIN returning Map objects.
+  Stream<List<Map<String, dynamic>>> watchPokemonMoves(int pokemonId) {
+    final query = select(pokemonMovesTable).join([
+      innerJoin(moveTable, moveTable.id.equalsExp(pokemonMovesTable.moveId)),
+    ])..where(pokemonMovesTable.pokemonId.equals(pokemonId));
+
+    return query.watch().map((rows) {
+      return rows.map((row) {
+        final junction = row.readTable(pokemonMovesTable);
+        final move = row.readTable(moveTable);
+        return {
+          'name': move.name,
+          'type': move.type,
+          'power': move.power,
+          'pp': move.pp,
+          'damageClass': move.damageClass,
+          'description': move.description,
+          'learnMethod': junction.learnMethod,
+          'levelLearned': junction.levelLearned,
+        };
+      }).toList();
+    });
+  }
+
   /// Fetch relational Abilities of a specific Pokémon using JOIN.
   Future<List<PokemonAbilityWithDetails>> getPokemonAbilities(int pokemonId) async {
     final query = select(pokemonAbilitiesTable).join([

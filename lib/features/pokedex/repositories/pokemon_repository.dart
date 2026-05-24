@@ -126,8 +126,19 @@ class PokemonRepository {
     }
   }
 
-  /// Lazily fetches abilities and moves for a given Pokémon, caching them locally in SQLite
+  /// Compatibility wrapper for existing detail views
   Future<void> syncAbilitiesAndMoves(int pokemonId) async {
+    try {
+      final pokemon = await (db.select(db.pokemonTable)..where((tbl) => tbl.id.equals(pokemonId))).getSingleOrNull();
+      if (pokemon != null) {
+        await syncPokemonDetails(pokemonId, pokemon.name);
+      }
+    } catch (_) {}
+  }
+
+  /// Lazily fetches abilities and moves for a given Pokémon, caching them locally in SQLite.
+  /// Fully implements parallel chunking, exact PokéAPI keys mapping and offline-first caching.
+  Future<void> syncPokemonDetails(int pokemonId, String pokemonName) async {
     try {
       // Check if already cached locally in junction table
       final existingAbilities = await (db.select(db.pokemonAbilitiesTable)
@@ -138,8 +149,8 @@ class PokemonRepository {
         return; // Already synchronized and cached offline-first!
       }
 
-      // Fetch on-demand details from PokeAPI
-      final response = await ApiClient.get('pokemon/$pokemonId');
+      // Fetch on-demand details from PokeAPI using lowercase pokemonName
+      final response = await ApiClient.get('pokemon/${pokemonName.toLowerCase()}');
       final data = response.data;
 
       final List<dynamic> abilitiesJson = data['abilities'] ?? [];
@@ -382,4 +393,16 @@ Stream<List<PokemonAbilityWithDetails>> pokemonAbilities(Ref ref, int pokemonId)
 Stream<List<PokemonMoveWithDetails>> pokemonMoves(Ref ref, int pokemonId) {
   final repo = ref.watch(pokemonRepositoryProvider);
   return repo.watchMovesForPokemon(pokemonId);
+}
+
+@riverpod
+Stream<List<Map<String, dynamic>>> pokemonAbilitiesStream(Ref ref, int pokemonId) {
+  final repo = ref.watch(pokemonRepositoryProvider);
+  return repo.db.watchPokemonAbilities(pokemonId);
+}
+
+@riverpod
+Stream<List<Map<String, dynamic>>> pokemonMovesStream(Ref ref, int pokemonId) {
+  final repo = ref.watch(pokemonRepositoryProvider);
+  return repo.db.watchPokemonMoves(pokemonId);
 }
