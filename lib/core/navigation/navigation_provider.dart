@@ -2,7 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'navigation_provider.g.dart';
 
-@riverpod
+@Riverpod(keepAlive: true)
 class CurrentMenuIndex extends _$CurrentMenuIndex {
   @override
   int build() => 0;

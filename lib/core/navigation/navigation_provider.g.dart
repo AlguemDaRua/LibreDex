@@ -20,7 +20,7 @@ final class CurrentMenuIndexProvider
         argument: null,
         retry: null,
         name: r'currentMenuIndexProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -41,7 +41,7 @@ final class CurrentMenuIndexProvider
   }
 }
 
-String _$currentMenuIndexHash() => r'4623bfb883ff0f4da0500829e32043b9bc0106db';
+String _$currentMenuIndexHash() => r'9590208a0e130a3de73d5b3d08c3b8d67eec1ec8';
 
 abstract class _$CurrentMenuIndex extends $Notifier<int> {
   int build();

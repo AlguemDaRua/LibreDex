@@ -276,7 +276,9 @@ class AppDrawer extends ConsumerWidget {
         onTap: () {
           Navigator.pop(context); // Close drawer
           if (!isSelected) {
-            ref.read(currentMenuIndexProvider.notifier).setIndex(index);
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              ref.read(currentMenuIndexProvider.notifier).setIndex(index);
+            });
           }
         },
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
