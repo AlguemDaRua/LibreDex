@@ -28,7 +28,7 @@ final class DatabaseProvider
         argument: null,
         retry: null,
         name: r'databaseProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -55,7 +55,7 @@ final class DatabaseProvider
   }
 }
 
-String _$databaseHash() => r'b43f5a38382427710fbceefeb419518e859b35ea';
+String _$databaseHash() => r'd66464688f3f3beae31aa517238455b4413086f1';
 
 /// Repository provider injected with Drift Database.
 
@@ -79,7 +79,7 @@ final class PokemonRepositoryProvider
         argument: null,
         retry: null,
         name: r'pokemonRepositoryProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -107,7 +107,7 @@ final class PokemonRepositoryProvider
   }
 }
 
-String _$pokemonRepositoryHash() => r'5c6a64840b2f31adfc90cf2a7a947db169c73ee1';
+String _$pokemonRepositoryHash() => r'c23f3eed1171c0a92151bbf3333d38df9b746fc6';
 
 @ProviderFor(pokemonAbilities)
 final pokemonAbilitiesProvider = PokemonAbilitiesFamily._();

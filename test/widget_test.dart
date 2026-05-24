@@ -1,8 +1,9 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/features/pokedex/viewmodels/pokedex_viewmodel.dart';
-import 'package:libredex/main.dart';
+import 'package:libredex/features/pokedex/views/pokedex_screen.dart';
 
 void main() {
   testWidgets('Smoke test for LibreDexBaseSetup', (WidgetTester tester) async {
@@ -13,7 +14,9 @@ void main() {
         overrides: [
           pokedexProvider.overrideWith((ref) => Stream.value(<Pokemon>[])),
         ],
-        child: const LibreDexApp(),
+        child: const MaterialApp(
+          home: PokedexScreen(),
+        ),
       ),
     );
 

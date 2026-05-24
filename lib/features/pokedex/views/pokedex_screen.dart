@@ -5,6 +5,7 @@ import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/features/pokedex/viewmodels/pokedex_viewmodel.dart';
 import 'package:libredex/features/pokedex/views/pokemon_detail_screen.dart';
+import 'package:libredex/core/widgets/app_drawer.dart';
 
 /// Highly-polished Grid View Pokedex Screen.
 /// Includes support for dynamic searching, Poké-type colored badges, and custom glassmorphic empty-state components.
@@ -94,98 +95,102 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
           ),
         ],
       ),
-      body: syncState.isLoading
-          ? _buildLoadingState()
-          : syncState.hasError
-              ? _buildErrorState(syncState.error.toString())
-              : listAsync.when(
-                  data: (pokemonList) {
-                    if (pokemonList.isEmpty) {
-                      return _buildEmptyState();
-                    }
+      drawer: const AppDrawer(currentRoute: 'pokedex'),
+      body: SafeArea(
+        bottom: true,
+        child: syncState.isLoading
+            ? _buildLoadingState()
+            : syncState.hasError
+                ? _buildErrorState(syncState.error.toString())
+                : listAsync.when(
+                    data: (pokemonList) {
+                      if (pokemonList.isEmpty) {
+                        return _buildEmptyState();
+                      }
 
-                    // Search Filter Logic
-                    final filteredList = pokemonList.where((pokemon) {
-                      final query = _searchQuery.toLowerCase();
-                      return pokemon.name.toLowerCase().contains(query) ||
-                          pokemon.id.toString().contains(query) ||
-                          pokemon.type1.toLowerCase().contains(query) ||
-                          (pokemon.type2?.toLowerCase().contains(query) ?? false);
-                    }).toList();
+                      // Search Filter Logic
+                      final filteredList = pokemonList.where((pokemon) {
+                        final query = _searchQuery.toLowerCase();
+                        return pokemon.name.toLowerCase().contains(query) ||
+                            pokemon.id.toString().contains(query) ||
+                            pokemon.type1.toLowerCase().contains(query) ||
+                            (pokemon.type2?.toLowerCase().contains(query) ?? false);
+                      }).toList();
 
-                    return Column(
-                      children: [
-                        // Search Bar
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          child: TextField(
-                            controller: _searchController,
-                            onChanged: (val) {
-                              setState(() {
-                                _searchQuery = val;
-                              });
-                            },
-                            decoration: InputDecoration(
-                              hintText: 'Search Pokémon by Name, ID or Type...',
-                              prefixIcon: const Icon(Icons.search, color: AppTheme.pokemonRed),
-                              suffixIcon: _searchQuery.isNotEmpty
-                                  ? IconButton(
-                                      icon: const Icon(Icons.clear, size: 20),
-                                      onPressed: () {
-                                        _searchController.clear();
-                                        setState(() {
-                                          _searchQuery = '';
-                                        });
-                                      },
-                                    )
-                                  : null,
-                              filled: true,
-                              fillColor: isDark ? const Color(0xFF161616) : const Color(0xFFEDF2F7),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(20),
-                                borderSide: BorderSide(
-                                  color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE2E8F0),
+                      return Column(
+                        children: [
+                          // Search Bar
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            child: TextField(
+                              controller: _searchController,
+                              onChanged: (val) {
+                                setState(() {
+                                  _searchQuery = val;
+                                });
+                              },
+                              decoration: InputDecoration(
+                                hintText: 'Search Pokémon by Name, ID or Type...',
+                                prefixIcon: const Icon(Icons.search, color: AppTheme.pokemonRed),
+                                suffixIcon: _searchQuery.isNotEmpty
+                                    ? IconButton(
+                                        icon: const Icon(Icons.clear, size: 20),
+                                        onPressed: () {
+                                          _searchController.clear();
+                                          setState(() {
+                                            _searchQuery = '';
+                                          });
+                                        },
+                                      )
+                                    : null,
+                                filled: true,
+                                fillColor: isDark ? const Color(0xFF161616) : const Color(0xFFEDF2F7),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                  borderSide: BorderSide(
+                                    color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE2E8F0),
+                                  ),
                                 ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(20),
-                                borderSide: const BorderSide(color: AppTheme.pokemonRed, width: 1.5),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                  borderSide: const BorderSide(color: AppTheme.pokemonRed, width: 1.5),
+                                ),
                               ),
                             ),
                           ),
-                        ),
 
-                        // Pokémon Grid View
-                        Expanded(
-                          child: filteredList.isEmpty
-                              ? const Center(
-                                  child: Text(
-                                    'No Pokémon matched your search.',
-                                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                          // Pokémon Grid View
+                          Expanded(
+                            child: filteredList.isEmpty
+                                ? const Center(
+                                    child: Text(
+                                      'No Pokémon matched your search.',
+                                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                                    ),
+                                  )
+                                : GridView.builder(
+                                    padding: const EdgeInsets.all(12),
+                                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 2,
+                                      crossAxisSpacing: 10,
+                                      mainAxisSpacing: 10,
+                                      childAspectRatio: 0.95,
+                                    ),
+                                    itemCount: filteredList.length,
+                                    itemBuilder: (context, index) {
+                                      final pokemon = filteredList[index];
+                                      return _buildPokemonCard(pokemon, isDark);
+                                    },
                                   ),
-                                )
-                              : GridView.builder(
-                                  padding: const EdgeInsets.all(12),
-                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 2,
-                                    crossAxisSpacing: 10,
-                                    mainAxisSpacing: 10,
-                                    childAspectRatio: 0.95,
-                                  ),
-                                  itemCount: filteredList.length,
-                                  itemBuilder: (context, index) {
-                                    final pokemon = filteredList[index];
-                                    return _buildPokemonCard(pokemon, isDark);
-                                  },
-                                ),
-                        ),
-                      ],
-                    );
-                  },
-                  loading: () => _buildLoadingState(),
-                  error: (error, _) => _buildErrorState(error.toString()),
-                ),
+                          ),
+                        ],
+                      );
+                    },
+                    loading: () => _buildLoadingState(),
+                    error: (error, _) => _buildErrorState(error.toString()),
+                  ),
+      ),
     );
   }
 

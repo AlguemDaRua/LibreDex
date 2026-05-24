@@ -139,6 +139,7 @@ class AppDatabase extends _$AppDatabase {
         final junction = row.readTable(pokemonAbilitiesTable);
         final ability = row.readTable(abilityTable);
         return {
+          'id': ability.id,
           'name': ability.name,
           'effect': ability.description,
           'isHidden': junction.isHidden,
@@ -158,6 +159,7 @@ class AppDatabase extends _$AppDatabase {
         final junction = row.readTable(pokemonMovesTable);
         final move = row.readTable(moveTable);
         return {
+          'id': move.id,
           'name': move.name,
           'type': move.type,
           'power': move.power,
@@ -196,6 +198,41 @@ class AppDatabase extends _$AppDatabase {
       final junction = row.readTable(pokemonMovesTable);
       final move = row.readTable(moveTable);
       return PokemonMoveWithDetails(junction: junction, move: move);
+    }).toList();
+  }
+
+  /// Fetch all Pokémons that can learn a specific Move, along with how they learn it.
+  Future<List<Map<String, dynamic>>> getPokemonsForMove(int moveId) async {
+    final query = select(pokemonMovesTable).join([
+      innerJoin(pokemonTable, pokemonTable.id.equalsExp(pokemonMovesTable.pokemonId)),
+    ])..where(pokemonMovesTable.moveId.equals(moveId));
+
+    final rows = await query.get();
+    return rows.map((row) {
+      final junction = row.readTable(pokemonMovesTable);
+      final pokemon = row.readTable(pokemonTable);
+      return {
+        'pokemon': pokemon,
+        'learnMethod': junction.learnMethod,
+        'levelLearned': junction.levelLearned,
+      };
+    }).toList();
+  }
+
+  /// Fetch all Pokémons that can have a specific Ability.
+  Future<List<Map<String, dynamic>>> getPokemonsForAbility(int abilityId) async {
+    final query = select(pokemonAbilitiesTable).join([
+      innerJoin(pokemonTable, pokemonTable.id.equalsExp(pokemonAbilitiesTable.pokemonId)),
+    ])..where(pokemonAbilitiesTable.abilityId.equals(abilityId));
+
+    final rows = await query.get();
+    return rows.map((row) {
+      final junction = row.readTable(pokemonAbilitiesTable);
+      final pokemon = row.readTable(pokemonTable);
+      return {
+        'pokemon': pokemon,
+        'isHidden': junction.isHidden,
+      };
     }).toList();
   }
 }

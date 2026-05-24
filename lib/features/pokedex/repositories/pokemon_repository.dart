@@ -7,7 +7,7 @@ part 'pokemon_repository.g.dart';
 
 /// Database provider since we cannot modify app_database.dart.
 /// Keeps database singleton and closes it on dispose.
-@riverpod
+@Riverpod(keepAlive: true)
 AppDatabase database(Ref ref) {
   final db = AppDatabase();
   ref.onDispose(() => db.close());
@@ -15,7 +15,7 @@ AppDatabase database(Ref ref) {
 }
 
 /// Repository provider injected with Drift Database.
-@riverpod
+@Riverpod(keepAlive: true)
 PokemonRepository pokemonRepository(Ref ref) {
   final db = ref.watch(databaseProvider);
   return PokemonRepository(db: db);
@@ -216,26 +216,30 @@ class PokemonRepository {
         );
 
         await Future.wait(chunk.map((m) async {
-          final int moveId = m['id'];
-          final String name = m['name'];
-          final String method = m['method'];
-          final int levelLearned = m['level'];
+          try {
+            final int moveId = m['id'];
+            final String name = m['name'];
+            final String method = m['method'];
+            final int levelLearned = m['level'];
 
-          // Skip detailed fetching if move details are already cached in MoveTable
-          final existing = existingMoveMap[moveId];
-          if (existing != null && existing.description != null && existing.type != 'Normal') {
-            // Just insert the junction directly
-            await db.into(db.pokemonMovesTable).insertOnConflictUpdate(PokemonMove(
-              pokemonId: pokemonId,
-              moveId: moveId,
-              learnMethod: method,
-              levelLearned: levelLearned,
-            ));
-            return;
+            // Skip detailed fetching if move details are already cached in MoveTable
+            final existing = existingMoveMap[moveId];
+            if (existing != null && existing.description != null && existing.type != 'Normal') {
+              // Just insert the junction directly
+              await db.into(db.pokemonMovesTable).insertOnConflictUpdate(PokemonMove(
+                pokemonId: pokemonId,
+                moveId: moveId,
+                learnMethod: method,
+                levelLearned: levelLearned,
+              ));
+              return;
+            }
+
+            // Otherwise fetch deep move details from PokeAPI
+            await _fetchAndSaveSingleMove(moveId, name, pokemonId, method, levelLearned);
+          } catch (_) {
+            // Absorb single move failure to let others continue
           }
-
-          // Otherwise fetch deep move details from PokeAPI
-          await _fetchAndSaveSingleMove(moveId, name, pokemonId, method, levelLearned);
         }));
       }
     } catch (e) {
