@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:libredex/core/theme/app_theme.dart';
 
 /// Um widget interativo e premium para comparar os sprites Normal (Esquerda) e Shiny (Direita).
 /// O fundo muda dinamicamente de acordo com o brilho (Light/Dark Mode).
@@ -8,6 +9,7 @@ class ShinySlider extends StatefulWidget {
   final String shinyImageUrl;
   final String normalLabel;
   final String shinyLabel;
+  final int? pokemonId;
 
   const ShinySlider({
     super.key,
@@ -15,6 +17,7 @@ class ShinySlider extends StatefulWidget {
     required this.shinyImageUrl,
     this.normalLabel = 'Normal',
     this.shinyLabel = '★ Shiny',
+    this.pokemonId,
   });
 
   @override
@@ -22,7 +25,7 @@ class ShinySlider extends StatefulWidget {
 }
 
 class _ShinySliderState extends State<ShinySlider> {
-  double _position = 0.5;
+  double _position = 0.0; // Start at 100% Normal by default
 
   void _updatePosition(Offset globalPosition) {
     if (!mounted) return;
@@ -34,7 +37,7 @@ class _ShinySliderState extends State<ShinySlider> {
 
     if (width > 0) {
       setState(() {
-        _position = (localOffset.dx / width).clamp(0.01, 0.99);
+        _position = (localOffset.dx / width).clamp(0.0, 1.0);
       });
     }
   }
@@ -70,26 +73,39 @@ class _ShinySliderState extends State<ShinySlider> {
                 clipBehavior: Clip.none,
                 alignment: Alignment.center,
                 children: [
-                  // 1. Fundo: Sprite Shiny (Direita)
+                  // 1. Fundo: Sprite Normal (Base)
                   Positioned.fill(
                     child: Center(
                       child: SizedBox(
                         width: width,
                         height: height,
-                        child: CachedNetworkImage(
-                          imageUrl: widget.shinyImageUrl,
-                          fit: BoxFit.contain,
-                          errorWidget: (context, url, error) => const Icon(
-                            Icons.broken_image,
-                            color: Colors.grey,
-                            size: 40,
-                          ),
-                        ),
+                        child: widget.pokemonId != null
+                            ? Hero(
+                                tag: 'pokemon_${widget.pokemonId}',
+                                child: CachedNetworkImage(
+                                  imageUrl: widget.normalImageUrl,
+                                  fit: BoxFit.contain,
+                                  errorWidget: (context, url, error) => const Icon(
+                                    Icons.broken_image,
+                                    color: Colors.grey,
+                                    size: 40,
+                                  ),
+                                ),
+                              )
+                            : CachedNetworkImage(
+                                imageUrl: widget.normalImageUrl,
+                                fit: BoxFit.contain,
+                                errorWidget: (context, url, error) => const Icon(
+                                  Icons.broken_image,
+                                  color: Colors.grey,
+                                  size: 40,
+                                ),
+                              ),
                       ),
                     ),
                   ),
 
-                  // 2. Frente: Sprite Normal (Esquerda com Clipper)
+                  // 2. Frente: Sprite Shiny (Clipped to position)
                   Positioned.fill(
                     child: ClipRect(
                       clipper: _SliderClipper(_position),
@@ -98,7 +114,7 @@ class _ShinySliderState extends State<ShinySlider> {
                           width: width,
                           height: height,
                           child: CachedNetworkImage(
-                            imageUrl: widget.normalImageUrl,
+                            imageUrl: widget.shinyImageUrl,
                             fit: BoxFit.contain,
                             errorWidget: (context, url, error) => const Icon(
                               Icons.broken_image,
@@ -111,41 +127,71 @@ class _ShinySliderState extends State<ShinySlider> {
                     ),
                   ),
 
-                  // Etiquetas de ajuda visual
+                  // Visual Toggles / Labels
                   Positioned(
                     left: 16,
                     bottom: 16,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.6),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        widget.normalLabel,
-                        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _position = 0.0; // 100% Normal
+                        });
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: _position < 0.1 
+                              ? AppTheme.pokemonRed 
+                              : Colors.black.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: _position < 0.1 ? Colors.white30 : Colors.transparent,
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          widget.normalLabel,
+                          style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ),
                   ),
                   Positioned(
                     right: 16,
                     bottom: 16,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.6),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        widget.shinyLabel,
-                        style: const TextStyle(color: Color(0xFFFFD700), fontSize: 11, fontWeight: FontWeight.bold),
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _position = 1.0; // 100% Shiny
+                        });
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: _position > 0.9 
+                              ? const Color(0xFFFFD700) 
+                              : Colors.black.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: _position > 0.9 ? Colors.black26 : Colors.transparent,
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          widget.shinyLabel,
+                          style: TextStyle(
+                            color: _position > 0.9 ? Colors.black87 : const Color(0xFFFFD700), 
+                            fontSize: 11, 
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                   ),
 
-                  // 3. Divisória e Botão de Arrasto (Knob)
+                  // 3. Divisória e Botão de Arrasto (Knob) clamped to prevent boundary leaks
                   Positioned(
-                    left: (width * _position) - 20,
+                    left: (width * _position - 20).clamp(0.0, width - 40),
                     top: 0,
                     bottom: 0,
                     child: IgnorePointer(

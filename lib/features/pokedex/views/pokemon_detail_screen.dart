@@ -122,14 +122,12 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Sprite Comparison Slider
-          Hero(
-            tag: 'pokemon_${widget.pokemon.id}',
-            child: ShinySlider(
-              normalImageUrl: widget.pokemon.spriteUrl,
-              shinyImageUrl: widget.pokemon.shinySpriteUrl,
-              normalLabel: 'Normal',
-              shinyLabel: '★ Shiny',
-            ),
+          ShinySlider(
+            normalImageUrl: widget.pokemon.spriteUrl,
+            shinyImageUrl: widget.pokemon.shinySpriteUrl,
+            normalLabel: 'Normal',
+            shinyLabel: '★ Shiny',
+            pokemonId: widget.pokemon.id,
           ),
           const SizedBox(height: 20),
 

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/features/pokedex/repositories/sync_repository.dart';
-import 'package:libredex/features/pokedex/views/pokedex_screen.dart';
+import 'package:libredex/features/home/views/home_screen.dart';
 
 class InitialSyncScreen extends ConsumerStatefulWidget {
   const InitialSyncScreen({super.key});
@@ -34,7 +34,7 @@ class _InitialSyncScreenState extends ConsumerState<InitialSyncScreen> {
         // Redirection
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const PokedexScreen()),
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
       }
     } catch (_) {
@@ -82,7 +82,7 @@ class _InitialSyncScreenState extends ConsumerState<InitialSyncScreen> {
 
               // Subtitle
               Text(
-                'Downloading Pokedex, sprites, abilities and moves for 100% offline usage. Please wait...',
+                'Downloading all 1025+ Pokémon (Gen 1-9+), base stats and official artworks for 100% offline usage. Moves & abilities sync automatically on-demand! Please wait...',
                 style: TextStyle(
                   fontSize: 13,
                   color: isDark ? Colors.grey[400] : Colors.grey[600],
@@ -136,13 +136,9 @@ class _InitialSyncScreenState extends ConsumerState<InitialSyncScreen> {
 
   String _getStatusMessage(double progress) {
     if (progress <= 0.05) {
-      return 'Fetching Generation 1 base indexes from PokeAPI...';
-    } else if (progress <= 0.40) {
-      return 'Downloading Kanto Pokémon details, base stats and official artwork...';
-    } else if (progress <= 0.60) {
-      return 'Extracting and downloading unique Pokémon abilities...';
+      return 'Fetching Generation 1-9+ base indexes from PokeAPI...';
     } else if (progress < 1.0) {
-      return 'Downloading full MoveDex data (accuracy, power and category)...';
+      return 'Downloading all 1025+ Pokémon details, base stats and official artworks...';
     } else {
       return 'Database fully synchronized! Directing to Pokédex...';
     }

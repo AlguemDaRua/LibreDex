@@ -1,5 +1,6 @@
 import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/core/network/api_client.dart';
+import 'package:drift/drift.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -28,57 +29,63 @@ class SyncRepository {
 
   SyncRepository({required this.db, required this.progressNotifier});
 
-  int _extractIdFromUrl(String url) {
-    try {
-      final cleanUrl = url.endsWith('/') ? url.substring(0, url.length - 1) : url;
-      final parts = cleanUrl.split('/');
-      return int.parse(parts.last);
-    } catch (_) {
-      return url.hashCode;
-    }
-  }
+  // Offline high-performance static lookups for Legendary IDs
+  static const Set<int> _legendaryIds = {
+    144, 145, 146, 150,
+    243, 244, 245, 249, 250,
+    377, 378, 379, 380, 381, 382, 383, 384,
+    480, 481, 482, 483, 484, 485, 486, 487, 488,
+    638, 639, 640, 641, 642, 643, 644, 645, 646,
+    716, 717, 718,
+    772, 773, 785, 786, 787, 788, 789, 790, 791, 792, 800,
+    888, 889, 890, 891, 892, 894, 895, 896, 897, 898, 905,
+    1001, 1002, 1003, 1004, 1007, 1008, 1009, 1010, 1017, 1020, 1021, 1022, 1023, 1024
+  };
 
-  /// Perform a mass 100% Offline-First synchronization of Generation 1 (151 Pokémon).
-  /// Batches insertions, caches all Moves, Abilities and relationships inside Drift.
+  // Offline high-performance static lookups for Mythical IDs
+  static const Set<int> _mythicalIds = {
+    151,
+    251,
+    385, 386,
+    489, 490, 491, 492, 493,
+    494, 647, 648, 649,
+    719, 720, 721,
+    801, 802, 807, 808, 809,
+    893,
+    1014, 1015, 1016, 1025
+  };
+
+  /// Perform a mass, lightning-fast 100% Offline-First initial synchronization
+  /// for all 1025 Pokémon (Generations 1-9+) using optimized Drift batches.
+  /// Moves and abilities are loaded lazily when details are opened.
   Future<void> performFullInitialSync() async {
     try {
       progressNotifier.setProgress(0.01);
 
-      // 1. Fetch 151 Kanto Pokémon base index
-      final indexResponse = await ApiClient.get('pokemon?limit=151');
-      final results = indexResponse.data['results'] as List<dynamic>;
-
-      final List<Map<String, dynamic>> pokemonBaseList = results.map((r) {
-        return {
-          'name': r['name'] as String,
-          'url': r['url'] as String,
-        };
-      }).toList();
+      // 1. Generate exact list of IDs 1 to 1025 to fetch all 9 Generations
+      final List<int> pokemonIds = List.generate(1025, (index) => index + 1);
 
       progressNotifier.setProgress(0.05);
 
       final List<Pokemon> pokemonsToInsert = [];
-      final List<Map<String, dynamic>> allAbilitiesToFetch = [];
-      final List<Map<String, dynamic>> allMovesToFetch = [];
-
-      // 2. Fetch Pokémon details in chunk size of 20
-      const int pokemonChunkSize = 20;
       int completedPokemons = 0;
 
-      for (int i = 0; i < pokemonBaseList.length; i += pokemonChunkSize) {
-        final chunk = pokemonBaseList.sublist(
+      // 2. Fetch Pokémon details in optimized concurrent batches of 40
+      const int pokemonChunkSize = 40;
+
+      for (int i = 0; i < pokemonIds.length; i += pokemonChunkSize) {
+        final chunk = pokemonIds.sublist(
           i,
-          i + pokemonChunkSize > pokemonBaseList.length ? pokemonBaseList.length : i + pokemonChunkSize,
+          i + pokemonChunkSize > pokemonIds.length ? pokemonIds.length : i + pokemonChunkSize,
         );
 
-        await Future.wait(chunk.map((p) async {
+        await Future.wait(chunk.map((id) async {
           try {
-            final name = p['name'];
-            final res = await ApiClient.get('pokemon/$name');
+            final res = await ApiClient.get('pokemon/$id');
             final data = res.data;
 
-            final int id = data['id'];
             final String pokeName = data['name'];
+
             final List<dynamic> types = data['types'];
             final String type1 = types[0]['type']['name'];
             final String? type2 = types.length > 1 ? types[1]['type']['name'] : null;
@@ -91,12 +98,43 @@ class SyncRepository {
             final int baseSpDef = stats[4]['base_stat'];
             final int baseSpd = stats[5]['base_stat'];
 
-            final String spriteUrl = data['sprites']['other']['official-artwork']['front_default'] 
-                ?? data['sprites']['front_default'] 
-                ?? '';
-            final String shinySpriteUrl = data['sprites']['other']['official-artwork']['front_shiny'] 
-                ?? data['sprites']['front_shiny'] 
-                ?? '';
+            // Choose the best artwork set that contains both default and shiny to ensure 100% perfect alignment in the slider
+            String spriteUrl = '';
+            String shinySpriteUrl = '';
+
+            final officialDefault = data['sprites']?['other']?['official-artwork']?['front_default'];
+            final officialShiny = data['sprites']?['other']?['official-artwork']?['front_shiny'];
+
+            final homeDefault = data['sprites']?['other']?['home']?['front_default'];
+            final homeShiny = data['sprites']?['other']?['home']?['front_shiny'];
+
+            final pixelDefault = data['sprites']?['front_default'];
+            final pixelShiny = data['sprites']?['front_shiny'];
+
+            if (officialDefault != null && officialShiny != null) {
+              spriteUrl = officialDefault;
+              shinySpriteUrl = officialShiny;
+            } else if (homeDefault != null && homeShiny != null) {
+              spriteUrl = homeDefault;
+              shinySpriteUrl = homeShiny;
+            } else if (pixelDefault != null && pixelShiny != null) {
+              spriteUrl = pixelDefault;
+              shinySpriteUrl = pixelShiny;
+            } else {
+              // Strict fallback: use official artwork if available, then home, then pixel
+              spriteUrl = officialDefault ?? homeDefault ?? pixelDefault ?? '';
+              shinySpriteUrl = officialShiny ?? homeShiny ?? pixelShiny ?? spriteUrl;
+            }
+
+            // Ultra Beasts (UB): IDs 793 to 799, 803 to 806.
+            final bool isUltraBeast = (id >= 793 && id <= 799) || (id >= 803 && id <= 806);
+
+            // Paradox Pokémon: IDs 984 to 995, 1007 to 1010.
+            final bool isParadox = (id >= 984 && id <= 995) || (id >= 1007 && id <= 1010);
+
+            // Check legendary and mythical status instantly offline-first using ID Sets
+            final bool isLegendary = _legendaryIds.contains(id);
+            final bool isMythical = _mythicalIds.contains(id);
 
             pokemonsToInsert.add(Pokemon(
               id: id,
@@ -110,230 +148,33 @@ class SyncRepository {
               baseSpAtk: baseSpAtk,
               baseSpDef: baseSpDef,
               baseSpd: baseSpd,
-              isLegendary: false,
-              isMythical: false,
-              isParadox: false,
-              isUltraBeast: false,
+              isLegendary: isLegendary,
+              isMythical: isMythical,
+              isParadox: isParadox,
+              isUltraBeast: isUltraBeast,
               spriteUrl: spriteUrl,
               shinySpriteUrl: shinySpriteUrl,
             ));
-
-            // Abilities
-            final List<dynamic> abilities = data['abilities'] ?? [];
-            for (final item in abilities) {
-              final abilityData = item['ability'];
-              final String abName = abilityData['name'];
-              final String abUrl = abilityData['url'];
-              final int abId = _extractIdFromUrl(abUrl);
-              final bool isHidden = item['is_hidden'] ?? false;
-
-              allAbilitiesToFetch.add({
-                'pokemonId': id,
-                'abilityId': abId,
-                'name': abName,
-                'isHidden': isHidden,
-              });
-            }
-
-            // Moves
-            final List<dynamic> moves = data['moves'] ?? [];
-            for (final item in moves) {
-              final moveData = item['move'];
-              final String mvName = moveData['name'];
-              final String mvUrl = moveData['url'];
-              final int mvId = _extractIdFromUrl(mvUrl);
-
-              final List<dynamic> versionDetails = item['version_group_details'] ?? [];
-              if (versionDetails.isEmpty) continue;
-
-              final detail = versionDetails.first;
-              final int levelLearned = detail['level_learned_at'] ?? 0;
-              final String rawMethod = detail['move_learn_method']['name'] ?? 'level-up';
-
-              String method = 'level';
-              if (rawMethod == 'machine') {
-                method = 'tm';
-              } else if (rawMethod == 'egg') {
-                method = 'egg';
-              } else if (rawMethod == 'tutor') {
-                method = 'tutor';
-              }
-
-              allMovesToFetch.add({
-                'pokemonId': id,
-                'moveId': mvId,
-                'name': mvName,
-                'learnMethod': method,
-                'levelLearned': levelLearned,
-              });
-            }
-          } catch (_) {}
-          completedPokemons++;
-          // Progress: 0.05 to 0.40
-          progressNotifier.setProgress(0.05 + (completedPokemons / pokemonBaseList.length) * 0.35);
+          } catch (_) {
+            // Absorb single Pokémon network exceptions to make synchronization resilient
+          } finally {
+            completedPokemons++;
+            // Smooth progress update (0.05 to 0.95)
+            progressNotifier.setProgress(0.05 + (completedPokemons / pokemonIds.length) * 0.90);
+          }
         }));
       }
 
-      // Write basic Pokémons to database atomically
-      await db.transaction(() async {
-        for (final p in pokemonsToInsert) {
-          await db.into(db.pokemonTable).insertOnConflictUpdate(p);
-        }
-      });
-
-      progressNotifier.setProgress(0.40);
-
-      // 3. Sync Unique Abilities (0.40 to 0.60)
-      final Set<int> uniqueAbilityIds = allAbilitiesToFetch.map((a) => a['abilityId'] as int).toSet();
-      final List<Ability> abilitiesToInsert = [];
-      int completedAbilities = 0;
-
-      const int abilityChunkSize = 25;
-      final List<int> uniqueAbilityList = uniqueAbilityIds.toList();
-
-      for (int i = 0; i < uniqueAbilityList.length; i += abilityChunkSize) {
-        final chunk = uniqueAbilityList.sublist(
-          i,
-          i + abilityChunkSize > uniqueAbilityList.length ? uniqueAbilityList.length : i + abilityChunkSize,
-        );
-
-        await Future.wait(chunk.map((abId) async {
-          try {
-            final res = await ApiClient.get('ability/$abId');
-            final data = res.data;
-            final String rawName = data['name'];
-
-            final effectEntries = data['effect_entries'] as List<dynamic>? ?? [];
-            String description = 'No description available.';
-            for (final entry in effectEntries) {
-              if (entry['language']['name'] == 'en') {
-                description = entry['short_effect'] ?? entry['effect'] ?? description;
-                break;
-              }
-            }
-            if (description == 'No description available.') {
-              final flavorTexts = data['flavor_text_entries'] as List<dynamic>? ?? [];
-              for (final entry in flavorTexts) {
-                if (entry['language']['name'] == 'en') {
-                  description = entry['flavor_text'] ?? description;
-                  break;
-                }
-              }
-            }
-
-            final cleanName = rawName.replaceAll('-', ' ').split(' ').map((word) {
-              if (word.isEmpty) return '';
-              return word[0].toUpperCase() + word.substring(1);
-            }).join(' ');
-
-            abilitiesToInsert.add(Ability(
-              id: abId,
-              name: cleanName,
-              description: description,
-            ));
-          } catch (_) {}
-          completedAbilities++;
-          // Progress: 0.40 to 0.60
-          progressNotifier.setProgress(0.40 + (completedAbilities / uniqueAbilityList.length) * 0.20);
-        }));
+      // 3. Atomically write all compact Pokémon to SQLite in a single optimized Drift batch!
+      if (pokemonsToInsert.isNotEmpty) {
+        await db.batch((batch) {
+          batch.insertAll(
+            db.pokemonTable,
+            pokemonsToInsert,
+            mode: InsertMode.insertOrReplace,
+          );
+        });
       }
-
-      // Write Abilities and their PokemonAbility relations
-      await db.transaction(() async {
-        for (final a in abilitiesToInsert) {
-          await db.into(db.abilityTable).insertOnConflictUpdate(a);
-        }
-        for (final item in allAbilitiesToFetch) {
-          await db.into(db.pokemonAbilitiesTable).insertOnConflictUpdate(PokemonAbility(
-            pokemonId: item['pokemonId'],
-            abilityId: item['abilityId'],
-            isHidden: item['isHidden'],
-          ));
-        }
-      });
-
-      progressNotifier.setProgress(0.60);
-
-      // 4. Sync Unique Moves (0.60 to 1.0)
-      final Set<int> uniqueMoveIds = allMovesToFetch.map((m) => m['moveId'] as int).toSet();
-      final List<Move> movesToInsert = [];
-      int completedMoves = 0;
-
-      const int moveChunkSize = 25;
-      final List<int> uniqueMoveList = uniqueMoveIds.toList();
-
-      for (int i = 0; i < uniqueMoveList.length; i += moveChunkSize) {
-        final chunk = uniqueMoveList.sublist(
-          i,
-          i + moveChunkSize > uniqueMoveList.length ? uniqueMoveList.length : i + moveChunkSize,
-        );
-
-        await Future.wait(chunk.map((mvId) async {
-          try {
-            final res = await ApiClient.get('move/$mvId');
-            final data = res.data;
-            final String rawName = data['name'];
-
-            final int pp = data['pp'] ?? 15;
-            final int? power = data['power'];
-            final int? accuracy = data['accuracy'];
-            final String type = data['type']['name'] ?? 'normal';
-            final String damageClass = data['damage_class']['name'] ?? 'physical';
-
-            final effectEntries = data['effect_entries'] as List<dynamic>? ?? [];
-            String description = 'No description available.';
-            for (final entry in effectEntries) {
-              if (entry['language']['name'] == 'en') {
-                description = entry['short_effect'] ?? entry['effect'] ?? description;
-                break;
-              }
-            }
-            if (description == 'No description available.') {
-              final flavorTexts = data['flavor_text_entries'] as List<dynamic>? ?? [];
-              for (final entry in flavorTexts) {
-                if (entry['language']['name'] == 'en') {
-                  description = entry['flavor_text'] ?? description;
-                  break;
-                }
-              }
-            }
-
-            final cleanName = rawName.replaceAll('-', ' ').split(' ').map((word) {
-              if (word.isEmpty) return '';
-              return word[0].toUpperCase() + word.substring(1);
-            }).join(' ');
-
-            movesToInsert.add(Move(
-              id: mvId,
-              name: cleanName,
-              type: type,
-              power: power,
-              accuracy: accuracy,
-              pp: pp,
-              damageClass: damageClass,
-              description: description,
-            ));
-          } catch (_) {}
-          completedMoves++;
-          // Progress: 0.60 to 0.95
-          progressNotifier.setProgress(0.60 + (completedMoves / uniqueMoveList.length) * 0.35);
-        }));
-      }
-
-      // Write Moves and relations inside SQLite Transaction
-      await db.transaction(() async {
-        for (final m in movesToInsert) {
-          await db.into(db.moveTable).insertOnConflictUpdate(m);
-        }
-        for (final item in allMovesToFetch) {
-          await db.into(db.pokemonMovesTable).insertOnConflictUpdate(PokemonMove(
-            pokemonId: item['pokemonId'],
-            moveId: item['moveId'],
-            learnMethod: item['learnMethod'],
-            levelLearned: item['levelLearned'],
-          ));
-        }
-      });
 
       progressNotifier.setProgress(1.0);
     } catch (_) {
