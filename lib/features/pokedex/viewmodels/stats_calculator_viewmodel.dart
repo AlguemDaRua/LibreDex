@@ -10,15 +10,16 @@ class StatsCalculatorState {
   final Map<String, int> ivs;
   final Map<String, int> evs;
   final String nature;
+  final String heldItem;
 
   StatsCalculatorState({
     required this.level,
     required this.ivs,
     required this.evs,
     required this.nature,
+    this.heldItem = 'None',
   });
 
-  /// Getter reativo que soma todos os EVs aplicados.
   int get totalEvs => evs.values.fold(0, (sum, val) => sum + val);
 
   StatsCalculatorState copyWith({
@@ -26,12 +27,14 @@ class StatsCalculatorState {
     Map<String, int>? ivs,
     Map<String, int>? evs,
     String? nature,
+    String? heldItem,
   }) {
     return StatsCalculatorState(
       level: level ?? this.level,
       ivs: ivs ?? this.ivs,
       evs: evs ?? this.evs,
       nature: nature ?? this.nature,
+      heldItem: heldItem ?? this.heldItem,
     );
   }
 }
@@ -91,8 +94,30 @@ class StatsCalculator extends _$StatsCalculator {
     state = state.copyWith(nature: natureId);
   }
 
+  void updateHeldItem(String item) {
+    state = state.copyWith(heldItem: item);
+  }
+
   void reset() {
     state = build();
+  }
+
+  /// Returns item-based multiplier for a given stat key.
+  double _getItemStatMultiplier(String statKey) {
+    final item = state.heldItem;
+    switch (item) {
+      case 'Choice Band':   return statKey == 'atk' ? 1.5 : 1.0;
+      case 'Choice Specs':  return statKey == 'spa' ? 1.5 : 1.0;
+      case 'Choice Scarf':  return statKey == 'spe' ? 1.5 : 1.0;
+      case 'Assault Vest':  return statKey == 'spd' ? 1.5 : 1.0;
+      case 'Eviolite':      return (statKey == 'def' || statKey == 'spd') ? 1.5 : 1.0;
+      case 'Thick Club':    return statKey == 'atk' ? 2.0 : 1.0;
+      case 'Deep Sea Tooth': return statKey == 'spa' ? 2.0 : 1.0;
+      case 'Iron Ball':     return statKey == 'spe' ? 0.5 : 1.0;
+      case 'Lagging Tail':  return statKey == 'spe' ? 0.5 : 1.0;
+      case 'Quick Powder':  return statKey == 'spe' ? 2.0 : 1.0;
+      default:              return 1.0;
+    }
   }
 
   /// Retorna o multiplicador da Natureza oficial do Pokémon para cada atributo.
@@ -183,8 +208,10 @@ class StatsCalculator extends _$StatsCalculator {
     return 1.0; // Neutro
   }
 
-  /// Calcula todos os stats de uma só vez para expor à UI de detalhes.
+  /// Calculates all stats applying nature + held item multipliers.
   Map<String, int> getCalculatedStats(Pokemon pokemon) {
+    int applyItem(int base, String key) =>
+        (base * _getItemStatMultiplier(key)).floor();
     return {
       'hp': StatCalculator.calculateHp(
         base: pokemon.baseHp,
@@ -192,41 +219,41 @@ class StatsCalculator extends _$StatsCalculator {
         ev: state.evs['hp'] ?? 0,
         level: state.level,
       ),
-      'atk': StatCalculator.calculateOtherStat(
+      'atk': applyItem(StatCalculator.calculateOtherStat(
         base: pokemon.baseAtk,
         iv: state.ivs['atk'] ?? 31,
         ev: state.evs['atk'] ?? 0,
         level: state.level,
         natureModifier: getNatureMultiplier(state.nature, 'Attack'),
-      ),
-      'def': StatCalculator.calculateOtherStat(
+      ), 'atk'),
+      'def': applyItem(StatCalculator.calculateOtherStat(
         base: pokemon.baseDef,
         iv: state.ivs['def'] ?? 31,
         ev: state.evs['def'] ?? 0,
         level: state.level,
         natureModifier: getNatureMultiplier(state.nature, 'Defense'),
-      ),
-      'spa': StatCalculator.calculateOtherStat(
+      ), 'def'),
+      'spa': applyItem(StatCalculator.calculateOtherStat(
         base: pokemon.baseSpAtk,
         iv: state.ivs['spa'] ?? 31,
         ev: state.evs['spa'] ?? 0,
         level: state.level,
         natureModifier: getNatureMultiplier(state.nature, 'Sp. Atk'),
-      ),
-      'spd': StatCalculator.calculateOtherStat(
+      ), 'spa'),
+      'spd': applyItem(StatCalculator.calculateOtherStat(
         base: pokemon.baseSpDef,
         iv: state.ivs['spd'] ?? 31,
         ev: state.evs['spd'] ?? 0,
         level: state.level,
         natureModifier: getNatureMultiplier(state.nature, 'Sp. Def'),
-      ),
-      'spe': StatCalculator.calculateOtherStat(
+      ), 'spd'),
+      'spe': applyItem(StatCalculator.calculateOtherStat(
         base: pokemon.baseSpd,
         iv: state.ivs['spe'] ?? 31,
         ev: state.evs['spe'] ?? 0,
         level: state.level,
         natureModifier: getNatureMultiplier(state.nature, 'Speed'),
-      ),
+      ), 'spe'),
     };
   }
 }

@@ -164,6 +164,7 @@ class AppDatabase extends _$AppDatabase {
           'type': move.type,
           'power': move.power,
           'pp': move.pp,
+          'accuracy': move.accuracy,
           'damageClass': move.damageClass,
           'description': move.description,
           'learnMethod': junction.learnMethod,

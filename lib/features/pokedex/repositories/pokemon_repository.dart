@@ -75,32 +75,33 @@ class PokemonRepository {
       final int baseSpDef = stats[4]['base_stat'];
       final int baseSpd = stats[5]['base_stat'];
 
-      // Choose the best artwork set that contains both default and shiny to ensure 100% perfect alignment in the slider
+      // HOME sprites have full shiny coverage for ALL gens (including Gen 9).
+      // Official-artwork often lacks shiny for Gen 9 Pokémon — always prefer HOME first.
       String spriteUrl = '';
       String shinySpriteUrl = '';
-
-      final officialDefault = data['sprites']?['other']?['official-artwork']?['front_default'];
-      final officialShiny = data['sprites']?['other']?['official-artwork']?['front_shiny'];
 
       final homeDefault = data['sprites']?['other']?['home']?['front_default'];
       final homeShiny = data['sprites']?['other']?['home']?['front_shiny'];
 
+      final officialDefault = data['sprites']?['other']?['official-artwork']?['front_default'];
+      final officialShiny = data['sprites']?['other']?['official-artwork']?['front_shiny'];
+
       final pixelDefault = data['sprites']?['front_default'];
       final pixelShiny = data['sprites']?['front_shiny'];
 
-      if (officialDefault != null && officialShiny != null) {
-        spriteUrl = officialDefault;
-        shinySpriteUrl = officialShiny;
-      } else if (homeDefault != null && homeShiny != null) {
+      if (homeDefault != null && homeShiny != null) {
         spriteUrl = homeDefault;
         shinySpriteUrl = homeShiny;
+      } else if (officialDefault != null && officialShiny != null) {
+        spriteUrl = officialDefault;
+        shinySpriteUrl = officialShiny;
       } else if (pixelDefault != null && pixelShiny != null) {
         spriteUrl = pixelDefault;
         shinySpriteUrl = pixelShiny;
       } else {
-        // Strict fallback: use official artwork if available, then home, then pixel
-        spriteUrl = officialDefault ?? homeDefault ?? pixelDefault ?? '';
-        shinySpriteUrl = officialShiny ?? homeShiny ?? pixelShiny ?? spriteUrl;
+        // Last resort: mix best available for each
+        spriteUrl = homeDefault ?? officialDefault ?? pixelDefault ?? '';
+        shinySpriteUrl = homeShiny ?? officialShiny ?? pixelShiny ?? spriteUrl;
       }
 
       final pokemon = Pokemon(

@@ -13,6 +13,7 @@ class DamageCalculatorState {
   final Map<String, int> attackerIvs;
   final Map<String, int> attackerEvs;
   final Map<String, int> attackerStages;
+  final String attackerHeldItem;
 
   // Active Move Settings
   final String? selectedMoveName;
@@ -26,6 +27,7 @@ class DamageCalculatorState {
   final Map<String, int> defenderIvs;
   final Map<String, int> defenderEvs;
   final Map<String, int> defenderStages;
+  final String defenderHeldItem;
 
   // Direct Simple Tab Overrides
   final double simpleDefenderStat;
@@ -46,6 +48,7 @@ class DamageCalculatorState {
     required this.attackerIvs,
     required this.attackerEvs,
     required this.attackerStages,
+    this.attackerHeldItem = 'None',
     this.selectedMoveName,
     this.moveType = 'fire',
     this.moveCategory = 'physical',
@@ -55,6 +58,7 @@ class DamageCalculatorState {
     required this.defenderIvs,
     required this.defenderEvs,
     required this.defenderStages,
+    this.defenderHeldItem = 'None',
     this.simpleDefenderStat = 120.0,
     this.weather = 'none',
     this.terrain = 'none',
@@ -72,6 +76,7 @@ class DamageCalculatorState {
     Map<String, int>? attackerIvs,
     Map<String, int>? attackerEvs,
     Map<String, int>? attackerStages,
+    String? attackerHeldItem,
     String? selectedMoveName,
     String? moveType,
     String? moveCategory,
@@ -81,6 +86,7 @@ class DamageCalculatorState {
     Map<String, int>? defenderIvs,
     Map<String, int>? defenderEvs,
     Map<String, int>? defenderStages,
+    String? defenderHeldItem,
     double? simpleDefenderStat,
     String? weather,
     String? terrain,
@@ -97,6 +103,7 @@ class DamageCalculatorState {
       attackerIvs: attackerIvs ?? Map<String, int>.from(this.attackerIvs),
       attackerEvs: attackerEvs ?? Map<String, int>.from(this.attackerEvs),
       attackerStages: attackerStages ?? Map<String, int>.from(this.attackerStages),
+      attackerHeldItem: attackerHeldItem ?? this.attackerHeldItem,
       selectedMoveName: selectedMoveName ?? this.selectedMoveName,
       moveType: moveType ?? this.moveType,
       moveCategory: moveCategory ?? this.moveCategory,
@@ -106,6 +113,7 @@ class DamageCalculatorState {
       defenderIvs: defenderIvs ?? Map<String, int>.from(this.defenderIvs),
       defenderEvs: defenderEvs ?? Map<String, int>.from(this.defenderEvs),
       defenderStages: defenderStages ?? Map<String, int>.from(this.defenderStages),
+      defenderHeldItem: defenderHeldItem ?? this.defenderHeldItem,
       simpleDefenderStat: simpleDefenderStat ?? this.simpleDefenderStat,
       weather: weather ?? this.weather,
       terrain: terrain ?? this.terrain,
@@ -139,21 +147,18 @@ class DamageCalculatorViewModel extends _$DamageCalculatorViewModel {
     state = state.copyWith(defender: p);
   }
 
-  void updateAttackerLevel(int lvl) {
-    state = state.copyWith(attackerLevel: lvl);
+  void setAttackerHeldItem(String item) {
+    state = state.copyWith(attackerHeldItem: item);
   }
 
-  void updateDefenderLevel(int lvl) {
-    state = state.copyWith(defenderLevel: lvl);
+  void setDefenderHeldItem(String item) {
+    state = state.copyWith(defenderHeldItem: item);
   }
 
-  void updateAttackerNature(String nature) {
-    state = state.copyWith(attackerNature: nature);
-  }
-
-  void updateDefenderNature(String nature) {
-    state = state.copyWith(defenderNature: nature);
-  }
+  void updateAttackerLevel(int lvl) => state = state.copyWith(attackerLevel: lvl);
+  void updateDefenderLevel(int lvl) => state = state.copyWith(defenderLevel: lvl);
+  void updateAttackerNature(String nature) => state = state.copyWith(attackerNature: nature);
+  void updateDefenderNature(String nature) => state = state.copyWith(defenderNature: nature);
 
   void updateAttackerIv(String key, int val) {
     final map = Map<String, int>.from(state.attackerIvs);
@@ -200,43 +205,14 @@ class DamageCalculatorViewModel extends _$DamageCalculatorViewModel {
     );
   }
 
-  void updateMoveType(String type) {
-    state = state.copyWith(moveType: type);
-  }
-
-  void updateMoveCategory(String category) {
-    state = state.copyWith(moveCategory: category);
-  }
-
-  void updateMovePower(double power) {
-    state = state.copyWith(movePower: power);
-  }
-
-  void setSimpleDefenderStat(double stat) {
-    state = state.copyWith(simpleDefenderStat: stat);
-  }
-
-  void setWeather(String w) {
-    state = state.copyWith(weather: w);
-  }
-
-  void setTerrain(String t) {
-    state = state.copyWith(terrain: t);
-  }
-
-  void toggleReflect(bool val) {
-    state = state.copyWith(reflectActive: val);
-  }
-
-  void toggleLightScreen(bool val) {
-    state = state.copyWith(lightScreenActive: val);
-  }
-
-  void toggleHelpingHand(bool val) {
-    state = state.copyWith(helpingHandActive: val);
-  }
-
-  void toggleTrickRoom(bool val) {
-    state = state.copyWith(trickRoomActive: val);
-  }
+  void updateMoveType(String type) => state = state.copyWith(moveType: type);
+  void updateMoveCategory(String category) => state = state.copyWith(moveCategory: category);
+  void updateMovePower(double power) => state = state.copyWith(movePower: power);
+  void setSimpleDefenderStat(double stat) => state = state.copyWith(simpleDefenderStat: stat);
+  void setWeather(String w) => state = state.copyWith(weather: w);
+  void setTerrain(String t) => state = state.copyWith(terrain: t);
+  void toggleReflect(bool val) => state = state.copyWith(reflectActive: val);
+  void toggleLightScreen(bool val) => state = state.copyWith(lightScreenActive: val);
+  void toggleHelpingHand(bool val) => state = state.copyWith(helpingHandActive: val);
+  void toggleTrickRoom(bool val) => state = state.copyWith(trickRoomActive: val);
 }

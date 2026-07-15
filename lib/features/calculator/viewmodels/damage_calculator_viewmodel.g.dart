@@ -43,7 +43,7 @@ final class DamageCalculatorViewModelProvider
 }
 
 String _$damageCalculatorViewModelHash() =>
-    r'a0ee95db37f54216d8d08873eb5cd9b02c87c340';
+    r'26db64f43bb6e755abbc4dfd885b1644cc4ae120';
 
 abstract class _$DamageCalculatorViewModel
     extends $Notifier<DamageCalculatorState> {

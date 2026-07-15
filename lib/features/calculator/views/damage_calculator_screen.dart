@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/core/theme/app_theme.dart';
+import 'package:libredex/features/calculator/utils/held_items_data.dart';
 import 'package:libredex/features/pokedex/models/stat_calculator.dart';
 import 'package:libredex/features/pokedex/viewmodels/pokedex_viewmodel.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
@@ -351,15 +353,6 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     );
     final int defenderSpeed = (rawDefenderSpeed * CombatUtils.getStageMultiplier(state.defenderStages['spe'] ?? 0)).toInt();
 
-    // Speed Duel Analysis taking Trick Room into absolute consideration
-    bool p1Outspeeds = attackerSpeed > defenderSpeed;
-    if (state.trickRoomActive) {
-      p1Outspeeds = attackerSpeed < defenderSpeed;
-    }
-    if (attackerSpeed == defenderSpeed) {
-      p1Outspeeds = true; // Speed tie fallback
-    }
-
     // Real-Time Precise Damage Calculations
     final isSpecial = activeMove.damageClass.toLowerCase() == 'special';
     
@@ -420,185 +413,191 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
 
     double finalBp = activeMove.power! * weatherMult * terrainMult * hhMult;
 
-    // Basic Combat Damage Formula
-    double damageBase = ((((2 * state.attackerLevel / 5) + 2) * finalBp * attackerAtk / defenderDef) / 50) + 2;
-    double finalMinDamage = damageBase * stabMult * effectivenessMult * screenMult * 0.85;
-    double finalMaxDamage = damageBase * stabMult * effectivenessMult * screenMult * 1.0;
+    // ── Apply held item multipliers + final calculations ──────────────────────
+    final double atkItemMult = HeldItemsData.getAttackMultiplier(
+        state.attackerHeldItem, activeMove.type, isSpecial);
+    final double defResistMult = HeldItemsData.getDefenderResistMultiplier(
+        state.defenderHeldItem, activeMove.type, effectivenessMult);
+    final double defStatItemMult = HeldItemsData.getDefenseMultiplier(state.defenderHeldItem, isSpecial);
 
-    // Percentage of Defender HP
-    double minPercent = (finalMinDamage / defenderMaxHp) * 100;
-    double maxPercent = (finalMaxDamage / defenderMaxHp) * 100;
+    // Final Speed with held items
+    final int finalAttackerSpeed = (attackerSpeed * HeldItemsData.getSpeedMultiplier(state.attackerHeldItem)).toInt();
+    final int finalDefenderSpeed = (defenderSpeed * HeldItemsData.getSpeedMultiplier(state.defenderHeldItem)).toInt();
+    bool p1Outspeeds = state.trickRoomActive ? finalAttackerSpeed < finalDefenderSpeed : finalAttackerSpeed > finalDefenderSpeed;
+    if (finalAttackerSpeed == finalDefenderSpeed) p1Outspeeds = true;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // 1vs1 Duel Arena Comparison Row
-          Row(
+    // Final damage incorporating all modifiers
+    final int defenderDefFinal = (defenderDef * defStatItemMult).toInt().clamp(1, 9999);
+    final double atkWithItem = attackerAtk * atkItemMult;
+    final double damageBase = ((((2 * state.attackerLevel / 5) + 2) * finalBp * atkWithItem / defenderDefFinal) / 50) + 2;
+    final double finalMinDamage = damageBase * stabMult * effectivenessMult * screenMult * defResistMult * 0.85;
+    final double finalMaxDamage = damageBase * stabMult * effectivenessMult * screenMult * defResistMult * 1.0;
+    final double minPercent = (finalMinDamage / defenderMaxHp) * 100;
+    final double maxPercent = (finalMaxDamage / defenderMaxHp) * 100;
+
+    Widget _pokemonDuelCard(Pokemon p, bool isAttacker, String heldItem) {
+      final typeColor = CombatUtils.typeColors[p.type1.toLowerCase()] ?? Colors.grey;
+      final spd = isAttacker ? finalAttackerSpeed : finalDefenderSpeed;
+      return GestureDetector(
+        onTap: () => _showPokemonPicker(context, pokemonList, isAttacker, vm),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF111111) : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: typeColor.withValues(alpha: 0.4), width: 1.5),
+            boxShadow: [BoxShadow(color: typeColor.withValues(alpha: 0.08), blurRadius: 12, spreadRadius: 2)],
+          ),
+          padding: const EdgeInsets.all(12),
+          child: Column(
             children: [
-              // Attacker Left Section
-              Expanded(
-                child: Column(
-                  children: [
-                    const Text('ATTACKER (LEFT)', style: TextStyle(fontWeight: FontWeight.w900, color: Colors.grey, fontSize: 10)),
-                    const SizedBox(height: 8),
-                    _buildDropdownHeader('POKEMON'),
-                    _buildCardWrapper(
-                      isDark,
-                      DropdownButtonHideUnderline(
-                        child: DropdownButton<Pokemon>(
-                          value: p1,
-                          dropdownColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
-                          isExpanded: true,
-                          items: pokemonList.map((p) {
-                            return DropdownMenuItem(
-                              value: p,
-                              child: Text(p.name, style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 12)),
-                            );
-                          }).toList(),
-                          onChanged: (p) {
-                            if (p != null) vm.setAttacker(p);
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    _buildDropdownHeader('SPEED TWEAK (EV)'),
-                    _buildCardWrapper(
-                      isDark,
-                      DropdownButtonHideUnderline(
-                        child: DropdownButton<int>(
-                          value: state.attackerEvs['spe'] ?? 4,
-                          dropdownColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
-                          isExpanded: true,
-                          items: [0, 4, 128, 252].map((spe) {
-                            return DropdownMenuItem(
-                              value: spe,
-                              child: Text('EV: $spe (Speed: $attackerSpeed)', style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 11)),
-                            );
-                          }).toList(),
-                          onChanged: (val) {
-                            if (val != null) vm.updateAttackerEv('spe', val);
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+              // Sprite
+              SizedBox(
+                height: 80,
+                child: p.spriteUrl.isNotEmpty
+                    ? CachedNetworkImage(
+                        imageUrl: p.spriteUrl,
+                        fit: BoxFit.contain,
+                        placeholder: (_, __) => const Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(AppTheme.pokemonRed)))),
+                        errorWidget: (_, __, ___) => Icon(Icons.catching_pokemon, size: 48, color: typeColor.withValues(alpha: 0.4)),
+                      )
+                    : Icon(Icons.catching_pokemon, size: 48, color: typeColor.withValues(alpha: 0.4)),
               ),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8.0),
-                child: Text('VS', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.orangeAccent)),
+              const SizedBox(height: 6),
+              // Name
+              Text(p.name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: isDark ? Colors.white : Colors.black), maxLines: 1, overflow: TextOverflow.ellipsis),
+              const SizedBox(height: 4),
+              // Types
+              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                _typeChip(p.type1),
+                if (p.type2 != null) ...[ const SizedBox(width: 4), _typeChip(p.type2!) ],
+              ]),
+              const SizedBox(height: 6),
+              // Speed
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(color: Colors.blue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
+                child: Text('⚡ SPD $spd', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.blue)),
               ),
-              // Defender Right Section
-              Expanded(
-                child: Column(
-                  children: [
-                    const Text('DEFENDER (RIGHT)', style: TextStyle(fontWeight: FontWeight.w900, color: Colors.grey, fontSize: 10)),
-                    const SizedBox(height: 8),
-                    _buildDropdownHeader('POKEMON'),
-                    _buildCardWrapper(
-                      isDark,
-                      DropdownButtonHideUnderline(
-                        child: DropdownButton<Pokemon>(
-                          value: p2,
-                          dropdownColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
-                          isExpanded: true,
-                          items: pokemonList.map((p) {
-                            return DropdownMenuItem(
-                              value: p,
-                              child: Text(p.name, style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 12)),
-                            );
-                          }).toList(),
-                          onChanged: (p) {
-                            if (p != null) vm.setDefender(p);
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    _buildDropdownHeader('SPEED TWEAK (EV)'),
-                    _buildCardWrapper(
-                      isDark,
-                      DropdownButtonHideUnderline(
-                        child: DropdownButton<int>(
-                          value: state.defenderEvs['spe'] ?? 0,
-                          dropdownColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
-                          isExpanded: true,
-                          items: [0, 4, 128, 252].map((spe) {
-                            return DropdownMenuItem(
-                              value: spe,
-                              child: Text('EV: $spe (Speed: $defenderSpeed)', style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 11)),
-                            );
-                          }).toList(),
-                          onChanged: (val) {
-                            if (val != null) vm.updateDefenderEv('spe', val);
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
+              const SizedBox(height: 6),
+              // Held Item
+              GestureDetector(
+                onTap: () => _showItemPicker(context, isAttacker, vm),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: heldItem != 'None' ? AppTheme.pokemonRed.withValues(alpha: 0.1) : (isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF3F4F6)),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: heldItem != 'None' ? AppTheme.pokemonRed.withValues(alpha: 0.4) : Colors.transparent),
+                  ),
+                  child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Icon(Icons.backpack_outlined, size: 12, color: heldItem != 'None' ? AppTheme.pokemonRed : Colors.grey),
+                    const SizedBox(width: 4),
+                    Expanded(child: Text(heldItem, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: heldItem != 'None' ? AppTheme.pokemonRed : Colors.grey), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                  ]),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+        ),
+      );
+    }
 
-          // Speed Duel Comparison Indicator Banner
-          _buildCardWrapper(
-            isDark,
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  p1Outspeeds ? Icons.offline_bolt_rounded : Icons.warning_amber_rounded,
-                  color: p1Outspeeds ? Colors.green : Colors.red,
-                  size: 20,
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 90),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // ── Pokemon Cards Row ──────────────────────────────────────────────
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: Column(children: [
+                const Text('ATTACKER', style: TextStyle(fontWeight: FontWeight.w900, color: Colors.grey, fontSize: 9, letterSpacing: 1)),
+                const SizedBox(height: 6),
+                _pokemonDuelCard(p1, true, state.attackerHeldItem),
+              ])),
+              Padding(
+                padding: const EdgeInsets.only(top: 44),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  decoration: BoxDecoration(color: Colors.orange.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
+                  child: const Text('VS', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Colors.orangeAccent)),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  p1Outspeeds
-                      ? '${p1.name} (Speed: $attackerSpeed) OUTSPEEDS ${p2.name} (Speed: $defenderSpeed)!'
-                      : '${p2.name} (Speed: $defenderSpeed) OUTSPEEDS ${p1.name} (Speed: $attackerSpeed)!',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: p1Outspeeds ? Colors.green : Colors.red,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Attacker Active Damaging Move Dropdown
-          _buildDropdownHeader('ATTACKER DAMAGING MOVE'),
-          _buildCardWrapper(
-            isDark,
-            DropdownButtonHideUnderline(
-              child: DropdownButton<Move>(
-                value: activeMove,
-                dropdownColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
-                isExpanded: true,
-                style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 13),
-                items: p1Moves.map((m) {
-                  return DropdownMenuItem<Move>(
-                    value: m,
-                    child: Text('${m.name} (${m.type.toUpperCase()} - BP: ${m.power})'),
-                  );
-                }).toList(),
-                onChanged: (m) {
-                  if (m != null) {
-                    vm.selectMove(m.name, m.type, m.damageClass, m.power!.toDouble());
-                  }
-                },
               ),
+              Expanded(child: Column(children: [
+                const Text('DEFENDER', style: TextStyle(fontWeight: FontWeight.w900, color: Colors.grey, fontSize: 9, letterSpacing: 1)),
+                const SizedBox(height: 6),
+                _pokemonDuelCard(p2, false, state.defenderHeldItem),
+              ])),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // ── Speed Comparison Banner ────────────────────────────────────────
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: p1Outspeeds ? Colors.green.withValues(alpha: 0.08) : Colors.red.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: p1Outspeeds ? Colors.green.withValues(alpha: 0.3) : Colors.red.withValues(alpha: 0.3)),
+            ),
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Icon(p1Outspeeds ? Icons.offline_bolt_rounded : Icons.warning_amber_rounded,
+                  color: p1Outspeeds ? Colors.greenAccent : Colors.redAccent, size: 18),
+              const SizedBox(width: 8),
+              Flexible(child: Text(
+                p1Outspeeds
+                    ? '${p1.name} ($finalAttackerSpeed) outspeeds ${p2.name} ($finalDefenderSpeed)${state.attackerHeldItem != 'None' ? ' [+${state.attackerHeldItem}]' : ''}'
+                    : '${p2.name} ($finalDefenderSpeed) outspeeds ${p1.name} ($finalAttackerSpeed)${state.defenderHeldItem != 'None' ? ' [+${state.defenderHeldItem}]' : ''}',
+                style: TextStyle(fontWeight: FontWeight.bold, color: p1Outspeeds ? Colors.greenAccent : Colors.redAccent, fontSize: 11),
+                textAlign: TextAlign.center,
+              )),
+            ]),
+          ),
+          const SizedBox(height: 12),
+
+          // ── Trick Room Toggle ───────────────────────────────────────────────
+          _buildSwitchListTile('Trick Room Active', state.trickRoomActive, vm.toggleTrickRoom),
+          const SizedBox(height: 12),
+
+          // ── Move Selector ─────────────────────────────────────────────────
+          _buildDropdownHeader('ATTACKER MOVE (ANY MOVE — TAP TO SEARCH)'),
+          const SizedBox(height: 6),
+          GestureDetector(
+            onTap: () => _showMovePicker(context, vm),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: state.selectedMoveName != null ? AppTheme.pokemonRed.withValues(alpha: 0.5) : (isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE2E8F0)), width: 1.2),
+              ),
+              child: Row(children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: (CombatUtils.typeColors[state.moveType.toLowerCase()] ?? Colors.grey).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(state.moveType.toUpperCase(),
+                      style: TextStyle(color: CombatUtils.typeColors[state.moveType.toLowerCase()] ?? Colors.grey, fontSize: 9, fontWeight: FontWeight.bold)),
+                ),
+                const SizedBox(width: 10),
+                Expanded(child: Text(
+                  state.selectedMoveName ?? 'Tap to search all moves...',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: state.selectedMoveName != null ? primaryColor : Colors.grey, fontSize: 13),
+                )),
+                Text('BP: ${activeMove.power ?? "—"}', style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                const SizedBox(width: 4),
+                const Icon(Icons.search, color: AppTheme.pokemonRed, size: 18),
+              ]),
             ),
           ),
           const SizedBox(height: 16),
 
-          // Real-Time Damage Summary Display Card
+          // ── Damage Result Card ─────────────────────────────────────────────
           Card(
             elevation: 0,
             color: isDark ? const Color(0xFF0F0F0F) : Colors.white,
@@ -608,53 +607,36 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
             ),
             child: Padding(
               padding: const EdgeInsets.all(20.0),
-              child: Column(
-                children: [
-                  const Text(
-                    'CALCULATED DAMAGE RANGE',
-                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: Colors.grey, letterSpacing: 0.5),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    '${finalMinDamage.toStringAsFixed(0)} - ${finalMaxDamage.toStringAsFixed(0)}',
-                    style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w900, color: AppTheme.pokemonRed),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Percentage: ${minPercent.toStringAsFixed(1)}% - ${maxPercent.toStringAsFixed(1)}% of Defender\'s HP',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.orangeAccent),
-                  ),
-                  const SizedBox(height: 12),
-                  // Effectiveness Capsule Label
-                  if (effectivenessMult != 1.0)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: effectivenessMult > 1.0
-                            ? Colors.green.withValues(alpha: 0.1)
-                            : Colors.red.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: effectivenessMult > 1.0 ? Colors.green : Colors.red,
-                        ),
-                      ),
-                      child: Text(
-                        effectivenessMult > 1.0 ? 'Super Effective! (${effectivenessMult}x)' : 'Not Very Effective... (${effectivenessMult}x)',
-                        style: TextStyle(
-                          color: effectivenessMult > 1.0 ? Colors.green : Colors.red,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
+              child: Column(children: [
+                const Text('CALCULATED DAMAGE RANGE', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: Colors.grey, letterSpacing: 0.5)),
+                const SizedBox(height: 12),
+                Text(
+                  '${finalMinDamage.toStringAsFixed(0)} – ${finalMaxDamage.toStringAsFixed(0)}',
+                  style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w900, color: AppTheme.pokemonRed),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '${minPercent.toStringAsFixed(1)}% – ${maxPercent.toStringAsFixed(1)}% of ${p2.name}\'s HP',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.orangeAccent),
+                ),
+                const SizedBox(height: 8),
+                // Modifier chips row
+                Wrap(spacing: 6, runSpacing: 4, alignment: WrapAlignment.center, children: [
+                  if (stabMult > 1.0) _modChip('STAB ×1.5', Colors.amber),
+                  if (effectivenessMult > 1.0) _modChip('Super Effective ×${effectivenessMult.toStringAsFixed(1)}', Colors.green),
+                  if (effectivenessMult < 1.0) _modChip('Not Effective ×${effectivenessMult.toStringAsFixed(2)}', Colors.red),
+                  if (state.attackerHeldItem != 'None') _modChip(state.attackerHeldItem, Colors.purple),
+                  if (state.defenderHeldItem != 'None') _modChip('Def: ${state.defenderHeldItem}', Colors.blueAccent),
+                  if (state.weather != 'none') _modChip('☁ ${state.weather}', Colors.teal),
+                  if (state.helpingHandActive) _modChip('Helping Hand ×1.5', Colors.orange),
+                ]),
+              ]),
             ),
           ),
           const SizedBox(height: 16),
 
-          // Battle Battlefield Global Tweaks Section
-          _buildDropdownHeader('BATTLEFIELD GLOBAL TWEAKS'),
+          // ── Battlefield Tweaks ────────────────────────────────────────────
+          _buildDropdownHeader('BATTLEFIELD TWEAKS'),
           const SizedBox(height: 8),
           Container(
             padding: const EdgeInsets.all(8),
@@ -663,28 +645,31 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE2E8F0)),
             ),
-            child: Column(
-              children: [
-                _buildSwitchListTile(
-                  'Trick Room Active',
-                  state.trickRoomActive,
-                  vm.toggleTrickRoom,
-                ),
-                _buildSwitchListTile(
-                  'Light Screen Active (Reduce Sp. Atk)',
-                  state.lightScreenActive,
-                  vm.toggleLightScreen,
-                ),
-                _buildSwitchListTile(
-                  'Reflect Active (Reduce Phys Atk)',
-                  state.reflectActive,
-                  vm.toggleReflect,
-                ),
-              ],
-            ),
+            child: Column(children: [
+              _buildSwitchListTile('Light Screen (Halves Sp. Atk)', state.lightScreenActive, vm.toggleLightScreen),
+              _buildSwitchListTile('Reflect (Halves Physical Atk)', state.reflectActive, vm.toggleReflect),
+              _buildSwitchListTile('Helping Hand (+50% damage)', state.helpingHandActive, vm.toggleHelpingHand),
+            ]),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _typeChip(String type) {
+    final color = CombatUtils.typeColors[type.toLowerCase()] ?? Colors.grey;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),
+      child: Text(type.toUpperCase(), style: TextStyle(color: color, fontSize: 8, fontWeight: FontWeight.bold)),
+    );
+  }
+
+  Widget _modChip(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(6), border: Border.all(color: color.withValues(alpha: 0.3))),
+      child: Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
     );
   }
 
@@ -716,6 +701,280 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
       value: val,
       activeThumbColor: AppTheme.pokemonRed,
       onChanged: onChanged,
+    );
+  }
+
+  // ── Searchable Pickers ───────────────────────────────────────────────────
+
+  void _showPokemonPicker(BuildContext context, List<Pokemon> list, bool isAttacker,
+      DamageCalculatorViewModel vm) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    String q = '';
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => StatefulBuilder(builder: (ctx, ss) {
+        final filtered = list
+            .where((p) =>
+                p.name.toLowerCase().contains(q.toLowerCase()) ||
+                p.id.toString().contains(q) ||
+                p.type1.toLowerCase().contains(q.toLowerCase()) ||
+                (p.type2?.toLowerCase().contains(q.toLowerCase()) ?? false))
+            .toList();
+        return DraggableScrollableSheet(
+          initialChildSize: 0.9, maxChildSize: 0.95, minChildSize: 0.5, expand: false,
+          builder: (ctx, sc) => Column(children: [
+            const SizedBox(height: 12),
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[700], borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                autofocus: true,
+                onChanged: (v) => ss(() => q = v),
+                decoration: InputDecoration(
+                  hintText: 'Search Pokémon by name, ID or type...',
+                  prefixIcon: const Icon(Icons.search, color: AppTheme.pokemonRed),
+                  filled: true,
+                  fillColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF3F4F6),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: ListView.builder(
+                controller: sc,
+                itemCount: filtered.length,
+                itemBuilder: (ctx, i) {
+                  final p = filtered[i];
+                  return ListTile(
+                    leading: p.spriteUrl.isNotEmpty
+                        ? SizedBox(
+                            width: 40,
+                            height: 40,
+                            child: CachedNetworkImage(
+                              imageUrl: p.spriteUrl,
+                              fit: BoxFit.contain,
+                              errorWidget: (_, __, ___) => const Icon(Icons.catching_pokemon, color: Colors.grey),
+                            ),
+                          )
+                        : const Icon(Icons.catching_pokemon, color: Colors.grey),
+                    title: Text(p.name, style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black, fontSize: 14)),
+                    subtitle: Text('#${p.id.toString().padLeft(3, '0')} • ${p.type1.toUpperCase()}${p.type2 != null ? ' / ${p.type2!.toUpperCase()}' : ''}',
+                        style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                    onTap: () {
+                      if (isAttacker) vm.setAttacker(p); else vm.setDefender(p);
+                      Navigator.pop(ctx);
+                    },
+                  );
+                },
+              ),
+            ),
+          ]),
+        );
+      }),
+    );
+  }
+
+  void _showMovePicker(BuildContext context, DamageCalculatorViewModel vm) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final moves = _dbDamagingMoves.isNotEmpty ? _dbDamagingMoves : _fallbackMoves;
+    String q = '';
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => StatefulBuilder(builder: (ctx, ss) {
+        final filtered = moves
+            .where((m) =>
+                m.name.toLowerCase().contains(q.toLowerCase()) ||
+                m.type.toLowerCase().contains(q.toLowerCase()) ||
+                m.damageClass.toLowerCase().contains(q.toLowerCase()) ||
+                (m.power?.toString().contains(q) ?? false))
+            .toList();
+        return DraggableScrollableSheet(
+          initialChildSize: 0.9, maxChildSize: 0.95, minChildSize: 0.5, expand: false,
+          builder: (ctx, sc) => Column(children: [
+            const SizedBox(height: 12),
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[700], borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                autofocus: true,
+                onChanged: (v) => ss(() => q = v),
+                decoration: InputDecoration(
+                  hintText: 'Search moves by name, type or BP...',
+                  prefixIcon: const Icon(Icons.search, color: AppTheme.pokemonRed),
+                  filled: true,
+                  fillColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF3F4F6),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: ListView.builder(
+                controller: sc,
+                itemCount: filtered.length,
+                itemBuilder: (ctx, i) {
+                  final m = filtered[i];
+                  final typeColor = CombatUtils.typeColors[m.type.toLowerCase()] ?? Colors.grey;
+                  return ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(color: typeColor.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(6)),
+                      child: Text(m.type.toUpperCase(), style: TextStyle(color: typeColor, fontSize: 10, fontWeight: FontWeight.bold)),
+                    ),
+                    title: Text(m.name, style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black, fontSize: 13)),
+                    subtitle: Text('BP: ${m.power ?? "—"} • ${m.damageClass.toUpperCase()}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                    onTap: () {
+                      vm.selectMove(m.name, m.type, m.damageClass, (m.power ?? 0).toDouble());
+                      Navigator.pop(ctx);
+                    },
+                  );
+                },
+              ),
+            ),
+          ]),
+        );
+      }),
+    );
+  }
+
+  void _showItemPicker(BuildContext context, bool isAttacker, DamageCalculatorViewModel vm) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    String q = '';
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => StatefulBuilder(builder: (ctx, ss) {
+        final items = HeldItemsData.allItems
+            .where((i) =>
+                i.name.toLowerCase().contains(q.toLowerCase()) ||
+                i.category.toLowerCase().contains(q.toLowerCase()) ||
+                i.description.toLowerCase().contains(q.toLowerCase()))
+            .toList();
+        return DraggableScrollableSheet(
+          initialChildSize: 0.85, maxChildSize: 0.95, minChildSize: 0.4, expand: false,
+          builder: (ctx, sc) => Column(children: [
+            const SizedBox(height: 12),
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[700], borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                autofocus: true,
+                onChanged: (v) => ss(() => q = v),
+                decoration: InputDecoration(
+                  hintText: 'Search items...',
+                  prefixIcon: const Icon(Icons.search, color: AppTheme.pokemonRed),
+                  filled: true,
+                  fillColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF3F4F6),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: ListView.builder(
+                controller: sc,
+                itemCount: items.length,
+                itemBuilder: (ctx, i) {
+                  final item = items[i];
+                  return ListTile(
+                    leading: Icon(Icons.backpack_outlined, color: item.name == 'None' ? Colors.grey : AppTheme.pokemonRed, size: 20),
+                    title: Text(item.name, style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black, fontSize: 13)),
+                    subtitle: Text('${item.category} • ${item.description}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                    onTap: () {
+                      if (isAttacker) vm.setAttackerHeldItem(item.name);
+                      else vm.setDefenderHeldItem(item.name);
+                      Navigator.pop(ctx);
+                    },
+                  );
+                },
+              ),
+            ),
+          ]),
+        );
+      }),
+    );
+  }
+
+  // Also used by Simple tab for move picking
+  void _showSimpleMovePicker(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final moves = _dbDamagingMoves.isNotEmpty ? _dbDamagingMoves : _fallbackMoves;
+    String q = '';
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => StatefulBuilder(builder: (ctx, ss) {
+        final filtered = moves
+            .where((m) =>
+                m.name.toLowerCase().contains(q.toLowerCase()) ||
+                m.type.toLowerCase().contains(q.toLowerCase()) ||
+                (m.power?.toString().contains(q) ?? false))
+            .toList();
+        return DraggableScrollableSheet(
+          initialChildSize: 0.9, maxChildSize: 0.95, minChildSize: 0.5, expand: false,
+          builder: (ctx, sc) => Column(children: [
+            const SizedBox(height: 12),
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[700], borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                autofocus: true,
+                onChanged: (v) => ss(() => q = v),
+                decoration: InputDecoration(
+                  hintText: 'Search moves by name, type or BP...',
+                  prefixIcon: const Icon(Icons.search, color: AppTheme.pokemonRed),
+                  filled: true,
+                  fillColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF3F4F6),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: ListView.builder(
+                controller: sc,
+                itemCount: filtered.length,
+                itemBuilder: (ctx, i) {
+                  final m = filtered[i];
+                  final typeColor = CombatUtils.typeColors[m.type.toLowerCase()] ?? Colors.grey;
+                  return ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(color: typeColor.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(6)),
+                      child: Text(m.type.toUpperCase(), style: TextStyle(color: typeColor, fontSize: 10, fontWeight: FontWeight.bold)),
+                    ),
+                    title: Text(m.name, style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black, fontSize: 13)),
+                    subtitle: Text('BP: ${m.power ?? "—"} • ${m.damageClass.toUpperCase()}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                    onTap: () {
+                      setState(() => _simpleSelectedMove = m);
+                      Navigator.pop(ctx);
+                    },
+                  );
+                },
+              ),
+            ),
+          ]),
+        );
+      }),
     );
   }
 }

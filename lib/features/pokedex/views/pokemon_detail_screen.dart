@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/core/theme/app_theme.dart';
+import 'package:libredex/features/calculator/utils/held_items_data.dart';
 import 'package:libredex/features/pokedex/models/type_efficiency_calculator.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
 import 'package:libredex/features/pokedex/viewmodels/stats_calculator_viewmodel.dart';
@@ -534,40 +535,90 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                             final String name = nature['name'];
                             final String? up = nature['up'];
                             final String? down = nature['down'];
-
                             String detailText = '• Neutral';
                             if (up != null && down != null) {
                               detailText = '▲ $up / ▼ $down';
                             }
-
                             return DropdownMenuItem<String>(
                               value: natureKey,
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
-                                    name,
-                                    style: TextStyle(color: primaryColor, fontSize: 14),
-                                  ),
-                                  Text(
-                                    detailText,
-                                    style: TextStyle(
-                                      color: up != null ? (isDark ? Colors.tealAccent : const Color(0xFF0F766E)) : Colors.grey,
-                                      fontSize: 11,
-                                    ),
-                                  ),
+                                  Text(name, style: TextStyle(color: primaryColor, fontSize: 14)),
+                                  Text(detailText, style: TextStyle(
+                                    color: up != null ? (isDark ? Colors.tealAccent : const Color(0xFF0F766E)) : Colors.grey,
+                                    fontSize: 11,
+                                  )),
                                 ],
                               ),
                             );
                           }).toList(),
                           onChanged: (val) {
-                            if (val != null) {
-                              statsNotifier.updateNature(val);
-                            }
+                            if (val != null) statsNotifier.updateNature(val);
                           },
                         ),
                       ),
                     ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Held Item Selector
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Held Item',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 6),
+                    GestureDetector(
+                      onTap: () => _showItemPickerForStats(statsNotifier),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF9FAFB),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: statsState.heldItem != 'None'
+                                ? AppTheme.pokemonRed.withValues(alpha: 0.5)
+                                : (isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE5E7EB)),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.backpack_outlined,
+                                size: 16,
+                                color: statsState.heldItem != 'None' ? AppTheme.pokemonRed : Colors.grey),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                statsState.heldItem,
+                                style: TextStyle(
+                                  color: statsState.heldItem != 'None' ? primaryColor : Colors.grey,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                            if (statsState.heldItem != 'None')
+                              GestureDetector(
+                                onTap: () => statsNotifier.updateHeldItem('None'),
+                                child: const Icon(Icons.close, size: 16, color: Colors.grey),
+                              )
+                            else
+                              const Icon(Icons.keyboard_arrow_down, color: Colors.grey, size: 18),
+                          ],
+                        ),
+                      ),
+                    ),
+                    if (statsState.heldItem != 'None') ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        HeldItemsData.findByName(statsState.heldItem)?.description ?? '',
+                        style: const TextStyle(color: Colors.grey, fontSize: 10, fontStyle: FontStyle.italic),
+                      ),
+                    ],
                   ],
                 ),
               ],
@@ -1154,6 +1205,69 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
         color: isSelected ? AppTheme.pokemonRed : const Color(0xFFE5E7EB),
       ),
       showCheckmark: false,
+    );
+  }
+
+  void _showItemPickerForStats(StatsCalculator notifier) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? Colors.white : Colors.black;
+    String searchQuery = '';
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) {
+          final items = HeldItemsData.allItems
+              .where((i) =>
+                  i.name.toLowerCase().contains(searchQuery.toLowerCase()) ||
+                  i.category.toLowerCase().contains(searchQuery.toLowerCase()))
+              .toList();
+          return DraggableScrollableSheet(
+            initialChildSize: 0.85, maxChildSize: 0.95, minChildSize: 0.5, expand: false,
+            builder: (ctx, sc) => Padding(
+              padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+              child: Column(children: [
+                const SizedBox(height: 12),
+                Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(2))),
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: TextField(
+                    autofocus: true,
+                    onChanged: (v) => setSheet(() => searchQuery = v),
+                    decoration: InputDecoration(
+                      hintText: 'Search held items...',
+                      prefixIcon: const Icon(Icons.search, color: AppTheme.pokemonRed),
+                      filled: true,
+                      fillColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF3F4F6),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: ListView.builder(
+                    controller: sc,
+                    itemCount: items.length,
+                    itemBuilder: (ctx, i) {
+                      final item = items[i];
+                      return ListTile(
+                        leading: Icon(Icons.backpack_outlined, color: item.name == 'None' ? Colors.grey : AppTheme.pokemonRed, size: 20),
+                        title: Text(item.name, style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 13)),
+                        subtitle: Text(item.description, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                        onTap: () { notifier.updateHeldItem(item.name); Navigator.pop(ctx); },
+                      );
+                    },
+                  ),
+                ),
+              ]),
+            ),
+          );
+        },
+      ),
     );
   }
 
