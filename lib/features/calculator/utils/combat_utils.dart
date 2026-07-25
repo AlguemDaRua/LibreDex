@@ -151,24 +151,236 @@ class CombatUtils {
     return 1.0;
   }
 
-  static double getTypeEffectiveness(String moveType, String t1, String? t2) {
-    double mult = 1.0;
+  /// Calculate dynamic base power for special moves (Return, Frustration, Eruption, Water Spout, Facade, Acrobatics, Knock Off, Hex, Foul Play, etc.)
+  static double calculateDynamicBasePower({
+    required String moveName,
+    required double basePower,
+    int friendship = 255,
+    double attackerHpPercent = 100.0,
+    double defenderHpPercent = 100.0,
+    String attackerStatus = 'none',
+    String defenderStatus = 'none',
+    String attackerHeldItem = 'None',
+    String defenderHeldItem = 'None',
+    int rageFistHits = 0,
+  }) {
+    final mName = moveName.toLowerCase().replaceAll('-', ' ').replaceAll('_', ' ').trim();
+
+    if (mName == 'return') {
+      return (friendship * 2 / 5).floorToDouble().clamp(1.0, 102.0);
+    }
+    if (mName == 'frustration') {
+      return ((255 - friendship) * 2 / 5).floorToDouble().clamp(1.0, 102.0);
+    }
+    if (mName == 'eruption' || mName == 'water spout') {
+      return (150.0 * (attackerHpPercent / 100.0)).floorToDouble().clamp(1.0, 150.0);
+    }
+    if (mName == 'facade') {
+      return (attackerStatus != 'none' && attackerStatus != 'freeze' && attackerStatus != 'sleep') ? 140.0 : 70.0;
+    }
+    if (mName == 'acrobatics') {
+      return (attackerHeldItem == 'None') ? 110.0 : 55.0;
+    }
+    if (mName == 'knock off') {
+      return (defenderHeldItem != 'None') ? (basePower * 1.5) : basePower;
+    }
+    if (mName == 'hex' || mName == 'bitter malice') {
+      return (defenderStatus != 'none') ? 130.0 : 65.0;
+    }
+    if (mName == 'rage fist') {
+      return 50.0 + (rageFistHits.clamp(0, 6) * 50.0);
+    }
+    if (mName == 'brine') {
+      return (defenderHpPercent <= 50.0) ? 130.0 : 65.0;
+    }
+    return basePower;
+  }
+
+  static double getTypeEffectiveness(
+    String moveType,
+    String t1,
+    String? t2, {
+    String? attackerAbility,
+    String? defenderAbility,
+    String? moveName,
+    bool defenderTeraActive = false,
+    String? defenderTeraType,
+  }) {
+    final move = moveType.toLowerCase();
+    // Tera defense overrides defender types to single Tera type
+    final type1 = (defenderTeraActive && defenderTeraType != null && defenderTeraType.isNotEmpty)
+        ? defenderTeraType.toLowerCase()
+        : t1.toLowerCase();
+    final type2 = (defenderTeraActive && defenderTeraType != null && defenderTeraType.isNotEmpty)
+        ? null
+        : t2?.toLowerCase();
+
+    final atkAbility = attackerAbility?.toLowerCase().replaceAll('-', ' ').replaceAll('_', ' ').trim() ?? '';
+    final defAbility = defenderAbility?.toLowerCase().replaceAll('-', ' ').replaceAll('_', ' ').trim() ?? '';
+    final mName = moveName?.toLowerCase().replaceAll('-', ' ').replaceAll('_', ' ').trim() ?? '';
+
+    // Check Mind's Eye or Scrappy bypass against Ghost types
+    final hasGhostBypass = atkAbility == 'minds eye' || atkAbility == 'mind\'s eye' || atkAbility == 'scrappy';
+
     double getSingleTypeMultiplier(String attacking, String defending) {
-      final atk = attacking.toLowerCase();
-      final def = defending.toLowerCase();
-      final data = effectivenessMap[atk];
+      final data = effectivenessMap[attacking];
       if (data == null) return 1.0;
 
-      if ((data['double'] ?? []).contains(def)) return 2.0;
-      if ((data['half'] ?? []).contains(def)) return 0.5;
-      if ((data['zero'] ?? []).contains(def)) return 0.0;
+      if ((data['double'] ?? []).contains(defending)) return 2.0;
+      if ((data['half'] ?? []).contains(defending)) return 0.5;
+      if ((data['zero'] ?? []).contains(defending)) {
+        if (hasGhostBypass && (attacking == 'normal' || attacking == 'fighting') && defending == 'ghost') {
+          return 1.0; // Bypasses Ghost immunity
+        }
+        return 0.0;
+      }
       return 1.0;
     }
 
-    mult *= getSingleTypeMultiplier(moveType, t1);
-    if (t2 != null) {
-      mult *= getSingleTypeMultiplier(moveType, t2);
+    double mult = getSingleTypeMultiplier(move, type1);
+    if (type2 != null) {
+      mult *= getSingleTypeMultiplier(move, type2);
     }
+
+    // ── Defender Ability Immunities ──
+    if (defAbility == 'well baked body' || defAbility == 'flash fire') {
+      if (move == 'fire') return 0.0;
+    }
+    if (defAbility == 'levitate' || defAbility == 'earth eater') {
+      if (move == 'ground') return 0.0;
+    }
+    if (defAbility == 'volt absorb' || defAbility == 'motor drive' || defAbility == 'lightning rod') {
+      if (move == 'electric') return 0.0;
+    }
+    if (defAbility == 'water absorb' || defAbility == 'storm drain' || defAbility == 'dry skin') {
+      if (move == 'water') return 0.0;
+    }
+    if (defAbility == 'sap sipper') {
+      if (move == 'grass') return 0.0;
+    }
+    if (defAbility == 'wonder guard') {
+      if (mult <= 1.0) return 0.0;
+    }
+
+    // Soundproof immunity
+    if (defAbility == 'soundproof') {
+      const soundMoves = {
+        'hyper voice', 'boomburst', 'bug buzz', 'torch song', 'snarl',
+        'clanging scales', 'roar', 'sing', 'overdrive', 'alluring voice',
+        'relic song', 'disarming voice', 'metal sound', 'screech', 'uproar'
+      };
+      if (soundMoves.contains(mName)) return 0.0;
+    }
+
+    // Bulletproof immunity
+    if (defAbility == 'bulletproof') {
+      const bulletMoves = {
+        'shadow ball', 'sludge bomb', 'gyro ball', 'energy ball', 'focus blast',
+        'weather ball', 'electro ball', 'beak blast', 'rock wrecker', 'magnet bomb',
+        'mud bomb', 'pyro ball', 'seed bomb', 'zap cannon', 'acid spray'
+      };
+      if (bulletMoves.contains(mName)) return 0.0;
+    }
+
+    // ── Defender Ability Damage Modifiers ──
+    if (defAbility == 'thick fat') {
+      if (move == 'fire' || move == 'ice') mult *= 0.5;
+    }
+    if (defAbility == 'heatproof') {
+      if (move == 'fire') mult *= 0.5;
+    }
+    if (defAbility == 'purifying salt') {
+      if (move == 'ghost') mult *= 0.5;
+    }
+    if (defAbility == 'dry skin') {
+      if (move == 'fire') mult *= 1.25;
+    }
+    if (defAbility == 'fluffy') {
+      if (move == 'fire') mult *= 2.0;
+    }
+    if (defAbility == 'filter' || defAbility == 'solid rock' || defAbility == 'prism armor') {
+      if (mult > 1.0) mult *= 0.75;
+    }
+
+    // ── Attacker Ability Modifiers ──
+    if (atkAbility == 'tinted lens') {
+      if (mult < 1.0 && mult > 0.0) mult *= 2.0;
+    }
+
     return mult;
+  }
+
+  /// Helper to return a human-readable badge summary when an ability alters effectiveness.
+  static String? getAbilityContextBadge({
+    required String moveType,
+    required String t1,
+    String? t2,
+    String? attackerAbility,
+    String? defenderAbility,
+    String? moveName,
+    bool defenderTeraActive = false,
+    String? defenderTeraType,
+  }) {
+    final move = moveType.toLowerCase();
+    final atkAbility = attackerAbility?.toLowerCase().replaceAll('-', ' ').replaceAll('_', ' ').trim() ?? '';
+    final defAbility = defenderAbility?.toLowerCase().replaceAll('-', ' ').replaceAll('_', ' ').trim() ?? '';
+
+    if ((atkAbility == 'minds eye' || atkAbility == 'mind\'s eye' || atkAbility == 'scrappy') &&
+        (move == 'normal' || move == 'fighting') &&
+        (t1.toLowerCase() == 'ghost' || t2?.toLowerCase() == 'ghost')) {
+      return '👁️ Mind\'s Eye / Scrappy: Hits Ghost (1.0x)';
+    }
+    if (atkAbility == 'tinted lens') {
+      final baseMult = getTypeEffectiveness(moveType, t1, t2, defenderAbility: defenderAbility, moveName: moveName, defenderTeraActive: defenderTeraActive, defenderTeraType: defenderTeraType);
+      if (baseMult < 1.0 && baseMult > 0.0) {
+        return '👓 Tinted Lens: Doubled Effectiveness';
+      }
+    }
+
+    if ((defAbility == 'well baked body' || defAbility == 'flash fire') && move == 'fire') {
+      return '🔥 Well-Baked Body / Flash Fire: IMMUNE (0x)';
+    }
+    if ((defAbility == 'levitate' || defAbility == 'earth eater') && move == 'ground') {
+      return '🌪️ Levitate / Earth Eater: IMMUNE (0x)';
+    }
+    if ((defAbility == 'volt absorb' || defAbility == 'motor drive' || defAbility == 'lightning rod') && move == 'electric') {
+      return '⚡ Volt Absorb / Motor Drive: IMMUNE (0x)';
+    }
+    if ((defAbility == 'water absorb' || defAbility == 'storm drain' || defAbility == 'dry skin') && move == 'water') {
+      return '💧 Water Absorb / Dry Skin: IMMUNE (0x)';
+    }
+    if (defAbility == 'sap sipper' && move == 'grass') {
+      return '🌿 Sap Sipper: IMMUNE (0x)';
+    }
+    if (defAbility == 'wonder guard') {
+      final baseMult = getTypeEffectiveness(moveType, t1, t2, defenderTeraActive: defenderTeraActive, defenderTeraType: defenderTeraType);
+      if (baseMult <= 1.0) {
+        return '🛡️ Wonder Guard: IMMUNE (0x)';
+      }
+    }
+    if (defAbility == 'soundproof') {
+      const soundMoves = {'hyper voice', 'boomburst', 'bug buzz', 'torch song', 'snarl', 'overdrive'};
+      if (soundMoves.contains(moveName?.toLowerCase())) return '🔊 Soundproof: IMMUNE (0x)';
+    }
+    if (defAbility == 'bulletproof') {
+      const bulletMoves = {'shadow ball', 'sludge bomb', 'energy ball', 'focus blast', 'seed bomb'};
+      if (bulletMoves.contains(moveName?.toLowerCase())) return '💣 Bulletproof: IMMUNE (0x)';
+    }
+    if (defAbility == 'thick fat' && (move == 'fire' || move == 'ice')) {
+      return '🛡️ Thick Fat: RESIST (0.5x)';
+    }
+    if (defAbility == 'purifying salt' && move == 'ghost') {
+      return '🧂 Purifying Salt: RESIST (0.5x)';
+    }
+    if (defAbility == 'heatproof' && move == 'fire') {
+      return '🔥 Heatproof: RESIST (0.5x)';
+    }
+    if (defAbility == 'filter' || defAbility == 'solid rock' || defAbility == 'prism armor') {
+      final baseMult = getTypeEffectiveness(moveType, t1, t2, defenderTeraActive: defenderTeraActive, defenderTeraType: defenderTeraType);
+      if (baseMult > 1.0) {
+        return '🛡️ Solid Rock / Filter: Reduced (0.75x)';
+      }
+    }
+    return null;
   }
 }
