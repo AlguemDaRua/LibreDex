@@ -190,7 +190,7 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
             normalImageUrl: _activePokemon.spriteUrl,
             shinyImageUrl: _activePokemon.shinySpriteUrl,
             normalLabel: 'Normal',
-            shinyLabel: '★ Shiny',
+            shinyLabel: 'Shiny',
             pokemonId: _activePokemon.id,
           ),
           const SizedBox(height: 20),
@@ -1733,22 +1733,35 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Breeding, Training & EV Yields',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: primaryColor),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Breeding, Training & EV Yields',
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: primaryColor),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      bstLabel,
+                      style: TextStyle(color: bstColor, fontSize: 11, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: bstColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: bstColor, width: 0.8),
+                  border: Border.all(color: bstColor, width: 1.0),
                 ),
                 child: Text(
-                  '$bst BST • $bstLabel',
-                  style: TextStyle(color: bstColor, fontSize: 10, fontWeight: FontWeight.bold),
+                  '$bst BST',
+                  style: TextStyle(color: bstColor, fontSize: 11, fontWeight: FontWeight.bold),
                 ),
               ),
             ],

@@ -767,7 +767,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     final double minPercent = (finalMinDamage / defenderMaxHp) * 100;
     final double maxPercent = (finalMaxDamage / defenderMaxHp) * 100;
 
-    Widget _pokemonDuelCard(Pokemon p, bool isAttacker, String heldItem) {
+    Widget buildPokemonDuelCard(Pokemon p, bool isAttacker, String heldItem) {
       final typeColor = CombatUtils.typeColors[p.type1.toLowerCase()] ?? Colors.grey;
       final spd = isAttacker ? finalAttackerSpeed : finalDefenderSpeed;
       final isTera = isAttacker ? state.attackerTeraActive : state.defenderTeraActive;
@@ -792,8 +792,8 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                     ? CachedNetworkImage(
                         imageUrl: p.spriteUrl,
                         fit: BoxFit.contain,
-                        placeholder: (_, __) => const Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(AppTheme.pokemonRed)))),
-                        errorWidget: (_, __, ___) => Icon(Icons.catching_pokemon, size: 48, color: typeColor.withValues(alpha: 0.4)),
+                        placeholder: (context, url) => const Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(AppTheme.pokemonRed)))),
+                        errorWidget: (context, url, error) => Icon(Icons.catching_pokemon, size: 48, color: typeColor.withValues(alpha: 0.4)),
                       )
                     : Icon(Icons.catching_pokemon, size: 48, color: typeColor.withValues(alpha: 0.4)),
               ),
@@ -827,7 +827,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                 child: Text('⚡ SPD $spd', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.blue)),
               ),
               const SizedBox(height: 6),
-              const Text('Tap to Edit Setup ⚙️', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppTheme.pokemonRed)),
+              const Text('Tap to Edit Setup', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppTheme.pokemonRed)),
             ],
           ),
         ),
@@ -845,7 +845,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
               Expanded(child: Column(children: [
                 const Text('ATTACKER', style: TextStyle(fontWeight: FontWeight.w900, color: Colors.grey, fontSize: 9, letterSpacing: 1)),
                 const SizedBox(height: 6),
-                _pokemonDuelCard(p1, true, state.attackerHeldItem),
+                buildPokemonDuelCard(p1, true, state.attackerHeldItem),
               ])),
               Padding(
                 padding: const EdgeInsets.only(top: 44),
@@ -859,7 +859,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
               Expanded(child: Column(children: [
                 const Text('DEFENDER', style: TextStyle(fontWeight: FontWeight.w900, color: Colors.grey, fontSize: 9, letterSpacing: 1)),
                 const SizedBox(height: 6),
-                _pokemonDuelCard(p2, false, state.defenderHeldItem),
+                buildPokemonDuelCard(p2, false, state.defenderHeldItem),
               ])),
             ],
           ),
@@ -1247,7 +1247,11 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                     leading: p.spriteUrl.isNotEmpty
                         ? SizedBox(
                             width: 40, height: 40,
-                            child: CachedNetworkImage(imageUrl: p.spriteUrl, fit: BoxFit.contain, errorWidget: (_, __, ___) => const Icon(Icons.catching_pokemon, color: Colors.grey)),
+                            child: CachedNetworkImage(
+                              imageUrl: p.spriteUrl,
+                              fit: BoxFit.contain,
+                              errorWidget: (context, url, error) => const Icon(Icons.catching_pokemon, color: Colors.grey),
+                            ),
                           )
                         : const Icon(Icons.catching_pokemon, color: Colors.grey),
                     title: Text(p.name, style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black, fontSize: 14)),
@@ -1257,11 +1261,17 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                       try {
                         final abs = await ref.read(databaseProvider).getPokemonAbilities(p.id);
                         final defAb = abs.isNotEmpty ? abs.first.ability.name : null;
-                        if (isAttacker) vm.setAttacker(p, defaultAbility: defAb);
-                        else vm.setDefender(p, defaultAbility: defAb);
+                        if (isAttacker) {
+                          vm.setAttacker(p, defaultAbility: defAb);
+                        } else {
+                          vm.setDefender(p, defaultAbility: defAb);
+                        }
                       } catch (_) {
-                        if (isAttacker) vm.setAttacker(p);
-                        else vm.setDefender(p);
+                        if (isAttacker) {
+                          vm.setAttacker(p);
+                        } else {
+                          vm.setDefender(p);
+                        }
                       }
                     },
                   );
@@ -1443,7 +1453,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
           final teraType = (isAttacker ? currentState.attackerTeraType : currentState.defenderTeraType) ?? p.type1;
           final status = isAttacker ? currentState.attackerStatus : currentState.defenderStatus;
 
-          Widget _buildStatRow(String label, String key, int baseVal, bool isHp) {
+          Widget buildStatRow(String label, String key, int baseVal, bool isHp) {
             final ivVal = ivs[key] ?? 31;
             final evVal = evs[key] ?? 0;
             final stageVal = stages[key] ?? 0;
@@ -1916,12 +1926,12 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                   ],
                 ),
                 const Divider(),
-                _buildStatRow('HP', 'hp', p.baseHp, true),
-                _buildStatRow('Attack', 'atk', p.baseAtk, false),
-                _buildStatRow('Defense', 'def', p.baseDef, false),
-                _buildStatRow('Sp. Atk', 'spa', p.baseSpAtk, false),
-                _buildStatRow('Sp. Def', 'spd', p.baseSpDef, false),
-                _buildStatRow('Speed', 'spe', p.baseSpd, false),
+                buildStatRow('HP', 'hp', p.baseHp, true),
+                buildStatRow('Attack', 'atk', p.baseAtk, false),
+                buildStatRow('Defense', 'def', p.baseDef, false),
+                buildStatRow('Sp. Atk', 'spa', p.baseSpAtk, false),
+                buildStatRow('Sp. Def', 'spd', p.baseSpDef, false),
+                buildStatRow('Speed', 'spe', p.baseSpd, false),
               ],
             ),
           );

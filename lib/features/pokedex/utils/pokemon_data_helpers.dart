@@ -90,36 +90,66 @@ class PokemonDataHelpers {
   /// Returns Gender Ratio breakdown for UI.
   static Map<String, dynamic> getGenderRatio(Pokemon p) {
     final dex = p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id;
+    final nameLower = p.name.toLowerCase();
+    final formLower = p.form.toLowerCase();
+
+    // Check specific form or species name indicators (e.g. Indeedee-Female, Meowstic-Female, Nidoran-F)
+    if (formLower.contains('female') || nameLower.contains('female') || formLower.contains(' - female') || nameLower.endsWith('-f')) {
+      return {'male': 0.0, 'female': 100.0, 'genderless': false};
+    }
+    if (formLower.contains('male') || nameLower.contains('male') || formLower.contains(' - male') || nameLower.endsWith('-m')) {
+      return {'male': 100.0, 'female': 0.0, 'genderless': false};
+    }
+
     if (p.isLegendary || p.isMythical || p.isUltraBeast || p.isParadox) {
+      // Exceptions: Latias/Latios, Cresselia, Enamorus, Tornadus/Thundurus/Landorus
+      if (dex == 380 || dex == 488 || dex == 905 || dex == 413 || dex == 669 || dex == 670 || dex == 671) {
+        return {'male': 0.0, 'female': 100.0, 'genderless': false};
+      }
+      if (dex == 381 || dex == 641 || dex == 642 || dex == 645) {
+        return {'male': 100.0, 'female': 0.0, 'genderless': false};
+      }
       return {'male': 0.0, 'female': 0.0, 'genderless': true};
     }
 
-    // Genderless non-legendary dexes (e.g. Magnemite, Voltorb, Staryu, Porygon, Beldum, Bronzor, Cryogonal)
-    const genderlessDexes = {81, 82, 100, 101, 120, 121, 137, 233, 374, 375, 376, 436, 437, 474, 615};
+    // Genderless non-legendary dexes
+    const genderlessDexes = {
+      81, 82, 100, 101, 120, 121, 137, 233, 292, 337, 338, 343, 344, 374, 375, 376,
+      436, 437, 462, 474, 479, 599, 600, 601, 615, 622, 623, 703, 774, 781, 854, 855,
+      870, 874, 875, 880, 881, 882, 883, 1012, 1013
+    };
     if (genderlessDexes.contains(dex)) {
       return {'male': 0.0, 'female': 0.0, 'genderless': true};
     }
 
-    // Starters and Eevee (87.5% Male, 12.5% Female)
-    const starterDexes = {
+    // Starters, Eevee, Combee, Salandit, Togepi line, Lucario line, Zoroark line (87.5% Male, 12.5% Female)
+    const maleHeavyDexes = {
       1, 2, 3, 4, 5, 6, 7, 8, 9, 133, 152, 153, 154, 155, 156, 157, 158, 159, 160,
-      252, 253, 254, 255, 256, 257, 258, 259, 260, 387, 388, 389, 390, 391, 392, 393, 394, 395,
-      495, 496, 497, 498, 499, 500, 501, 502, 503, 650, 651, 652, 653, 654, 655, 656, 657, 658,
-      722, 723, 724, 725, 726, 727, 728, 729, 730, 810, 811, 812, 813, 814, 815, 816, 817, 818,
-      906, 907, 908, 909, 910, 911, 912, 913, 914
+      175, 176, 468, 252, 253, 254, 255, 256, 257, 258, 259, 260, 387, 388, 389, 390,
+      391, 392, 393, 394, 395, 415, 447, 448, 495, 496, 497, 498, 499, 500, 501, 502,
+      503, 570, 571, 650, 651, 652, 653, 654, 655, 656, 657, 658, 722, 723, 724, 725,
+      726, 727, 728, 729, 730, 757, 810, 811, 812, 813, 814, 815, 816, 817, 818, 906,
+      907, 908, 909, 910, 911, 912, 913, 914
     };
-    if (starterDexes.contains(dex)) {
+    if (maleHeavyDexes.contains(dex)) {
       return {'male': 87.5, 'female': 12.5, 'genderless': false};
     }
 
-    // 100% Female species (e.g. Chansey, Kangaskhan, Jynx, Miltank, Blissey, Latias, Vespiquen, Froslass)
-    const femaleOnlyDexes = {113, 115, 124, 241, 242, 380, 416, 478};
+    // 100% Female species
+    const femaleOnlyDexes = {
+      29, 30, 31, 113, 115, 124, 238, 241, 242, 314, 380, 413, 416, 440, 478, 488,
+      548, 549, 629, 630, 669, 670, 671, 758, 761, 762, 763, 856, 857, 858, 868, 869,
+      905, 957, 958, 959, 1017
+    };
     if (femaleOnlyDexes.contains(dex)) {
       return {'male': 0.0, 'female': 100.0, 'genderless': false};
     }
 
-    // 100% Male species (e.g. Nidoran M, Hitmonlee, Hitmonchan, Tauros, Latios, Hitmontop, Volbeat)
-    const maleOnlyDexes = {32, 33, 34, 106, 107, 128, 237, 313, 381};
+    // 100% Male species (including Impdimp #859, Morgrem #860, Grimmsnarl #861)
+    const maleOnlyDexes = {
+      32, 33, 34, 106, 107, 128, 236, 237, 313, 381, 414, 475, 538, 539, 627, 628,
+      641, 642, 645, 859, 860, 861
+    };
     if (maleOnlyDexes.contains(dex)) {
       return {'male': 100.0, 'female': 0.0, 'genderless': false};
     }
