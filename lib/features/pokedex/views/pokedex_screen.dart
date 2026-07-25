@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/core/theme/app_theme.dart';
+import 'package:libredex/features/pokedex/utils/pokemon_data_helpers.dart';
 import 'package:libredex/features/pokedex/viewmodels/pokedex_viewmodel.dart';
 import 'package:libredex/features/pokedex/views/pokemon_detail_screen.dart';
 import 'package:libredex/core/widgets/app_drawer.dart';
@@ -18,20 +19,32 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
+  // Shiny Mode Toggle & EV Yield Filter
+  bool _globalShinyMode = false;
+  String? _selectedEvYieldStat; // null = All, 'hp', 'atk', 'def', 'spatk', 'spdef', 'spd'
+
   // Advanced Filters State
   final List<String> _selectedTypes = [];
   final Set<int> _selectedGenerations = {};
   bool _showLegendary = false;
+  bool _showMythical = false;
   bool _showUltraBeast = false;
   bool _showParadox = false;
   bool _showShinyOnly = false;
-  String _sortOption = 'id_asc'; // id_asc, id_desc, name_asc, name_desc, bst_asc, bst_desc
+  String _sortOption = 'id_asc'; // id_asc, id_desc, name_asc, name_desc, bst_asc, bst_desc, hp_desc, atk_desc, etc.
 
   // Advanced Formats Filter State
   final List<String> _selectedFormats = []; // 'MEGA', 'ALOLA', 'GALAR', 'HISUI', 'PALDEA'
 
-  // Map to store active selected form index for grouped Pokémon
-  // Map tracking active form index removed.
+  // Stat Range & Threshold Filters
+  double _minBst = 100.0;
+  double _maxBst = 780.0;
+  double _minHp = 0.0;
+  double _minAtk = 0.0;
+  double _minDef = 0.0;
+  double _minSpAtk = 0.0;
+  double _minSpDef = 0.0;
+  double _minSpd = 0.0;
 
   // Static list of all 18 Pokémon types for chips selector
   static const List<String> _allTypes = [
@@ -63,6 +76,46 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
     return p.baseHp + p.baseAtk + p.baseDef + p.baseSpAtk + p.baseSpDef + p.baseSpd;
   }
 
+  bool _isUltraBeast(Pokemon p) {
+    if (p.isUltraBeast) return true;
+    final dex = p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id;
+    return dex >= 793 && dex <= 806;
+  }
+
+  bool _isParadox(Pokemon p) {
+    if (p.isParadox) return true;
+    final name = p.name.toLowerCase();
+    return name.startsWith('great-tusk') || name.startsWith('scream-tail') || name.startsWith('brute-bonnet') ||
+           name.startsWith('flutter-mane') || name.startsWith('slither-wing') || name.startsWith('sandy-shocks') ||
+           name.startsWith('iron-treads') || name.startsWith('iron-bundle') || name.startsWith('iron-hands') ||
+           name.startsWith('iron-jugulis') || name.startsWith('iron-moth') || name.startsWith('iron-thorns') ||
+           name.startsWith('roaring-moon') || name.startsWith('iron-valiant') || name.startsWith('walking-wake') ||
+           name.startsWith('iron-leaves') || name.startsWith('gouging-fire') || name.startsWith('raging-bolt') ||
+           name.startsWith('iron-boulder') || name.startsWith('iron-crown');
+  }
+
+  bool _isLegendary(Pokemon p) {
+    if (p.isLegendary) return true;
+    final dex = p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id;
+    const legendaries = {
+      144, 145, 146, 150, 243, 244, 245, 249, 250, 377, 378, 379, 380, 381, 382, 383, 384,
+      480, 481, 482, 483, 484, 485, 486, 487, 488, 638, 639, 640, 641, 642, 643, 644, 645, 646,
+      716, 717, 718, 772, 773, 785, 786, 787, 788, 789, 790, 791, 792, 800,
+      888, 889, 890, 891, 892, 894, 895, 896, 897, 898, 1007, 1008, 1014, 1015, 1016, 1017, 1024
+    };
+    return legendaries.contains(dex);
+  }
+
+  bool _isMythical(Pokemon p) {
+    if (p.isMythical) return true;
+    final dex = p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id;
+    const mythicals = {
+      151, 251, 385, 386, 489, 490, 491, 492, 493, 494, 647, 648, 649, 719, 720, 721,
+      801, 802, 807, 808, 809, 893, 1025
+    };
+    return mythicals.contains(dex);
+  }
+
   Color _getTypeColor(String type) {
     switch (type.toLowerCase()) {
       case 'fire': return const Color(0xFFEE8130);
@@ -88,25 +141,47 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
 
   void _clearAllFilters() {
     setState(() {
+      _globalShinyMode = false;
+      _selectedEvYieldStat = null;
       _selectedTypes.clear();
       _selectedGenerations.clear();
       _selectedFormats.clear();
       _showLegendary = false;
+      _showMythical = false;
       _showUltraBeast = false;
       _showParadox = false;
       _showShinyOnly = false;
       _sortOption = 'id_asc';
+      _minBst = 100.0;
+      _maxBst = 780.0;
+      _minHp = 0.0;
+      _minAtk = 0.0;
+      _minDef = 0.0;
+      _minSpAtk = 0.0;
+      _minSpDef = 0.0;
+      _minSpd = 0.0;
     });
   }
 
   bool get _hasActiveFilters {
-    return _selectedTypes.isNotEmpty ||
+    return _globalShinyMode ||
+        _selectedEvYieldStat != null ||
+        _selectedTypes.isNotEmpty ||
         _selectedGenerations.isNotEmpty ||
         _selectedFormats.isNotEmpty ||
         _showLegendary ||
+        _showMythical ||
         _showUltraBeast ||
         _showParadox ||
         _showShinyOnly ||
+        _minBst > 100.0 ||
+        _maxBst < 780.0 ||
+        _minHp > 0.0 ||
+        _minAtk > 0.0 ||
+        _minDef > 0.0 ||
+        _minSpAtk > 0.0 ||
+        _minSpDef > 0.0 ||
+        _minSpd > 0.0 ||
         _sortOption != 'id_asc';
   }
 
@@ -128,6 +203,20 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
+          // Shiny Mode Toggle Button for Shiny Hunters
+          IconButton(
+            icon: Icon(
+              _globalShinyMode ? Icons.auto_awesome : Icons.auto_awesome_outlined,
+              color: _globalShinyMode ? Colors.amberAccent : primaryColor,
+            ),
+            onPressed: () {
+              setState(() {
+                _globalShinyMode = !_globalShinyMode;
+              });
+            },
+            tooltip: _globalShinyMode ? 'Shiny Mode Active' : 'Enable Shiny Mode',
+          ),
+
           // Clear active filters indicator
           if (_hasActiveFilters)
             IconButton(
@@ -199,16 +288,17 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                           }
                         }
 
-                        // 4. Special Category Toggles
-                        if (_showLegendary && !(pokemon.isLegendary || pokemon.isMythical)) {
-                          return false;
+                        // 4. Special Category Toggles (OR-matching when multiple toggles active)
+                        final hasCategoryFilter = _showLegendary || _showMythical || _showUltraBeast || _showParadox;
+                        if (hasCategoryFilter) {
+                          bool matchesCategory = false;
+                          if (_showLegendary && _isLegendary(pokemon)) matchesCategory = true;
+                          if (_showMythical && _isMythical(pokemon)) matchesCategory = true;
+                          if (_showUltraBeast && _isUltraBeast(pokemon)) matchesCategory = true;
+                          if (_showParadox && _isParadox(pokemon)) matchesCategory = true;
+                          if (!matchesCategory) return false;
                         }
-                        if (_showUltraBeast && !pokemon.isUltraBeast) {
-                          return false;
-                        }
-                        if (_showParadox && !pokemon.isParadox) {
-                          return false;
-                        }
+
                         if (_showShinyOnly && pokemon.shinySpriteUrl.isEmpty) {
                           return false;
                         }
@@ -218,6 +308,24 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                           if (!_selectedFormats.any((fmt) => _matchesFormat(pokemon, fmt))) {
                             return false;
                           }
+                        }
+
+                        // 6. BST Range Filter
+                        final bst = _getBst(pokemon);
+                        if (bst < _minBst || bst > _maxBst) return false;
+
+                        // 7. Individual Stat Thresholds Filter
+                        if (pokemon.baseHp < _minHp) return false;
+                        if (pokemon.baseAtk < _minAtk) return false;
+                        if (pokemon.baseDef < _minDef) return false;
+                        if (pokemon.baseSpAtk < _minSpAtk) return false;
+                        if (pokemon.baseSpDef < _minSpDef) return false;
+                        if (pokemon.baseSpd < _minSpd) return false;
+
+                        // 8. EV Yield Filter Matching
+                        if (_selectedEvYieldStat != null) {
+                          final evKeys = PokemonDataHelpers.getEvYieldStatKeys(pokemon);
+                          if (!evKeys.contains(_selectedEvYieldStat)) return false;
                         }
 
                         return true;
@@ -246,6 +354,18 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                             return _getBst(pA).compareTo(_getBst(pB));
                           case 'bst_desc':
                             return _getBst(pB).compareTo(_getBst(pA));
+                          case 'hp_desc':
+                            return pB.baseHp.compareTo(pA.baseHp);
+                          case 'atk_desc':
+                            return pB.baseAtk.compareTo(pA.baseAtk);
+                          case 'def_desc':
+                            return pB.baseDef.compareTo(pA.baseDef);
+                          case 'spatk_desc':
+                            return pB.baseSpAtk.compareTo(pA.baseSpAtk);
+                          case 'spdef_desc':
+                            return pB.baseSpDef.compareTo(pA.baseSpDef);
+                          case 'spd_desc':
+                            return pB.baseSpd.compareTo(pA.baseSpd);
                           case 'id_asc':
                           default:
                             return a.compareTo(b);
@@ -443,7 +563,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                     tag: 'pokemon_${pokemon.id}',
                     child: pokemon.spriteUrl.isNotEmpty
                         ? CachedNetworkImage(
-                            imageUrl: (_showShinyOnly && pokemon.shinySpriteUrl.isNotEmpty)
+                            imageUrl: ((_showShinyOnly || _globalShinyMode) && pokemon.shinySpriteUrl.isNotEmpty)
                                 ? pokemon.shinySpriteUrl
                                 : pokemon.spriteUrl,
                             fit: BoxFit.contain,
@@ -646,8 +766,12 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                               ),
                               child: Column(
                                 children: [
-                                  _buildSwitchRow('Legendary / Mythical', _showLegendary, (val) {
+                                  _buildSwitchRow('Legendary Pokémon', _showLegendary, (val) {
                                     setState(() => _showLegendary = val);
+                                    setModalState(() {});
+                                  }),
+                                  _buildSwitchRow('Mythical Pokémon', _showMythical, (val) {
+                                    setState(() => _showMythical = val);
                                     setModalState(() {});
                                   }),
                                   _buildSwitchRow('Ultra Beasts (UB)', _showUltraBeast, (val) {
@@ -665,6 +789,8 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                                 ],
                               ),
                             ),
+                            const SizedBox(height: 18),
+
                             // 3.5 Formats / Regional Forms
                             _buildSectionLabel('REGIONAL / SPECIAL FORMATS'),
                             const SizedBox(height: 8),
@@ -700,7 +826,119 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                             ),
                             const SizedBox(height: 18),
 
-                            // 4. Sorting options
+                            // 4. Base Stat Total (BST) Range Slider
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                _buildSectionLabel('BASE STAT TOTAL (BST) RANGE'),
+                                Text(
+                                  '${_minBst.round()} - ${_maxBst.round()}',
+                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.pokemonRed),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            RangeSlider(
+                              values: RangeValues(_minBst, _maxBst),
+                              min: 100.0,
+                              max: 780.0,
+                              divisions: 68,
+                              activeColor: AppTheme.pokemonRed,
+                              inactiveColor: isDark ? const Color(0xFF262626) : const Color(0xFFE2E8F0),
+                              labels: RangeLabels('${_minBst.round()}', '${_maxBst.round()}'),
+                              onChanged: (RangeValues values) {
+                                setState(() {
+                                  _minBst = values.start;
+                                  _maxBst = values.end;
+                                });
+                                setModalState(() {});
+                              },
+                            ),
+                            const SizedBox(height: 18),
+
+                            // 5. Individual Base Stat Filters
+                            _buildSectionLabel('MINIMUM BASE STAT THRESHOLDS'),
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF141414) : const Color(0xFFF7FAFC),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE2E8F0)),
+                              ),
+                              child: Column(
+                                children: [
+                                  _buildStatSliderRow('HP', _minHp, (val) {
+                                    setState(() => _minHp = val);
+                                    setModalState(() {});
+                                  }),
+                                  _buildStatSliderRow('Attack', _minAtk, (val) {
+                                    setState(() => _minAtk = val);
+                                    setModalState(() {});
+                                  }),
+                                  _buildStatSliderRow('Defense', _minDef, (val) {
+                                    setState(() => _minDef = val);
+                                    setModalState(() {});
+                                  }),
+                                  _buildStatSliderRow('Sp. Atk', _minSpAtk, (val) {
+                                    setState(() => _minSpAtk = val);
+                                    setModalState(() {});
+                                  }),
+                                  _buildStatSliderRow('Sp. Def', _minSpDef, (val) {
+                                    setState(() => _minSpDef = val);
+                                    setModalState(() {});
+                                  }),
+                                  _buildStatSliderRow('Speed', _minSpd, (val) {
+                                    setState(() => _minSpd = val);
+                                    setModalState(() {});
+                                  }),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+
+                            // 5.5 EV Yield Stat Filter
+                            _buildSectionLabel('EV YIELD STAT FILTER'),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 6,
+                              children: [
+                                {'label': 'ANY EV', 'key': null},
+                                {'label': 'HP EV', 'key': 'hp'},
+                                {'label': 'ATK EV', 'key': 'atk'},
+                                {'label': 'DEF EV', 'key': 'def'},
+                                {'label': 'SPA EV', 'key': 'spatk'},
+                                {'label': 'SPD EV', 'key': 'spdef'},
+                                {'label': 'SPE EV', 'key': 'spd'},
+                              ].map((item) {
+                                final String? key = item['key'];
+                                final String label = item['label'] as String;
+                                final bool isSel = _selectedEvYieldStat == key;
+                                return ChoiceChip(
+                                  label: Text(
+                                    label,
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: isSel ? Colors.white : Colors.grey,
+                                    ),
+                                  ),
+                                  selected: isSel,
+                                  selectedColor: AppTheme.pokemonRed,
+                                  backgroundColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFEDF2F7),
+                                  onSelected: (selected) {
+                                    setState(() {
+                                      _selectedEvYieldStat = selected ? key : null;
+                                    });
+                                    setModalState(() {});
+                                  },
+                                );
+                              }).toList(),
+                            ),
+                            const SizedBox(height: 18),
+
+                            // 6. Sorting options
                             _buildSectionLabel('SORTING'),
                             const SizedBox(height: 8),
                             Container(
@@ -721,8 +959,14 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                                     DropdownMenuItem(value: 'id_desc', child: Text('ID (DESCENDING)')),
                                     DropdownMenuItem(value: 'name_asc', child: Text('ALPHABETICAL (A - Z)')),
                                     DropdownMenuItem(value: 'name_desc', child: Text('ALPHABETICAL (Z - A)')),
-                                    DropdownMenuItem(value: 'bst_asc', child: Text('BST TOTAL (LOWEST FIRST)')),
                                     DropdownMenuItem(value: 'bst_desc', child: Text('BST TOTAL (HIGHEST FIRST)')),
+                                    DropdownMenuItem(value: 'bst_asc', child: Text('BST TOTAL (LOWEST FIRST)')),
+                                    DropdownMenuItem(value: 'hp_desc', child: Text('HIGHEST HP')),
+                                    DropdownMenuItem(value: 'atk_desc', child: Text('HIGHEST ATTACK')),
+                                    DropdownMenuItem(value: 'def_desc', child: Text('HIGHEST DEFENSE')),
+                                    DropdownMenuItem(value: 'spatk_desc', child: Text('HIGHEST SP. ATK')),
+                                    DropdownMenuItem(value: 'spdef_desc', child: Text('HIGHEST SP. DEF')),
+                                    DropdownMenuItem(value: 'spd_desc', child: Text('HIGHEST SPEED')),
                                   ],
                                   onChanged: (val) {
                                     if (val != null) {
@@ -761,6 +1005,48 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
           onChanged: onChanged,
         ),
       ],
+    );
+  }
+
+  Widget _buildStatSliderRow(String label, double value, ValueChanged<double> onChanged) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2.0),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 65,
+            child: Text(
+              label,
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isDark ? Colors.grey[300] : Colors.grey[800]),
+            ),
+          ),
+          Expanded(
+            child: Slider(
+              value: value,
+              min: 0,
+              max: 200,
+              divisions: 40,
+              activeColor: AppTheme.pokemonRed,
+              inactiveColor: isDark ? const Color(0xFF262626) : const Color(0xFFE2E8F0),
+              label: '${value.round()}',
+              onChanged: onChanged,
+            ),
+          ),
+          SizedBox(
+            width: 32,
+            child: Text(
+              value > 0 ? '${value.round()}+' : 'Any',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: value > 0 ? AppTheme.pokemonRed : Colors.grey,
+              ),
+              textAlign: TextAlign.right,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

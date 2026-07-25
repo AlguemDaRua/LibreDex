@@ -216,6 +216,104 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
     return combined;
   }
 
+  void _showTypePicker(BuildContext context, bool isPrimary) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF141414) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        final options = isPrimary ? _allTypes : ['none', ..._allTypes];
+
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      isPrimary ? 'Select Primary Type' : 'Select Secondary Type',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Flexible(
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    itemCount: options.length,
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      childAspectRatio: 2.5,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                    ),
+                    itemBuilder: (ctx, i) {
+                      final type = options[i];
+                      final isSelected = isPrimary ? _primaryType == type : _secondaryType == type;
+                      final color = _typeColors[type] ?? Colors.grey;
+
+                      return InkWell(
+                        onTap: () {
+                          setState(() {
+                            if (isPrimary) {
+                              _primaryType = type;
+                              if (_secondaryType == _primaryType) {
+                                _secondaryType = 'none';
+                              }
+                            } else {
+                              _secondaryType = type;
+                            }
+                          });
+                          Navigator.pop(ctx);
+                        },
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: isSelected ? color : color.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: isSelected ? color : color.withValues(alpha: 0.4),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Text(
+                            type.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                              color: isSelected ? Colors.white : color,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -263,109 +361,10 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
         bottom: true,
         child: Column(
           children: [
-            // Selectors Container
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  // Primary Type Box
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'PRIMARY TYPE',
-                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey),
-                        ),
-                        const SizedBox(height: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF121212) : Colors.white,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: primaryThemeColor.withValues(alpha: 0.5), width: 1.5),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: _primaryType,
-                              isExpanded: true,
-                              dropdownColor: isDark ? const Color(0xFF121212) : Colors.white,
-                              style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor),
-                              items: _allTypes.map((t) {
-                                return DropdownMenuItem<String>(
-                                  value: t,
-                                  child: Text(t.toUpperCase(), style: TextStyle(color: _typeColors[t])),
-                                );
-                              }).toList(),
-                              onChanged: (val) {
-                                if (val != null) {
-                                  setState(() {
-                                    _primaryType = val;
-                                    if (_secondaryType == _primaryType) {
-                                      _secondaryType = 'none';
-                                    }
-                                  });
-                                }
-                              },
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-
-                  // Secondary Type Box
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'SECONDARY TYPE',
-                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey),
-                        ),
-                        const SizedBox(height: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF121212) : Colors.white,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: secondaryThemeColor.withValues(alpha: 0.5), width: 1.5),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: _secondaryType,
-                              isExpanded: true,
-                              dropdownColor: isDark ? const Color(0xFF121212) : Colors.white,
-                              style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor),
-                              items: ['none', ..._allTypes].map((t) {
-                                final color = _typeColors[t] ?? Colors.grey;
-                                return DropdownMenuItem<String>(
-                                  value: t,
-                                  child: Text(t.toUpperCase(), style: TextStyle(color: color)),
-                                );
-                              }).toList(),
-                              onChanged: (val) {
-                                if (val != null) {
-                                  setState(() {
-                                    _secondaryType = val;
-                                  });
-                                }
-                              },
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Combined Badges Header Panel (Top-Left & Bottom-Right Premium Stacking)
+            // Single Unified Interactive Header Card (Handles both Selection and Preview!)
             Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              height: 120,
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              height: 130,
               width: double.infinity,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -389,7 +388,7 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
                 borderRadius: BorderRadius.circular(20),
                 child: Stack(
                   children: [
-                    // Decorative Background Shield Icon
+                    // Background Shield Icon
                     Positioned(
                       right: -15,
                       top: -15,
@@ -400,47 +399,64 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
                       ),
                     ),
                     
-                    // Top-Left Badge: Primary Type
+                    // Top-Left Badge: Primary Type (Clickable Interactive Picker)
                     Positioned(
                       left: 16,
                       top: 16,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: primaryThemeColor,
-                              borderRadius: BorderRadius.circular(10),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: primaryThemeColor.withValues(alpha: 0.5),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 3),
+                      child: GestureDetector(
+                        onTap: () => _showTypePicker(context, true),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'PRIMARY TYPE',
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w900,
+                                    color: isDark ? Colors.grey[400] : Colors.grey[700],
+                                    letterSpacing: 0.5,
+                                  ),
                                 ),
+                                const SizedBox(width: 4),
+                                Icon(Icons.arrow_drop_down_rounded, size: 16, color: primaryThemeColor),
                               ],
                             ),
-                            child: Text(
-                              _primaryType.toUpperCase(),
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.white,
-                                letterSpacing: 1.5,
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: primaryThemeColor,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: primaryThemeColor.withValues(alpha: 0.5),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    _primaryType.toUpperCase(),
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w900,
+                                      color: Colors.white,
+                                      letterSpacing: 1.5,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  const Icon(Icons.touch_app_rounded, size: 14, color: Colors.white70),
+                                ],
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'PRIMARY TYPE',
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.grey[400] : Colors.grey[600],
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                     
@@ -458,54 +474,75 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
                         ),
                       ),
                     
-                    // Bottom-Right Badge: Secondary Type
+                    // Bottom-Right Badge: Secondary Type (Clickable Interactive Picker)
                     Positioned(
                       right: 16,
                       bottom: 16,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            _secondaryType == 'none' ? 'PURE ELEMENT' : 'SECONDARY TYPE',
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.grey[400] : Colors.grey[600],
-                              letterSpacing: 0.5,
+                      child: GestureDetector(
+                        onTap: () => _showTypePicker(context, false),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  _secondaryType == 'none' ? 'PURE ELEMENT (TAP TO ADD)' : 'SECONDARY TYPE',
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w900,
+                                    color: isDark ? Colors.grey[400] : Colors.grey[700],
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(Icons.arrow_drop_down_rounded, size: 16, color: secondaryThemeColor),
+                              ],
                             ),
-                          ),
-                          const SizedBox(height: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: _secondaryType == 'none' ? Colors.transparent : secondaryThemeColor,
-                              borderRadius: BorderRadius.circular(10),
-                              border: _secondaryType == 'none' 
-                                  ? Border.all(color: isDark ? Colors.white24 : Colors.black26, width: 1.5)
-                                  : null,
-                              boxShadow: _secondaryType == 'none'
-                                  ? []
-                                  : [
-                                      BoxShadow(
-                                        color: secondaryThemeColor.withValues(alpha: 0.5),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 3),
-                                      ),
-                                    ],
-                            ),
-                            child: Text(
-                              _secondaryType == 'none' ? 'NONE' : _secondaryType.toUpperCase(),
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w900,
-                                color: _secondaryType == 'none' 
-                                    ? (isDark ? Colors.white38 : Colors.black45) 
-                                    : Colors.white,
-                                letterSpacing: 1.5,
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: _secondaryType == 'none' ? Colors.transparent : secondaryThemeColor,
+                                borderRadius: BorderRadius.circular(12),
+                                border: _secondaryType == 'none' 
+                                    ? Border.all(color: isDark ? Colors.white38 : Colors.black38, width: 1.5)
+                                    : null,
+                                boxShadow: _secondaryType == 'none'
+                                    ? []
+                                    : [
+                                        BoxShadow(
+                                          color: secondaryThemeColor.withValues(alpha: 0.5),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 3),
+                                        ),
+                                      ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    _secondaryType == 'none' ? '+ ADD TYPE' : _secondaryType.toUpperCase(),
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w900,
+                                      color: _secondaryType == 'none' 
+                                          ? (isDark ? Colors.white70 : Colors.black87) 
+                                          : Colors.white,
+                                      letterSpacing: 1.5,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Icon(
+                                    _secondaryType == 'none' ? Icons.add_circle_outline_rounded : Icons.touch_app_rounded,
+                                    size: 14,
+                                    color: _secondaryType == 'none' ? (isDark ? Colors.white70 : Colors.black87) : Colors.white70,
+                                  ),
+                                ],
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ],

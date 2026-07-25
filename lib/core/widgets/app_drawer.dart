@@ -60,7 +60,7 @@ class AppDrawer extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '100% Offline-First Dex',
+                    'Complete Online & Offline Dex',
                     style: TextStyle(
                       fontSize: 12,
                       color: isDark ? Colors.grey[500] : Colors.white70,

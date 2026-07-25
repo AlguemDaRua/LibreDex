@@ -31,8 +31,8 @@ class SettingsScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.only(left: 20, right: 20, top: 12, bottom: 80),
           children: [
-            // ─── Section: Offline Data Management ─────────────────────────
-            _buildSectionHeader('OFFLINE DATA MANAGEMENT', isDark),
+            // ─── Section: Sync & Offline Data Management ─────────────────────────
+            _buildSectionHeader('SYNC & LOCAL STORAGE MANAGEMENT', isDark),
             const SizedBox(height: 12),
 
             // Sync Status Card
@@ -51,14 +51,14 @@ class SettingsScreen extends ConsumerWidget {
                       const Icon(Icons.storage_rounded, color: AppTheme.pokemonRed, size: 22),
                       const SizedBox(width: 12),
                       Text(
-                        'Local Storage Status',
+                        'Database Sync & Storage',
                         style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 15),
                       ),
                     ],
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'All 1025+ Pokémon (Gen 1–9+), alternate forms, Moves, Abilities, and full Learnset data are bundled and available offline. Sprites are fetched online or cached locally.',
+                    'All 1025+ Pokémon (Gen 1–9+), alternate forms, Moves, Abilities, and full Learnsets are stored locally for instant offline usage. High-res sprites stream online dynamically or can be downloaded for offline use.',
                     style: TextStyle(
                       color: isDark ? Colors.grey[400] : Colors.grey[600],
                       fontSize: 12,

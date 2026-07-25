@@ -6,9 +6,11 @@ import 'package:libredex/features/calculator/utils/held_items_data.dart';
 import 'package:libredex/features/pokedex/models/type_efficiency_calculator.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
 import 'package:libredex/features/pokedex/viewmodels/stats_calculator_viewmodel.dart';
-import 'package:libredex/features/pokedex/widgets/shiny_slider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:libredex/features/abilitydex/views/ability_detail_screen.dart';
 import 'package:libredex/features/movedex/views/move_detail_screen.dart';
+import 'package:libredex/features/pokedex/utils/pokemon_data_helpers.dart';
+import 'package:libredex/features/pokedex/widgets/shiny_slider.dart';
 
 /// Static dictionary of Pokémon Natures in alphabetical order.
 const Map<String, Map<String, dynamic>> alphabeticalNatures = {
@@ -41,8 +43,9 @@ const Map<String, Map<String, dynamic>> alphabeticalNatures = {
 
 class PokemonDetailScreen extends ConsumerStatefulWidget {
   final List<Pokemon> forms;
+  final int initialFormIndex;
 
-  const PokemonDetailScreen({super.key, required this.forms});
+  const PokemonDetailScreen({super.key, required this.forms, this.initialFormIndex = 0});
 
   @override
   ConsumerState<PokemonDetailScreen> createState() => _PokemonDetailScreenState();
@@ -51,13 +54,14 @@ class PokemonDetailScreen extends ConsumerStatefulWidget {
 class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   String _moveFilter = 'all';
-  int _selectedFormIndex = 0;
+  late int _selectedFormIndex;
 
   Pokemon get _activePokemon => widget.forms[_selectedFormIndex];
 
   @override
   void initState() {
     super.initState();
+    _selectedFormIndex = widget.initialFormIndex < widget.forms.length ? widget.initialFormIndex : 0;
     _tabController = TabController(length: 3, vsync: this);
     _triggerSyncForActivePokemon();
   }
@@ -206,6 +210,14 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
 
           // Abilities Card (Overview)
           _buildAbilitiesCard(),
+          const SizedBox(height: 20),
+
+          // Breeding, Training & EV Yield Card (Bulbapedia / PokéDB style)
+          _buildBiologicalDataCard(),
+          const SizedBox(height: 20),
+
+          // Evolution Family & Forms Card
+          _buildEvolutionCard(),
           const SizedBox(height: 20),
 
           // Type Relations (TypeDex Card)
@@ -473,6 +485,241 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
               ),
             ),
             error: (err, stack) => Text('Error loading abilities: $err', style: const TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _navigateToPokemon(int targetId) async {
+    if (targetId == _activePokemon.id) return;
+
+    final db = ref.read(pokemonRepositoryProvider).db;
+    final targetPokemon = await (db.select(db.pokemonTable)..where((t) => t.id.equals(targetId))).getSingleOrNull();
+
+    if (targetPokemon != null && mounted) {
+      final int targetDexNum = targetPokemon.nationalDexNumber > 0 ? targetPokemon.nationalDexNumber : targetPokemon.id;
+      final allForms = await (db.select(db.pokemonTable)..where((t) => t.nationalDexNumber.equals(targetDexNum))).get();
+      final formsList = allForms.isNotEmpty ? allForms : [targetPokemon];
+      final targetIdx = formsList.indexWhere((p) => p.id == targetId);
+
+      if (!mounted) return;
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PokemonDetailScreen(
+            forms: formsList,
+            initialFormIndex: targetIdx >= 0 ? targetIdx : 0,
+          ),
+        ),
+      );
+    }
+  }
+
+  Widget _buildEvolutionCard() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final int dexNum = _activePokemon.nationalDexNumber > 0 ? _activePokemon.nationalDexNumber : _activePokemon.id;
+    final evoAsync = ref.watch(pokemonEvolutionChainProvider((dexNum: dexNum, forms: widget.forms)));
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF121212) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
+        boxShadow: isDark ? [] : [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'Evolutions & Forms',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black),
+              ),
+              const Spacer(),
+              Icon(Icons.account_tree_outlined, size: 18, color: AppTheme.pokemonRed),
+            ],
+          ),
+          Divider(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB), height: 24),
+          evoAsync.when(
+            data: (steps) {
+              if (steps.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12.0),
+                  child: Center(
+                    child: Text(
+                      'This Pokémon does not evolve.',
+                      style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 13, fontStyle: FontStyle.italic),
+                    ),
+                  ),
+                );
+              }
+
+              return ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: steps.length,
+                separatorBuilder: (context, index) => const SizedBox(height: 14),
+                itemBuilder: (context, index) {
+                  final step = steps[index];
+                  final isFormEvolution = step.form != 'normal';
+
+                  return Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF9FAFB),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: isFormEvolution
+                            ? AppTheme.pokemonRed.withValues(alpha: 0.4)
+                            : (isDark ? const Color(0xFF2B2B2B) : const Color(0xFFE5E7EB)),
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        if (isFormEvolution)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: AppTheme.pokemonRed.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: AppTheme.pokemonRed, width: 0.8),
+                              ),
+                              child: Text(
+                                step.form.toUpperCase(),
+                                style: const TextStyle(color: AppTheme.pokemonRed, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                              ),
+                            ),
+                          ),
+                        Row(
+                          children: [
+                            // From Pokémon (Clickable)
+                            Expanded(
+                              child: InkWell(
+                                onTap: () => _navigateToPokemon(step.fromId),
+                                borderRadius: BorderRadius.circular(10),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 4.0),
+                                  child: Column(
+                                    children: [
+                                      if (step.fromSprite != null && step.fromSprite!.isNotEmpty)
+                                        CachedNetworkImage(
+                                          imageUrl: step.fromSprite!,
+                                          height: 54,
+                                          width: 54,
+                                          fit: BoxFit.contain,
+                                          errorWidget: (context, url, error) => const Icon(Icons.catching_pokemon, size: 40, color: Colors.grey),
+                                        )
+                                      else
+                                        const Icon(Icons.catching_pokemon, size: 40, color: Colors.grey),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        step.fromName,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: step.fromId == _activePokemon.id ? AppTheme.pokemonRed : (isDark ? Colors.white : Colors.black87),
+                                        ),
+                                        textAlign: TextAlign.center,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            // Arrow & Trigger Details
+                            Expanded(
+                              flex: 2,
+                              child: Column(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: isDark ? const Color(0xFF262626) : const Color(0xFFE2E8F0),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      step.trigger,
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: isDark ? Colors.grey[300] : Colors.grey[800],
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  const Icon(Icons.arrow_forward_rounded, color: AppTheme.pokemonRed, size: 20),
+                                ],
+                              ),
+                            ),
+
+                            // To Pokémon (Clickable)
+                            Expanded(
+                              child: InkWell(
+                                onTap: () => _navigateToPokemon(step.toId),
+                                borderRadius: BorderRadius.circular(10),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 4.0),
+                                  child: Column(
+                                    children: [
+                                      if (step.toSprite != null && step.toSprite!.isNotEmpty)
+                                        CachedNetworkImage(
+                                          imageUrl: step.toSprite!,
+                                          height: 54,
+                                          width: 54,
+                                          fit: BoxFit.contain,
+                                          errorWidget: (context, url, error) => const Icon(Icons.catching_pokemon, size: 40, color: Colors.grey),
+                                        )
+                                      else
+                                        const Icon(Icons.catching_pokemon, size: 40, color: Colors.grey),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        step.toName,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: step.toId == _activePokemon.id ? AppTheme.pokemonRed : (isDark ? Colors.white : Colors.black87),
+                                        ),
+                                        textAlign: TextAlign.center,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+            loading: () => const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Center(
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(AppTheme.pokemonRed)),
+                ),
+              ),
+            ),
+            error: (err, stack) => Text('Could not load evolutions: $err', style: const TextStyle(color: Colors.redAccent, fontSize: 11)),
           ),
         ],
       ),
@@ -1019,7 +1266,20 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
 
               final filteredMoves = movesList.where((item) {
                 if (_moveFilter == 'all') return true;
-                return item['learnMethod'] == _moveFilter;
+                final method = (item['learnMethod'] ?? '').toString().toLowerCase();
+                if (_moveFilter == 'level') {
+                  return method.contains('level') || method == 'level-up';
+                }
+                if (_moveFilter == 'tm') {
+                  return method.contains('tm') || method.contains('tr') || method == 'machine';
+                }
+                if (_moveFilter == 'tutor') {
+                  return method.contains('tutor');
+                }
+                if (_moveFilter == 'egg') {
+                  return method.contains('egg');
+                }
+                return method == _moveFilter;
               }).toList();
 
               if (filteredMoves.isEmpty) {
@@ -1421,6 +1681,186 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
       default:
         return Colors.grey;
     }
+  }
+
+  Widget _buildBiologicalDataCard() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? Colors.white : Colors.black;
+
+    final int bst = _activePokemon.baseHp +
+        _activePokemon.baseAtk +
+        _activePokemon.baseDef +
+        _activePokemon.baseSpAtk +
+        _activePokemon.baseSpDef +
+        _activePokemon.baseSpd;
+
+    final String evYield = PokemonDataHelpers.getEvYield(_activePokemon);
+    final String eggGroups = PokemonDataHelpers.getEggGroups(_activePokemon);
+    final Map<String, dynamic> gender = PokemonDataHelpers.getGenderRatio(_activePokemon);
+    final String catchRate = PokemonDataHelpers.getCatchRate(_activePokemon);
+
+    Color bstColor = Colors.grey;
+    String bstLabel = 'Standard BST';
+    if (bst >= 600) {
+      bstColor = Colors.purpleAccent;
+      bstLabel = 'Top Tier / Legend';
+    } else if (bst >= 500) {
+      bstColor = Colors.tealAccent;
+      bstLabel = 'Fully Evolved / High Power';
+    } else if (bst >= 400) {
+      bstColor = Colors.blueAccent;
+      bstLabel = 'Mid Tier';
+    }
+
+    final bool isGenderless = gender['genderless'] == true;
+    final double malePct = (gender['male'] as num).toDouble();
+    final double femalePct = (gender['female'] as num).toDouble();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF121212) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
+        boxShadow: isDark
+            ? []
+            : [
+                BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
+              ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Breeding, Training & EV Yields',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: primaryColor),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: bstColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: bstColor, width: 0.8),
+                ),
+                child: Text(
+                  '$bst BST • $bstLabel',
+                  style: TextStyle(color: bstColor, fontSize: 10, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          Divider(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB), height: 24),
+
+          // EV Yield
+          _buildBioRow('EV Yield', evYield, Icons.fitness_center_rounded, isDark),
+          const SizedBox(height: 12),
+
+          // Egg Groups
+          _buildBioRow('Egg Groups', eggGroups, Icons.egg_rounded, isDark),
+          const SizedBox(height: 12),
+
+          // Catch Rate
+          _buildBioRow('Catch Rate', catchRate, Icons.catching_pokemon_rounded, isDark),
+          const SizedBox(height: 12),
+
+          // Gender Ratio
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.wc_rounded, size: 16, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Gender Ratio',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              if (isGenderless)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'Genderless (100% N/A)',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
+                  ),
+                )
+              else
+                Column(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: SizedBox(
+                        height: 10,
+                        child: Row(
+                          children: [
+                            if (malePct > 0)
+                              Expanded(
+                                flex: malePct.toInt(),
+                                child: Container(color: Colors.blueAccent),
+                              ),
+                            if (femalePct > 0)
+                              Expanded(
+                                flex: femalePct.toInt(),
+                                child: Container(color: Colors.pinkAccent),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '♂ $malePct% Male',
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.blueAccent),
+                        ),
+                        Text(
+                          '♀ $femalePct% Female',
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.pinkAccent),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBioRow(String label, String value, IconData icon, bool isDark) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 16, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 90,
+          child: Text(
+            label,
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black),
+          ),
+        ),
+      ],
+    );
   }
 
 }
