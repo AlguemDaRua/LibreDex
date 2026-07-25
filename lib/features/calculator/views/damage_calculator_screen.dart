@@ -22,20 +22,10 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
   late TabController _tabController;
   List<Move> _dbDamagingMoves = [];
 
-  // Predefined popular damaging moves as fallbacks
-  static final List<Move> _fallbackMoves = [
-    const Move(id: 9901, name: 'Flamethrower', type: 'fire', power: 90, accuracy: 100, pp: 15, damageClass: 'special', description: 'Burns the foe.'),
-    const Move(id: 9902, name: 'Thunderbolt', type: 'electric', power: 90, accuracy: 100, pp: 15, damageClass: 'special', description: 'Electrifies the foe.'),
-    const Move(id: 9903, name: 'Ice Beam', type: 'ice', power: 90, accuracy: 100, pp: 15, damageClass: 'special', description: 'Freezes the foe.'),
-    const Move(id: 9904, name: 'Earthquake', type: 'ground', power: 100, accuracy: 100, pp: 10, damageClass: 'physical', description: 'Strikes the ground.'),
-    const Move(id: 9905, name: 'Hydro Pump', type: 'water', power: 110, accuracy: 80, pp: 5, damageClass: 'special', description: 'High water pressure blast.'),
-    const Move(id: 9906, name: 'Close Combat', type: 'fighting', power: 120, accuracy: 100, pp: 5, damageClass: 'physical', description: 'Launches close attack.'),
-    const Move(id: 9907, name: 'Draco Meteor', type: 'dragon', power: 130, accuracy: 90, pp: 5, damageClass: 'special', description: 'Summons stars.'),
-    const Move(id: 9908, name: 'Psychic', type: 'psychic', power: 90, accuracy: 100, pp: 10, damageClass: 'special', description: 'Telekinetic strike.'),
-    const Move(id: 9909, name: 'Giga Drain', type: 'grass', power: 75, accuracy: 100, pp: 10, damageClass: 'special', description: 'Absorbs opponent energy.'),
-  ];
-
-  Move _simpleSelectedMove = _fallbackMoves.first;
+  Move _simpleSelectedMove = const Move(id: 0, name: 'Loading...', type: 'normal', pp: 0, damageClass: 'physical');
+  int _simpleStatStage = 0;
+  bool _attackerExpanded = false;
+  bool _defenderExpanded = false;
 
   @override
   void initState() {
@@ -131,7 +121,10 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
   // --- SIMPLE TAB DESIGN ---
   Widget _buildSimpleTab(DamageCalculatorState state, DamageCalculatorViewModel vm, bool isDark, Color primaryColor) {
     // Safely resolve simpleSelectedMove to guarantee it exists in the active moves list
-    final List<Move> simpleMovesList = _dbDamagingMoves.isNotEmpty ? _dbDamagingMoves : _fallbackMoves;
+    final List<Move> simpleMovesList = _dbDamagingMoves;
+    if (simpleMovesList.isEmpty) {
+      return const Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(AppTheme.pokemonRed)));
+    }
     Move simpleSelectedMove = _simpleSelectedMove;
     if (!simpleMovesList.any((m) => m.id == simpleSelectedMove.id)) {
       simpleSelectedMove = simpleMovesList.first;
@@ -153,8 +146,18 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     // Helping Hand Calculation
     double helpingHandMult = state.helpingHandActive ? 1.5 : 1.0;
 
+    // Held Item Calculation
+    final double itemMult = HeldItemsData.getAttackMultiplier(
+      state.attackerHeldItem,
+      simpleSelectedMove.type,
+      simpleSelectedMove.damageClass.toLowerCase() == 'special',
+    );
+
+    // Stat Stage Multiplier (Simulates attacker's stat boost)
+    double statStageMult = CombatUtils.getStageMultiplier(_simpleStatStage);
+
     // Total Modified Base Power
-    double finalBasePower = simpleSelectedMove.power! * weatherMult * terrainMult * helpingHandMult;
+    final double finalBasePower = (simpleSelectedMove.power ?? 0) * weatherMult * terrainMult * helpingHandMult * itemMult * statStageMult;
 
     final typeColor = CombatUtils.typeColors[simpleSelectedMove.type.toLowerCase()] ?? Colors.grey;
 
@@ -233,6 +236,71 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
           ),
           const SizedBox(height: 16),
 
+          // Attacker Held Item Selector
+          _buildDropdownHeader('ATTACKER HELD ITEM'),
+          _buildCardWrapper(
+            isDark,
+            DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: state.attackerHeldItem,
+                dropdownColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+                isExpanded: true,
+                style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 13),
+                items: HeldItemsData.offensiveItems.map((item) {
+                  return DropdownMenuItem<String>(
+                    value: item.name,
+                    child: Text(
+                      item.name == 'None' ? 'No Held Item' : '${item.name} (${item.description})',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: primaryColor,
+                        fontSize: 12,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                }).toList(),
+                onChanged: (item) {
+                  if (item != null) {
+                    vm.setAttackerHeldItem(item);
+                  }
+                },
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Stat Stage Selector
+          _buildDropdownHeader('STAT STAGE BOOST'),
+          _buildCardWrapper(
+            isDark,
+            DropdownButtonHideUnderline(
+              child: DropdownButton<int>(
+                value: _simpleStatStage,
+                dropdownColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+                isExpanded: true,
+                style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 13),
+                items: List.generate(13, (i) => i - 6).map((stage) {
+                  return DropdownMenuItem<int>(
+                    value: stage,
+                    child: Text(
+                      stage >= 0 ? '+$stage Stage' : '$stage Stage',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 13),
+                    ),
+                  );
+                }).toList(),
+                onChanged: (val) {
+                  if (val != null) {
+                    setState(() {
+                      _simpleStatStage = val;
+                    });
+                  }
+                },
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
           // Weather Selector
           _buildDropdownHeader('BATTLE WEATHER'),
           _buildCardWrapper(
@@ -247,6 +315,8 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                   DropdownMenuItem(value: 'none', child: Text('No Weather (Normal)')),
                   DropdownMenuItem(value: 'sunny', child: Text('Harsh Sunlight (Sunny)')),
                   DropdownMenuItem(value: 'rainy', child: Text('Rainy Weather (Rain)')),
+                  DropdownMenuItem(value: 'sandstorm', child: Text('Sandstorm')),
+                  DropdownMenuItem(value: 'snow', child: Text('Snow / Hail')),
                 ],
                 onChanged: (w) => vm.setWeather(w ?? 'none'),
               ),
@@ -269,6 +339,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                   DropdownMenuItem(value: 'electric', child: Text('Electric Terrain')),
                   DropdownMenuItem(value: 'grassy', child: Text('Grassy Terrain')),
                   DropdownMenuItem(value: 'psychic', child: Text('Psychic Terrain')),
+                  DropdownMenuItem(value: 'misty', child: Text('Misty Terrain')),
                 ],
                 onChanged: (t) => vm.setTerrain(t ?? 'none'),
               ),
@@ -323,7 +394,10 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     final p2 = state.defender!;
 
     // Move options available for current attacker
-    final List<Move> p1Moves = _dbDamagingMoves.isNotEmpty ? _dbDamagingMoves : _fallbackMoves;
+    final List<Move> p1Moves = _dbDamagingMoves;
+    if (p1Moves.isEmpty) {
+      return const Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(AppTheme.pokemonRed)));
+    }
     Move? activeMove;
     if (state.selectedMoveName != null) {
       activeMove = p1Moves.firstWhere(
@@ -355,15 +429,40 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
 
     // Real-Time Precise Damage Calculations
     final isSpecial = activeMove.damageClass.toLowerCase() == 'special';
-    
-    final int rawAttackerAtk = StatCalculator.calculateOtherStat(
-      base: isSpecial ? p1.baseSpAtk : p1.baseAtk,
-      iv: isSpecial ? (state.attackerIvs['spa'] ?? 31) : (state.attackerIvs['atk'] ?? 31),
-      ev: isSpecial ? (state.attackerEvs['spa'] ?? 0) : (state.attackerEvs['atk'] ?? 252),
-      level: state.attackerLevel,
-      natureModifier: CombatUtils.getNatureMultiplier(state.attackerNature, isSpecial ? 'Sp. Atk' : 'Attack'),
-    );
-    final int attackerAtk = (rawAttackerAtk * CombatUtils.getStageMultiplier(isSpecial ? (state.attackerStages['spa'] ?? 0) : (state.attackerStages['atk'] ?? 0))).toInt();
+    final bool isBodyPress = activeMove.name.toLowerCase() == 'body press';
+    final int rawAttackerAtk;
+    final int attackerAtk;
+    final double atkItemMult;
+
+    if (isBodyPress) {
+      // Body Press uses Defense!
+      final int rawAttackerDef = StatCalculator.calculateOtherStat(
+        base: p1.baseDef,
+        iv: state.attackerIvs['def'] ?? 31,
+        ev: state.attackerEvs['def'] ?? 0,
+        level: state.attackerLevel,
+        natureModifier: CombatUtils.getNatureMultiplier(state.attackerNature, 'Defense'),
+      );
+      final int attackerDef = (rawAttackerDef * CombatUtils.getStageMultiplier(state.attackerStages['def'] ?? 0)).toInt();
+      // Apply Eviolite or items that boost DEFENSE to the attacker's Defense stat!
+      final double defItemMult = HeldItemsData.getDefenseMultiplier(state.attackerHeldItem, false);
+      rawAttackerAtk = rawAttackerDef;
+      attackerAtk = (attackerDef * defItemMult).toInt();
+      // Universal damage items like Life Orb still boost Body Press
+      final attackerItem = HeldItemsData.findByName(state.attackerHeldItem);
+      atkItemMult = attackerItem?.universalDamageMultiplier ?? 1.0;
+    } else {
+      rawAttackerAtk = StatCalculator.calculateOtherStat(
+        base: isSpecial ? p1.baseSpAtk : p1.baseAtk,
+        iv: isSpecial ? (state.attackerIvs['spa'] ?? 31) : (state.attackerIvs['atk'] ?? 31),
+        ev: isSpecial ? (state.attackerEvs['spa'] ?? 0) : (state.attackerEvs['atk'] ?? 252),
+        level: state.attackerLevel,
+        natureModifier: CombatUtils.getNatureMultiplier(state.attackerNature, isSpecial ? 'Sp. Atk' : 'Attack'),
+      );
+      final int stageMultiplier = isSpecial ? (state.attackerStages['spa'] ?? 0) : (state.attackerStages['atk'] ?? 0);
+      attackerAtk = (rawAttackerAtk * CombatUtils.getStageMultiplier(stageMultiplier)).toInt();
+      atkItemMult = HeldItemsData.getAttackMultiplier(state.attackerHeldItem, activeMove.type, isSpecial);
+    }
 
     final int rawDefenderDef = StatCalculator.calculateOtherStat(
       base: isSpecial ? p2.baseSpDef : p2.baseDef,
@@ -414,8 +513,6 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     double finalBp = activeMove.power! * weatherMult * terrainMult * hhMult;
 
     // ── Apply held item multipliers + final calculations ──────────────────────
-    final double atkItemMult = HeldItemsData.getAttackMultiplier(
-        state.attackerHeldItem, activeMove.type, isSpecial);
     final double defResistMult = HeldItemsData.getDefenderResistMultiplier(
         state.defenderHeldItem, activeMove.type, effectivenessMult);
     final double defStatItemMult = HeldItemsData.getDefenseMultiplier(state.defenderHeldItem, isSpecial);
@@ -438,13 +535,27 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     Widget _pokemonDuelCard(Pokemon p, bool isAttacker, String heldItem) {
       final typeColor = CombatUtils.typeColors[p.type1.toLowerCase()] ?? Colors.grey;
       final spd = isAttacker ? finalAttackerSpeed : finalDefenderSpeed;
+      final isExpanded = isAttacker ? _attackerExpanded : _defenderExpanded;
       return GestureDetector(
-        onTap: () => _showPokemonPicker(context, pokemonList, isAttacker, vm),
+        onTap: () {
+          setState(() {
+            if (isAttacker) {
+              _attackerExpanded = !_attackerExpanded;
+              if (_attackerExpanded) _defenderExpanded = false;
+            } else {
+              _defenderExpanded = !_defenderExpanded;
+              if (_defenderExpanded) _attackerExpanded = false;
+            }
+          });
+        },
         child: Container(
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF111111) : Colors.white,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: typeColor.withValues(alpha: 0.4), width: 1.5),
+            border: Border.all(
+              color: isExpanded ? AppTheme.pokemonRed : typeColor.withValues(alpha: 0.4),
+              width: isExpanded ? 2.0 : 1.5,
+            ),
             boxShadow: [BoxShadow(color: typeColor.withValues(alpha: 0.08), blurRadius: 12, spreadRadius: 2)],
           ),
           padding: const EdgeInsets.all(12),
@@ -479,23 +590,9 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                 child: Text('⚡ SPD $spd', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.blue)),
               ),
               const SizedBox(height: 6),
-              // Held Item
-              GestureDetector(
-                onTap: () => _showItemPicker(context, isAttacker, vm),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: heldItem != 'None' ? AppTheme.pokemonRed.withValues(alpha: 0.1) : (isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF3F4F6)),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: heldItem != 'None' ? AppTheme.pokemonRed.withValues(alpha: 0.4) : Colors.transparent),
-                  ),
-                  child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Icon(Icons.backpack_outlined, size: 12, color: heldItem != 'None' ? AppTheme.pokemonRed : Colors.grey),
-                    const SizedBox(width: 4),
-                    Expanded(child: Text(heldItem, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: heldItem != 'None' ? AppTheme.pokemonRed : Colors.grey), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                  ]),
-                ),
+              Text(
+                isExpanded ? 'Collapse ▲' : 'Edit Stats ▼',
+                style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey),
               ),
             ],
           ),
@@ -534,6 +631,18 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
             ],
           ),
           const SizedBox(height: 12),
+
+          // Attacker stats editor panel
+          if (_attackerExpanded) ...[
+            _buildStatsEditor(true, p1, state, vm, pokemonList),
+            const SizedBox(height: 12),
+          ],
+
+          // Defender stats editor panel
+          if (_defenderExpanded) ...[
+            _buildStatsEditor(false, p2, state, vm, pokemonList),
+            const SizedBox(height: 12),
+          ],
 
           // ── Speed Comparison Banner ────────────────────────────────────────
           Container(
@@ -646,6 +755,64 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
               border: Border.all(color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE2E8F0)),
             ),
             child: Column(children: [
+              // Weather Dropdown
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                child: Row(
+                  children: [
+                    const Text('Weather: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: state.weather,
+                          dropdownColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+                          isExpanded: true,
+                          style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 12),
+                          items: const [
+                            DropdownMenuItem(value: 'none', child: Text('No Weather (Normal)')),
+                            DropdownMenuItem(value: 'sunny', child: Text('Harsh Sunlight (Sunny)')),
+                            DropdownMenuItem(value: 'rainy', child: Text('Rainy Weather (Rain)')),
+                            DropdownMenuItem(value: 'sandstorm', child: Text('Sandstorm')),
+                            DropdownMenuItem(value: 'snow', child: Text('Snow / Hail')),
+                          ],
+                          onChanged: (w) => vm.setWeather(w ?? 'none'),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(),
+              // Terrain Dropdown
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                child: Row(
+                  children: [
+                    const Text('Terrain: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: state.terrain,
+                          dropdownColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+                          isExpanded: true,
+                          style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 12),
+                          items: const [
+                            DropdownMenuItem(value: 'none', child: Text('No Terrain')),
+                            DropdownMenuItem(value: 'electric', child: Text('Electric Terrain')),
+                            DropdownMenuItem(value: 'grassy', child: Text('Grassy Terrain')),
+                            DropdownMenuItem(value: 'psychic', child: Text('Psychic Terrain')),
+                            DropdownMenuItem(value: 'misty', child: Text('Misty Terrain')),
+                          ],
+                          onChanged: (t) => vm.setTerrain(t ?? 'none'),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(),
               _buildSwitchListTile('Light Screen (Halves Sp. Atk)', state.lightScreenActive, vm.toggleLightScreen),
               _buildSwitchListTile('Reflect (Halves Physical Atk)', state.reflectActive, vm.toggleReflect),
               _buildSwitchListTile('Helping Hand (+50% damage)', state.helpingHandActive, vm.toggleHelpingHand),
@@ -782,7 +949,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
 
   void _showMovePicker(BuildContext context, DamageCalculatorViewModel vm) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final moves = _dbDamagingMoves.isNotEmpty ? _dbDamagingMoves : _fallbackMoves;
+    final moves = _dbDamagingMoves;
     String q = '';
     showModalBottomSheet(
       context: context,
@@ -848,133 +1015,335 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     );
   }
 
-  void _showItemPicker(BuildContext context, bool isAttacker, DamageCalculatorViewModel vm) {
+  Widget _buildStatsEditor(bool isAttacker, Pokemon p, DamageCalculatorState state, DamageCalculatorViewModel vm, List<Pokemon> pokemonList) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    String q = '';
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (ctx) => StatefulBuilder(builder: (ctx, ss) {
-        final items = HeldItemsData.allItems
-            .where((i) =>
-                i.name.toLowerCase().contains(q.toLowerCase()) ||
-                i.category.toLowerCase().contains(q.toLowerCase()) ||
-                i.description.toLowerCase().contains(q.toLowerCase()))
-            .toList();
-        return DraggableScrollableSheet(
-          initialChildSize: 0.85, maxChildSize: 0.95, minChildSize: 0.4, expand: false,
-          builder: (ctx, sc) => Column(children: [
-            const SizedBox(height: 12),
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[700], borderRadius: BorderRadius.circular(2))),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: TextField(
-                autofocus: true,
-                onChanged: (v) => ss(() => q = v),
-                decoration: InputDecoration(
-                  hintText: 'Search items...',
-                  prefixIcon: const Icon(Icons.search, color: AppTheme.pokemonRed),
-                  filled: true,
-                  fillColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF3F4F6),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Expanded(
-              child: ListView.builder(
-                controller: sc,
-                itemCount: items.length,
-                itemBuilder: (ctx, i) {
-                  final item = items[i];
-                  return ListTile(
-                    leading: Icon(Icons.backpack_outlined, color: item.name == 'None' ? Colors.grey : AppTheme.pokemonRed, size: 20),
-                    title: Text(item.name, style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black, fontSize: 13)),
-                    subtitle: Text('${item.category} • ${item.description}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                    onTap: () {
-                      if (isAttacker) vm.setAttackerHeldItem(item.name);
-                      else vm.setDefenderHeldItem(item.name);
-                      Navigator.pop(ctx);
-                    },
-                  );
-                },
-              ),
-            ),
-          ]),
-        );
-      }),
-    );
-  }
+    final primaryColor = isDark ? Colors.white : Colors.black;
+    final level = isAttacker ? state.attackerLevel : state.defenderLevel;
+    final nature = isAttacker ? state.attackerNature : state.defenderNature;
+    final heldItem = isAttacker ? state.attackerHeldItem : state.defenderHeldItem;
+    final ivs = isAttacker ? state.attackerIvs : state.defenderIvs;
+    final evs = isAttacker ? state.attackerEvs : state.defenderEvs;
+    final stages = isAttacker ? state.attackerStages : state.defenderStages;
 
-  // Also used by Simple tab for move picking
-  void _showSimpleMovePicker(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final moves = _dbDamagingMoves.isNotEmpty ? _dbDamagingMoves : _fallbackMoves;
-    String q = '';
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (ctx) => StatefulBuilder(builder: (ctx, ss) {
-        final filtered = moves
-            .where((m) =>
-                m.name.toLowerCase().contains(q.toLowerCase()) ||
-                m.type.toLowerCase().contains(q.toLowerCase()) ||
-                (m.power?.toString().contains(q) ?? false))
-            .toList();
-        return DraggableScrollableSheet(
-          initialChildSize: 0.9, maxChildSize: 0.95, minChildSize: 0.5, expand: false,
-          builder: (ctx, sc) => Column(children: [
-            const SizedBox(height: 12),
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[700], borderRadius: BorderRadius.circular(2))),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: TextField(
-                autofocus: true,
-                onChanged: (v) => ss(() => q = v),
-                decoration: InputDecoration(
-                  hintText: 'Search moves by name, type or BP...',
-                  prefixIcon: const Icon(Icons.search, color: AppTheme.pokemonRed),
-                  filled: true,
-                  fillColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF3F4F6),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+    final List<String> natures = [
+      'hardy', 'lonely', 'brave', 'adamant', 'naughty',
+      'bold', 'docile', 'relaxed', 'impish', 'lax',
+      'timid', 'hasty', 'serious', 'jolly', 'naive',
+      'modest', 'mild', 'quiet', 'bashful', 'rash',
+      'calm', 'gentle', 'sassy', 'careful', 'quirky'
+    ];
+
+    Widget _buildStatRow(String label, String key, int baseVal, bool isHp) {
+      final ivVal = ivs[key] ?? 31;
+      final evVal = evs[key] ?? 0;
+      final stageVal = stages[key] ?? 0;
+
+      final int finalStat;
+      if (isHp) {
+        finalStat = StatCalculator.calculateHp(base: baseVal, iv: ivVal, ev: evVal, level: level);
+      } else {
+        finalStat = StatCalculator.calculateOtherStat(
+          base: baseVal,
+          iv: ivVal,
+          ev: evVal,
+          level: level,
+          natureModifier: CombatUtils.getNatureMultiplier(nature, label),
+        );
+      }
+      final double stageMult = isHp ? 1.0 : CombatUtils.getStageMultiplier(stageVal);
+      final int finalStatWithStage = (finalStat * stageMult).toInt();
+
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            Expanded(
+              flex: 2,
+              child: Text(
+                label,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+              ),
+            ),
+            Expanded(
+              flex: 1,
+              child: Text(
+                '$baseVal',
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: SizedBox(
+                  height: 32,
+                  child: TextField(
+                    decoration: InputDecoration(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      filled: true,
+                      fillColor: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF1F5F9),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide.none),
+                    ),
+                    style: TextStyle(color: primaryColor, fontSize: 12, fontWeight: FontWeight.bold),
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.center,
+                    controller: TextEditingController(text: '$ivVal')
+                      ..selection = TextSelection.fromPosition(TextPosition(offset: '$ivVal'.length)),
+                    onChanged: (val) {
+                      final parsed = int.tryParse(val) ?? 0;
+                      final clamped = parsed.clamp(0, 31);
+                      if (isAttacker) {
+                        vm.updateAttackerIv(key, clamped);
+                      } else {
+                        vm.updateDefenderIv(key, clamped);
+                      }
+                    },
+                  ),
                 ),
               ),
             ),
-            const SizedBox(height: 8),
             Expanded(
-              child: ListView.builder(
-                controller: sc,
-                itemCount: filtered.length,
-                itemBuilder: (ctx, i) {
-                  final m = filtered[i];
-                  final typeColor = CombatUtils.typeColors[m.type.toLowerCase()] ?? Colors.grey;
-                  return ListTile(
-                    leading: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(color: typeColor.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(6)),
-                      child: Text(m.type.toUpperCase(), style: TextStyle(color: typeColor, fontSize: 10, fontWeight: FontWeight.bold)),
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: SizedBox(
+                  height: 32,
+                  child: TextField(
+                    decoration: InputDecoration(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      filled: true,
+                      fillColor: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF1F5F9),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide.none),
                     ),
-                    title: Text(m.name, style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black, fontSize: 13)),
-                    subtitle: Text('BP: ${m.power ?? "—"} • ${m.damageClass.toUpperCase()}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                    onTap: () {
-                      setState(() => _simpleSelectedMove = m);
-                      Navigator.pop(ctx);
+                    style: TextStyle(color: primaryColor, fontSize: 12, fontWeight: FontWeight.bold),
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.center,
+                    controller: TextEditingController(text: '$evVal')
+                      ..selection = TextSelection.fromPosition(TextPosition(offset: '$evVal'.length)),
+                    onChanged: (val) {
+                      final parsed = int.tryParse(val) ?? 0;
+                      final clamped = parsed.clamp(0, 252);
+                      if (isAttacker) {
+                        vm.updateAttackerEv(key, clamped);
+                      } else {
+                        vm.updateDefenderEv(key, clamped);
+                      }
                     },
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              flex: 2,
+              child: isHp
+                  ? const Center(child: Text('-', style: TextStyle(color: Colors.grey)))
+                  : Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Container(
+                        height: 32,
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<int>(
+                            value: stageVal,
+                            dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                            items: List.generate(13, (i) => i - 6).map((stage) {
+                              return DropdownMenuItem<int>(
+                                value: stage,
+                                child: Text(
+                                  stage >= 0 ? '+$stage' : '$stage',
+                                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: primaryColor),
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (v) {
+                              if (v != null) {
+                                if (isAttacker) {
+                                  vm.updateAttackerStage(key, v);
+                                } else {
+                                  vm.updateDefenderStage(key, v);
+                                }
+                              }
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+            ),
+            Expanded(
+              flex: 2,
+              child: Text(
+                '$finalStatWithStage',
+                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: AppTheme.pokemonRed),
+                textAlign: TextAlign.right,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF0C0C0C) : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE2E8F0), width: 1.2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                isAttacker ? 'ATTACKER SETUP' : 'DEFENDER SETUP',
+                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 0.5, color: Colors.grey),
+              ),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.search_rounded, size: 14),
+                label: const Text('Change', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  elevation: 0,
+                  backgroundColor: AppTheme.pokemonRed,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                onPressed: () => _showPokemonPicker(context, pokemonList, isAttacker, vm),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('LEVEL', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
+                    Slider(
+                      value: level.toDouble(),
+                      min: 1,
+                      max: 100,
+                      divisions: 99,
+                      label: '$level',
+                      activeColor: AppTheme.pokemonRed,
+                      onChanged: (val) {
+                        if (isAttacker) {
+                          vm.updateAttackerLevel(val.toInt());
+                        } else {
+                          vm.updateDefenderLevel(val.toInt());
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('NATURE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: nature,
+                          dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                          isExpanded: true,
+                          style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 12),
+                          items: natures.map((n) {
+                            return DropdownMenuItem<String>(
+                              value: n,
+                              child: Text(n.toUpperCase()),
+                            );
+                          }).toList(),
+                          onChanged: (n) {
+                            if (n != null) {
+                              if (isAttacker) {
+                                vm.updateAttackerNature(n);
+                              } else {
+                                vm.updateDefenderNature(n);
+                              }
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Text('HELD ITEM', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
+          const SizedBox(height: 4),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: heldItem,
+                dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                isExpanded: true,
+                style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 12),
+                items: HeldItemsData.allItems.map((item) {
+                  return DropdownMenuItem<String>(
+                    value: item.name,
+                    child: Text(
+                      item.name == 'None' ? 'No Held Item' : '${item.name} (${item.description})',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 11),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   );
+                }).toList(),
+                onChanged: (item) {
+                  if (item != null) {
+                    if (isAttacker) {
+                      vm.setAttackerHeldItem(item);
+                    } else {
+                      vm.setDefenderHeldItem(item);
+                    }
+                  }
                 },
               ),
             ),
-          ]),
-        );
-      }),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: const [
+              Expanded(flex: 2, child: Text('STAT', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey))),
+              Expanded(flex: 1, child: Text('BASE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey), textAlign: TextAlign.center)),
+              Expanded(flex: 2, child: Text('IV', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey), textAlign: TextAlign.center)),
+              Expanded(flex: 2, child: Text('EV', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey), textAlign: TextAlign.center)),
+              Expanded(flex: 2, child: Text('BOOST', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey), textAlign: TextAlign.center)),
+              Expanded(flex: 2, child: Text('FINAL', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey), textAlign: TextAlign.right)),
+            ],
+          ),
+          const Divider(),
+          _buildStatRow('HP', 'hp', p.baseHp, true),
+          _buildStatRow('Attack', 'atk', p.baseAtk, false),
+          _buildStatRow('Defense', 'def', p.baseDef, false),
+          _buildStatRow('Sp. Atk', 'spa', p.baseSpAtk, false),
+          _buildStatRow('Sp. Def', 'spd', p.baseSpDef, false),
+          _buildStatRow('Speed', 'spe', p.baseSpd, false),
+        ],
+      ),
     );
   }
 }

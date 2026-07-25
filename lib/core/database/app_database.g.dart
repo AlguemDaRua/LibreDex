@@ -196,6 +196,18 @@ class $PokemonTableTable extends PokemonTable
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _nationalDexNumberMeta = const VerificationMeta(
+    'nationalDexNumber',
+  );
+  @override
+  late final GeneratedColumn<int> nationalDexNumber = GeneratedColumn<int>(
+    'national_dex_number',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: Constant(0),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -215,6 +227,7 @@ class $PokemonTableTable extends PokemonTable
     isUltraBeast,
     spriteUrl,
     shinySpriteUrl,
+    nationalDexNumber,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -366,6 +379,15 @@ class $PokemonTableTable extends PokemonTable
     } else if (isInserting) {
       context.missing(_shinySpriteUrlMeta);
     }
+    if (data.containsKey('national_dex_number')) {
+      context.handle(
+        _nationalDexNumberMeta,
+        nationalDexNumber.isAcceptableOrUnknown(
+          data['national_dex_number']!,
+          _nationalDexNumberMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -443,6 +465,10 @@ class $PokemonTableTable extends PokemonTable
         DriftSqlType.string,
         data['${effectivePrefix}shiny_sprite_url'],
       )!,
+      nationalDexNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}national_dex_number'],
+      )!,
     );
   }
 
@@ -470,6 +496,7 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
   final bool isUltraBeast;
   final String spriteUrl;
   final String shinySpriteUrl;
+  final int nationalDexNumber;
   const Pokemon({
     required this.id,
     required this.name,
@@ -488,6 +515,7 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
     required this.isUltraBeast,
     required this.spriteUrl,
     required this.shinySpriteUrl,
+    required this.nationalDexNumber,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -511,6 +539,7 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
     map['is_ultra_beast'] = Variable<bool>(isUltraBeast);
     map['sprite_url'] = Variable<String>(spriteUrl);
     map['shiny_sprite_url'] = Variable<String>(shinySpriteUrl);
+    map['national_dex_number'] = Variable<int>(nationalDexNumber);
     return map;
   }
 
@@ -535,6 +564,7 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
       isUltraBeast: Value(isUltraBeast),
       spriteUrl: Value(spriteUrl),
       shinySpriteUrl: Value(shinySpriteUrl),
+      nationalDexNumber: Value(nationalDexNumber),
     );
   }
 
@@ -561,6 +591,7 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
       isUltraBeast: serializer.fromJson<bool>(json['isUltraBeast']),
       spriteUrl: serializer.fromJson<String>(json['spriteUrl']),
       shinySpriteUrl: serializer.fromJson<String>(json['shinySpriteUrl']),
+      nationalDexNumber: serializer.fromJson<int>(json['nationalDexNumber']),
     );
   }
   @override
@@ -584,6 +615,7 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
       'isUltraBeast': serializer.toJson<bool>(isUltraBeast),
       'spriteUrl': serializer.toJson<String>(spriteUrl),
       'shinySpriteUrl': serializer.toJson<String>(shinySpriteUrl),
+      'nationalDexNumber': serializer.toJson<int>(nationalDexNumber),
     };
   }
 
@@ -605,6 +637,7 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
     bool? isUltraBeast,
     String? spriteUrl,
     String? shinySpriteUrl,
+    int? nationalDexNumber,
   }) => Pokemon(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -623,6 +656,7 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
     isUltraBeast: isUltraBeast ?? this.isUltraBeast,
     spriteUrl: spriteUrl ?? this.spriteUrl,
     shinySpriteUrl: shinySpriteUrl ?? this.shinySpriteUrl,
+    nationalDexNumber: nationalDexNumber ?? this.nationalDexNumber,
   );
   Pokemon copyWithCompanion(PokemonTableCompanion data) {
     return Pokemon(
@@ -651,6 +685,9 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
       shinySpriteUrl: data.shinySpriteUrl.present
           ? data.shinySpriteUrl.value
           : this.shinySpriteUrl,
+      nationalDexNumber: data.nationalDexNumber.present
+          ? data.nationalDexNumber.value
+          : this.nationalDexNumber,
     );
   }
 
@@ -673,7 +710,8 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
           ..write('isParadox: $isParadox, ')
           ..write('isUltraBeast: $isUltraBeast, ')
           ..write('spriteUrl: $spriteUrl, ')
-          ..write('shinySpriteUrl: $shinySpriteUrl')
+          ..write('shinySpriteUrl: $shinySpriteUrl, ')
+          ..write('nationalDexNumber: $nationalDexNumber')
           ..write(')'))
         .toString();
   }
@@ -697,6 +735,7 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
     isUltraBeast,
     spriteUrl,
     shinySpriteUrl,
+    nationalDexNumber,
   );
   @override
   bool operator ==(Object other) =>
@@ -718,7 +757,8 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
           other.isParadox == this.isParadox &&
           other.isUltraBeast == this.isUltraBeast &&
           other.spriteUrl == this.spriteUrl &&
-          other.shinySpriteUrl == this.shinySpriteUrl);
+          other.shinySpriteUrl == this.shinySpriteUrl &&
+          other.nationalDexNumber == this.nationalDexNumber);
 }
 
 class PokemonTableCompanion extends UpdateCompanion<Pokemon> {
@@ -739,6 +779,7 @@ class PokemonTableCompanion extends UpdateCompanion<Pokemon> {
   final Value<bool> isUltraBeast;
   final Value<String> spriteUrl;
   final Value<String> shinySpriteUrl;
+  final Value<int> nationalDexNumber;
   const PokemonTableCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -757,6 +798,7 @@ class PokemonTableCompanion extends UpdateCompanion<Pokemon> {
     this.isUltraBeast = const Value.absent(),
     this.spriteUrl = const Value.absent(),
     this.shinySpriteUrl = const Value.absent(),
+    this.nationalDexNumber = const Value.absent(),
   });
   PokemonTableCompanion.insert({
     this.id = const Value.absent(),
@@ -776,6 +818,7 @@ class PokemonTableCompanion extends UpdateCompanion<Pokemon> {
     required bool isUltraBeast,
     required String spriteUrl,
     required String shinySpriteUrl,
+    this.nationalDexNumber = const Value.absent(),
   }) : name = Value(name),
        form = Value(form),
        type1 = Value(type1),
@@ -809,6 +852,7 @@ class PokemonTableCompanion extends UpdateCompanion<Pokemon> {
     Expression<bool>? isUltraBeast,
     Expression<String>? spriteUrl,
     Expression<String>? shinySpriteUrl,
+    Expression<int>? nationalDexNumber,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -828,6 +872,7 @@ class PokemonTableCompanion extends UpdateCompanion<Pokemon> {
       if (isUltraBeast != null) 'is_ultra_beast': isUltraBeast,
       if (spriteUrl != null) 'sprite_url': spriteUrl,
       if (shinySpriteUrl != null) 'shiny_sprite_url': shinySpriteUrl,
+      if (nationalDexNumber != null) 'national_dex_number': nationalDexNumber,
     });
   }
 
@@ -849,6 +894,7 @@ class PokemonTableCompanion extends UpdateCompanion<Pokemon> {
     Value<bool>? isUltraBeast,
     Value<String>? spriteUrl,
     Value<String>? shinySpriteUrl,
+    Value<int>? nationalDexNumber,
   }) {
     return PokemonTableCompanion(
       id: id ?? this.id,
@@ -868,6 +914,7 @@ class PokemonTableCompanion extends UpdateCompanion<Pokemon> {
       isUltraBeast: isUltraBeast ?? this.isUltraBeast,
       spriteUrl: spriteUrl ?? this.spriteUrl,
       shinySpriteUrl: shinySpriteUrl ?? this.shinySpriteUrl,
+      nationalDexNumber: nationalDexNumber ?? this.nationalDexNumber,
     );
   }
 
@@ -925,6 +972,9 @@ class PokemonTableCompanion extends UpdateCompanion<Pokemon> {
     if (shinySpriteUrl.present) {
       map['shiny_sprite_url'] = Variable<String>(shinySpriteUrl.value);
     }
+    if (nationalDexNumber.present) {
+      map['national_dex_number'] = Variable<int>(nationalDexNumber.value);
+    }
     return map;
   }
 
@@ -947,7 +997,8 @@ class PokemonTableCompanion extends UpdateCompanion<Pokemon> {
           ..write('isParadox: $isParadox, ')
           ..write('isUltraBeast: $isUltraBeast, ')
           ..write('spriteUrl: $spriteUrl, ')
-          ..write('shinySpriteUrl: $shinySpriteUrl')
+          ..write('shinySpriteUrl: $shinySpriteUrl, ')
+          ..write('nationalDexNumber: $nationalDexNumber')
           ..write(')'))
         .toString();
   }
@@ -2384,6 +2435,7 @@ typedef $$PokemonTableTableCreateCompanionBuilder =
       required bool isUltraBeast,
       required String spriteUrl,
       required String shinySpriteUrl,
+      Value<int> nationalDexNumber,
     });
 typedef $$PokemonTableTableUpdateCompanionBuilder =
     PokemonTableCompanion Function({
@@ -2404,6 +2456,7 @@ typedef $$PokemonTableTableUpdateCompanionBuilder =
       Value<bool> isUltraBeast,
       Value<String> spriteUrl,
       Value<String> shinySpriteUrl,
+      Value<int> nationalDexNumber,
     });
 
 final class $$PokemonTableTableReferences
@@ -2554,6 +2607,11 @@ class $$PokemonTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<int> get nationalDexNumber => $composableBuilder(
+    column: $table.nationalDexNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
   Expression<bool> pokemonMovesTableRefs(
     Expression<bool> Function($$PokemonMovesTableTableFilterComposer f) f,
   ) {
@@ -2699,6 +2757,11 @@ class $$PokemonTableTableOrderingComposer
     column: $table.shinySpriteUrl,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get nationalDexNumber => $composableBuilder(
+    column: $table.nationalDexNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$PokemonTableTableAnnotationComposer
@@ -2766,6 +2829,11 @@ class $$PokemonTableTableAnnotationComposer
 
   GeneratedColumn<String> get shinySpriteUrl => $composableBuilder(
     column: $table.shinySpriteUrl,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get nationalDexNumber => $composableBuilder(
+    column: $table.nationalDexNumber,
     builder: (column) => column,
   );
 
@@ -2870,6 +2938,7 @@ class $$PokemonTableTableTableManager
                 Value<bool> isUltraBeast = const Value.absent(),
                 Value<String> spriteUrl = const Value.absent(),
                 Value<String> shinySpriteUrl = const Value.absent(),
+                Value<int> nationalDexNumber = const Value.absent(),
               }) => PokemonTableCompanion(
                 id: id,
                 name: name,
@@ -2888,6 +2957,7 @@ class $$PokemonTableTableTableManager
                 isUltraBeast: isUltraBeast,
                 spriteUrl: spriteUrl,
                 shinySpriteUrl: shinySpriteUrl,
+                nationalDexNumber: nationalDexNumber,
               ),
           createCompanionCallback:
               ({
@@ -2908,6 +2978,7 @@ class $$PokemonTableTableTableManager
                 required bool isUltraBeast,
                 required String spriteUrl,
                 required String shinySpriteUrl,
+                Value<int> nationalDexNumber = const Value.absent(),
               }) => PokemonTableCompanion.insert(
                 id: id,
                 name: name,
@@ -2926,6 +2997,7 @@ class $$PokemonTableTableTableManager
                 isUltraBeast: isUltraBeast,
                 spriteUrl: spriteUrl,
                 shinySpriteUrl: shinySpriteUrl,
+                nationalDexNumber: nationalDexNumber,
               ),
           withReferenceMapper: (p0) => p0
               .map(

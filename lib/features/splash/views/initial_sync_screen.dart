@@ -82,7 +82,7 @@ class _InitialSyncScreenState extends ConsumerState<InitialSyncScreen> {
 
               // Subtitle
               Text(
-                'Downloading all 1025+ Pokémon (Gen 1-9+), base stats and official artworks for 100% offline usage. Moves & abilities sync automatically on-demand! Please wait...',
+              'Downloading all 1025+ Pokémon (Gen 1-9+), base stats and official artworks. Moves & Abilities are pre-bundled and will be seeded instantly. Please wait...',
                 style: TextStyle(
                   fontSize: 13,
                   color: isDark ? Colors.grey[400] : Colors.grey[600],

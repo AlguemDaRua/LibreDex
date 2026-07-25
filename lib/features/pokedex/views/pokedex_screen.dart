@@ -27,6 +27,12 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
   bool _showShinyOnly = false;
   String _sortOption = 'id_asc'; // id_asc, id_desc, name_asc, name_desc, bst_asc, bst_desc
 
+  // Advanced Formats Filter State
+  final List<String> _selectedFormats = []; // 'MEGA', 'ALOLA', 'GALAR', 'HISUI', 'PALDEA'
+
+  // Map to store active selected form index for grouped Pokémon
+  // Map tracking active form index removed.
+
   // Static list of all 18 Pokémon types for chips selector
   static const List<String> _allTypes = [
     'normal', 'fire', 'water', 'electric', 'grass', 'ice',
@@ -84,6 +90,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
     setState(() {
       _selectedTypes.clear();
       _selectedGenerations.clear();
+      _selectedFormats.clear();
       _showLegendary = false;
       _showUltraBeast = false;
       _showParadox = false;
@@ -95,6 +102,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
   bool get _hasActiveFilters {
     return _selectedTypes.isNotEmpty ||
         _selectedGenerations.isNotEmpty ||
+        _selectedFormats.isNotEmpty ||
         _showLegendary ||
         _showUltraBeast ||
         _showParadox ||
@@ -156,11 +164,13 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
 
                       // Apply All Advanced Combinatory Filter Logics
                       final filteredList = pokemonList.where((pokemon) {
+                        final int dexNum = pokemon.nationalDexNumber > 0 ? pokemon.nationalDexNumber : pokemon.id;
+
                         // 1. Search Query (Name, ID, type)
                         final query = _searchQuery.toLowerCase();
                         final matchesSearch = pokemon.name.toLowerCase().contains(query) ||
-                            pokemon.id.toString().contains(query) ||
-                            pokemon.id.toString().padLeft(3, '0').contains(query);
+                            dexNum.toString().contains(query) ||
+                            dexNum.toString().padLeft(3, '0').contains(query);
 
                         if (!matchesSearch) return false;
 
@@ -184,7 +194,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
 
                         // 3. Generation Chips Matching
                         if (_selectedGenerations.isNotEmpty) {
-                          if (!_selectedGenerations.contains(_getGeneration(pokemon.id))) {
+                          if (!_selectedGenerations.contains(_getGeneration(dexNum))) {
                             return false;
                           }
                         }
@@ -203,25 +213,42 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                           return false;
                         }
 
+                        // 5. Format Filters Matching
+                        if (_selectedFormats.isNotEmpty) {
+                          if (!_selectedFormats.any((fmt) => _matchesFormat(pokemon, fmt))) {
+                            return false;
+                          }
+                        }
+
                         return true;
                       }).toList();
 
-                      // 5. Apply Complex Sorting
-                      filteredList.sort((a, b) {
+                      // Group the filtered individual Pokémon by nationalDexNumber / base species
+                      final Map<int, List<Pokemon>> groupedMap = {};
+                      for (final p in filteredList) {
+                        final int dexNum = p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id;
+                        groupedMap.putIfAbsent(dexNum, () => []).add(p);
+                      }
+
+                      // Sort the grouped keys based on the active sorting option
+                      final List<int> sortedKeys = groupedMap.keys.toList();
+                      sortedKeys.sort((a, b) {
+                        final pA = groupedMap[a]!.first;
+                        final pB = groupedMap[b]!.first;
                         switch (_sortOption) {
                           case 'id_desc':
-                            return b.id.compareTo(a.id);
+                            return b.compareTo(a);
                           case 'name_asc':
-                            return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+                            return pA.name.toLowerCase().compareTo(pB.name.toLowerCase());
                           case 'name_desc':
-                            return b.name.toLowerCase().compareTo(a.name.toLowerCase());
+                            return pB.name.toLowerCase().compareTo(pA.name.toLowerCase());
                           case 'bst_asc':
-                            return _getBst(a).compareTo(_getBst(b));
+                            return _getBst(pA).compareTo(_getBst(pB));
                           case 'bst_desc':
-                            return _getBst(b).compareTo(_getBst(a));
+                            return _getBst(pB).compareTo(_getBst(pA));
                           case 'id_asc':
                           default:
-                            return a.id.compareTo(b.id);
+                            return a.compareTo(b);
                         }
                       });
 
@@ -302,8 +329,8 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                             ),
                           ),
 
-                          // Sliver Grid rendering butter-smooth 1025+ Pokémon cards
-                          filteredList.isEmpty
+                          // Sliver Grid rendering grouped species cards
+                          sortedKeys.isEmpty
                               ? const SliverFillRemaining(
                                   child: Center(
                                     child: Text(
@@ -319,19 +346,20 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                                       crossAxisCount: 2,
                                       crossAxisSpacing: 10,
                                       mainAxisSpacing: 10,
-                                      childAspectRatio: 0.95,
+                                      childAspectRatio: 0.80,
                                     ),
                                     delegate: SliverChildBuilderDelegate(
                                       (context, index) {
-                                        final pokemon = filteredList[index];
-                                        return _buildPokemonCard(pokemon, isDark);
+                                        final group = groupedMap[sortedKeys[index]]!;
+                                        return _buildPokemonCard(group, isDark);
                                       },
-                                      childCount: filteredList.length,
+                                      childCount: sortedKeys.length,
                                     ),
                                   ),
                                 ),
                         ],
                       );
+
                     },
                     loading: () => _buildLoadingState(),
                     error: (error, _) => _buildErrorState(error.toString()),
@@ -340,7 +368,12 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
     );
   }
 
-  Widget _buildPokemonCard(Pokemon pokemon, bool isDark) {
+  Widget _buildPokemonCard(List<Pokemon> group, bool isDark) {
+    if (group.isEmpty) return const SizedBox.shrink();
+
+    // The grid should always display the first form from the group (usually the 'normal' one)
+    final pokemon = group.first;
+    final int dexNum = pokemon.nationalDexNumber > 0 ? pokemon.nationalDexNumber : pokemon.id;
     final typeColor = _getTypeColor(pokemon.type1);
 
     return Card(
@@ -356,10 +389,11 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
         onTap: () {
+          // Pass the FULL group of forms to the detail screen!
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => PokemonDetailScreen(pokemon: pokemon),
+              builder: (context) => PokemonDetailScreen(forms: group),
             ),
           );
         },
@@ -376,7 +410,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                       pokemon.name,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 15,
+                        fontSize: 14,
                         letterSpacing: 0.2,
                       ),
                       maxLines: 1,
@@ -384,16 +418,16 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                     ),
                   ),
                   Text(
-                    '#${pokemon.id.toString().padLeft(3, '0')}',
+                    '#${dexNum.toString().padLeft(3, '0')}',
                     style: TextStyle(
                       color: typeColor,
                       fontWeight: FontWeight.w900,
-                      fontSize: 12,
+                      fontSize: 11,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
               Row(
                 children: [
                   _buildTypeBadge(pokemon.type1, typeColor),
@@ -413,7 +447,6 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                                 ? pokemon.shinySpriteUrl
                                 : pokemon.spriteUrl,
                             fit: BoxFit.contain,
-                            // Strict memory cache footprint constraints to prevent RAM issues during fast scroll
                             maxHeightDiskCache: 200,
                             maxWidthDiskCache: 200,
                             placeholder: (context, url) => const Center(
@@ -423,9 +456,9 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                                 child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Colors.grey)),
                               ),
                             ),
-                            errorWidget: (context, url, error) => Icon(Icons.catching_pokemon, size: 50, color: typeColor.withValues(alpha: 0.3)),
+                            errorWidget: (context, url, error) => Icon(Icons.catching_pokemon, size: 40, color: typeColor.withValues(alpha: 0.3)),
                           )
-                        : Icon(Icons.catching_pokemon, size: 50, color: typeColor.withValues(alpha: 0.3)),
+                        : Icon(Icons.catching_pokemon, size: 40, color: typeColor.withValues(alpha: 0.3)),
                   ),
                 ),
               ),
@@ -434,6 +467,24 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
         ),
       ),
     );
+  }
+
+  bool _matchesFormat(Pokemon p, String format) {
+    final f = p.form.toLowerCase();
+    switch (format.toUpperCase()) {
+      case 'MEGA':
+        return f.contains('mega');
+      case 'ALOLA':
+        return f.contains('alolan');
+      case 'GALAR':
+        return f.contains('galarian');
+      case 'HISUI':
+        return f.contains('hisuian');
+      case 'PALDEA':
+        return f.contains('paldean');
+      default:
+        return false;
+    }
   }
 
   Widget _buildTypeBadge(String type, Color color) {
@@ -613,6 +664,39 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                                   }),
                                 ],
                               ),
+                            ),
+                            // 3.5 Formats / Regional Forms
+                            _buildSectionLabel('REGIONAL / SPECIAL FORMATS'),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: ['MEGA', 'ALOLA', 'GALAR', 'HISUI', 'PALDEA'].map((fmt) {
+                                final bool isSel = _selectedFormats.contains(fmt);
+                                return ChoiceChip(
+                                  label: Text(
+                                    fmt,
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: isSel ? Colors.white : Colors.grey,
+                                    ),
+                                  ),
+                                  selected: isSel,
+                                  selectedColor: AppTheme.pokemonRed,
+                                  backgroundColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFEDF2F7),
+                                  onSelected: (selected) {
+                                    setState(() {
+                                      if (selected) {
+                                        _selectedFormats.add(fmt);
+                                      } else {
+                                        _selectedFormats.remove(fmt);
+                                      }
+                                    });
+                                    setModalState(() {});
+                                  },
+                                );
+                              }).toList(),
                             ),
                             const SizedBox(height: 18),
 

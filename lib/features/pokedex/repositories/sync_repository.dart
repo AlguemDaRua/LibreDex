@@ -3,6 +3,9 @@ import 'package:libredex/core/network/api_client.dart';
 import 'package:drift/drift.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'dart:convert';
+import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 
 part 'sync_repository.g.dart';
 
@@ -172,10 +175,19 @@ class SyncRepository {
     {'slug': 'gallade-mega', 'form': 'Mega'},
     {'slug': 'audino-mega', 'form': 'Mega'},
     {'slug': 'diancie-mega', 'form': 'Mega'},
+    // Basculin / Basculegion / Maushold / Dudunsparce segment & gender forms
+    {'slug': 'basculin-blue-striped', 'form': 'Blue-Striped'},
+    {'slug': 'basculin-white-striped', 'form': 'White-Striped'},
+    {'slug': 'basculegion-female', 'form': 'Female'},
+    {'slug': 'maushold-family-of-three', 'form': 'Family of 3'},
+    {'slug': 'dudunsparce-three-segment', 'form': '3-Segment'},
   ];
 
   /// Picks the best sprite URLs — HOME sprites first (full shiny coverage for ALL gens),
   /// then official-artwork, then pixel sprites.
+  /// Normal and Shiny are picked INDEPENDENTLY so Gen 9 HOME normals are never skipped
+  /// just because HOME shiny hasn't been uploaded yet.
+  /// shinySpriteUrl NEVER returns empty — it falls back to the normal sprite URL.
   static ({String normal, String shiny}) _pickSprites(Map<String, dynamic> data) {
     final homeDefault = data['sprites']?['other']?['home']?['front_default'];
     final homeShiny = data['sprites']?['other']?['home']?['front_shiny'];
@@ -186,36 +198,168 @@ class SyncRepository {
     final pixelDefault = data['sprites']?['front_default'];
     final pixelShiny = data['sprites']?['front_shiny'];
 
-    // HOME has complete shiny coverage for Gen 1–9. Prefer it.
-    if (homeDefault != null && homeShiny != null) {
-      return (normal: homeDefault as String, shiny: homeShiny as String);
+    // Pick best NORMAL sprite independently (HOME > official-artwork > pixel)
+    final String bestNormal = (homeDefault as String?)?.isNotEmpty == true
+        ? homeDefault!
+        : (officialDefault as String?)?.isNotEmpty == true
+            ? officialDefault!
+            : (pixelDefault as String?) ?? '';
+
+    // Pick best SHINY sprite independently (HOME > official-artwork > pixel)
+    // If nothing exists, fall back to the normal sprite to avoid broken images.
+    final String bestShiny = (homeShiny as String?)?.isNotEmpty == true
+        ? homeShiny!
+        : (officialShiny as String?)?.isNotEmpty == true
+            ? officialShiny!
+            : (pixelShiny as String?)?.isNotEmpty == true
+                ? pixelShiny!
+                : bestNormal; // Final fallback: use normal if no shiny exists
+
+    return (normal: bestNormal, shiny: bestShiny);
+  }
+
+  /// Seed Moves, Abilities, Pokémon stubs and junction tables from pre-bundled JSON assets.
+  /// This is always called regardless of whether a full Pokémon network sync is needed.
+  /// This ensures that even users with existing DBs get all Move/Ability/Learnset data and stubs.
+  Future<void> seedBundledData() async {
+    try {
+      // 1. Seed base Pokemon & alternate forms
+      final pokemonJson = await rootBundle.loadString('assets/data/pokemon.json');
+      final pokemonData = await compute(jsonDecode, pokemonJson) as List;
+
+      final List<Pokemon> bundledPokemon = pokemonData.map((p) => Pokemon(
+        id: p['id'],
+        name: p['name'],
+        form: p['form'] ?? 'normal',
+        type1: p['type1'],
+        type2: p['type2'],
+        baseHp: p['baseHp'],
+        baseAtk: p['baseAtk'],
+        baseDef: p['baseDef'],
+        baseSpAtk: p['baseSpAtk'],
+        baseSpDef: p['baseSpDef'],
+        baseSpd: p['baseSpd'],
+        isLegendary: p['isLegendary'] ?? false,
+        isMythical: p['isMythical'] ?? false,
+        isParadox: p['isParadox'] ?? false,
+        isUltraBeast: p['isUltraBeast'] ?? false,
+        spriteUrl: p['spriteUrl'] ?? '',
+        shinySpriteUrl: p['shinySpriteUrl'] ?? '',
+        nationalDexNumber: p['nationalDexNumber'] ?? p['id'],
+      )).toList();
+
+      // 2. Seed Moves
+      final movesJson = await rootBundle.loadString('assets/data/moves.json');
+      final movesData = await compute(jsonDecode, movesJson) as List;
+
+      final List<Move> bundledMoves = movesData.map((m) => Move(
+        id: m['id'],
+        name: m['name'],
+        type: m['type'],
+        power: m['power'],
+        accuracy: m['accuracy'],
+        pp: m['pp'],
+        damageClass: m['damageClass'],
+        description: m['description'],
+      )).toList();
+
+      // 3. Seed Abilities
+      final abilitiesJson = await rootBundle.loadString('assets/data/abilities.json');
+      final abilitiesData = await compute(jsonDecode, abilitiesJson) as List;
+
+      final List<Ability> bundledAbilities = abilitiesData.map((a) => Ability(
+        id: a['id'],
+        name: a['name'],
+        description: a['description'],
+      )).toList();
+
+      // 4. Seed Pokemon-Abilities junctions
+      final pokeAbilitiesJson = await rootBundle.loadString('assets/data/pokemon_abilities.json');
+      final pokeAbilitiesData = await compute(jsonDecode, pokeAbilitiesJson) as List;
+
+      final List<PokemonAbility> bundledPokeAbilities = pokeAbilitiesData.map((a) => PokemonAbility(
+        pokemonId: a['pokemonId'],
+        abilityId: a['abilityId'],
+        isHidden: a['isHidden'],
+      )).toList();
+
+      // 5. Seed Pokemon-Moves junctions
+      final pokeMovesJson = await rootBundle.loadString('assets/data/pokemon_moves.json');
+      final pokeMovesData = await compute(jsonDecode, pokeMovesJson) as List;
+
+      final List<PokemonMove> bundledPokeMoves = pokeMovesData.map((m) => PokemonMove(
+        pokemonId: m['pokemonId'],
+        moveId: m['moveId'],
+        learnMethod: m['learnMethod'],
+        levelLearned: m['levelLearned'],
+      )).toList();
+
+      // Batch insert with chunking (500 per batch) to respect SQLite parameter limits
+      const chunkSize = 500;
+
+      for (var i = 0; i < bundledPokemon.length; i += chunkSize) {
+        final end = (i + chunkSize < bundledPokemon.length) ? i + chunkSize : bundledPokemon.length;
+        await db.batch((batch) {
+          batch.insertAll(db.pokemonTable, bundledPokemon.sublist(i, end), mode: InsertMode.insertOrReplace);
+        });
+      }
+
+      for (var i = 0; i < bundledMoves.length; i += chunkSize) {
+        final end = (i + chunkSize < bundledMoves.length) ? i + chunkSize : bundledMoves.length;
+        await db.batch((batch) {
+          batch.insertAll(db.moveTable, bundledMoves.sublist(i, end), mode: InsertMode.insertOrReplace);
+        });
+      }
+
+      for (var i = 0; i < bundledAbilities.length; i += chunkSize) {
+        final end = (i + chunkSize < bundledAbilities.length) ? i + chunkSize : bundledAbilities.length;
+        await db.batch((batch) {
+          batch.insertAll(db.abilityTable, bundledAbilities.sublist(i, end), mode: InsertMode.insertOrReplace);
+        });
+      }
+
+      for (var i = 0; i < bundledPokeAbilities.length; i += chunkSize) {
+        final end = (i + chunkSize < bundledPokeAbilities.length) ? i + chunkSize : bundledPokeAbilities.length;
+        await db.batch((batch) {
+          batch.insertAll(db.pokemonAbilitiesTable, bundledPokeAbilities.sublist(i, end), mode: InsertMode.insertOrReplace);
+        });
+      }
+
+      for (var i = 0; i < bundledPokeMoves.length; i += chunkSize) {
+        final end = (i + chunkSize < bundledPokeMoves.length) ? i + chunkSize : bundledPokeMoves.length;
+        await db.batch((batch) {
+          batch.insertAll(db.pokemonMovesTable, bundledPokeMoves.sublist(i, end), mode: InsertMode.insertOrReplace);
+        });
+      }
+    } catch (e, stack) {
+      debugPrint('Error seeding bundled data: $e\n$stack');
     }
-    // Official artwork — Gen 9 often missing shiny here
-    if (officialDefault != null && officialShiny != null) {
-      return (normal: officialDefault as String, shiny: officialShiny as String);
-    }
-    // Pixel sprites — oldest fallback
-    if (pixelDefault != null && pixelShiny != null) {
-      return (normal: pixelDefault as String, shiny: pixelShiny as String);
-    }
-    // Last resort: mix best available for each
-    final n = homeDefault ?? officialDefault ?? pixelDefault ?? '';
-    final s = homeShiny ?? officialShiny ?? pixelShiny ?? n;
-    return (normal: n as String, shiny: s as String);
   }
 
   /// Perform a mass, lightning-fast 100% Offline-First initial synchronization
   /// for all 1025 Pokémon (Generations 1-9+) using optimized Drift batches.
   /// Then fetches all known alternate forms (Alolan, Galarian, Hisuian, Paldean, Mega).
-  /// Moves and abilities are loaded lazily when details are opened.
+  /// Moves, abilities and junctions are always seeded from bundled JSON assets.
   Future<void> performFullInitialSync() async {
     try {
       progressNotifier.setProgress(0.01);
+
+      // ALWAYS seed bundled Move/Ability/Junction data first — this runs for ALL users
+      // even if they already have Pokémon in the DB, ensuring junctions are never missing.
+      await seedBundledData();
+
+      // Check if Pokémon table already has data — if so, skip the heavy network fetch
+      final existingCount = await db.select(db.pokemonTable).get();
+      if (existingCount.isNotEmpty) {
+        progressNotifier.setProgress(1.0);
+        return;
+      }
 
       // 1. Generate exact list of IDs 1 to 1025 to fetch all 9 Generations
       final List<int> pokemonIds = List.generate(1025, (index) => index + 1);
 
       progressNotifier.setProgress(0.05);
+
 
       final List<Pokemon> pokemonsToInsert = [];
       int completedPokemons = 0;
@@ -283,6 +427,7 @@ class SyncRepository {
               isUltraBeast: isUltraBeast,
               spriteUrl: sprites.normal,
               shinySpriteUrl: sprites.shiny,
+              nationalDexNumber: id,
             ));
           } catch (_) {
             // Absorb single Pokémon network exceptions to make synchronization resilient
@@ -339,24 +484,31 @@ class SyncRepository {
 
             final sprites = _pickSprites(data);
 
-            // Build display name: extract base species name and prepend form
-            // e.g. "vulpix-alola" → base "Vulpix" + form "Alolan" → "Vulpix (Alolan)"
-            final String baseName = pokeName
-                .replaceAll('-alola', '')
-                .replaceAll('-galar', '')
-                .replaceAll('-hisui', '')
-                .replaceAll('-paldea', '')
-                .replaceAll('-mega', '')
-                .replaceAll('-combat', '')
-                .replaceAll('-blaze', '')
-                .replaceAll('-aqua', '')
-                .replaceAll('-x', '')
-                .replaceAll('-y', '')
+            // Parse National Dex Number (parent species ID) from species URL
+            final String speciesUrl = data['species']['url'] as String;
+            final int nationalDexNumber = int.parse(speciesUrl.split('/').where((s) => s.isNotEmpty).last);
+
+            // Build display name: extract base species name cleanly
+            String baseSpecies = pokeName.split('-').first;
+            if (pokeName.startsWith('mr-mime')) {
+              baseSpecies = 'mr-mime';
+            }
+
+            final String baseName = baseSpecies
                 .split('-')
                 .map((w) => w.isEmpty ? '' : w[0].toUpperCase() + w.substring(1))
                 .join(' ');
 
-            final String displayName = '$baseName ($formLabel)';
+            String displayName;
+            if (formLabel == 'Mega') {
+              displayName = 'Mega $baseName';
+            } else if (formLabel == 'Mega X') {
+              displayName = 'Mega $baseName X';
+            } else if (formLabel == 'Mega Y') {
+              displayName = 'Mega $baseName Y';
+            } else {
+              displayName = '$baseName ($formLabel)';
+            }
 
             formsToInsert.add(Pokemon(
               id: formId,
@@ -376,6 +528,7 @@ class SyncRepository {
               isUltraBeast: false,
               spriteUrl: sprites.normal,
               shinySpriteUrl: sprites.shiny,
+              nationalDexNumber: nationalDexNumber,
             ));
           } catch (_) {
             // Absorb individual form failures
@@ -397,6 +550,7 @@ class SyncRepository {
         });
       }
 
+      // Bundled Moves/Abilities/Junctions were already seeded at the start via seedBundledData()
       progressNotifier.setProgress(1.0);
     } catch (_) {
       progressNotifier.setProgress(1.0);

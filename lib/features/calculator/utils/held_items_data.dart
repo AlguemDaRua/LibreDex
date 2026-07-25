@@ -3,6 +3,16 @@
 class HeldItemsData {
   static const String noItem = 'None';
 
+  static List<HeldItem> get offensiveItems {
+    return allItems.where((item) => 
+      item.name == 'None' ||
+      item.atkMultiplier != 1.0 || 
+      item.spAtkMultiplier != 1.0 || 
+      item.universalDamageMultiplier != 1.0 || 
+      item.typeBoostMultiplier != 1.0
+    ).toList();
+  }
+
   /// All available items for the picker, grouped by category.
   static const List<HeldItem> allItems = [
     HeldItem(name: 'None', category: 'None', description: 'No held item.'),

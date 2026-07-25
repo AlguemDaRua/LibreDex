@@ -7,6 +7,8 @@ import 'package:libredex/features/pokedex/models/type_efficiency_calculator.dart
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
 import 'package:libredex/features/pokedex/viewmodels/stats_calculator_viewmodel.dart';
 import 'package:libredex/features/pokedex/widgets/shiny_slider.dart';
+import 'package:libredex/features/abilitydex/views/ability_detail_screen.dart';
+import 'package:libredex/features/movedex/views/move_detail_screen.dart';
 
 /// Static dictionary of Pokémon Natures in alphabetical order.
 const Map<String, Map<String, dynamic>> alphabeticalNatures = {
@@ -38,9 +40,9 @@ const Map<String, Map<String, dynamic>> alphabeticalNatures = {
 };
 
 class PokemonDetailScreen extends ConsumerStatefulWidget {
-  final Pokemon pokemon;
+  final List<Pokemon> forms;
 
-  const PokemonDetailScreen({super.key, required this.pokemon});
+  const PokemonDetailScreen({super.key, required this.forms});
 
   @override
   ConsumerState<PokemonDetailScreen> createState() => _PokemonDetailScreenState();
@@ -49,17 +51,21 @@ class PokemonDetailScreen extends ConsumerStatefulWidget {
 class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   String _moveFilter = 'all';
+  int _selectedFormIndex = 0;
 
-
+  Pokemon get _activePokemon => widget.forms[_selectedFormIndex];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    // Reset calculator state and lazily trigger background database sync
+    _triggerSyncForActivePokemon();
+  }
+
+  void _triggerSyncForActivePokemon() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(statsCalculatorProvider.notifier).reset();
-      ref.read(pokemonRepositoryProvider).syncPokemonDetails(widget.pokemon.id, widget.pokemon.name);
+      ref.read(pokemonRepositoryProvider).syncPokemonDetails(_activePokemon.id, _activePokemon.name);
     });
   }
 
@@ -78,31 +84,84 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
       backgroundColor: isDark ? Colors.black : const Color(0xFFF9FAFB),
       appBar: AppBar(
         title: Text(
-          '#${widget.pokemon.id.toString().padLeft(3, '0')} ${widget.pokemon.name.toUpperCase()}',
-          style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1, color: primaryColor),
+          '#${_activePokemon.nationalDexNumber > 0 ? _activePokemon.nationalDexNumber.toString().padLeft(3, '0') : _activePokemon.id.toString().padLeft(3, '0')} ${_activePokemon.name.toUpperCase()}',
+          style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1, color: primaryColor, fontSize: 18),
         ),
         iconTheme: IconThemeData(color: primaryColor),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: AppTheme.pokemonRed,
-          labelColor: primaryColor,
-          unselectedLabelColor: Colors.grey,
-          dividerColor: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB),
-          tabs: const [
-            Tab(text: 'GENERAL', icon: Icon(Icons.info_outline, size: 20)),
-            Tab(text: 'STATS', icon: Icon(Icons.analytics_outlined, size: 20)),
-            Tab(text: 'MOVES', icon: Icon(Icons.flash_on_outlined, size: 20)),
-          ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: TabBar(
+            controller: _tabController,
+            indicatorColor: AppTheme.pokemonRed,
+            labelColor: primaryColor,
+            unselectedLabelColor: Colors.grey,
+            dividerColor: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB),
+            tabs: const [
+              Tab(text: 'GENERAL', icon: Icon(Icons.info_outline, size: 20)),
+              Tab(text: 'STATS', icon: Icon(Icons.analytics_outlined, size: 20)),
+              Tab(text: 'MOVES', icon: Icon(Icons.flash_on_outlined, size: 20)),
+            ],
+          ),
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
+      body: Column(
         children: [
-          _buildGeneralTab(),
-          _buildStatsTab(),
-          _buildMovesTab(),
+          // Form selector sits in the body, below the AppBar — not inside it.
+          if (widget.forms.length > 1)
+            Container(
+              height: 48,
+              color: isDark ? Colors.black : const Color(0xFFF9FAFB),
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                itemCount: widget.forms.length,
+                itemBuilder: (context, index) {
+                  final p = widget.forms[index];
+                  final isSelected = index == _selectedFormIndex;
+                  String label = p.form;
+                  if (label == 'normal') label = 'Normal';
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _selectedFormIndex = index;
+                        _triggerSyncForActivePokemon();
+                      });
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isSelected ? AppTheme.pokemonRed : (isDark ? const Color(0xFF1A1A1A) : const Color(0xFFE5E7EB)),
+                        borderRadius: BorderRadius.circular(20),
+                        border: isSelected ? null : Border.all(color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFD1D5DB)),
+                      ),
+                      child: Center(
+                        child: Text(
+                          label,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: isSelected ? Colors.white : Colors.grey,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildGeneralTab(),
+                _buildStatsTab(),
+                _buildMovesTab(),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -113,8 +172,8 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
   /// -------------------------------------------------------------
   Widget _buildGeneralTab() {
     final doubleEffs = TypeEfficiencyCalculator.getCombinedEffectiveness(
-      widget.pokemon.type1,
-      widget.pokemon.type2,
+      _activePokemon.type1,
+      _activePokemon.type2,
     );
 
     return SingleChildScrollView(
@@ -124,11 +183,11 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
         children: [
           // Sprite Comparison Slider
           ShinySlider(
-            normalImageUrl: widget.pokemon.spriteUrl,
-            shinyImageUrl: widget.pokemon.shinySpriteUrl,
+            normalImageUrl: _activePokemon.spriteUrl,
+            shinyImageUrl: _activePokemon.shinySpriteUrl,
             normalLabel: 'Normal',
             shinyLabel: '★ Shiny',
-            pokemonId: widget.pokemon.id,
+            pokemonId: _activePokemon.id,
           ),
           const SizedBox(height: 20),
 
@@ -136,10 +195,10 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildTypeBadge(widget.pokemon.type1),
-              if (widget.pokemon.type2 != null) ...[
+              _buildTypeBadge(_activePokemon.type1),
+              if (_activePokemon.type2 != null) ...[
                 const SizedBox(width: 12),
-                _buildTypeBadge(widget.pokemon.type2!),
+                _buildTypeBadge(_activePokemon.type2!),
               ],
             ],
           ),
@@ -273,7 +332,7 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
 
   Widget _buildAbilitiesCard() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final abilitiesAsync = ref.watch(pokemonAbilitiesStreamProvider(widget.pokemon.id));
+    final abilitiesAsync = ref.watch(pokemonAbilitiesStreamProvider(_activePokemon.id));
 
     return Container(
       width: double.infinity,
@@ -298,33 +357,44 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
             data: (abilities) {
               if (abilities.isEmpty) {
                 return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 24.0),
+                  padding: const EdgeInsets.symmetric(vertical: 20.0),
                   child: Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(AppTheme.pokemonRed)),
-                        ),
-                        const SizedBox(height: 12),
+                        Icon(Icons.info_outline_rounded, color: Colors.grey[500], size: 28),
+                        const SizedBox(height: 8),
                         Text(
-                          'Syncing abilities from PokéAPI...',
-                          style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 12),
+                          'No abilities linked yet.',
+                          style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 13, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Go to Settings → Fix Moves & Abilities Links',
+                          style: TextStyle(color: isDark ? Colors.grey[600] : Colors.grey[400], fontSize: 11),
+                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
                   ),
                 );
               }
+              final sortedAbilities = List<Map<String, dynamic>>.from(abilities)
+                ..sort((a, b) {
+                  final bool aHidden = a['isHidden'] ?? false;
+                  final bool bHidden = b['isHidden'] ?? false;
+                  if (aHidden && !bHidden) return 1;
+                  if (!aHidden && bHidden) return -1;
+                  return 0;
+                });
+
               return ListView.separated(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: abilities.length,
+                itemCount: sortedAbilities.length,
                 separatorBuilder: (context, index) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
-                  final ability = abilities[index];
+                  final ability = sortedAbilities[index];
                   final int? abilityId = ability['id'];
                   final String name = ability['name'] ?? '';
                   final String effect = ability['effect'] ?? 'No description available.';
@@ -418,7 +488,7 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
 
     final statsState = ref.watch(statsCalculatorProvider);
     final statsNotifier = ref.read(statsCalculatorProvider.notifier);
-    final calculatedStats = statsNotifier.getCalculatedStats(widget.pokemon);
+    final calculatedStats = statsNotifier.getCalculatedStats(_activePokemon);
 
     final int remainingEvs = 508 - statsState.totalEvs;
 
@@ -639,7 +709,7 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
             children: [
               _buildCompetiveStatRow(
                 label: 'HP',
-                baseValue: widget.pokemon.baseHp,
+                baseValue: _activePokemon.baseHp,
                 ivValue: statsState.ivs['hp'] ?? 31,
                 evValue: statsState.evs['hp'] ?? 0,
                 finalValue: calculatedStats['hp'] ?? 100,
@@ -651,7 +721,7 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
               ),
               _buildCompetiveStatRow(
                 label: 'Attack',
-                baseValue: widget.pokemon.baseAtk,
+                baseValue: _activePokemon.baseAtk,
                 ivValue: statsState.ivs['atk'] ?? 31,
                 evValue: statsState.evs['atk'] ?? 0,
                 finalValue: calculatedStats['atk'] ?? 100,
@@ -663,7 +733,7 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
               ),
               _buildCompetiveStatRow(
                 label: 'Defense',
-                baseValue: widget.pokemon.baseDef,
+                baseValue: _activePokemon.baseDef,
                 ivValue: statsState.ivs['def'] ?? 31,
                 evValue: statsState.evs['def'] ?? 0,
                 finalValue: calculatedStats['def'] ?? 100,
@@ -675,7 +745,7 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
               ),
               _buildCompetiveStatRow(
                 label: 'Sp. Atk',
-                baseValue: widget.pokemon.baseSpAtk,
+                baseValue: _activePokemon.baseSpAtk,
                 ivValue: statsState.ivs['spa'] ?? 31,
                 evValue: statsState.evs['spa'] ?? 0,
                 finalValue: calculatedStats['spa'] ?? 100,
@@ -687,7 +757,7 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
               ),
               _buildCompetiveStatRow(
                 label: 'Sp. Def',
-                baseValue: widget.pokemon.baseSpDef,
+                baseValue: _activePokemon.baseSpDef,
                 ivValue: statsState.ivs['spd'] ?? 31,
                 evValue: statsState.evs['spd'] ?? 0,
                 finalValue: calculatedStats['spd'] ?? 100,
@@ -699,7 +769,7 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
               ),
               _buildCompetiveStatRow(
                 label: 'Speed',
-                baseValue: widget.pokemon.baseSpd,
+                baseValue: _activePokemon.baseSpd,
                 ivValue: statsState.ivs['spe'] ?? 31,
                 evValue: statsState.evs['spe'] ?? 0,
                 finalValue: calculatedStats['spe'] ?? 100,
@@ -902,7 +972,7 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
   /// -------------------------------------------------------------
   Widget _buildMovesTab() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final movesAsync = ref.watch(pokemonMovesStreamProvider(widget.pokemon.id));
+    final movesAsync = ref.watch(pokemonMovesStreamProvider(_activePokemon.id));
 
     return Column(
       children: [
@@ -931,15 +1001,16 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(AppTheme.pokemonRed)),
-                      ),
+                      Icon(Icons.info_outline_rounded, color: Colors.grey[500], size: 32),
                       const SizedBox(height: 12),
                       Text(
-                        'Syncing moves from PokéAPI...',
-                        style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 12),
+                        'No moves linked yet.',
+                        style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 14, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Go to Settings → Fix Moves & Abilities Links',
+                        style: TextStyle(color: isDark ? Colors.grey[600] : Colors.grey[400], fontSize: 12),
                       ),
                     ],
                   ),
@@ -1276,191 +1347,15 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
     int abilityId,
     String abilityName,
     String abilityEffect,
-  ) async {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = isDark ? Colors.white : Colors.black;
-
-    final db = ref.read(databaseProvider);
-    final pokemonsList = await db.getPokemonsForAbility(abilityId);
-
-    // Group pokemons by Normal and Hidden status
-    final List<Pokemon> normalUsers = [];
-    final List<Pokemon> hiddenUsers = [];
-
-    for (final item in pokemonsList) {
-      final Pokemon p = item['pokemon'];
-      final bool isHidden = item['isHidden'] ?? false;
-      if (isHidden) {
-        hiddenUsers.add(p);
-      } else {
-        normalUsers.add(p);
-      }
-    }
-
-    if (!context.mounted) return;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+  ) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AbilityDetailScreen(
+          abilityId: abilityId,
+          abilityName: abilityName,
+        ),
       ),
-      builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.75,
-          maxChildSize: 0.95,
-          minChildSize: 0.5,
-          expand: false,
-          builder: (context, scrollController) {
-            return SafeArea(
-              child: SingleChildScrollView(
-                controller: scrollController,
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE5E7EB),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Title
-                    Text(
-                      abilityName,
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: primaryColor),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Description Box
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF161616) : const Color(0xFFF3F4F6),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        abilityEffect,
-                        style: TextStyle(color: isDark ? Colors.grey[300] : Colors.grey[800], fontSize: 13, height: 1.4),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Pokémon possessing this ability
-                    Text(
-                      'Pokémon with this Ability',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: primaryColor),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Normal Users
-                    if (normalUsers.isNotEmpty) ...[
-                      const Text(
-                        'Normal Ability',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.pokemonRed),
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: normalUsers.map((p) {
-                          final pColor = _getTypeColor(p.type1);
-                          final isCurrent = p.id == widget.pokemon.id;
-                          return ActionChip(
-                            backgroundColor: isCurrent
-                                ? (isDark ? AppTheme.pokemonRed.withValues(alpha: 0.2) : AppTheme.pokemonRed.withValues(alpha: 0.1))
-                                : (isDark ? const Color(0xFF161616) : Colors.white),
-                            side: BorderSide(
-                              color: isCurrent
-                                  ? AppTheme.pokemonRed
-                                  : (isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE2E8F0)),
-                              width: isCurrent ? 1.5 : 1.0,
-                            ),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            label: Text(
-                              p.name + (isCurrent ? ' (Current)' : ''),
-                              style: TextStyle(
-                                color: isCurrent ? AppTheme.pokemonRed : pColor,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            onPressed: () {
-                              Navigator.pop(context);
-                              if (!isCurrent) {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (context) => PokemonDetailScreen(pokemon: p)),
-                                );
-                              }
-                            },
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-
-                    // Hidden Users
-                    if (hiddenUsers.isNotEmpty) ...[
-                      const Text(
-                        'Hidden Ability (HIDDEN)',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.purpleAccent),
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: hiddenUsers.map((p) {
-                          final pColor = _getTypeColor(p.type1);
-                          final isCurrent = p.id == widget.pokemon.id;
-                          return ActionChip(
-                            backgroundColor: isCurrent
-                                ? (isDark ? AppTheme.pokemonRed.withValues(alpha: 0.2) : AppTheme.pokemonRed.withValues(alpha: 0.1))
-                                : (isDark ? const Color(0xFF161616) : Colors.white),
-                            side: BorderSide(
-                              color: isCurrent
-                                  ? AppTheme.pokemonRed
-                                  : (isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE2E8F0)),
-                              width: isCurrent ? 1.5 : 1.0,
-                            ),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            label: Text(
-                              p.name + (isCurrent ? ' (Current)' : ''),
-                              style: TextStyle(
-                                color: isCurrent ? AppTheme.pokemonRed : pColor,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            onPressed: () {
-                              Navigator.pop(context);
-                              if (!isCurrent) {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (context) => PokemonDetailScreen(pokemon: p)),
-                                );
-                              }
-                            },
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
     );
   }
 
@@ -1470,236 +1365,15 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
     String moveName,
     String moveDescription,
     String moveType,
-  ) async {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = isDark ? Colors.white : Colors.black;
-    final color = _getTypeColor(moveType);
-
-    final db = ref.read(databaseProvider);
-    final pokemonsList = await db.getPokemonsForMove(moveId);
-
-    // Group pokemons by learn method
-    final Map<String, List<Map<String, dynamic>>> grouped = {
-      'level': [],
-      'tm': [],
-      'tutor': [],
-      'egg': [],
-    };
-    for (final item in pokemonsList) {
-      final method = item['learnMethod'] ?? 'level';
-      if (grouped.containsKey(method)) {
-        grouped[method]!.add(item);
-      }
-    }
-
-    if (!context.mounted) return;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+  ) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MoveDetailScreen(
+          moveId: moveId,
+          moveName: moveName,
+        ),
       ),
-      builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.8,
-          maxChildSize: 0.95,
-          minChildSize: 0.5,
-          expand: false,
-          builder: (context, scrollController) {
-            return SafeArea(
-              child: SingleChildScrollView(
-                controller: scrollController,
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Handle line
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE5E7EB),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Header: Move Name & Type Badge
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            moveName,
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: primaryColor,
-                            ),
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: color,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            moveType.toUpperCase(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.0,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Description Box
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF161616) : const Color(0xFFF3F4F6),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        moveDescription,
-                        style: TextStyle(
-                          color: isDark ? Colors.grey[300] : Colors.grey[800],
-                          fontSize: 13,
-                          height: 1.4,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // List of Pokemon that can learn this move
-                    Text(
-                      'Pokémon that can learn this Move',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: primaryColor,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Render grouped users
-                    ...grouped.entries.map((entry) {
-                      final String method = entry.key;
-                      final List<Map<String, dynamic>> items = entry.value;
-
-                      if (items.isEmpty) return const SizedBox.shrink();
-
-                      String sectionTitle = 'Level Up';
-                      Color sectionColor = Colors.amber;
-                      if (method == 'tm') {
-                        sectionTitle = 'TM / TR';
-                        sectionColor = Colors.blue;
-                      } else if (method == 'tutor') {
-                        sectionTitle = 'Tutor';
-                        sectionColor = Colors.green;
-                      } else if (method == 'egg') {
-                        sectionTitle = 'Egg';
-                        sectionColor = Colors.purple;
-                      }
-
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  color: sectionColor,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                sectionTitle,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13,
-                                  color: isDark ? Colors.white70 : Colors.black87,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: items.map((item) {
-                              final Pokemon p = item['pokemon'];
-                              final level = item['levelLearned'];
-                              final pColor = _getTypeColor(p.type1);
-                              final isCurrent = p.id == widget.pokemon.id;
-
-                              String label = p.name;
-                              if (method == 'level' && level != null) {
-                                label += ' (Lvl $level)';
-                              }
-                              if (isCurrent) {
-                                label += ' (Current)';
-                              }
-
-                              return ActionChip(
-                                backgroundColor: isCurrent
-                                    ? (isDark ? AppTheme.pokemonRed.withValues(alpha: 0.2) : AppTheme.pokemonRed.withValues(alpha: 0.1))
-                                    : (isDark ? const Color(0xFF161616) : Colors.white),
-                                side: BorderSide(
-                                  color: isCurrent
-                                      ? AppTheme.pokemonRed
-                                      : (isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE2E8F0)),
-                                  width: isCurrent ? 1.5 : 1.0,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                label: Text(
-                                  label,
-                                  style: TextStyle(
-                                    color: isCurrent ? AppTheme.pokemonRed : pColor,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  if (!isCurrent) {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => PokemonDetailScreen(pokemon: p),
-                                      ),
-                                    );
-                                  }
-                                },
-                              );
-                            }).toList(),
-                          ),
-                          const SizedBox(height: 20),
-                        ],
-                      );
-                    }),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
     );
   }
 

@@ -4,7 +4,7 @@ import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/widgets/app_drawer.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
-import 'package:libredex/features/pokedex/views/pokemon_detail_screen.dart';
+import 'package:libredex/features/movedex/views/move_detail_screen.dart';
 
 class MovedexScreen extends ConsumerStatefulWidget {
   const MovedexScreen({super.key});
@@ -204,206 +204,17 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
     );
   }
 
-  void _showMoveDetails(BuildContext context, Move move) async {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = isDark ? Colors.white : Colors.black;
-    final color = _getTypeColor(move.type);
-
-    final db = ref.read(databaseProvider);
-    final pokemonsList = await db.getPokemonsForMove(move.id);
-
-    // Group pokemons by learn method
-    final Map<String, List<Map<String, dynamic>>> grouped = {
-      'level': [],
-      'tm': [],
-      'tutor': [],
-      'egg': [],
-    };
-    for (final item in pokemonsList) {
-      final method = item['learnMethod'] ?? 'level';
-      if (grouped.containsKey(method)) {
-        grouped[method]!.add(item);
-      }
-    }
-
-    if (!context.mounted) return;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.8,
-          maxChildSize: 0.95,
-          minChildSize: 0.5,
-          expand: false,
-          builder: (context, scrollController) {
-            return SafeArea(
-              bottom: true,
-              child: SingleChildScrollView(
-                controller: scrollController,
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Handle line
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE5E7EB),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Header Title
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          move.name,
-                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: primaryColor),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: color.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: color.withValues(alpha: 0.4)),
-                          ),
-                          child: Text(
-                            move.type.toUpperCase(),
-                            style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Move Parameters Stats Row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _buildStatBox('Power', move.power != null && move.power! > 0 ? '${move.power}' : '—', isDark),
-                        _buildStatBox('Accuracy', move.accuracy != null ? '${move.accuracy}%' : '—', isDark),
-                        _buildStatBox('PP', '${move.pp}/${move.pp}', isDark),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Description Card
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF161616) : const Color(0xFFF3F4F6),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        move.description ?? 'No description available.',
-                        style: TextStyle(color: isDark ? Colors.grey[300] : Colors.grey[800], fontSize: 13, height: 1.4),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Learned By Pokémon Title
-                    Text(
-                      'Learned By Pokémon',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: primaryColor),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Categorized Pokémons List
-                    for (final method in ['level', 'tm', 'tutor', 'egg']) ...[
-                      if (grouped[method]!.isNotEmpty) ...[
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 6.0),
-                          child: Text(
-                            method == 'level'
-                                ? 'By Level Up'
-                                : method == 'tm'
-                                    ? 'By TM / TR'
-                                    : method == 'tutor'
-                                        ? 'By Tutor'
-                                        : 'By Egg (Breeding)',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.pokemonRed),
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: grouped[method]!.map((item) {
-                            final Pokemon p = item['pokemon'];
-                            final int? lvl = item['levelLearned'];
-                            final pColor = _getTypeColor(p.type1);
-
-                            return ActionChip(
-                              backgroundColor: isDark ? const Color(0xFF161616) : Colors.white,
-                              side: BorderSide(color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE2E8F0)),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              label: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    p.name,
-                                    style: TextStyle(color: pColor, fontSize: 11, fontWeight: FontWeight.w600),
-                                  ),
-                                  if (method == 'level' && lvl != null && lvl > 0) ...[
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      'Lvl $lvl',
-                                      style: const TextStyle(color: Colors.amberAccent, fontSize: 9, fontWeight: FontWeight.bold),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                              onPressed: () {
-                                Navigator.pop(context);
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (context) => PokemonDetailScreen(pokemon: p)),
-                                );
-                              },
-                            );
-                          }).toList(),
-                        ),
-                        const SizedBox(height: 16),
-                      ],
-                    ],
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildStatBox(String label, String value, bool isDark) {
-    return Container(
-      width: 100,
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF161616) : Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
-      ),
-      child: Column(
-        children: [
-          Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          Text(value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black)),
-        ],
+  void _showMoveDetails(BuildContext context, Move move) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MoveDetailScreen(
+          moveId: move.id,
+          moveName: move.name,
+        ),
       ),
     );
   }
+
 }
+

@@ -27,6 +27,7 @@ class PokemonTable extends Table {
   BoolColumn get isUltraBeast => boolean()();
   TextColumn get spriteUrl => text()();
   TextColumn get shinySpriteUrl => text()();
+  IntColumn get nationalDexNumber => integer().withDefault(Constant(0))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -111,7 +112,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration {
@@ -123,6 +124,9 @@ class AppDatabase extends _$AppDatabase {
       onUpgrade: (m, from, to) async {
         if (from < 2) {
           await m.addColumn(moveTable, moveTable.description);
+        }
+        if (from < 3) {
+          await m.addColumn(pokemonTable, pokemonTable.nationalDexNumber);
         }
       },
     );

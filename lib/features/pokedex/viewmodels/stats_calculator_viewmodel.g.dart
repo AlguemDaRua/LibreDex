@@ -41,7 +41,7 @@ final class StatsCalculatorProvider
   }
 }
 
-String _$statsCalculatorHash() => r'1ec5bff839d75da8d0376582d7f1bc5a9fcc349c';
+String _$statsCalculatorHash() => r'a735580acd6424d61ef310410cf2acf13c80f503';
 
 abstract class _$StatsCalculator extends $Notifier<StatsCalculatorState> {
   StatsCalculatorState build();
