@@ -35,7 +35,7 @@ class SyncRepository {
 
   static List<dynamic> _decodeList(String raw) => jsonDecode(raw) as List<dynamic>;
 
-  Future<void> _insertAll<T extends Table, D>(
+  Future<void> _insertAll<T extends Table, D extends Insertable<D>>(
     TableInfo<T, D> table,
     List<D> rows,
   ) async {
