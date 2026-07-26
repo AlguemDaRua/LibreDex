@@ -104,12 +104,25 @@ class SyncRepository {
         .toList();
 
     final pokemonMoves = (await _loadJsonList('assets/data/pokemon_moves.json'))
-        .map((m) => PokemonMove(
-              pokemonId: m['pokemonId'] as int,
-              moveId: m['moveId'] as int,
-              learnMethod: m['learnMethod'] as String,
-              levelLearned: m['levelLearned'] as int?,
-            ))
+        .map((m) {
+          // The generator writes moves as compact arrays to keep the largest
+          // bundled asset small. The map branch keeps old assets reseedable.
+          if (m is List) {
+            return PokemonMove(
+              pokemonId: m[0] as int,
+              moveId: m[1] as int,
+              learnMethod: m[2] as String,
+              levelLearned: m.length > 3 ? m[3] as int? : null,
+            );
+          }
+          final map = m as Map<String, dynamic>;
+          return PokemonMove(
+            pokemonId: map['pokemonId'] as int,
+            moveId: map['moveId'] as int,
+            learnMethod: map['learnMethod'] as String,
+            levelLearned: map['levelLearned'] as int?,
+          );
+        })
         .toList();
 
     // Parents before children so the foreign keys always resolve.

@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/core/network/api_client.dart';
@@ -25,6 +28,7 @@ PokemonRepository pokemonRepository(Ref ref) {
 /// Repository responsible for syncing and retrieving offline-first Pokémon data.
 class PokemonRepository {
   final AppDatabase db;
+  Map<String, dynamic>? _localEvolutionChains;
 
   PokemonRepository({required this.db});
 
@@ -81,10 +85,53 @@ class PokemonRepository {
         await _parseChainNode(chainData, steps);
       }
     } catch (_) {
-      // Fallback: If network is offline, attempt local species lookup
+      // Offline fallback is loaded below.
     }
 
+    if (steps.isNotEmpty) return steps;
+    return _fetchLocalEvolutionSteps(dexNum);
+  }
+
+  Future<List<EvolutionStep>> _fetchLocalEvolutionSteps(int dexNum) async {
+    _localEvolutionChains ??= jsonDecode(
+      await rootBundle.loadString('assets/data/evolution_chains.json'),
+    ) as Map<String, dynamic>;
+
+    List<dynamic>? chain = _localEvolutionChains![dexNum.toString()] as List<dynamic>?;
+    chain ??= _localEvolutionChains!.values.cast<List<dynamic>?>().firstWhere(
+      (rows) => rows?.any((raw) {
+            final row = raw as Map<String, dynamic>;
+            return row['from'] == dexNum || row['to'] == dexNum;
+          }) ?? false,
+      orElse: () => null,
+    );
+    if (chain == null || chain.isEmpty) return const [];
+
+    final steps = <EvolutionStep>[];
+    for (final raw in chain) {
+      final row = raw as Map<String, dynamic>;
+      final fromDex = row['from'] as int;
+      final toDex = row['to'] as int;
+      final fromPokemon = await _firstPokemonForDex(fromDex);
+      final toPokemon = await _firstPokemonForDex(toDex);
+      steps.add(EvolutionStep(
+        fromId: fromPokemon?.id ?? fromDex,
+        fromName: _formatDisplayName(fromPokemon?.name ?? 'pokemon-$fromDex', fromPokemon?.form ?? 'normal'),
+        fromSprite: fromPokemon?.spriteUrl,
+        toId: toPokemon?.id ?? toDex,
+        toName: _formatDisplayName(toPokemon?.name ?? 'pokemon-$toDex', toPokemon?.form ?? 'normal'),
+        toSprite: toPokemon?.spriteUrl,
+        trigger: row['trigger'] as String? ?? 'Evolves',
+        form: fromPokemon?.form ?? 'normal',
+      ));
+    }
     return steps;
+  }
+
+  Future<Pokemon?> _firstPokemonForDex(int dexNum) async {
+    final rows = await (db.select(db.pokemonTable)..where((t) => t.nationalDexNumber.equals(dexNum))).get();
+    if (rows.isEmpty) return null;
+    return rows.firstWhere((p) => p.form == 'normal', orElse: () => rows.first);
   }
 
   Future<void> _parseChainNode(Map<String, dynamic> node, List<EvolutionStep> steps) async {

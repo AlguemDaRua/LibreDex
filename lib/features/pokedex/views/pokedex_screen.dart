@@ -1,9 +1,12 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:libredex/core/data/ev_yield_data.dart';
 import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/core/theme/app_theme.dart';
+import 'package:libredex/core/widgets/app_state_widgets.dart';
 import 'package:libredex/features/pokedex/utils/pokemon_data_helpers.dart';
+import 'package:libredex/features/pokedex/viewmodels/favorites_provider.dart';
 import 'package:libredex/features/pokedex/viewmodels/pokedex_viewmodel.dart';
 import 'package:libredex/features/pokedex/views/pokemon_detail_screen.dart';
 import 'package:libredex/core/widgets/app_drawer.dart';
@@ -19,11 +22,9 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
-  // Shiny Mode Toggle & EV Yield Filter
   bool _globalShinyMode = false;
-  String? _selectedEvYieldStat; // null = All, 'hp', 'atk', 'def', 'spatk', 'spdef', 'spd'
+  String? _selectedEvYieldStat;
 
-  // Advanced Filters State
   final List<String> _selectedTypes = [];
   final Set<int> _selectedGenerations = {};
   bool _showLegendary = false;
@@ -31,12 +32,11 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
   bool _showUltraBeast = false;
   bool _showParadox = false;
   bool _showShinyOnly = false;
-  String _sortOption = 'id_asc'; // id_asc, id_desc, name_asc, name_desc, bst_asc, bst_desc, hp_desc, atk_desc, etc.
+  bool _showFavoritesOnly = false;
+  String _sortOption = 'id_asc';
 
-  // Advanced Formats Filter State
-  final List<String> _selectedFormats = []; // 'MEGA', 'ALOLA', 'GALAR', 'HISUI', 'PALDEA'
+  final List<String> _selectedFormats = [];
 
-  // Stat Range & Threshold Filters
   double _minBst = 100.0;
   double _maxBst = 780.0;
   double _minHp = 0.0;
@@ -46,7 +46,6 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
   double _minSpDef = 0.0;
   double _minSpd = 0.0;
 
-  // Static list of all 18 Pokémon types for chips selector
   static const List<String> _allTypes = [
     'normal', 'fire', 'water', 'electric', 'grass', 'ice',
     'fighting', 'poison', 'ground', 'flying', 'psychic', 'bug',
@@ -151,6 +150,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
       _showUltraBeast = false;
       _showParadox = false;
       _showShinyOnly = false;
+      _showFavoritesOnly = false;
       _sortOption = 'id_asc';
       _minBst = 100.0;
       _maxBst = 780.0;
@@ -174,6 +174,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
         _showUltraBeast ||
         _showParadox ||
         _showShinyOnly ||
+        _showFavoritesOnly ||
         _minBst > 100.0 ||
         _maxBst < 780.0 ||
         _minHp > 0.0 ||
@@ -185,9 +186,38 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
         _sortOption != 'id_asc';
   }
 
+  bool _matchesSearch(Pokemon pokemon, int dexNum, String query) {
+    if (query.isEmpty) return true;
+    final name = pokemon.name.toLowerCase();
+    final form = pokemon.form.toLowerCase();
+    final type1 = pokemon.type1.toLowerCase();
+    final type2 = pokemon.type2?.toLowerCase() ?? '';
+    final dex = dexNum.toString();
+
+    return name.contains(query) ||
+        form.contains(query) ||
+        type1.contains(query) ||
+        type2.contains(query) ||
+        dex.contains(query) ||
+        dex.padLeft(3, '0').contains(query) ||
+        _isSubsequence(query, name.replaceAll('-', ''));
+  }
+
+  bool _isSubsequence(String query, String text) {
+    if (query.length < 3) return false;
+    var index = 0;
+    for (final codeUnit in text.codeUnits) {
+      if (codeUnit == query.codeUnitAt(index)) index++;
+      if (index == query.length) return true;
+    }
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final listAsync = ref.watch(pokedexProvider);
+    final favoriteDexNumbers = ref.watch(favoritePokemonProvider);
+    final evYieldDataset = ref.watch(evYieldDatasetProvider);
     final syncState = ref.watch(pokedexSyncNotifierProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? Colors.white : Colors.black;
@@ -203,7 +233,14 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
-          // Shiny Mode Toggle Button for Shiny Hunters
+          IconButton(
+            icon: Icon(
+              _showFavoritesOnly ? Icons.star_rounded : Icons.star_border_rounded,
+              color: _showFavoritesOnly ? Colors.amber : primaryColor,
+            ),
+            onPressed: () => setState(() => _showFavoritesOnly = !_showFavoritesOnly),
+            tooltip: _showFavoritesOnly ? 'Show all Pokémon' : 'Show favorites',
+          ),
           IconButton(
             icon: Icon(
               _globalShinyMode ? Icons.auto_awesome : Icons.auto_awesome_outlined,
@@ -217,14 +254,13 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
             tooltip: _globalShinyMode ? 'Shiny Mode Active' : 'Enable Shiny Mode',
           ),
 
-          // Clear active filters indicator
           if (_hasActiveFilters)
             IconButton(
               icon: const Icon(Icons.filter_alt_off_rounded, color: Colors.orangeAccent),
               onPressed: _clearAllFilters,
               tooltip: 'Clear Filters',
             ),
-          
+
           listAsync.when(
             data: (list) => list.isNotEmpty
                 ? IconButton(
@@ -251,19 +287,15 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                         return _buildEmptyState();
                       }
 
-                      // Apply All Advanced Combinatory Filter Logics
                       final filteredList = pokemonList.where((pokemon) {
                         final int dexNum = pokemon.nationalDexNumber > 0 ? pokemon.nationalDexNumber : pokemon.id;
+                        if (_showFavoritesOnly && !favoriteDexNumbers.contains(dexNum)) {
+                          return false;
+                        }
 
-                        // 1. Search Query (Name, ID, type)
-                        final query = _searchQuery.toLowerCase();
-                        final matchesSearch = pokemon.name.toLowerCase().contains(query) ||
-                            dexNum.toString().contains(query) ||
-                            dexNum.toString().padLeft(3, '0').contains(query);
+                        final query = _searchQuery.trim().toLowerCase();
+                        if (!_matchesSearch(pokemon, dexNum, query)) return false;
 
-                        if (!matchesSearch) return false;
-
-                        // 2. Dual Type exclusive match logic
                         if (_selectedTypes.isNotEmpty) {
                           if (_selectedTypes.length == 1) {
                             final type = _selectedTypes.first.toLowerCase();
@@ -271,7 +303,6 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                                 (pokemon.type2?.toLowerCase() == type);
                             if (!matches) return false;
                           } else {
-                            // Strictly exclusive dual type matching
                             final t1 = _selectedTypes[0].toLowerCase();
                             final t2 = _selectedTypes[1].toLowerCase();
                             final pt1 = pokemon.type1.toLowerCase();
@@ -281,14 +312,12 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                           }
                         }
 
-                        // 3. Generation Chips Matching
                         if (_selectedGenerations.isNotEmpty) {
                           if (!_selectedGenerations.contains(_getGeneration(dexNum))) {
                             return false;
                           }
                         }
 
-                        // 4. Special Category Toggles (OR-matching when multiple toggles active)
                         final hasCategoryFilter = _showLegendary || _showMythical || _showUltraBeast || _showParadox;
                         if (hasCategoryFilter) {
                           bool matchesCategory = false;
@@ -303,18 +332,15 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                           return false;
                         }
 
-                        // 5. Format Filters Matching
                         if (_selectedFormats.isNotEmpty) {
                           if (!_selectedFormats.any((fmt) => _matchesFormat(pokemon, fmt))) {
                             return false;
                           }
                         }
 
-                        // 6. BST Range Filter
                         final bst = _getBst(pokemon);
                         if (bst < _minBst || bst > _maxBst) return false;
 
-                        // 7. Individual Stat Thresholds Filter
                         if (pokemon.baseHp < _minHp) return false;
                         if (pokemon.baseAtk < _minAtk) return false;
                         if (pokemon.baseDef < _minDef) return false;
@@ -322,23 +348,21 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                         if (pokemon.baseSpDef < _minSpDef) return false;
                         if (pokemon.baseSpd < _minSpd) return false;
 
-                        // 8. EV Yield Filter Matching
                         if (_selectedEvYieldStat != null) {
-                          final evKeys = PokemonDataHelpers.getEvYieldStatKeys(pokemon);
+                          final realEv = evYieldDataset.hasValue ? evYieldDataset.requireValue[pokemon.id] : null;
+                          final evKeys = realEv?.statKeys ?? PokemonDataHelpers.getEvYieldStatKeys(pokemon);
                           if (!evKeys.contains(_selectedEvYieldStat)) return false;
                         }
 
                         return true;
                       }).toList();
 
-                      // Group the filtered individual Pokémon by nationalDexNumber / base species
                       final Map<int, List<Pokemon>> groupedMap = {};
                       for (final p in filteredList) {
                         final int dexNum = p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id;
                         groupedMap.putIfAbsent(dexNum, () => []).add(p);
                       }
 
-                      // Sort the grouped keys based on the active sorting option
                       final List<int> sortedKeys = groupedMap.keys.toList();
                       sortedKeys.sort((a, b) {
                         final pA = groupedMap[a]!.first;
@@ -375,7 +399,6 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                       return CustomScrollView(
                         physics: const BouncingScrollPhysics(),
                         slivers: [
-                          // Sticky Search & Filter Pinned Bar Header
                           SliverPersistentHeader(
                             pinned: true,
                             delegate: _StickySearchHeaderDelegate(
@@ -393,7 +416,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                                           });
                                         },
                                         decoration: InputDecoration(
-                                          hintText: 'Search Name or National ID...',
+                                          hintText: 'Search name, type, form, or #...',
                                           prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.pokemonRed),
                                           suffixIcon: _searchQuery.isNotEmpty
                                               ? IconButton(
@@ -449,14 +472,18 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                             ),
                           ),
 
-                          // Sliver Grid rendering grouped species cards
                           sortedKeys.isEmpty
-                              ? const SliverFillRemaining(
-                                  child: Center(
-                                    child: Text(
-                                      'No Pokémon matched your criteria.',
-                                      style: TextStyle(fontSize: 16, color: Colors.grey, fontWeight: FontWeight.bold),
-                                    ),
+                              ? SliverFillRemaining(
+                                  child: AppEmptyState(
+                                    icon: Icons.search_off_rounded,
+                                    title: 'No Pokémon found',
+                                    message: _showFavoritesOnly
+                                        ? 'Tap the star on any Pokémon card to build your favorites list.'
+                                        : _hasActiveFilters
+                                            ? 'Try clearing a filter or widening your stat ranges.'
+                                            : 'Try another name, type, form, or Pokédex number.',
+                                    actionLabel: _hasActiveFilters ? 'Clear filters' : null,
+                                    onAction: _hasActiveFilters ? _clearAllFilters : null,
                                   ),
                                 )
                               : SliverPadding(
@@ -471,7 +498,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                                     delegate: SliverChildBuilderDelegate(
                                       (context, index) {
                                         final group = groupedMap[sortedKeys[index]]!;
-                                        return _buildPokemonCard(group, isDark);
+                                        return _buildPokemonCard(group, isDark, favoriteDexNumbers);
                                       },
                                       childCount: sortedKeys.length,
                                     ),
@@ -488,101 +515,171 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
     );
   }
 
-  Widget _buildPokemonCard(List<Pokemon> group, bool isDark) {
+  Widget _buildPokemonCard(List<Pokemon> group, bool isDark, Set<int> favoriteDexNumbers) {
     if (group.isEmpty) return const SizedBox.shrink();
 
-    // The grid should always display the first form from the group (usually the 'normal' one)
+    // The grid shows one species card, then passes every bundled form forward.
     final pokemon = group.first;
     final int dexNum = pokemon.nationalDexNumber > 0 ? pokemon.nationalDexNumber : pokemon.id;
     final typeColor = _getTypeColor(pokemon.type1);
+    final secondaryColor = pokemon.type2 == null ? typeColor : _getTypeColor(pokemon.type2!);
+    final isFavorite = favoriteDexNumbers.contains(dexNum);
+    final imageUrl = ((_showShinyOnly || _globalShinyMode) && pokemon.shinySpriteUrl.isNotEmpty)
+        ? pokemon.shinySpriteUrl
+        : pokemon.spriteUrl;
 
-    return Card(
-      elevation: 0,
-      color: isDark ? const Color(0xFF0C0C0C) : Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(
-          color: isDark ? const Color(0xFF1C1C1C) : const Color(0xFFE2E8F0),
-          width: 1.2,
-        ),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () {
-          // Pass the FULL group of forms to the detail screen!
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => PokemonDetailScreen(forms: group),
-            ),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      pokemon.name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        letterSpacing: 0.2,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Text(
-                    '#${dexNum.toString().padLeft(3, '0')}',
-                    style: TextStyle(
-                      color: typeColor,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  _buildTypeBadge(pokemon.type1, typeColor),
-                  if (pokemon.type2 != null) ...[
-                    const SizedBox(width: 4),
-                    _buildTypeBadge(pokemon.type2!, _getTypeColor(pokemon.type2!)),
-                  ],
-                ],
-              ),
-              Expanded(
-                child: Center(
-                  child: Hero(
-                    tag: 'pokemon_${pokemon.id}',
-                    child: pokemon.spriteUrl.isNotEmpty
-                        ? CachedNetworkImage(
-                            imageUrl: ((_showShinyOnly || _globalShinyMode) && pokemon.shinySpriteUrl.isNotEmpty)
-                                ? pokemon.shinySpriteUrl
-                                : pokemon.spriteUrl,
-                            fit: BoxFit.contain,
-                            maxHeightDiskCache: 200,
-                            maxWidthDiskCache: 200,
-                            placeholder: (context, url) => const Center(
-                              child: SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Colors.grey)),
-                              ),
-                            ),
-                            errorWidget: (context, url, error) => Icon(Icons.catching_pokemon, size: 40, color: typeColor.withValues(alpha: 0.3)),
-                          )
-                        : Icon(Icons.catching_pokemon, size: 40, color: typeColor.withValues(alpha: 0.3)),
-                  ),
-                ),
+    return RepaintBoundary(
+      child: Semantics(
+        button: true,
+        label: 'Open ${pokemon.name}, number $dexNum',
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(26),
+            boxShadow: [
+              BoxShadow(
+                color: typeColor.withValues(alpha: isDark ? 0.18 : 0.20),
+                blurRadius: 22,
+                offset: const Offset(0, 10),
               ),
             ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: Ink(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(26),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: isDark
+                      ? [
+                          Color.alphaBlend(typeColor.withValues(alpha: 0.25), const Color(0xFF080808)),
+                          const Color(0xFF0E0E12),
+                        ]
+                      : [
+                          typeColor.withValues(alpha: 0.22),
+                          secondaryColor.withValues(alpha: 0.10),
+                          Colors.white,
+                        ],
+                ),
+                border: Border.all(color: typeColor.withValues(alpha: isDark ? 0.35 : 0.22)),
+              ),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(26),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PokemonDetailScreen(forms: group),
+                    ),
+                  );
+                },
+                child: Stack(
+                  children: [
+                    Positioned(
+                      right: -18,
+                      bottom: -22,
+                      child: Icon(
+                        Icons.catching_pokemon,
+                        size: 112,
+                        color: Colors.white.withValues(alpha: isDark ? 0.035 : 0.34),
+                      ),
+                    ),
+                    Positioned(
+                      top: 6,
+                      right: 6,
+                      child: IconButton.filledTonal(
+                        visualDensity: VisualDensity.compact,
+                        iconSize: 18,
+                        tooltip: isFavorite ? 'Remove favorite' : 'Add favorite',
+                        onPressed: () => ref.read(favoritePokemonProvider.notifier).toggle(dexNum),
+                        icon: Icon(isFavorite ? Icons.star_rounded : Icons.star_border_rounded),
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.black.withValues(alpha: isDark ? 0.22 : 0.08),
+                          foregroundColor: isFavorite ? Colors.amber : (isDark ? Colors.white70 : const Color(0xFF475569)),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '#${dexNum.toString().padLeft(3, '0')}',
+                            style: TextStyle(
+                              color: typeColor,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 12,
+                              letterSpacing: 0.7,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            pokemon.name,
+                            style: TextStyle(
+                              color: isDark ? Colors.white : const Color(0xFF111827),
+                              fontWeight: FontWeight.w900,
+                              fontSize: 19,
+                              letterSpacing: -0.3,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 5,
+                            runSpacing: 5,
+                            children: [
+                              _buildTypeBadge(pokemon.type1, typeColor),
+                              if (pokemon.type2 != null) _buildTypeBadge(pokemon.type2!, secondaryColor),
+                            ],
+                          ),
+                          Expanded(
+                            child: Center(
+                              child: Hero(
+                                tag: 'pokemon_${pokemon.id}',
+                                child: imageUrl.isNotEmpty
+                                    ? CachedNetworkImage(
+                                        imageUrl: imageUrl,
+                                        fit: BoxFit.contain,
+                                        maxHeightDiskCache: 240,
+                                        maxWidthDiskCache: 240,
+                                        placeholder: (context, url) => const SizedBox(
+                                          width: 26,
+                                          height: 26,
+                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                        ),
+                                        errorWidget: (context, url, error) => Icon(
+                                          Icons.catching_pokemon,
+                                          size: 58,
+                                          color: typeColor.withValues(alpha: 0.36),
+                                        ),
+                                      )
+                                    : Icon(
+                                        Icons.catching_pokemon,
+                                        size: 58,
+                                        color: typeColor.withValues(alpha: 0.36),
+                                      ),
+                              ),
+                            ),
+                          ),
+                          if (group.length > 1)
+                            Text(
+                              '${group.length} forms',
+                              style: TextStyle(
+                                color: isDark ? Colors.white70 : const Color(0xFF475569),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),
@@ -678,7 +775,6 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                         child: ListView(
                           controller: scrollController,
                           children: [
-                            // 1. Dual Types selection
                             _buildSectionLabel('TYPES SELECTOR (UP TO 2 FOR DUAL EXCLUSIVE MATCH)'),
                             const SizedBox(height: 8),
                             Wrap(
@@ -716,7 +812,6 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                             ),
                             const SizedBox(height: 18),
 
-                            // 2. Generation Selection
                             _buildSectionLabel('GENERATIONS'),
                             const SizedBox(height: 8),
                             SizedBox(
@@ -754,7 +849,6 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                             ),
                             const SizedBox(height: 18),
 
-                            // 3. Special Categories
                             _buildSectionLabel('SPECIAL CATEGORIES'),
                             const SizedBox(height: 8),
                             Container(

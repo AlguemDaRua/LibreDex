@@ -23,7 +23,6 @@ class AppDrawer extends ConsumerWidget {
         bottom: true,
         child: Column(
           children: [
-            // Drawer Header
             Container(
               width: double.infinity,
               padding: const EdgeInsets.only(top: 60, bottom: 24, left: 24, right: 24),
@@ -73,7 +72,6 @@ class AppDrawer extends ConsumerWidget {
 
             const SizedBox(height: 16),
 
-            // Drawer Items
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -89,10 +87,18 @@ class AppDrawer extends ConsumerWidget {
                   _buildDrawerItem(
                     context: context,
                     ref: ref,
+                    icon: Icons.groups_rounded,
+                    label: 'Team Builder',
+                    route: 'team',
+                    index: 1,
+                  ),
+                  _buildDrawerItem(
+                    context: context,
+                    ref: ref,
                     icon: Icons.flash_on_rounded,
                     label: 'MoveDex',
                     route: 'moves',
-                    index: 1,
+                    index: 2,
                   ),
                   _buildDrawerItem(
                     context: context,
@@ -100,7 +106,15 @@ class AppDrawer extends ConsumerWidget {
                     icon: Icons.auto_awesome_rounded,
                     label: 'AbilityDex',
                     route: 'abilities',
-                    index: 2,
+                    index: 3,
+                  ),
+                  _buildDrawerItem(
+                    context: context,
+                    ref: ref,
+                    icon: Icons.inventory_2_rounded,
+                    label: 'ItemDex',
+                    route: 'items',
+                    index: 4,
                   ),
                   _buildDrawerItem(
                     context: context,
@@ -108,7 +122,7 @@ class AppDrawer extends ConsumerWidget {
                     icon: Icons.analytics_rounded,
                     label: 'NatureDex',
                     route: 'natures',
-                    index: 3,
+                    index: 5,
                   ),
                   _buildDrawerItem(
                     context: context,
@@ -116,7 +130,7 @@ class AppDrawer extends ConsumerWidget {
                     icon: Icons.grid_on_rounded,
                     label: 'Type Chart',
                     route: 'type_chart',
-                    index: 4,
+                    index: 6,
                   ),
                   _buildDrawerItem(
                     context: context,
@@ -124,7 +138,7 @@ class AppDrawer extends ConsumerWidget {
                     icon: Icons.calculate_rounded,
                     label: 'Damage Calculator',
                     route: 'calculator',
-                    index: 5,
+                    index: 7,
                   ),
                   Divider(height: 32, color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
                   _buildDrawerItem(
@@ -133,27 +147,32 @@ class AppDrawer extends ConsumerWidget {
                     icon: Icons.settings_rounded,
                     label: 'Settings',
                     route: 'settings',
-                    index: 6,
+                    index: 8,
                   ),
                 ],
               ),
             ),
 
-            // Premium 3-Button Theme Mode Selector at the bottom of the drawer
             Divider(height: 1, color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'THEME MODE',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w900,
-                      color: isDark ? Colors.grey[500] : Colors.grey[600],
-                      letterSpacing: 0.8,
-                    ),
+                  Row(
+                    children: [
+                      Icon(Icons.blur_circular_rounded, size: 15, color: isDark ? const Color(0xFFA78BFA) : AppTheme.pokemonRed),
+                      const SizedBox(width: 6),
+                      Text(
+                        'ULTRA WORMHOLE THEME',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          color: isDark ? Colors.grey[500] : Colors.grey[600],
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 10),
                   Row(
@@ -183,45 +202,47 @@ class AppDrawer extends ConsumerWidget {
     final currentMode = ref.watch(themeModeProvider);
     final isSelected = currentMode == mode;
 
-    final selectedBg = isDark ? AppTheme.pokemonRed.withValues(alpha: 0.2) : AppTheme.pokemonRed.withValues(alpha: 0.1);
-    final selectedBorder = AppTheme.pokemonRed;
+    final accent = mode == ThemeMode.dark
+        ? const Color(0xFFA78BFA)
+        : mode == ThemeMode.light
+            ? const Color(0xFFF59E0B)
+            : AppTheme.pokemonBlue;
     final unselectedBorder = isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB);
 
     return Expanded(
       child: GestureDetector(
-        onTap: () {
-          ref.read(themeModeProvider.notifier).setThemeMode(mode);
-        },
-        child: Container(
+        onTap: () => ref.read(themeModeProvider.notifier).setThemeMode(mode),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
           margin: const EdgeInsets.symmetric(horizontal: 4),
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: 9),
           decoration: BoxDecoration(
-            color: isSelected ? selectedBg : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: isSelected ? selectedBorder : unselectedBorder,
-              width: 1.5,
-            ),
+            gradient: isSelected
+                ? LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [accent.withValues(alpha: 0.28), AppTheme.pokemonRed.withValues(alpha: 0.12)],
+                  )
+                : null,
+            color: isSelected ? null : Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: isSelected ? accent : unselectedBorder, width: 1.4),
+            boxShadow: isSelected
+                ? [BoxShadow(color: accent.withValues(alpha: 0.18), blurRadius: 14, offset: const Offset(0, 6))]
+                : const [],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                icon,
-                size: 16,
-                color: isSelected
-                    ? AppTheme.pokemonRed
-                    : (isDark ? Colors.grey[400] : Colors.grey[600]),
-              ),
+              Icon(icon, size: 17, color: isSelected ? accent : (isDark ? Colors.grey[400] : Colors.grey[600])),
               const SizedBox(height: 4),
               Text(
                 label,
                 style: TextStyle(
                   fontSize: 11,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected
-                      ? (isDark ? Colors.white : AppTheme.pokemonRed)
-                      : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                  fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
+                  color: isSelected ? (isDark ? Colors.white : const Color(0xFF111827)) : (isDark ? Colors.grey[400] : Colors.grey[600]),
                 ),
               ),
             ],
