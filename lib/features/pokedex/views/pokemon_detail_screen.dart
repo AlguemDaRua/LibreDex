@@ -1699,7 +1699,8 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
 
     // Authoritative facts from the bundled PokeAPI dataset. While the asset is
     // still decoding we simply omit these rows rather than showing guesses.
-    final dataset = ref.watch(speciesDatasetProvider).valueOrNull;
+    final datasetAsync = ref.watch(speciesDatasetProvider);
+    final dataset = datasetAsync.hasValue ? datasetAsync.requireValue : null;
     final int dexNumber = _activePokemon.nationalDexNumber > 0
         ? _activePokemon.nationalDexNumber
         : _activePokemon.id;
