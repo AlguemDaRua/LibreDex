@@ -10,6 +10,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:libredex/features/abilitydex/views/ability_detail_screen.dart';
 import 'package:libredex/features/movedex/views/move_detail_screen.dart';
 import 'package:libredex/features/pokedex/utils/pokemon_data_helpers.dart';
+import 'package:libredex/core/data/species_data.dart';
 import 'package:libredex/features/pokedex/widgets/shiny_slider.dart';
 
 /// Static dictionary of Pokémon Natures in alphabetical order.
@@ -63,13 +64,13 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
     super.initState();
     _selectedFormIndex = widget.initialFormIndex < widget.forms.length ? widget.initialFormIndex : 0;
     _tabController = TabController(length: 3, vsync: this);
-    _triggerSyncForActivePokemon();
+    _resetStatsForActiveForm();
   }
 
-  void _triggerSyncForActivePokemon() {
+  /// Resets the EV/IV sliders whenever the displayed form changes.
+  void _resetStatsForActiveForm() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(statsCalculatorProvider.notifier).reset();
-      ref.read(pokemonRepositoryProvider).syncPokemonDetails(_activePokemon.id, _activePokemon.name);
+      if (mounted) ref.read(statsCalculatorProvider.notifier).reset();
     });
   }
 
@@ -130,7 +131,7 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                     onTap: () {
                       setState(() {
                         _selectedFormIndex = index;
-                        _triggerSyncForActivePokemon();
+                        _resetStatsForActiveForm();
                       });
                     },
                     child: Container(
@@ -1695,9 +1696,16 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
         _activePokemon.baseSpd;
 
     final String evYield = PokemonDataHelpers.getEvYield(_activePokemon);
-    final String eggGroups = PokemonDataHelpers.getEggGroups(_activePokemon);
-    final Map<String, dynamic> gender = PokemonDataHelpers.getGenderRatio(_activePokemon);
-    final String catchRate = PokemonDataHelpers.getCatchRate(_activePokemon);
+
+    // Authoritative facts from the bundled PokeAPI dataset. While the asset is
+    // still decoding we simply omit these rows rather than showing guesses.
+    final dataset = ref.watch(speciesDatasetProvider).valueOrNull;
+    final int dexNumber = _activePokemon.nationalDexNumber > 0
+        ? _activePokemon.nationalDexNumber
+        : _activePokemon.id;
+    final FormFacts? form =
+        dataset?.formFacts(_activePokemon.id, nationalDexNumber: dexNumber);
+    final SpeciesFacts? species = dataset?.speciesFacts(dexNumber);
 
     Color bstColor = Colors.grey;
     String bstLabel = 'Standard BST';
@@ -1712,9 +1720,9 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
       bstLabel = 'Mid Tier';
     }
 
-    final bool isGenderless = gender['genderless'] == true;
-    final double malePct = (gender['male'] as num).toDouble();
-    final double femalePct = (gender['female'] as num).toDouble();
+    final bool isGenderless = species?.gender.genderless ?? true;
+    final double malePct = species?.gender.malePercent ?? 0;
+    final double femalePct = species?.gender.femalePercent ?? 0;
 
     return Container(
       width: double.infinity,
@@ -1768,17 +1776,74 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
           ),
           Divider(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB), height: 24),
 
-          // EV Yield
+          if (form != null) ...[
+            _buildBioRow('Height', form.heightLabel, Icons.height_rounded, isDark),
+            const SizedBox(height: 12),
+            // Weight drives Low Kick, Grass Knot, Heavy Slam and Heat Crash.
+            _buildBioRow('Weight', form.weightLabel, Icons.monitor_weight_rounded, isDark),
+            const SizedBox(height: 12),
+            _buildBioRow(
+              'Base EXP',
+              '${form.baseExp} EXP when defeated',
+              Icons.military_tech_rounded,
+              isDark,
+            ),
+            const SizedBox(height: 12),
+            _buildBioRow(
+              'Weight Moves',
+              'Low Kick / Grass Knot hit this Pokémon for '
+                  '${form.lowKickPower} base power',
+              Icons.sports_martial_arts_rounded,
+              isDark,
+            ),
+            const SizedBox(height: 12),
+          ],
+
           _buildBioRow('EV Yield', evYield, Icons.fitness_center_rounded, isDark),
           const SizedBox(height: 12),
 
-          // Egg Groups
-          _buildBioRow('Egg Groups', eggGroups, Icons.egg_rounded, isDark),
-          const SizedBox(height: 12),
-
-          // Catch Rate
-          _buildBioRow('Catch Rate', catchRate, Icons.catching_pokemon_rounded, isDark),
-          const SizedBox(height: 12),
+          if (species != null) ...[
+            _buildBioRow('Egg Groups', species.eggGroupLabel, Icons.egg_rounded, isDark),
+            const SizedBox(height: 12),
+            if (species.canBreed) ...[
+              _buildBioRow(
+                'Hatch Time',
+                '${species.eggCycles} cycles (~${species.eggSteps} steps)',
+                Icons.timelapse_rounded,
+                isDark,
+              ),
+              const SizedBox(height: 12),
+            ],
+            _buildBioRow(
+              'Catch Rate',
+              species.captureRateLabel,
+              Icons.catching_pokemon_rounded,
+              isDark,
+            ),
+            const SizedBox(height: 12),
+            _buildBioRow(
+              'Growth Rate',
+              '${species.growthRate} '
+                  '(${_formatExp(species.growthTotalExp)} EXP to Lv. 100)',
+              Icons.trending_up_rounded,
+              isDark,
+            ),
+            const SizedBox(height: 12),
+            _buildBioRow(
+              'Base Friendship',
+              '${species.baseHappiness}',
+              Icons.favorite_rounded,
+              isDark,
+            ),
+            const SizedBox(height: 12),
+            _buildBioRow(
+              'Generation',
+              'Introduced in Gen ${species.generation}',
+              Icons.public_rounded,
+              isDark,
+            ),
+            const SizedBox(height: 12),
+          ],
 
           // Gender Ratio
           Column(
@@ -1818,12 +1883,12 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                           children: [
                             if (malePct > 0)
                               Expanded(
-                                flex: malePct.toInt(),
+                                flex: (malePct * 10).round(),
                                 child: Container(color: Colors.blueAccent),
                               ),
                             if (femalePct > 0)
                               Expanded(
-                                flex: femalePct.toInt(),
+                                flex: (femalePct * 10).round(),
                                 child: Container(color: Colors.pinkAccent),
                               ),
                           ],
@@ -1835,11 +1900,11 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          '♂ $malePct% Male',
+                          '♂ ${GenderRatio.formatPercent(malePct)}% Male',
                           style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.blueAccent),
                         ),
                         Text(
-                          '♀ $femalePct% Female',
+                          '♀ ${GenderRatio.formatPercent(femalePct)}% Female',
                           style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.pinkAccent),
                         ),
                       ],
@@ -1852,6 +1917,12 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
       ),
     );
   }
+
+  /// Formats large experience totals as e.g. "1,059,860".
+  String _formatExp(int value) => value.toString().replaceAllMapped(
+        RegExp(r'(\d)(?=(\d{3})+$)'),
+        (m) => '${m[1]},',
+      );
 
   Widget _buildBioRow(String label, String value, IconData icon, bool isDark) {
     return Row(
