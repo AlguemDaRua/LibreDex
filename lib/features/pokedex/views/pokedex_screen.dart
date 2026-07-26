@@ -229,8 +229,8 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
             data: (list) => list.isNotEmpty
                 ? IconButton(
                     icon: const Icon(Icons.sync),
-                    onPressed: () => ref.read(pokedexSyncNotifierProvider.notifier).syncPokedex(),
-                    tooltip: 'Force Sync Data',
+                    onPressed: () => ref.read(pokedexSyncNotifierProvider.notifier).reseed(),
+                    tooltip: 'Rebuild offline database',
                   )
                 : const SizedBox.shrink(),
             error: (err, stack) => const SizedBox.shrink(),
@@ -1113,7 +1113,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
             const Icon(Icons.error_outline, size: 64, color: AppTheme.pokemonRed),
             const SizedBox(height: 16),
             const Text(
-              'Sync Error Occurred',
+              'Could not load the Pokédex',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -1124,7 +1124,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: () => ref.read(pokedexSyncNotifierProvider.notifier).syncPokedex(),
+              onPressed: () => ref.read(pokedexSyncNotifierProvider.notifier).reseed(),
               icon: const Icon(Icons.sync),
               label: const Text('Try Again'),
               style: ElevatedButton.styleFrom(
@@ -1163,15 +1163,15 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Your offline database currently contains no Pokémon. Sync details from PokeAPI to begin.',
+              'Your local database is empty. Rebuild it from the data bundled inside the app — no connection needed.',
               style: TextStyle(fontSize: 14, color: Colors.grey),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
             ElevatedButton.icon(
-              onPressed: () => ref.read(pokedexSyncNotifierProvider.notifier).syncPokedex(),
-              icon: const Icon(Icons.cloud_download),
-              label: const Text('Sync Generations 1-9+ (1025 Pokémon)'),
+              onPressed: () => ref.read(pokedexSyncNotifierProvider.notifier).reseed(),
+              icon: const Icon(Icons.restart_alt_rounded),
+              label: const Text('Rebuild offline database'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.pokemonRed,
                 foregroundColor: Colors.white,

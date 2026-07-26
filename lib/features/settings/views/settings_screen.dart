@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/widgets/app_drawer.dart';
+import 'package:libredex/core/widgets/offline_download_dialog.dart';
+import 'package:libredex/features/home/views/home_screen.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
 import 'package:libredex/features/pokedex/repositories/sync_repository.dart';
-import 'package:libredex/features/splash/views/initial_sync_screen.dart';
-import 'package:libredex/features/pokedex/repositories/deep_sync_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -87,11 +87,9 @@ class SettingsScreen extends ConsumerWidget {
               primaryColor: primaryColor,
               icon: Icons.download_rounded,
               title: 'Download Offline Sprites',
-              subtitle: 'Download all 2,200+ high-quality sprites for offline usage (~150MB)',
-              onTap: () {
-                ref.read(deepSyncRepositoryProvider).startDeepSync();
-                Navigator.pop(context);
-              },
+              subtitle: 'Pick a quality and download every sprite for offline use. '
+                  'The app stays usable, and you can pause or cancel at any time.',
+              onTap: () => showOfflineDownloadDialog(context),
             ),
             const SizedBox(height: 12),
 
@@ -111,8 +109,8 @@ class SettingsScreen extends ConsumerWidget {
               isDark: isDark,
               primaryColor: primaryColor,
               icon: Icons.sync_problem_rounded,
-              title: 'Force Complete Re-Sync',
-              subtitle: 'Wipe all local Pokémon data and re-download everything from the internet. Requires a connection.',
+              title: 'Rebuild Local Database',
+              subtitle: 'Clear and rebuild every table from the data bundled in the app. Works fully offline.',
               onTap: () => _confirmResetAndSync(context, ref),
             ),
 
@@ -192,62 +190,106 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Future<void> _reseedBundledData(BuildContext context, WidgetRef ref) async {
+    _showBlockingProgress(
+      context,
+      'Unpacking bundled Moves, Abilities and Learnsets into the local database. '
+      'This may take a few seconds.',
+    );
+
+    String message;
+    try {
+      await ref.read(syncRepositoryProvider).seedBundledData();
+      message = '✓ Moves, Abilities & Learnsets re-seeded successfully.';
+    } catch (e) {
+      message = 'Re-seed failed: $e';
+    }
+
+    if (!context.mounted) return;
+    // Pop the progress dialog specifically, never the app shell.
+    Navigator.of(context, rootNavigator: true).pop();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), duration: const Duration(seconds: 3)),
+    );
+  }
+
+  /// Clears every table and re-seeds it from the bundled JSON assets.
+  ///
+  /// Runs entirely offline, and always dismisses its own progress dialog using
+  /// the dialog's context so it can never pop the app shell.
+  Future<void> _rebuildLocalDatabase(BuildContext context, WidgetRef ref) async {
+    _showBlockingProgress(
+      context,
+      'Rebuilding the local database from bundled data. This may take a few seconds.',
+    );
+
+    String message;
+    try {
+      final db = ref.read(databaseProvider);
+      await db.transaction(() async {
+        await db.delete(db.pokemonAbilitiesTable).go();
+        await db.delete(db.pokemonMovesTable).go();
+        await db.delete(db.pokemonTable).go();
+        await db.delete(db.moveTable).go();
+        await db.delete(db.abilityTable).go();
+      });
+      await ref.read(syncRepositoryProvider).seedBundledData();
+      message = '✓ Local database rebuilt successfully.';
+    } catch (e) {
+      message = 'Rebuild failed: $e';
+    }
+
+    if (!context.mounted) return;
+    Navigator.of(context, rootNavigator: true).pop();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), duration: const Duration(seconds: 3)),
+    );
+  }
+
+  /// Shows a non-dismissible progress dialog with a shared look.
+  void _showBlockingProgress(BuildContext context, String message) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    showDialog(
+    showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Re-seeding Local Data…', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: const Column(
+        content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SizedBox(height: 8),
-            CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(AppTheme.pokemonRed)),
-            SizedBox(height: 16),
+            const SizedBox(height: 8),
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation(AppTheme.pokemonRed),
+            ),
+            const SizedBox(height: 20),
             Text(
-              'Unpacking bundled Moves, Abilities and Learnset junctions into the local database. This may take a few seconds.',
-              style: TextStyle(fontSize: 12, height: 1.4),
+              message,
+              style: const TextStyle(fontSize: 12, height: 1.4),
               textAlign: TextAlign.center,
             ),
           ],
         ),
       ),
     );
-
-    try {
-      await ref.read(syncRepositoryProvider).seedBundledData();
-    } catch (_) {}
-
-    if (context.mounted) {
-      Navigator.pop(context); // Close progress dialog
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('✓ Moves, Abilities & Learnsets re-seeded successfully!'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 3),
-        ),
-      );
-    }
   }
 
   void _confirmResetAndSync(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    showDialog(
+    showDialog<void>(
       context: context,
-      builder: (context) {
+      builder: (ctx) {
         return AlertDialog(
           backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Confirm Full Reset?', style: TextStyle(fontWeight: FontWeight.bold)),
+          title: const Text('Rebuild local database?', style: TextStyle(fontWeight: FontWeight.bold)),
           content: const Text(
-            'This will clear all local Pokémon, Move, Ability and Learnset data and restart the global initialization sync wizard. An internet connection is required.',
+            'This clears the local Pokémon, Move, Ability and Learnset tables and rebuilds '
+            'them from the data bundled inside the app. No internet connection is required.',
             style: TextStyle(fontSize: 13, height: 1.4),
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(ctx),
               child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
             ),
             ElevatedButton(
@@ -256,24 +298,12 @@ class SettingsScreen extends ConsumerWidget {
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              onPressed: () async {
-                Navigator.pop(context);
-                final db = ref.read(databaseProvider);
-                await db.transaction(() async {
-                  await db.delete(db.pokemonAbilitiesTable).go();
-                  await db.delete(db.pokemonMovesTable).go();
-                  await db.delete(db.pokemonTable).go();
-                  await db.delete(db.moveTable).go();
-                  await db.delete(db.abilityTable).go();
-                });
-                if (context.mounted) {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => const InitialSyncScreen()),
-                  );
-                }
+              onPressed: () {
+                Navigator.pop(ctx);
+                // Use the screen's context, not the dismissed dialog's.
+                _rebuildLocalDatabase(context, ref);
               },
-              child: const Text('Reset & Sync', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text('Rebuild', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         );
@@ -283,9 +313,9 @@ class SettingsScreen extends ConsumerWidget {
 
   void _confirmDeleteOfflineData(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    showDialog(
+    showDialog<void>(
       context: context,
-      builder: (context) {
+      builder: (ctx) {
         return AlertDialog(
           backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -296,7 +326,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(ctx),
               child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
             ),
             ElevatedButton(
@@ -306,10 +336,10 @@ class SettingsScreen extends ConsumerWidget {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               onPressed: () async {
-                Navigator.pop(context);
+                Navigator.pop(ctx);
                 await DefaultCacheManager().emptyCache();
                 final prefs = await SharedPreferences.getInstance();
-                await prefs.setBool('promptedOfflineDownload', false);
+                await prefs.setBool(kOfflinePromptShownKey, false);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(

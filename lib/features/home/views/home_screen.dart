@@ -1,93 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/navigation/navigation_provider.dart';
-import 'package:libredex/features/pokedex/views/pokedex_screen.dart';
-import 'package:libredex/features/movedex/views/movedex_screen.dart';
-import 'package:libredex/features/abilitydex/views/abilitydex_screen.dart';
-import 'package:libredex/features/naturedex/views/naturedex_screen.dart';
-import 'package:libredex/features/typechart/views/typechart_screen.dart';
-import 'package:libredex/features/calculator/views/damage_calculator_screen.dart';
-import 'package:libredex/features/settings/views/settings_screen.dart';
-import 'package:libredex/features/pokedex/repositories/deep_sync_repository.dart';
 import 'package:libredex/core/theme/app_theme.dart';
+import 'package:libredex/core/widgets/offline_download_dialog.dart';
+import 'package:libredex/features/abilitydex/views/abilitydex_screen.dart';
+import 'package:libredex/features/calculator/views/damage_calculator_screen.dart';
+import 'package:libredex/features/movedex/views/movedex_screen.dart';
+import 'package:libredex/features/naturedex/views/naturedex_screen.dart';
+import 'package:libredex/features/pokedex/repositories/deep_sync_repository.dart';
+import 'package:libredex/features/pokedex/views/pokedex_screen.dart';
+import 'package:libredex/features/settings/views/settings_screen.dart';
+import 'package:libredex/features/typechart/views/typechart_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class OfflinePromptDialog extends ConsumerStatefulWidget {
-  const OfflinePromptDialog({super.key});
+/// Preference key marking that the first-run offline download prompt was shown.
+const String kOfflinePromptShownKey = 'promptedOfflineDownload';
 
-  @override
-  ConsumerState<OfflinePromptDialog> createState() => _OfflinePromptDialogState();
-}
-
-class _OfflinePromptDialogState extends ConsumerState<OfflinePromptDialog> {
-  bool _doNotAskAgain = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    return AlertDialog(
-      backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: const Text('Download Offline Data?', style: TextStyle(fontWeight: FontWeight.bold)),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'Would you like to download all Moves, Abilities, and Sprites for complete offline usage without internet? (Approx 150MB)',
-            style: TextStyle(fontSize: 13, color: isDark ? Colors.grey[300] : Colors.grey[700], height: 1.4),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Checkbox(
-                value: _doNotAskAgain,
-                activeColor: AppTheme.pokemonRed,
-                onChanged: (val) {
-                  setState(() => _doNotAskAgain = val ?? false);
-                },
-              ),
-              const Expanded(
-                child: Text('Do not ask again', style: TextStyle(fontSize: 13)),
-              ),
-            ],
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () async {
-            if (_doNotAskAgain) {
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.setBool('promptedOfflineDownload', true);
-            }
-            if (context.mounted) Navigator.pop(context);
-          },
-          child: const Text('Not Now', style: TextStyle(color: Colors.grey)),
-        ),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.pokemonRed,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-          onPressed: () async {
-            if (_doNotAskAgain) {
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.setBool('promptedOfflineDownload', true);
-            }
-            ref.read(deepSyncRepositoryProvider).startDeepSync();
-            if (context.mounted) Navigator.pop(context);
-          },
-          child: const Text('Download', style: TextStyle(fontWeight: FontWeight.bold)),
-        ),
-      ],
-    );
-  }
-}
-
-/// Unified home wrapper screen that dynamically displays sub-screens based on the active index
-/// and handles pop signals cleanly to avoid accidental app termination.
+/// Hosts the main sections of the app and keeps the offline download banner
+/// pinned above whichever section is active.
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -101,127 +31,182 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkOfflinePrompt();
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybePromptForDownload());
   }
 
-  Future<void> _checkOfflinePrompt() async {
+  Future<void> _maybePromptForDownload() async {
     if (_hasPromptedThisSession) return;
     _hasPromptedThisSession = true;
 
     final prefs = await SharedPreferences.getInstance();
-    final bool prompted = prefs.getBool('promptedOfflineDownload') ?? false;
+    if (prefs.getBool(kOfflinePromptShownKey) ?? false) return;
+    if (!mounted) return;
 
-    if (!prompted && mounted) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const OfflinePromptDialog(),
-      );
-    }
+    await prefs.setBool(kOfflinePromptShownKey, true);
+    if (!mounted) return;
+    await showOfflineDownloadDialog(context);
   }
 
   @override
   Widget build(BuildContext context) {
     final currentIndex = ref.watch(currentMenuIndexProvider);
-    final deepSyncState = ref.watch(deepSyncProgressProvider);
 
-    Widget activeBody;
-    switch (currentIndex) {
-      case 0:
-        activeBody = const PokedexScreen();
-        break;
-      case 1:
-        activeBody = const MovedexScreen();
-        break;
-      case 2:
-        activeBody = const AbilitydexScreen();
-        break;
-      case 3:
-        activeBody = const NaturedexScreen();
-        break;
-      case 4:
-        activeBody = const TypeChartScreen();
-        break;
-      case 5:
-        activeBody = const DamageCalculatorScreen();
-        break;
-      case 6:
-        activeBody = const SettingsScreen();
-        break;
-      default:
-        activeBody = const PokedexScreen();
-    }
-
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    Widget bodyWithBanner = Column(
-      children: [
-        if (deepSyncState.progress > 0 && !deepSyncState.isComplete)
-          Container(
-            padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top, bottom: 8, left: 16, right: 16),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                )
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Background Sync',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.pokemonRed),
-                    ),
-                    Text(
-                      '${(deepSyncState.progress * 100).toInt()}%',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: deepSyncState.progress,
-                    backgroundColor: isDark ? const Color(0xFF333333) : const Color(0xFFE5E7EB),
-                    valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.pokemonRed),
-                    minHeight: 4,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  deepSyncState.message,
-                  style: TextStyle(fontSize: 10, color: isDark ? Colors.grey[400] : Colors.grey[600]),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+    // Intercept back: from any sub-section, Back returns to the Pokédex first.
+    return PopScope(
+      canPop: currentIndex == 0,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        ref.read(currentMenuIndexProvider.notifier).setIndex(0);
+      },
+      child: Column(
+        children: [
+          const _DownloadBanner(),
+          Expanded(
+            child: IndexedStack(
+              index: currentIndex,
+              children: const [
+                PokedexScreen(),
+                MovedexScreen(),
+                AbilitydexScreen(),
+                NaturedexScreen(),
+                TypeChartScreen(),
+                DamageCalculatorScreen(),
+                SettingsScreen(),
               ],
             ),
           ),
-        Expanded(child: activeBody),
-      ],
+        ],
+      ),
     );
+  }
+}
 
-    // Intercept back actions. If we are on any sub-page, pressing "Back" returns us to Pokédex (0).
-    return PopScope(
-      canPop: currentIndex == 0,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        if (currentIndex > 0) {
-          ref.read(currentMenuIndexProvider.notifier).setIndex(0);
-        }
-      },
-      child: bodyWithBanner,
+/// Compact, always-visible progress strip shown while sprites download.
+///
+/// It sits above the active screen rather than covering it, so the app stays
+/// fully usable while data is being fetched in the background.
+class _DownloadBanner extends ConsumerWidget {
+  const _DownloadBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sync = ref.watch(deepSyncControllerProvider);
+    if (!sync.isVisible) return const SizedBox.shrink();
+
+    final controller = ref.read(deepSyncControllerProvider.notifier);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hasFailed = sync.status == DownloadStatus.failed;
+
+    return Material(
+      color: isDark ? const Color(0xFF101010) : Colors.white,
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    hasFailed ? Icons.cloud_off_rounded : Icons.cloud_download_rounded,
+                    size: 18,
+                    color: hasFailed ? Colors.orangeAccent : AppTheme.pokemonRed,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      hasFailed
+                          ? 'Offline download paused'
+                          : sync.status == DownloadStatus.paused
+                              ? 'Download paused'
+                              : 'Downloading sprites for offline use',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: hasFailed ? Colors.orangeAccent : AppTheme.pokemonRed,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (!hasFailed)
+                    Text(
+                      '${sync.completed}/${sync.total}',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                    ),
+                  if (sync.status == DownloadStatus.running)
+                    _BannerAction(
+                      icon: Icons.pause_rounded,
+                      tooltip: 'Pause',
+                      onPressed: controller.pause,
+                    ),
+                  if (sync.status == DownloadStatus.paused)
+                    _BannerAction(
+                      icon: Icons.play_arrow_rounded,
+                      tooltip: 'Resume',
+                      onPressed: controller.resume,
+                    ),
+                  _BannerAction(
+                    icon: Icons.close_rounded,
+                    tooltip: hasFailed ? 'Dismiss' : 'Cancel download',
+                    onPressed: hasFailed ? controller.acknowledge : controller.cancel,
+                  ),
+                ],
+              ),
+              if (!hasFailed) ...[
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: sync.progress,
+                    minHeight: 5,
+                    backgroundColor: isDark ? const Color(0xFF262626) : const Color(0xFFE5E7EB),
+                    valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.pokemonRed),
+                  ),
+                ),
+                const SizedBox(height: 6),
+              ],
+              Text(
+                hasFailed
+                    ? (sync.errorMessage ?? 'Download interrupted.')
+                    : '${(sync.progress * 100).toStringAsFixed(0)}% · ${sync.currentLabel}',
+                style: TextStyle(
+                  fontSize: 11,
+                  height: 1.3,
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BannerAction extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onPressed;
+
+  const _BannerAction({
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: Icon(icon, size: 20),
+      tooltip: tooltip,
+      visualDensity: VisualDensity.compact,
+      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+      padding: EdgeInsets.zero,
+      onPressed: onPressed,
     );
   }
 }
