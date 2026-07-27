@@ -899,7 +899,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     // Gen 9 Terastallization STAB multiplier
     double stabMult = 1.0;
     final moveTypeLower = effectiveMoveType;
-    if (state.attackerTeraActive && state.attackerTeraType != null) {
+    if (!state.ruleset.isChampions && state.attackerTeraActive && state.attackerTeraType != null) {
       final teraTypeLower = state.attackerTeraType!.toLowerCase();
       final isOriginalStab = p1.type1.toLowerCase() == moveTypeLower || p1.type2?.toLowerCase() == moveTypeLower;
       if (teraTypeLower == moveTypeLower) {
@@ -920,7 +920,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
       attackerAbility: state.attackerAbility,
       defenderAbility: state.defenderAbility,
       moveName: activeMove.name,
-      defenderTeraActive: state.defenderTeraActive,
+      defenderTeraActive: !state.ruleset.isChampions && state.defenderTeraActive,
       defenderTeraType: state.defenderTeraType,
     );
 
@@ -968,7 +968,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     Widget buildPokemonDuelCard(Pokemon p, bool isAttacker, String heldItem) {
       final typeColor = CombatUtils.typeColors[p.type1.toLowerCase()] ?? Colors.grey;
       final spd = isAttacker ? finalAttackerSpeed : finalDefenderSpeed;
-      final isTera = isAttacker ? state.attackerTeraActive : state.defenderTeraActive;
+      final isTera = !state.ruleset.isChampions && (isAttacker ? state.attackerTeraActive : state.defenderTeraActive);
       final teraT = isAttacker ? state.attackerTeraType : state.defenderTeraType;
       final status = isAttacker ? state.attackerStatus : state.defenderStatus;
 
@@ -1926,8 +1926,9 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                   const SizedBox(height: 12),
                 ],
 
-                // Terastallization Card
-                Container(
+                // Terastallization Card (Mainline ruleset only — Pokémon Champions does not have Tera)
+                if (!currentState.ruleset.isChampions) ...[
+                  Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: isDark ? const Color(0xFF141414) : const Color(0xFFF3F4F6),
@@ -1998,6 +1999,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                   ),
                 ),
                 const SizedBox(height: 12),
+              ],
 
                 // Status Condition & Held Item
                 Row(

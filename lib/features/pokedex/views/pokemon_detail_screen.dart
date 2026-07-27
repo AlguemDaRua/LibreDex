@@ -71,9 +71,15 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
   @override
   void initState() {
     super.initState();
-    _selectedFormIndex = widget.initialFormIndex < widget.forms.length ? widget.initialFormIndex : 0;
+    if (widget.forms.isNotEmpty) {
+      _selectedFormIndex = widget.initialFormIndex.clamp(0, widget.forms.length - 1);
+    } else {
+      _selectedFormIndex = 0;
+    }
     _tabController = TabController(length: 3, vsync: this);
-    _resetStatsForActiveForm();
+    if (widget.forms.isNotEmpty) {
+      _resetStatsForActiveForm();
+    }
   }
 
   /// Resets the EV/IV sliders whenever the displayed form changes.
@@ -105,6 +111,13 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
 
   @override
   Widget build(BuildContext context) {
+    if (widget.forms.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Pokémon Details')),
+        body: const Center(child: Text('No Pokémon data available.')),
+      );
+    }
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? Colors.white : Colors.black;
     final dexNumber = _activePokemon.nationalDexNumber > 0 ? _activePokemon.nationalDexNumber : _activePokemon.id;
@@ -393,7 +406,7 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final dexNumber = _activePokemon.nationalDexNumber > 0 ? _activePokemon.nationalDexNumber : _activePokemon.id;
     final entriesAsync = ref.watch(pokedexEntryDatasetProvider);
-    final entry = entriesAsync.hasValue ? entriesAsync.requireValue[dexNumber] : null;
+    final entry = entriesAsync.value?[dexNumber];
     if (entry == null || (entry.genus.isEmpty && entry.flavor.isEmpty)) {
       return const SizedBox.shrink();
     }
@@ -1781,13 +1794,13 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
         _activePokemon.baseSpd;
 
     final evYieldAsync = ref.watch(evYieldDatasetProvider);
-    final realEvYield = evYieldAsync.hasValue ? evYieldAsync.requireValue[_activePokemon.id] : null;
+    final realEvYield = evYieldAsync.value?[_activePokemon.id];
     final String evYield = realEvYield?.label ?? '${PokemonDataHelpers.getEvYield(_activePokemon)} (estimated)';
 
     // Authoritative facts from the bundled PokeAPI dataset. While the asset is
     // still decoding we simply omit these rows rather than showing guesses.
     final datasetAsync = ref.watch(speciesDatasetProvider);
-    final dataset = datasetAsync.hasValue ? datasetAsync.requireValue : null;
+    final dataset = datasetAsync.value;
     final int dexNumber = _activePokemon.nationalDexNumber > 0
         ? _activePokemon.nationalDexNumber
         : _activePokemon.id;
@@ -1965,12 +1978,12 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                         height: 10,
                         child: Row(
                           children: [
-                            if (malePct > 0)
+                            if (malePct > 0 && (malePct * 10).round() > 0)
                               Expanded(
                                 flex: (malePct * 10).round(),
                                 child: Container(color: Colors.blueAccent),
                               ),
-                            if (femalePct > 0)
+                            if (femalePct > 0 && (femalePct * 10).round() > 0)
                               Expanded(
                                 flex: (femalePct * 10).round(),
                                 child: Container(color: Colors.pinkAccent),
