@@ -238,7 +238,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
     final listAsync = ref.watch(pokedexProvider);
     final favoriteDexNumbers = ref.watch(favoritePokemonProvider);
     final teamPokemonIds = ref.watch(teamBuilderProvider).whereType<int>().toSet();
-    final championsCatalog = ref.watch(championsCatalogProvider).valueOrNull;
+    final championsCatalog = ref.watch(championsCatalogProvider).value;
     final evYieldDataset = ref.watch(evYieldDatasetProvider);
     final syncState = ref.watch(pokedexSyncNotifierProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;

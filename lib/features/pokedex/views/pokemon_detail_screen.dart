@@ -465,7 +465,7 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
   Widget _buildAbilitiesCard() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final abilitiesAsync = ref.watch(pokemonAbilitiesStreamProvider(_activePokemon.id));
-    final abilityFallbackFrom = abilitiesAsync.valueOrNull
+    final abilityFallbackFrom = abilitiesAsync.value
         ?.firstWhere((a) => a['abilityFallbackFrom'] != null, orElse: () => const <String, dynamic>{})
             ['abilityFallbackFrom'] as String?;
 
@@ -1320,7 +1320,7 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
 
     // Forms without direct learnset rows receive the base species learnset
     // tagged with `learnsetFallbackFrom` by the repository.
-    final fallbackFrom = movesAsync.valueOrNull
+    final fallbackFrom = movesAsync.value
         ?.firstWhere((m) => m['learnsetFallbackFrom'] != null, orElse: () => const <String, dynamic>{})
             ['learnsetFallbackFrom'] as String?;
 

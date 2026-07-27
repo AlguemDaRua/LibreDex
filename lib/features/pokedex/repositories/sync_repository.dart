@@ -138,7 +138,7 @@ class SyncRepository {
     }
     final overridesById = <int, Map<dynamic, dynamic>>{
       for (final raw in (overlay['pokemonOverrides'] as List<dynamic>? ?? const []))
-        (raw as Map<dynamic, dynamic>)['id'] as int: Map<dynamic, dynamic>.from(raw as Map<dynamic, dynamic>),
+        (raw as Map<dynamic, dynamic>)['id'] as int: Map<dynamic, dynamic>.from(raw),
     };
     for (final row in pokemonRows) {
       final patch = overridesById[row['id'] as int];

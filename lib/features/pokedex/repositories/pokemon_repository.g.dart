@@ -323,7 +323,7 @@ final class PokemonAbilitiesStreamProvider
 }
 
 String _$pokemonAbilitiesStreamHash() =>
-    r'f8fbbc2247671659c40c3d1b6f310e8942102b75';
+    r'17bb6c18ba9a82ff709bb8bcb45fbe7e19d311fe';
 
 final class PokemonAbilitiesStreamFamily extends $Family
     with $FunctionalFamilyOverride<Stream<List<Map<String, dynamic>>>, int> {
@@ -401,7 +401,7 @@ final class PokemonMovesStreamProvider
 }
 
 String _$pokemonMovesStreamHash() =>
-    r'165e5aa9be6061e37f597facbb36fc35ccc93bc4';
+    r'2c393d5a8fab9cf1b8a8c4d69b54716bac24abdf';
 
 final class PokemonMovesStreamFamily extends $Family
     with $FunctionalFamilyOverride<Stream<List<Map<String, dynamic>>>, int> {

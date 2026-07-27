@@ -786,7 +786,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     // weather/terrain, ...) resolve from the live battle context instead of
     // their — often missing — database power. Runs after the speed block so
     // Gyro Ball / Electro Ball can use the final, paralysis-adjusted stats.
-    final speciesDataset = ref.watch(speciesDatasetProvider).valueOrNull;
+    final speciesDataset = ref.watch(speciesDatasetProvider).value;
     final double attackerWeightKg = speciesDataset
             ?.formFacts(p1.id, nationalDexNumber: p1.nationalDexNumber)
             ?.weightKg ??

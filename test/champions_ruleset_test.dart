@@ -88,7 +88,7 @@ void main() {
       expect(stats['hp'], 137);
       expect(stats['atk'], 205); // Adamant (+10% Attack)
       expect(stats['spe'], 162, reason: 'Adamant does not touch Speed: (125 + 5 + 32) = 162');
-      expect(stats['atk'], greaterThan(stats['spa']),
+      expect(stats['atk']!, greaterThan(stats['spa']!),
           reason: 'physical attacker alignment beats its Sp. Atk');
     });
   });
@@ -110,7 +110,7 @@ void main() {
       // Every alignment is still a proper nature with a ±10% modifier except
       // the neutral Serious.
       for (final alignment in ChampionsRules.alignments) {
-        final mods = <String>[
+        final mods = <double>[
           for (final stat in <String>['Attack', 'Defense', 'Sp. Atk', 'Sp. Def', 'Speed'])
             CombatUtils.getNatureMultiplier(alignment, stat),
         ];
@@ -161,7 +161,7 @@ void main() {
       SharedPreferences.setMockInitialValues(<String, Object>{});
     });
 
-    ProviderContainer _liveContainer() {
+    ProviderContainer liveContainer() {
       final container = ProviderContainer();
       addTearDown(container.dispose);
       // Keep the auto-dispose notifier alive for the whole test.
@@ -171,7 +171,7 @@ void main() {
     }
 
     test('switching rulesets preserves the mainline EV/IV setup', () async {
-      final container = _liveContainer();
+      final container = liveContainer();
       final vm = container.read(damageCalculatorViewModelProvider.notifier);
 
       vm.updateAttackerEv('atk', 128);
@@ -192,7 +192,7 @@ void main() {
     });
 
     test('natures that are not alignments normalize to Serious in Champions', () async {
-      final container = _liveContainer();
+      final container = liveContainer();
       final vm = container.read(damageCalculatorViewModelProvider.notifier);
 
       vm.updateAttackerNature('hardy'); // dropped in Champions
@@ -202,7 +202,7 @@ void main() {
     });
 
     test('SP edits clamp per-stat and total budget', () {
-      final container = _liveContainer();
+      final container = liveContainer();
       final vm = container.read(damageCalculatorViewModelProvider.notifier);
 
       vm.applyChampionsPreset(
@@ -219,7 +219,7 @@ void main() {
     });
 
     test('ruleset choice persists via SharedPreferences', () async {
-      final container = _liveContainer();
+      final container = liveContainer();
       final vm = container.read(damageCalculatorViewModelProvider.notifier);
       await vm.setRuleset(BattleRuleset.champions);
 

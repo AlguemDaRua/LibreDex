@@ -19,6 +19,7 @@ void main() {
 
       expect(backStack.goBack(), 2);
       expect(backStack.goBack(), 4);
+      expect(backStack.goBack(), SectionBackStack.rootIndex, reason: 'lands on Pokédex root');
       expect(backStack.goBack(), isNull, reason: 'root reached, history drained');
       expect(backStack.current, SectionBackStack.rootIndex);
     });
@@ -30,6 +31,7 @@ void main() {
         ..record(7); // "Open in calculator" shortcut
 
       expect(backStack.goBack(), 1, reason: 'back from the calculator must return to the team');
+      expect(backStack.goBack(), SectionBackStack.rootIndex, reason: 'back from team returns to Pokédex');
       expect(backStack.goBack(), isNull);
     });
 
@@ -40,6 +42,7 @@ void main() {
         ..record(7)
         ..record(7);
       expect(backStack.stack.length, 1);
+      expect(backStack.goBack(), SectionBackStack.rootIndex);
       expect(backStack.goBack(), isNull);
     });
 
@@ -60,7 +63,8 @@ void main() {
       backStack
         ..record(1)
         ..record(7);
-      backStack.goBack(); // → 1, stack already consistent
+      expect(backStack.goBack(), 1); // → 1
+      expect(backStack.goBack(), SectionBackStack.rootIndex); // → 0
       expect(backStack.stack, isEmpty);
       expect(backStack.goBack(), isNull);
     });
