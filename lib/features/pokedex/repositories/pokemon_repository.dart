@@ -68,6 +68,126 @@ class PokemonRepository {
     });
   }
 
+  /// Resolves the base-form Pokémon that can lend its learnset/abilities to
+  /// a form without direct junction rows (bundle Mega/G-Max forms and the
+  /// Z-A Megas whose Champions data is not released yet). Returns null when
+  /// [pokemonId] is already the base form or cannot be resolved.
+  Future<(int id, String name)?> _baseFormForFallback(int pokemonId) async {
+    final self = await (db.select(db.pokemonTable)
+          ..where((t) => t.id.equals(pokemonId)))
+        .getSingleOrNull();
+    if (self == null) return null;
+    final dex = self.nationalDexNumber > 0 ? self.nationalDexNumber : self.id;
+    final sameDex = await (db.select(db.pokemonTable)
+          ..where((t) => t.nationalDexNumber.equals(dex)))
+        .get();
+    if (sameDex.isEmpty) return null;
+    final base = sameDex.firstWhere(
+      (p) => p.form == 'normal',
+      orElse: () => sameDex.first,
+    );
+    if (base.id == pokemonId) return null;
+    return (base.id, base.name);
+  }
+
+  Future<List<Map<String, dynamic>>> _movesAsMaps(int pokemonId) async {
+    final rows = await db.getPokemonMoves(pokemonId);
+    return rows
+        .map((row) => {
+              'id': row.move.id,
+              'name': row.move.name,
+              'type': row.move.type,
+              'power': row.move.power,
+              'pp': row.move.pp,
+              'accuracy': row.move.accuracy,
+              'damageClass': row.move.damageClass,
+              'description': row.move.description,
+              'learnMethod': row.junction.learnMethod,
+              'levelLearned': row.junction.levelLearned,
+            })
+        .toList();
+  }
+
+  /// Watches the moves of [pokemonId]; when the form has no direct learnset
+  /// rows, the base species learnset is returned instead and every row is
+  /// tagged with `learnsetFallbackFrom`, letting the UI show the
+  /// "Using base species learnset for this form." note instead of an empty
+  /// screen.
+  ///
+  /// Champions Mega forms are a middle case: their only direct rows are the
+  /// Champions "train" selections. Those alone would look like an empty
+  /// dex page, so the base species learnset is merged in (tagged) with the
+  /// train rows kept on top.
+  Stream<List<Map<String, dynamic>>> watchMovesWithFallback(int pokemonId) async* {
+    await for (final rows in db.watchPokemonMoves(pokemonId)) {
+      final onlyTrainRows = rows.isNotEmpty && rows.every((r) => r['learnMethod'] == 'train');
+      if (rows.isNotEmpty && !onlyTrainRows) {
+        yield rows;
+        continue;
+      }
+      final base = await _baseFormForFallback(pokemonId);
+      if (base == null) {
+        yield rows;
+        continue;
+      }
+      final baseRows = await _movesAsMaps(base.$1);
+      if (baseRows.isEmpty) {
+        yield rows;
+        continue;
+      }
+      yield [
+        ...rows,
+        for (final row in baseRows) {...row, 'learnsetFallbackFrom': base.$2},
+      ];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _abilitiesAsMaps(int pokemonId) async {
+    final rows = await db.getPokemonAbilities(pokemonId);
+    return rows
+        .map((row) => {
+              'id': row.ability.id,
+              'name': row.ability.name,
+              'effect': row.ability.description,
+              'isHidden': row.junction.isHidden,
+            })
+        .toList();
+  }
+
+  /// Same idea as [watchMovesWithFallback] for abilities — Mega forms with
+  /// no released Champions ability still show something meaningful.
+  Stream<List<Map<String, dynamic>>> watchAbilitiesWithFallback(int pokemonId) async* {
+    await for (final rows in db.watchPokemonAbilities(pokemonId)) {
+      if (rows.isNotEmpty) {
+        yield rows;
+        continue;
+      }
+      final base = await _baseFormForFallback(pokemonId);
+      if (base == null) {
+        yield rows;
+        continue;
+      }
+      final baseRows = await _abilitiesAsMaps(base.$1);
+      if (baseRows.isEmpty) {
+        yield rows;
+        continue;
+      }
+      yield [
+        for (final row in baseRows) {...row, 'abilityFallbackFrom': base.$2},
+      ];
+    }
+  }
+
+  /// One-shot abilities fetch with the same base-form fallback; used by the
+  /// damage calculator setup sheet.
+  Future<List<Map<String, dynamic>>> getAbilitiesWithFallback(int pokemonId) async {
+    final rows = await _abilitiesAsMaps(pokemonId);
+    if (rows.isNotEmpty) return rows;
+    final base = await _baseFormForFallback(pokemonId);
+    if (base == null) return rows;
+    return _abilitiesAsMaps(base.$1);
+  }
+
   /// Fetches evolution chain steps for a given National Dex ID and available forms.
   Future<List<EvolutionStep>> fetchEvolutionSteps(int dexNum, List<Pokemon> forms) async {
     final List<EvolutionStep> steps = [];
@@ -285,13 +405,13 @@ Stream<List<PokemonMoveWithDetails>> pokemonMoves(Ref ref, int pokemonId) {
 @riverpod
 Stream<List<Map<String, dynamic>>> pokemonAbilitiesStream(Ref ref, int pokemonId) {
   final repo = ref.watch(pokemonRepositoryProvider);
-  return repo.db.watchPokemonAbilities(pokemonId);
+  return repo.watchAbilitiesWithFallback(pokemonId);
 }
 
 @riverpod
 Stream<List<Map<String, dynamic>>> pokemonMovesStream(Ref ref, int pokemonId) {
   final repo = ref.watch(pokemonRepositoryProvider);
-  return repo.db.watchPokemonMoves(pokemonId);
+  return repo.watchMovesWithFallback(pokemonId);
 }
 
 final pokemonEvolutionChainProvider = FutureProvider.family<List<EvolutionStep>, ({int dexNum, List<Pokemon> forms})>((ref, arg) {

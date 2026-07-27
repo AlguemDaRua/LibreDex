@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:libredex/core/widgets/pokemon_sprite.dart';
 import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/core/theme/app_theme.dart';
+import 'package:libredex/features/calculator/models/battle_ruleset.dart';
 import 'package:libredex/features/calculator/utils/held_items_data.dart';
 import 'package:libredex/features/pokedex/models/stat_calculator.dart';
 import 'package:libredex/features/pokedex/viewmodels/pokedex_viewmodel.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
+import 'package:libredex/core/data/species_data.dart';
 import 'package:libredex/core/widgets/app_drawer.dart';
 import 'package:libredex/features/calculator/utils/combat_utils.dart';
+import 'package:libredex/core/theme/app_spacing.dart';
 import 'package:libredex/features/calculator/viewmodels/damage_calculator_viewmodel.dart';
 
 const Map<String, String> natureFormattedNames = {
@@ -39,6 +42,13 @@ const Map<String, String> natureFormattedNames = {
   'quirky': 'QUIRKY (Neutral)',
 };
 
+/// Pokémon Champions has 21 Stat Alignments: the four flat fillers (Hardy,
+/// Docile, Bashful, Quirky) are gone and Serious is the only neutral one.
+final Map<String, String> championsAlignmentNames = {
+  for (final entry in natureFormattedNames.entries)
+    if (ChampionsRules.alignments.contains(entry.key)) entry.key: entry.value,
+};
+
 class DamageCalculatorScreen extends ConsumerStatefulWidget {
   const DamageCalculatorScreen({super.key});
 
@@ -57,6 +67,39 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _loadDbMoves();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _consumeLaunchIntent());
+  }
+
+  /// Team Builder (and future surfaces) can park a one-shot intent asking
+  /// the calculator to open with a given ruleset / attacker. Applied once,
+  /// after the notifier finished loading the persisted ruleset.
+  Future<void> _consumeLaunchIntent() async {
+    final intent = ref.read(calculatorLaunchIntentProvider.notifier).consume();
+    if (intent == null) return;
+    final vm = ref.read(damageCalculatorViewModelProvider.notifier);
+    await vm.rulesetReady;
+    if (!mounted) return;
+    if (intent.ruleset != null) {
+      await vm.setRuleset(intent.ruleset!);
+    }
+    final pokemonId = intent.attackerPokemonId;
+    if (pokemonId == null) return;
+    try {
+      final db = ref.read(databaseProvider);
+      final pokemon = await (db.select(db.pokemonTable)
+            ..where((t) => t.id.equals(pokemonId)))
+          .getSingleOrNull();
+      if (pokemon == null) return;
+      final abilities = await ref
+          .read(pokemonRepositoryProvider)
+          .getAbilitiesWithFallback(pokemon.id);
+      vm.setAttacker(
+        pokemon,
+        defaultAbility: abilities.isNotEmpty ? abilities.first['name'] as String : null,
+      );
+    } catch (_) {
+      // The intent is best-effort; a wiped table must never break the screen.
+    }
   }
 
   @override
@@ -70,7 +113,9 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
       final db = ref.read(databaseProvider);
       final allMoves = await db.select(db.moveTable).get();
       final damaging = allMoves
-          .where((m) => m.power != null && m.power! > 0 && m.damageClass != 'status')
+          .where((m) =>
+              m.damageClass != 'status' &&
+              ((m.power != null && m.power! > 0) || CombatUtils.supportsDynamicBasePower(m.name)))
           .toList();
       damaging.sort((a, b) => a.name.compareTo(b.name));
       if (mounted) {
@@ -94,6 +139,14 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     final state = ref.watch(damageCalculatorViewModelProvider);
     final vm = ref.read(damageCalculatorViewModelProvider.notifier);
     final pokedexAsync = ref.watch(pokedexProvider);
+
+    // One-shot launch intents (Team Builder's "open in calculator") apply on
+    // the frame after they are requested — watching keeps this alive even
+    // while the section is parked inside HomeScreen's IndexedStack, so a
+    // returning visit never misses the handoff.
+    if (ref.watch(calculatorLaunchIntentProvider) != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _consumeLaunchIntent());
+    }
 
     return Scaffold(
       backgroundColor: isDark ? Colors.black : const Color(0xFFF9FAFB),
@@ -119,7 +172,11 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
         ),
       ),
       drawer: const AppDrawer(currentRoute: 'calculator'),
-      body: pokedexAsync.when(
+      body: Column(
+        children: [
+          _buildRulesetBar(isDark, state, vm),
+          Expanded(
+            child: pokedexAsync.when(
         data: (pokemonList) {
           if (pokemonList.isEmpty) {
             return const Center(child: CircularProgressIndicator(color: AppTheme.pokemonRed));
@@ -162,6 +219,94 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
         },
         loading: () => const Center(child: CircularProgressIndicator(color: AppTheme.pokemonRed)),
         error: (err, stack) => Center(child: Text('Error loading Pokémon data: $err')),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Mainline / Pokémon Champions ruleset switcher pinned above both tabs.
+  ///
+  /// Champions is an additional mode: the mainline calculator keeps working
+  /// exactly as before, and both setups survive the toggle. Persisted via
+  /// SharedPreferences in the view model.
+  Widget _buildRulesetBar(
+    bool isDark,
+    DamageCalculatorState state,
+    DamageCalculatorViewModel vm,
+  ) {
+    final isChampions = state.ruleset.isChampions;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF111111) : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isChampions
+              ? Colors.deepPurpleAccent.withValues(alpha: 0.45)
+              : (isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB)),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              for (final ruleset in BattleRuleset.values) ...[
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => vm.setRuleset(ruleset),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 160),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: state.ruleset == ruleset
+                            ? (ruleset.isChampions ? Colors.deepPurpleAccent : AppTheme.pokemonRed)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            ruleset.isChampions
+                                ? Icons.emoji_events_rounded
+                                : Icons.videogame_asset_rounded,
+                            size: 14,
+                            color: state.ruleset == ruleset ? Colors.white : Colors.grey,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            ruleset.label.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.4,
+                              color: state.ruleset == ruleset ? Colors.white : Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          if (isChampions) ...[
+            const SizedBox(height: 6),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 6),
+              child: Text(
+                'Champions uses 66 Stat Points instead of EVs. IVs are always treated as perfect.',
+                style: TextStyle(fontSize: 10.5, height: 1.35, color: Colors.grey, fontWeight: FontWeight.w600),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -234,13 +379,15 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     // Critical Hit multiplier (1.5x)
     final double critMult = state.isCriticalHit ? 1.5 : 1.0;
 
-    // Damage Formula Base
-    final double damageBase = ((((2 * state.attackerLevel / 5) + 2) * finalBp * atkFinal / defFinal) / 50) + 2;
+    // Damage Formula Base — Champions locks the level term to 50, matching
+    // its fixed battle level; mainline keeps the editable level.
+    final int sandboxLevel = state.ruleset.isChampions ? ChampionsRules.level : state.attackerLevel;
+    final double damageBase = ((((2 * sandboxLevel / 5) + 2) * finalBp * atkFinal / defFinal) / 50) + 2;
     final double rawMinDamage = damageBase * state.simpleStab * state.simpleEffectiveness * screenMult * burnMult * critMult * defResistMult * 0.85;
     final double rawMaxDamage = damageBase * state.simpleStab * state.simpleEffectiveness * screenMult * burnMult * critMult * defResistMult * 1.0;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, AppSpacing.topContentGap, AppSpacing.pagePadding, AppSpacing.bottomScrollPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -583,6 +730,30 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
       return const Center(child: CircularProgressIndicator(color: AppTheme.pokemonRed));
     }
 
+    final bool isChampions = state.ruleset.isChampions;
+    final int battleLevel = isChampions ? ChampionsRules.level : state.attackerLevel;
+
+    /// One funnel for final stat math. Mainline keeps the classic IV/EV
+    /// formulas; Champions swaps in the Lv. 50 / 31 IV / Stat Point system
+    /// (Stat Alignment = nature) — the rest of the engine is ruleset-agnostic.
+    int sideStat({
+      required bool attacker,
+      required String key,
+      required int base,
+      required String natureLabel,
+    }) {
+      final nature = attacker ? state.attackerNature : state.defenderNature;
+      final natureMod = CombatUtils.getNatureMultiplier(nature, natureLabel);
+      if (isChampions) {
+        final sp = (attacker ? state.attackerSps : state.defenderSps)[key] ?? 0;
+        return StatCalculator.calculateChampionsStat(base: base, sp: sp, alignmentModifier: natureMod);
+      }
+      final iv = (attacker ? state.attackerIvs : state.defenderIvs)[key] ?? 31;
+      final ev = (attacker ? state.attackerEvs : state.defenderEvs)[key] ?? 0;
+      final level = attacker ? state.attackerLevel : state.defenderLevel;
+      return StatCalculator.calculateOtherStat(base: base, iv: iv, ev: ev, level: level, natureModifier: natureMod);
+    }
+
     final p1Moves = _dbDamagingMoves;
     Move activeMove;
     if (state.selectedMoveName != null) {
@@ -594,9 +765,38 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
       activeMove = p1Moves.first;
     }
 
-    // Dynamic Move Power calculation (Return, Frustration, Eruption, Water Spout, Facade, Acrobatics, Knock Off, Hex, Foul Play, etc.)
+    // Speed calculation with Paralysis check
+    final int rawAttackerSpeed = sideStat(
+      attacker: true, key: 'spe', base: p1.baseSpd, natureLabel: 'Speed',
+    );
+    double atkSpdMult = CombatUtils.getStageMultiplier(state.attackerStages['spe'] ?? 0);
+    if (state.attackerStatus == 'paralysis' && state.attackerAbility != 'quick feet') atkSpdMult *= 0.5;
+    if (state.attackerStatus != 'none' && state.attackerAbility == 'quick feet') atkSpdMult *= 1.5;
+    final int attackerSpeed = (rawAttackerSpeed * atkSpdMult).toInt();
+
+    final int rawDefenderSpeed = sideStat(
+      attacker: false, key: 'spe', base: p2.baseSpd, natureLabel: 'Speed',
+    );
+    double defSpdMult = CombatUtils.getStageMultiplier(state.defenderStages['spe'] ?? 0);
+    if (state.defenderStatus == 'paralysis' && state.defenderAbility != 'quick feet') defSpdMult *= 0.5;
+    if (state.defenderStatus != 'none' && state.defenderAbility == 'quick feet') defSpdMult *= 1.5;
+    final int defenderSpeed = (rawDefenderSpeed * defSpdMult).toInt();
+
+    // Dynamic Move Power: gimmick moves (weight, speed, status, item, HP%,
+    // weather/terrain, ...) resolve from the live battle context instead of
+    // their — often missing — database power. Runs after the speed block so
+    // Gyro Ball / Electro Ball can use the final, paralysis-adjusted stats.
+    final speciesDataset = ref.watch(speciesDatasetProvider).valueOrNull;
+    final double attackerWeightKg = speciesDataset
+            ?.formFacts(p1.id, nationalDexNumber: p1.nationalDexNumber)
+            ?.weightKg ??
+        0.0;
+    final double defenderWeightKg = speciesDataset
+            ?.formFacts(p2.id, nationalDexNumber: p2.nationalDexNumber)
+            ?.weightKg ??
+        0.0;
     final double rawBp = activeMove.power?.toDouble() ?? 50.0;
-    final double basePowerVal = CombatUtils.calculateDynamicBasePower(
+    final dynamicBp = CombatUtils.resolveDynamicBasePower(
       moveName: activeMove.name,
       basePower: rawBp,
       friendship: state.attackerFriendship,
@@ -607,32 +807,23 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
       attackerHeldItem: state.attackerHeldItem,
       defenderHeldItem: state.defenderHeldItem,
       rageFistHits: state.rageFistHits,
+      attackerWeightKg: attackerWeightKg,
+      defenderWeightKg: defenderWeightKg,
+      attackerSpeedStat: attackerSpeed.toDouble(),
+      defenderSpeedStat: defenderSpeed.toDouble(),
+      weather: state.weather,
+      terrain: state.terrain,
     );
+    final double basePowerVal = dynamicBp.basePower;
+    final String? dynamicBpNote = dynamicBp.note;
 
-    // Speed calculation with Paralysis check
-    final int rawAttackerSpeed = StatCalculator.calculateOtherStat(
-      base: p1.baseSpd,
-      iv: state.attackerIvs['spe'] ?? 31,
-      ev: state.attackerEvs['spe'] ?? 4,
-      level: state.attackerLevel,
-      natureModifier: CombatUtils.getNatureMultiplier(state.attackerNature, 'Speed'),
+    // Weather Ball / Terrain Pulse transform into the matching type.
+    final String effectiveMoveType = CombatUtils.effectiveMoveType(
+      moveName: activeMove.name,
+      moveType: activeMove.type,
+      weather: state.weather,
+      terrain: state.terrain,
     );
-    double atkSpdMult = CombatUtils.getStageMultiplier(state.attackerStages['spe'] ?? 0);
-    if (state.attackerStatus == 'paralysis' && state.attackerAbility != 'quick feet') atkSpdMult *= 0.5;
-    if (state.attackerStatus != 'none' && state.attackerAbility == 'quick feet') atkSpdMult *= 1.5;
-    final int attackerSpeed = (rawAttackerSpeed * atkSpdMult).toInt();
-
-    final int rawDefenderSpeed = StatCalculator.calculateOtherStat(
-      base: p2.baseSpd,
-      iv: state.defenderIvs['spe'] ?? 31,
-      ev: state.defenderEvs['spe'] ?? 0,
-      level: state.defenderLevel,
-      natureModifier: CombatUtils.getNatureMultiplier(state.defenderNature, 'Speed'),
-    );
-    double defSpdMult = CombatUtils.getStageMultiplier(state.defenderStages['spe'] ?? 0);
-    if (state.defenderStatus == 'paralysis' && state.defenderAbility != 'quick feet') defSpdMult *= 0.5;
-    if (state.defenderStatus != 'none' && state.defenderAbility == 'quick feet') defSpdMult *= 1.5;
-    final int defenderSpeed = (rawDefenderSpeed * defSpdMult).toInt();
 
     final isSpecial = activeMove.damageClass.toLowerCase() == 'special';
     final bool isBodyPress = activeMove.name.toLowerCase() == 'body press';
@@ -643,18 +834,16 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
 
     if (isFoulPlay) {
       // Foul Play uses defender's attack stat
-      final int rawDefAtk = StatCalculator.calculateOtherStat(
-        base: p2.baseAtk, iv: state.defenderIvs['atk'] ?? 31, ev: state.defenderEvs['atk'] ?? 0,
-        level: state.defenderLevel, natureModifier: CombatUtils.getNatureMultiplier(state.defenderNature, 'Attack'),
+      final int rawDefAtk = sideStat(
+        attacker: false, key: 'atk', base: p2.baseAtk, natureLabel: 'Attack',
       );
       final int defAtkStage = state.defenderStages['atk'] ?? 0;
       final int effDefAtkStage = state.isCriticalHit ? (defAtkStage < 0 ? 0 : defAtkStage) : defAtkStage;
       attackerAtk = (rawDefAtk * CombatUtils.getStageMultiplier(effDefAtkStage)).toInt();
-      atkItemMult = HeldItemsData.getAttackMultiplier(state.attackerHeldItem, activeMove.type, false);
+      atkItemMult = HeldItemsData.getAttackMultiplier(state.attackerHeldItem, effectiveMoveType, false);
     } else if (isBodyPress) {
-      final int rawAttackerDef = StatCalculator.calculateOtherStat(
-        base: p1.baseDef, iv: state.attackerIvs['def'] ?? 31, ev: state.attackerEvs['def'] ?? 0,
-        level: state.attackerLevel, natureModifier: CombatUtils.getNatureMultiplier(state.attackerNature, 'Defense'),
+      final int rawAttackerDef = sideStat(
+        attacker: true, key: 'def', base: p1.baseDef, natureLabel: 'Defense',
       );
       final int atkDefStage = state.attackerStages['def'] ?? 0;
       final int effAtkDefStage = state.isCriticalHit ? (atkDefStage < 0 ? 0 : atkDefStage) : atkDefStage;
@@ -664,45 +853,52 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
       final attackerItem = HeldItemsData.findByName(state.attackerHeldItem);
       atkItemMult = attackerItem?.universalDamageMultiplier ?? 1.0;
     } else {
-      final int rawAttackerAtk = StatCalculator.calculateOtherStat(
+      final int rawAttackerAtk = sideStat(
+        attacker: true,
+        key: isSpecial ? 'spa' : 'atk',
         base: isSpecial ? p1.baseSpAtk : p1.baseAtk,
-        iv: isSpecial ? (state.attackerIvs['spa'] ?? 31) : (state.attackerIvs['atk'] ?? 31),
-        ev: isSpecial ? (state.attackerEvs['spa'] ?? 0) : (state.attackerEvs['atk'] ?? 252),
-        level: state.attackerLevel,
-        natureModifier: CombatUtils.getNatureMultiplier(state.attackerNature, isSpecial ? 'Sp. Atk' : 'Attack'),
+        natureLabel: isSpecial ? 'Sp. Atk' : 'Attack',
       );
       final int stageVal = isSpecial ? (state.attackerStages['spa'] ?? 0) : (state.attackerStages['atk'] ?? 0);
       final int effStageVal = state.isCriticalHit ? (stageVal < 0 ? 0 : stageVal) : stageVal;
       double gutsMult = 1.0;
       if (!isSpecial && state.attackerStatus != 'none' && state.attackerAbility == 'guts') gutsMult = 1.5;
       attackerAtk = (rawAttackerAtk * CombatUtils.getStageMultiplier(effStageVal) * gutsMult).toInt();
-      atkItemMult = HeldItemsData.getAttackMultiplier(state.attackerHeldItem, activeMove.type, isSpecial);
+      atkItemMult = HeldItemsData.getAttackMultiplier(state.attackerHeldItem, effectiveMoveType, isSpecial);
     }
 
-    final int rawDefenderDef = StatCalculator.calculateOtherStat(
+    final int rawDefenderDef = sideStat(
+      attacker: false,
+      key: isSpecial ? 'spd' : 'def',
       base: isSpecial ? p2.baseSpDef : p2.baseDef,
-      iv: isSpecial ? (state.defenderIvs['spd'] ?? 31) : (state.defenderIvs['def'] ?? 31),
-      ev: isSpecial ? (state.defenderEvs['spd'] ?? 4) : (state.defenderEvs['def'] ?? 252),
-      level: state.defenderLevel,
-      natureModifier: CombatUtils.getNatureMultiplier(state.defenderNature, isSpecial ? 'Sp. Def' : 'Defense'),
+      natureLabel: isSpecial ? 'Sp. Def' : 'Defense',
     );
     final int defStageVal = isSpecial ? (state.defenderStages['spd'] ?? 0) : (state.defenderStages['def'] ?? 0);
     final int effDefStageVal = state.isCriticalHit ? (defStageVal > 0 ? 0 : defStageVal) : defStageVal;
     final int defenderDef = (rawDefenderDef * CombatUtils.getStageMultiplier(effDefStageVal)).toInt();
 
-    final int defenderMaxHp = StatCalculator.calculateHp(
-      base: p2.baseHp, iv: state.defenderIvs['hp'] ?? 31, ev: state.defenderEvs['hp'] ?? 252, level: state.defenderLevel,
-    );
+    final int defenderMaxHp = isChampions
+        ? StatCalculator.calculateChampionsHp(
+            base: p2.baseHp,
+            sp: state.defenderSps['hp'] ?? 0,
+            isShedinja: p2.name.toLowerCase() == 'shedinja',
+          )
+        : StatCalculator.calculateHp(
+            base: p2.baseHp,
+            iv: state.defenderIvs['hp'] ?? 31,
+            ev: state.defenderEvs['hp'] ?? 252,
+            level: state.defenderLevel,
+          );
 
     double weatherMult = 1.0;
-    if (state.weather == 'sunny' && activeMove.type.toLowerCase() == 'fire') weatherMult = 1.5;
-    if (state.weather == 'sunny' && activeMove.type.toLowerCase() == 'water') weatherMult = 0.5;
-    if (state.weather == 'rainy' && activeMove.type.toLowerCase() == 'water') weatherMult = 1.5;
-    if (state.weather == 'rainy' && activeMove.type.toLowerCase() == 'fire') weatherMult = 0.5;
+    if (state.weather == 'sunny' && effectiveMoveType == 'fire') weatherMult = 1.5;
+    if (state.weather == 'sunny' && effectiveMoveType == 'water') weatherMult = 0.5;
+    if (state.weather == 'rainy' && effectiveMoveType == 'water') weatherMult = 1.5;
+    if (state.weather == 'rainy' && effectiveMoveType == 'fire') weatherMult = 0.5;
 
     // Gen 9 Terastallization STAB multiplier
     double stabMult = 1.0;
-    final moveTypeLower = activeMove.type.toLowerCase();
+    final moveTypeLower = effectiveMoveType;
     if (state.attackerTeraActive && state.attackerTeraType != null) {
       final teraTypeLower = state.attackerTeraType!.toLowerCase();
       final isOriginalStab = p1.type1.toLowerCase() == moveTypeLower || p1.type2?.toLowerCase() == moveTypeLower;
@@ -718,7 +914,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     }
 
     double effectivenessMult = CombatUtils.getTypeEffectiveness(
-      activeMove.type,
+      effectiveMoveType,
       p2.type1,
       p2.type2,
       attackerAbility: state.attackerAbility,
@@ -735,9 +931,9 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     }
 
     double terrainMult = 1.0;
-    if (state.terrain == 'electric' && activeMove.type.toLowerCase() == 'electric') terrainMult = 1.3;
-    if (state.terrain == 'grassy' && activeMove.type.toLowerCase() == 'grass') terrainMult = 1.3;
-    if (state.terrain == 'psychic' && activeMove.type.toLowerCase() == 'psychic') terrainMult = 1.3;
+    if (state.terrain == 'electric' && effectiveMoveType == 'electric') terrainMult = 1.3;
+    if (state.terrain == 'grassy' && effectiveMoveType == 'grass') terrainMult = 1.3;
+    if (state.terrain == 'psychic' && effectiveMoveType == 'psychic') terrainMult = 1.3;
 
     double hhMult = state.helpingHandActive ? 1.5 : 1.0;
     double finalBp = basePowerVal * weatherMult * terrainMult * hhMult;
@@ -751,7 +947,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     // Critical Hit multiplier (1.5x)
     final double critMult = state.isCriticalHit ? 1.5 : 1.0;
 
-    final double defResistMult = HeldItemsData.getDefenderResistMultiplier(state.defenderHeldItem, activeMove.type, effectivenessMult);
+    final double defResistMult = HeldItemsData.getDefenderResistMultiplier(state.defenderHeldItem, effectiveMoveType, effectivenessMult);
     final double defStatItemMult = HeldItemsData.getDefenseMultiplier(state.defenderHeldItem, isSpecial);
 
     final int finalAttackerSpeed = (attackerSpeed * HeldItemsData.getSpeedMultiplier(state.attackerHeldItem)).toInt();
@@ -761,7 +957,9 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
 
     final int defenderDefFinal = (defenderDef * defStatItemMult).toInt().clamp(1, 9999);
     final double atkWithItem = attackerAtk * atkItemMult;
-    final double damageBase = ((((2 * state.attackerLevel / 5) + 2) * finalBp * atkWithItem / defenderDefFinal) / 50) + 2;
+    // The mainline damage formula is kept as-is; Champions battles are
+    // always Lv. 50, which is exactly what `battleLevel` injects.
+    final double damageBase = ((((2 * battleLevel / 5) + 2) * finalBp * atkWithItem / defenderDefFinal) / 50) + 2;
     final double finalMinDamage = damageBase * stabMult * effectivenessMult * screenMult * burnMult * critMult * defResistMult * 0.85;
     final double finalMaxDamage = damageBase * stabMult * effectivenessMult * screenMult * burnMult * critMult * defResistMult * 1.0;
     final double minPercent = (finalMinDamage / defenderMaxHp) * 100;
@@ -789,11 +987,13 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
               SizedBox(
                 height: 80,
                 child: p.spriteUrl.isNotEmpty
-                    ? CachedNetworkImage(
+                    ? PokemonSprite(
                         imageUrl: p.spriteUrl,
-                        fit: BoxFit.contain,
-                        placeholder: (context, url) => const Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(AppTheme.pokemonRed)))),
-                        errorWidget: (context, url, error) => Icon(Icons.catching_pokemon, size: 48, color: typeColor.withValues(alpha: 0.4)),
+                        fallbackUrl: PokemonSprite.homeArtworkUrl(p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id),
+                        loadingIndicatorSize: 24,
+                        loadingColor: AppTheme.pokemonRed,
+                        errorIconSize: 48,
+                        errorIconColor: typeColor.withValues(alpha: 0.4),
                       )
                     : Icon(Icons.catching_pokemon, size: 48, color: typeColor.withValues(alpha: 0.4)),
               ),
@@ -835,7 +1035,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 90),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, AppSpacing.topContentGap, AppSpacing.pagePadding, AppSpacing.bottomScrollPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -920,6 +1120,31 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
             ),
           ),
 
+          // Explains which gimmick rule produced the resolved base power.
+          if (dynamicBpNote != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.teal.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.teal.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.auto_fix_high_rounded, size: 14, color: Colors.tealAccent),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      dynamicBpNote,
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.tealAccent),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
           // Dynamic Move Steppers (Rage Fist / Return / Eruption)
           if (activeMove.name.toLowerCase() == 'rage fist') ...[
             const SizedBox(height: 8),
@@ -1002,7 +1227,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
 
                 // Contextual ability badge
                 if (CombatUtils.getAbilityContextBadge(
-                  moveType: activeMove.type,
+                  moveType: effectiveMoveType,
                   t1: p2.type1,
                   t2: p2.type2,
                   attackerAbility: state.attackerAbility,
@@ -1021,7 +1246,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                     ),
                     child: Text(
                       CombatUtils.getAbilityContextBadge(
-                        moveType: activeMove.type,
+                        moveType: effectiveMoveType,
                         t1: p2.type1,
                         t2: p2.type2,
                         attackerAbility: state.attackerAbility,
@@ -1247,10 +1472,11 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                     leading: p.spriteUrl.isNotEmpty
                         ? SizedBox(
                             width: 40, height: 40,
-                            child: CachedNetworkImage(
+                            child: PokemonSprite(
                               imageUrl: p.spriteUrl,
-                              fit: BoxFit.contain,
-                              errorWidget: (context, url, error) => const Icon(Icons.catching_pokemon, color: Colors.grey),
+                              fallbackUrl: PokemonSprite.homeArtworkUrl(p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id),
+                              errorIconColor: Colors.grey,
+                              errorIconSize: 24,
                             ),
                           )
                         : const Icon(Icons.catching_pokemon, color: Colors.grey),
@@ -1443,26 +1669,42 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
       builder: (ctx) => Consumer(
         builder: (context, ref, _) {
           final currentState = ref.watch(damageCalculatorViewModelProvider);
-          final level = isAttacker ? currentState.attackerLevel : currentState.defenderLevel;
+          final isChampions = currentState.ruleset.isChampions;
           final nature = isAttacker ? currentState.attackerNature : currentState.defenderNature;
           final heldItem = isAttacker ? currentState.attackerHeldItem : currentState.defenderHeldItem;
           final ivs = isAttacker ? currentState.attackerIvs : currentState.defenderIvs;
           final evs = isAttacker ? currentState.attackerEvs : currentState.defenderEvs;
+          final sps = isAttacker ? currentState.attackerSps : currentState.defenderSps;
           final stages = isAttacker ? currentState.attackerStages : currentState.defenderStages;
           final isTeraActive = isAttacker ? currentState.attackerTeraActive : currentState.defenderTeraActive;
           final teraType = (isAttacker ? currentState.attackerTeraType : currentState.defenderTeraType) ?? p.type1;
           final status = isAttacker ? currentState.attackerStatus : currentState.defenderStatus;
+          // Champions fixes every battle at level 50 with perfect IVs.
+          final level = isChampions
+              ? ChampionsRules.level
+              : (isAttacker ? currentState.attackerLevel : currentState.defenderLevel);
 
           Widget buildStatRow(String label, String key, int baseVal, bool isHp) {
             final ivVal = ivs[key] ?? 31;
             final evVal = evs[key] ?? 0;
+            final spVal = sps[key] ?? 0;
             final stageVal = stages[key] ?? 0;
-            final int finalStat = isHp
-                ? StatCalculator.calculateHp(base: baseVal, iv: ivVal, ev: evVal, level: level)
-                : StatCalculator.calculateOtherStat(
-                    base: baseVal, iv: ivVal, ev: evVal, level: level,
-                    natureModifier: CombatUtils.getNatureMultiplier(nature, label),
-                  );
+            final int finalStat = isChampions
+                ? (isHp
+                    ? StatCalculator.calculateChampionsHp(
+                        base: baseVal, sp: spVal,
+                        isShedinja: p.name.toLowerCase() == 'shedinja',
+                      )
+                    : StatCalculator.calculateChampionsStat(
+                        base: baseVal, sp: spVal,
+                        alignmentModifier: CombatUtils.getNatureMultiplier(nature, label),
+                      ))
+                : (isHp
+                    ? StatCalculator.calculateHp(base: baseVal, iv: ivVal, ev: evVal, level: level)
+                    : StatCalculator.calculateOtherStat(
+                        base: baseVal, iv: ivVal, ev: evVal, level: level,
+                        natureModifier: CombatUtils.getNatureMultiplier(nature, label),
+                      ));
             final double stageMult = isHp ? 1.0 : CombatUtils.getStageMultiplier(stageVal);
             final int finalStatWithStage = (finalStat * stageMult).toInt();
 
@@ -1478,7 +1720,21 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       child: SizedBox(
                         height: 32,
-                        child: TextField(
+                        child: isChampions
+                            // Champions treats IVs as perfect — show the
+                            // fixed value instead of an editable field.
+                            ? Container(
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: isDark ? const Color(0xFF161616) : const Color(0xFFE9EEF4),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  '${ChampionsRules.fixedIv}',
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
+                                ),
+                              )
+                            : TextField(
                           decoration: InputDecoration(
                             contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             filled: true,
@@ -1519,15 +1775,26 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                           style: TextStyle(color: primaryColor, fontSize: 12, fontWeight: FontWeight.bold),
                           keyboardType: TextInputType.number,
                           textAlign: TextAlign.center,
-                          controller: TextEditingController(text: '$evVal')
-                            ..selection = TextSelection.fromPosition(TextPosition(offset: '$evVal'.length)),
+                          controller: TextEditingController(text: isChampions ? '$spVal' : '$evVal')
+                            ..selection = TextSelection.fromPosition(
+                                TextPosition(offset: (isChampions ? '$spVal' : '$evVal').length)),
                           onChanged: (val) {
                             final parsed = int.tryParse(val) ?? 0;
-                            final clamped = parsed.clamp(0, 252);
-                            if (isAttacker) {
-                              vm.updateAttackerEv(key, clamped);
+                            if (isChampions) {
+                              // Stat Points: 32 per stat cap, 66 overall —
+                              // the view model enforces the total budget.
+                              if (isAttacker) {
+                                vm.updateAttackerSp(key, parsed);
+                              } else {
+                                vm.updateDefenderSp(key, parsed);
+                              }
                             } else {
-                              vm.updateDefenderEv(key, clamped);
+                              final clamped = parsed.clamp(0, 252);
+                              if (isAttacker) {
+                                vm.updateAttackerEv(key, clamped);
+                              } else {
+                                vm.updateDefenderEv(key, clamped);
+                              }
                             }
                           },
                         ),
@@ -1596,7 +1863,16 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                     Row(
                       children: [
                         if (p.spriteUrl.isNotEmpty)
-                          SizedBox(width: 36, height: 36, child: CachedNetworkImage(imageUrl: p.spriteUrl, fit: BoxFit.contain)),
+                          SizedBox(
+                            width: 36,
+                            height: 36,
+                            child: PokemonSprite(
+                              imageUrl: p.spriteUrl,
+                              fallbackUrl: PokemonSprite.homeArtworkUrl(p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id),
+                              errorIconColor: Colors.grey,
+                              errorIconSize: 24,
+                            ),
+                          ),
                         const SizedBox(width: 8),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1625,6 +1901,30 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                   ],
                 ),
                 const Divider(height: 24),
+
+                if (isChampions) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.deepPurpleAccent.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.deepPurpleAccent.withValues(alpha: 0.25)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.emoji_events_rounded, size: 16, color: Colors.deepPurpleAccent),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Pokémon Champions — 66 Stat Points in total, max 32 per stat. IVs are always treated as perfect.',
+                            style: TextStyle(fontSize: 10.5, height: 1.35, fontWeight: FontWeight.w600, color: Colors.grey),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
 
                 // Terastallization Card
                 Container(
@@ -1777,8 +2077,10 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                         children: [
                           const Text('ABILITY', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
                           const SizedBox(height: 4),
-                          FutureBuilder<List<PokemonAbilityWithDetails>>(
-                            future: ref.read(databaseProvider).getPokemonAbilities(p.id),
+                          FutureBuilder<List<Map<String, dynamic>>>(
+                            // Base-species abilities fill in for forms that
+                            // have no released Champions ability yet.
+                            future: ref.read(pokemonRepositoryProvider).getAbilitiesWithFallback(p.id),
                             builder: (context, snapshot) {
                               final abilitiesList = snapshot.data ?? [];
                               if (abilitiesList.isEmpty) {
@@ -1788,10 +2090,11 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                                   child: const Text('Default Ability', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
                                 );
                               }
+                              String abilityNameOf(Map<String, dynamic> a) => (a['name'] ?? '') as String;
                               final selectedAbility = isAttacker ? currentState.attackerAbility : currentState.defenderAbility;
-                              final currentAbility = (selectedAbility != null && abilitiesList.any((a) => a.ability.name.toLowerCase() == selectedAbility.toLowerCase()))
-                                  ? abilitiesList.firstWhere((a) => a.ability.name.toLowerCase() == selectedAbility.toLowerCase()).ability.name
-                                  : abilitiesList.first.ability.name;
+                              final currentAbility = (selectedAbility != null && abilitiesList.any((a) => abilityNameOf(a).toLowerCase() == selectedAbility.toLowerCase()))
+                                  ? abilityNameOf(abilitiesList.firstWhere((a) => abilityNameOf(a).toLowerCase() == selectedAbility.toLowerCase()))
+                                  : abilityNameOf(abilitiesList.first);
 
                               return Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -1802,8 +2105,9 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                                     isExpanded: true,
                                     style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 11),
                                     items: abilitiesList.map((a) {
-                                      final label = a.junction.isHidden ? '${a.ability.name} (Hidden)' : a.ability.name;
-                                      return DropdownMenuItem<String>(value: a.ability.name, child: Text(label, overflow: TextOverflow.ellipsis));
+                                      final name = abilityNameOf(a);
+                                      final label = (a['isHidden'] == true) ? '$name (Hidden)' : name;
+                                      return DropdownMenuItem<String>(value: name, child: Text(label, overflow: TextOverflow.ellipsis));
                                     }).toList(),
                                     onChanged: (ab) {
                                       if (ab != null) {
@@ -1827,17 +2131,26 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('NATURE (STAT DIRECTS)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
+                          Text(
+                            isChampions ? 'STAT ALIGNMENT' : 'NATURE (STAT DIRECTS)',
+                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey),
+                          ),
                           const SizedBox(height: 4),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8),
                             decoration: BoxDecoration(color: isDark ? const Color(0xFF141414) : const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(12)),
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
-                                value: natureFormattedNames.containsKey(nature.toLowerCase()) ? nature.toLowerCase() : 'adamant',
+                                value: (isChampions ? championsAlignmentNames : natureFormattedNames)
+                                        .containsKey(nature.toLowerCase())
+                                    ? nature.toLowerCase()
+                                    : (isChampions ? 'serious' : 'adamant'),
                                 isExpanded: true,
                                 style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 11),
-                                items: natureFormattedNames.entries.map((e) => DropdownMenuItem<String>(value: e.key, child: Text(e.value, overflow: TextOverflow.ellipsis))).toList(),
+                                items: (isChampions ? championsAlignmentNames : natureFormattedNames)
+                                    .entries
+                                    .map((e) => DropdownMenuItem<String>(value: e.key, child: Text(e.value, overflow: TextOverflow.ellipsis)))
+                                    .toList(),
                                 onChanged: (n) {
                                   if (n != null) {
                                     if (isAttacker) {
@@ -1857,72 +2170,133 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                 ),
                 const SizedBox(height: 12),
 
-                // Level Slider
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('LEVEL: $level', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
-                    Slider(
-                      value: level.toDouble(), min: 1, max: 100, divisions: 99,
-                      activeColor: AppTheme.pokemonRed,
-                      onChanged: (val) {
-                        if (isAttacker) {
-                          vm.updateAttackerLevel(val.toInt());
-                        } else {
-                          vm.updateDefenderLevel(val.toInt());
-                        }
-                      },
+                // Level Slider — Champions battles are always level 50.
+                if (isChampions)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF141414) : const Color(0xFFF3F4F6),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.deepPurpleAccent.withValues(alpha: 0.25)),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // EVs & IVs Presets & Editor Table
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('STATS, EVS, IVS & BOOSTS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
-                    Row(
+                    child: const Row(
                       children: [
-                        TextButton(
-                          onPressed: () {
-                            final keys = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
-                            for (final k in keys) {
-                              if (isAttacker) {
-                                vm.updateAttackerEv(k, k == 'hp' || k == 'atk' ? 252 : (k == 'spe' ? 4 : 0));
-                              } else {
-                                vm.updateDefenderEv(k, k == 'hp' || k == 'def' ? 252 : (k == 'spd' ? 4 : 0));
-                              }
-                            }
-                          },
-                          child: const Text('252/252 Preset', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.pokemonRed)),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            final keys = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
-                            for (final k in keys) {
-                              if (isAttacker) {
-                                vm.updateAttackerIv(k, 31);
-                              } else {
-                                vm.updateDefenderIv(k, 31);
-                              }
-                            }
-                          },
-                          child: const Text('Max IVs', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                        Icon(Icons.lock_outline_rounded, size: 14, color: Colors.deepPurpleAccent),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'LEVEL: 50 — fixed for all Pokémon Champions battles',
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey),
+                          ),
                         ),
                       ],
                     ),
+                  )
+                else
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('LEVEL: $level', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
+                      Slider(
+                        value: level.toDouble(), min: 1, max: 100, divisions: 99,
+                        activeColor: AppTheme.pokemonRed,
+                        onChanged: (val) {
+                          if (isAttacker) {
+                            vm.updateAttackerLevel(val.toInt());
+                          } else {
+                            vm.updateDefenderLevel(val.toInt());
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                const SizedBox(height: 16),
+
+                // EVs & IVs (mainline) or Stat Point (Champions) editor table
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      isChampions ? 'STATS, SP & BOOSTS' : 'STATS, EVS, IVS & BOOSTS',
+                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey),
+                    ),
+                    if (isChampions)
+                      Text(
+                        '${ChampionsRules.remainingStatPoints(sps)} / ${ChampionsRules.totalStatPoints} SP remaining',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          color: ChampionsRules.remainingStatPoints(sps) == 0
+                              ? Colors.deepPurpleAccent
+                              : Colors.grey,
+                        ),
+                      )
+                    else
+                      Row(
+                        children: [
+                          TextButton(
+                            onPressed: () {
+                              final keys = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
+                              for (final k in keys) {
+                                if (isAttacker) {
+                                  vm.updateAttackerEv(k, k == 'hp' || k == 'atk' ? 252 : (k == 'spe' ? 4 : 0));
+                                } else {
+                                  vm.updateDefenderEv(k, k == 'hp' || k == 'def' ? 252 : (k == 'spd' ? 4 : 0));
+                                }
+                              }
+                            },
+                            child: const Text('252/252 Preset', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.pokemonRed)),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              final keys = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
+                              for (final k in keys) {
+                                if (isAttacker) {
+                                  vm.updateAttackerIv(k, 31);
+                                } else {
+                                  vm.updateDefenderIv(k, 31);
+                                }
+                              }
+                            },
+                            child: const Text('Max IVs', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                          ),
+                        ],
+                      ),
                   ],
                 ),
+                if (isChampions) ...[
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      for (final preset in ChampionsStatPreset.presets)
+                        ActionChip(
+                          label: Text(preset.label, style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold)),
+                          visualDensity: VisualDensity.compact,
+                          backgroundColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFEDF2F7),
+                          side: BorderSide(color: Colors.deepPurpleAccent.withValues(alpha: 0.25)),
+                          onPressed: () => vm.applyChampionsPreset(isAttacker: isAttacker, preset: preset),
+                        ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 4),
                 Row(
-                  children: const [
-                    Expanded(flex: 2, child: Text('STAT', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey))),
-                    Expanded(flex: 1, child: Text('BASE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey), textAlign: TextAlign.center)),
-                    Expanded(flex: 2, child: Text('IV', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey), textAlign: TextAlign.center)),
-                    Expanded(flex: 2, child: Text('EV', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey), textAlign: TextAlign.center)),
-                    Expanded(flex: 2, child: Text('BOOST', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey), textAlign: TextAlign.center)),
-                    Expanded(flex: 2, child: Text('FINAL', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey), textAlign: TextAlign.right)),
+                  children: [
+                    const Expanded(flex: 2, child: Text('STAT', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey))),
+                    const Expanded(flex: 1, child: Text('BASE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey), textAlign: TextAlign.center)),
+                    const Expanded(flex: 2, child: Text('IV', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey), textAlign: TextAlign.center)),
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        isChampions ? 'SP' : 'EV',
+                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const Expanded(flex: 2, child: Text('BOOST', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey), textAlign: TextAlign.center)),
+                    const Expanded(flex: 2, child: Text('FINAL', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey), textAlign: TextAlign.right)),
                   ],
                 ),
                 const Divider(),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/navigation/navigation_provider.dart';
+import 'package:libredex/core/navigation/section_back_stack.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/widgets/offline_download_dialog.dart';
 import 'package:libredex/features/abilitydex/views/abilitydex_screen.dart';
@@ -30,6 +32,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   static bool _hasPromptedThisSession = false;
   final Set<int> _visitedIndices = {0};
+  final SectionBackStack _backStack = SectionBackStack();
 
   @override
   void initState() {
@@ -79,12 +82,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final currentIndex = ref.watch(currentMenuIndexProvider);
     _visitedIndices.add(currentIndex);
+    _backStack.record(currentIndex);
 
     return PopScope(
-      canPop: currentIndex == 0,
+      // Section switching is handled manually: back walks the section
+      // history (Team Builder → Calculator → back lands on Team Builder
+      // again) instead of always jumping to the Pokédex. Only when the
+      // history is empty at the root does the app close.
+      canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
-        ref.read(currentMenuIndexProvider.notifier).setIndex(0);
+        final int? target = _backStack.goBack();
+        if (target == null) {
+          SystemNavigator.pop();
+        } else {
+          ref.read(currentMenuIndexProvider.notifier).setIndex(target);
+        }
       },
       child: Column(
         children: [

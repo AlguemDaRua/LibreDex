@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:libredex/core/theme/app_spacing.dart';
 import 'package:libredex/core/widgets/app_drawer.dart';
 
 class TypeChartScreen extends StatefulWidget {
@@ -555,7 +556,7 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
             // Defending Effectiveness List
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.only(left: 16, right: 16, top: 0, bottom: 80),
+                padding: const EdgeInsets.only(left: AppSpacing.pagePadding, right: AppSpacing.pagePadding, top: 0, bottom: AppSpacing.bottomScrollPadding),
                 children: [
                   _buildSectionHeader('DEFENSIVE COVERAGE', 'Incoming damage multipliers', isDark),
                   const SizedBox(height: 10),

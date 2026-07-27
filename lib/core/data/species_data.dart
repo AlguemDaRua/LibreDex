@@ -43,28 +43,6 @@ class FormFacts {
   /// Weight rendered as both metric and imperial, e.g. `460.0 kg (1014.1 lbs)`.
   String get weightLabel =>
       '${weightKg.toStringAsFixed(1)} kg (${(weightKg * 2.20462).toStringAsFixed(1)} lbs)';
-
-  /// Base power of Low Kick / Grass Knot against a target of this weight.
-  int get lowKickPower {
-    if (weightKg >= 200) return 120;
-    if (weightKg >= 100) return 100;
-    if (weightKg >= 50) return 80;
-    if (weightKg >= 25) return 60;
-    if (weightKg >= 10) return 40;
-    return 20;
-  }
-
-  /// Base power of Heavy Slam / Heat Crash, which compares the user's weight to
-  /// the target's. Returns 0 when [targetWeightKg] is not a positive number.
-  int heavySlamPower(double targetWeightKg) {
-    if (targetWeightKg <= 0) return 0;
-    final ratio = weightKg / targetWeightKg;
-    if (ratio >= 5) return 120;
-    if (ratio >= 4) return 100;
-    if (ratio >= 3) return 80;
-    if (ratio >= 2) return 60;
-    return 40;
-  }
 }
 
 /// Gender distribution of a species.
@@ -192,6 +170,52 @@ class SpeciesDataset {
 
   static const SpeciesDataset empty = SpeciesDataset._({}, {});
 
+  /// 100%-male distribution used by [formGenderOverrides].
+  static const GenderRatio maleLocked =
+      GenderRatio(genderless: false, malePercent: 100, femalePercent: 0);
+
+  /// 100%-female distribution used by [formGenderOverrides].
+  static const GenderRatio femaleLocked =
+      GenderRatio(genderless: false, malePercent: 0, femalePercent: 100);
+
+  /// Forms whose gender ratio differs from the *species* ratio shipped by
+  /// PokéAPI.
+  ///
+  /// Species-level gender data is shared by every form, which is wrong for
+  /// the gender-morph forms (Indeedee-Female is always female while the
+  /// species reads 50/50) and for event/cosplay forms with a locked gender
+  /// (cap Pikachu is always male; Cosplay Pikachu always female). Keyed by
+  /// bundled Pokémon form id.
+  static const Map<int, GenderRatio> formGenderOverrides = {
+    // Gender-morph forms: the base row is the male visual, the separate
+    // 10xxx row is the female visual. Each is gender-locked in the games.
+    678: maleLocked, // Meowstic-Male
+    10025: femaleLocked, // Meowstic-Female
+    876: maleLocked, // Indeedee-Male
+    10186: femaleLocked, // Indeedee-Female
+    902: maleLocked, // Basculegion-Male
+    10248: femaleLocked, // Basculegion-Female
+    10254: femaleLocked, // Oinkologne-Female (species 916 reads 100% male)
+    // Cosplay Pikachu outfits are female-only.
+    10080: femaleLocked,
+    10081: femaleLocked,
+    10082: femaleLocked,
+    10083: femaleLocked,
+    10084: femaleLocked,
+    10085: femaleLocked,
+    // Cap Pikachu gifts are always male.
+    10094: maleLocked,
+    10095: maleLocked,
+    10096: maleLocked,
+    10097: maleLocked,
+    10098: maleLocked,
+    10099: maleLocked,
+    10160: maleLocked,
+    // Battle Bond / Ash-Greninja are event-fixed males.
+    10116: maleLocked,
+    10117: maleLocked,
+  };
+
   /// Physical facts for a specific form id (falls back to the base species when
   /// a form has no dedicated entry).
   FormFacts? formFacts(int formId, {int? nationalDexNumber}) =>
@@ -199,6 +223,12 @@ class SpeciesDataset {
 
   /// Breeding and training facts for a national dex number.
   SpeciesFacts? speciesFacts(int nationalDexNumber) => _species[nationalDexNumber];
+
+  /// Gender ratio for a specific form, applying [formGenderOverrides] before
+  /// falling back to the species-wide ratio.
+  GenderRatio? genderFor(int formId, {int? nationalDexNumber}) =>
+      formGenderOverrides[formId] ??
+      (nationalDexNumber != null ? _species[nationalDexNumber]?.gender : null);
 
   bool get isEmpty => _forms.isEmpty && _species.isEmpty;
 

@@ -151,7 +151,75 @@ class CombatUtils {
     return 1.0;
   }
 
-  /// Calculate dynamic base power for special moves (Return, Frustration, Eruption, Water Spout, Facade, Acrobatics, Knock Off, Hex, Foul Play, etc.)
+  /// Every move whose base power depends on battle context rather than a
+  /// fixed database value. Used to decide which low/no-power moves the duel
+  /// move picker must still offer (Low Kick & co. have no `power` in
+  /// moves.json, but the calculator resolves them).
+  static const Set<String> dynamicBasePowerMoves = {
+    'return', 'frustration', 'eruption', 'water spout', 'facade',
+    'acrobatics', 'knock off', 'hex', 'bitter malice', 'rage fist', 'brine',
+    // Weight-based gimmicks.
+    'low kick', 'grass knot', 'heavy slam', 'heat crash',
+    // Speed-based gimmicks.
+    'gyro ball', 'electro ball',
+    // Status / HP-based gimmicks.
+    'venoshock', 'crush grip', 'wring out', 'flail', 'reversal', 'hard press',
+    // Environment gimmicks (also change the move's type).
+    'weather ball', 'terrain pulse',
+  };
+
+  static String _normalizeName(String moveName) =>
+      moveName.toLowerCase().replaceAll('-', ' ').replaceAll('_', ' ').trim();
+
+  /// Whether [moveName] scales on battle context (weight, speed, status,
+  /// item, HP, ...) instead of a fixed database power.
+  static bool supportsDynamicBasePower(String moveName) =>
+      dynamicBasePowerMoves.contains(_normalizeName(moveName));
+
+  /// Effective attacking type of moves that transform with the battlefield.
+  ///
+  /// * Weather Ball becomes Fire/Water/Rock/Ice in sun/rain/sandstorm/snow.
+  /// * Terrain Pulse becomes Electric/Grass/Psychic/Fairy on the matching
+  ///   terrain.
+  ///
+  /// Returns [moveType] unchanged for everything else.
+  static String effectiveMoveType({
+    required String moveName,
+    required String moveType,
+    String weather = 'none',
+    String terrain = 'none',
+  }) {
+    final mName = _normalizeName(moveName);
+    if (mName == 'weather ball') {
+      switch (weather) {
+        case 'sunny':
+          return 'fire';
+        case 'rainy':
+          return 'water';
+        case 'sandstorm':
+          return 'rock';
+        case 'snow':
+          return 'ice';
+      }
+    } else if (mName == 'terrain pulse') {
+      switch (terrain) {
+        case 'electric':
+          return 'electric';
+        case 'grassy':
+          return 'grass';
+        case 'psychic':
+          return 'psychic';
+        case 'misty':
+          return 'fairy';
+      }
+    }
+    return moveType.toLowerCase();
+  }
+
+  /// Effective base power for gimmick moves (Return, Frustration, Eruption,
+  /// Water Spout, Facade, Acrobatics, Knock Off, Hex, Low Kick & co.).
+  /// Thin wrapper over [resolveDynamicBasePower] for callers that only need
+  /// the number and not the explanation note.
   static double calculateDynamicBasePower({
     required String moveName,
     required double basePower,
@@ -163,38 +231,199 @@ class CombatUtils {
     String attackerHeldItem = 'None',
     String defenderHeldItem = 'None',
     int rageFistHits = 0,
+    double attackerWeightKg = 0,
+    double defenderWeightKg = 0,
+    double attackerSpeedStat = 0,
+    double defenderSpeedStat = 0,
+    String weather = 'none',
+    String terrain = 'none',
   }) {
-    final mName = moveName.toLowerCase().replaceAll('-', ' ').replaceAll('_', ' ').trim();
+    return resolveDynamicBasePower(
+      moveName: moveName,
+      basePower: basePower,
+      friendship: friendship,
+      attackerHpPercent: attackerHpPercent,
+      defenderHpPercent: defenderHpPercent,
+      attackerStatus: attackerStatus,
+      defenderStatus: defenderStatus,
+      attackerHeldItem: attackerHeldItem,
+      defenderHeldItem: defenderHeldItem,
+      rageFistHits: rageFistHits,
+      attackerWeightKg: attackerWeightKg,
+      defenderWeightKg: defenderWeightKg,
+      attackerSpeedStat: attackerSpeedStat,
+      defenderSpeedStat: defenderSpeedStat,
+      weather: weather,
+      terrain: terrain,
+    ).basePower;
+  }
+
+  /// Full version of [calculateDynamicBasePower] that also explains the
+  /// gimmick it applied. When no contextual rule matches, [note] is `null`
+  /// and the plain [basePower] passes through.
+  static ({double basePower, String? note}) resolveDynamicBasePower({
+    required String moveName,
+    required double basePower,
+    int friendship = 255,
+    double attackerHpPercent = 100.0,
+    double defenderHpPercent = 100.0,
+    String attackerStatus = 'none',
+    String defenderStatus = 'none',
+    String attackerHeldItem = 'None',
+    String defenderHeldItem = 'None',
+    int rageFistHits = 0,
+    double attackerWeightKg = 0,
+    double defenderWeightKg = 0,
+    double attackerSpeedStat = 0,
+    double defenderSpeedStat = 0,
+    String weather = 'none',
+    String terrain = 'none',
+  }) {
+    final mName = _normalizeName(moveName);
 
     if (mName == 'return') {
-      return (friendship * 2 / 5).floorToDouble().clamp(1.0, 102.0);
+      final bp = (friendship * 2 / 5).floorToDouble().clamp(1.0, 102.0);
+      return (basePower: bp, note: 'Friendship $friendship → ${bp.toInt()} BP');
     }
     if (mName == 'frustration') {
-      return ((255 - friendship) * 2 / 5).floorToDouble().clamp(1.0, 102.0);
+      final bp = ((255 - friendship) * 2 / 5).floorToDouble().clamp(1.0, 102.0);
+      return (basePower: bp, note: 'Friendship $friendship → ${bp.toInt()} BP');
     }
     if (mName == 'eruption' || mName == 'water spout') {
-      return (150.0 * (attackerHpPercent / 100.0)).floorToDouble().clamp(1.0, 150.0);
+      final bp = (150.0 * (attackerHpPercent / 100.0)).floorToDouble().clamp(1.0, 150.0);
+      return (basePower: bp, note: 'Attacker at ${attackerHpPercent.toInt()}% HP → ${bp.toInt()} BP');
     }
     if (mName == 'facade') {
-      return (attackerStatus != 'none' && attackerStatus != 'freeze' && attackerStatus != 'sleep') ? 140.0 : 70.0;
+      final boosted = attackerStatus != 'none' && attackerStatus != 'freeze' && attackerStatus != 'sleep';
+      return (basePower: boosted ? 140.0 : 70.0, note: boosted ? 'Attacker is statused → 140 BP' : null);
     }
     if (mName == 'acrobatics') {
-      return (attackerHeldItem == 'None') ? 110.0 : 55.0;
+      final boosted = attackerHeldItem == 'None';
+      return (basePower: boosted ? 110.0 : 55.0, note: boosted ? 'No held item → 110 BP' : null);
     }
     if (mName == 'knock off') {
-      return (defenderHeldItem != 'None') ? (basePower * 1.5) : basePower;
+      final boosted = defenderHeldItem != 'None';
+      return (basePower: boosted ? (basePower * 1.5) : basePower, note: boosted ? 'Target holds an item → ×1.5 BP' : null);
     }
     if (mName == 'hex' || mName == 'bitter malice') {
-      return (defenderStatus != 'none') ? 130.0 : 65.0;
+      final boosted = defenderStatus != 'none';
+      return (basePower: boosted ? 130.0 : 65.0, note: boosted ? 'Target is statused → 130 BP' : null);
     }
     if (mName == 'rage fist') {
-      return 50.0 + (rageFistHits.clamp(0, 6) * 50.0);
+      final bp = 50.0 + (rageFistHits.clamp(0, 6) * 50.0);
+      return (basePower: bp, note: '$rageFistHits hits taken → ${bp.toInt()} BP');
     }
     if (mName == 'brine') {
-      return (defenderHpPercent <= 50.0) ? 130.0 : 65.0;
+      final boosted = defenderHpPercent <= 50.0;
+      return (basePower: boosted ? 130.0 : 65.0, note: boosted ? 'Target below half HP → 130 BP' : null);
     }
-    return basePower;
+
+    // ── Weight-based gimmicks (the defender feeds Low Kick / Grass Knot;
+    // Heavy Slam / Heat Crash compare both weights) ──────────────────────
+    if (mName == 'low kick' || mName == 'grass knot') {
+      if (defenderWeightKg > 0) {
+        final bp = lowKickPowerFor(defenderWeightKg).toDouble();
+        return (basePower: bp, note: 'Target weighs ${_fmtKg(defenderWeightKg)} → ${bp.toInt()} BP');
+      }
+      return (basePower: basePower, note: null);
+    }
+    if (mName == 'heavy slam' || mName == 'heat crash') {
+      if (attackerWeightKg > 0 && defenderWeightKg > 0) {
+        final bp = heavySlamPowerFor(attackerWeightKg, defenderWeightKg).toDouble();
+        final ratio = attackerWeightKg / defenderWeightKg;
+        return (
+          basePower: bp,
+          note: '${_fmtKg(attackerWeightKg)} vs ${_fmtKg(defenderWeightKg)} '
+              '(${ratio.toStringAsFixed(1)}×) → ${bp.toInt()} BP',
+        );
+      }
+      return (basePower: basePower, note: null);
+    }
+
+    // ── Speed-based gimmicks ────────────────────────────────────────────
+    if (mName == 'gyro ball') {
+      if (attackerSpeedStat > 0 && defenderSpeedStat > 0) {
+        final bp = (25.0 * defenderSpeedStat / attackerSpeedStat).floorToDouble().clamp(1.0, 150.0);
+        return (
+          basePower: bp,
+          note: '25× (Spd ${defenderSpeedStat.round()} / ${attackerSpeedStat.round()}) → ${bp.toInt()} BP',
+        );
+      }
+      return (basePower: basePower, note: null);
+    }
+    if (mName == 'electro ball') {
+      if (attackerSpeedStat > 0 && defenderSpeedStat > 0) {
+        final ratio = attackerSpeedStat / defenderSpeedStat;
+        final double bp = ratio >= 4 ? 150 : ratio >= 3 ? 120 : ratio >= 2 ? 80 : ratio >= 1 ? 60 : 40;
+        return (basePower: bp, note: 'Speed ratio ${ratio.toStringAsFixed(1)}× → ${bp.toInt()} BP');
+      }
+      return (basePower: basePower, note: null);
+    }
+
+    // ── Status / HP-based gimmicks ──────────────────────────────────────
+    if (mName == 'venoshock') {
+      final boosted = defenderStatus == 'poison' || defenderStatus == 'toxic';
+      return (basePower: boosted ? 130.0 : 65.0, note: boosted ? 'Target is poisoned → 130 BP' : null);
+    }
+    if (mName == 'crush grip' || mName == 'wring out') {
+      final bp = (120.0 * (defenderHpPercent / 100.0)).floorToDouble().clamp(1.0, 120.0);
+      return (basePower: bp, note: 'Target at ${defenderHpPercent.toInt()}% HP → ${bp.toInt()} BP');
+    }
+    if (mName == 'flail' || mName == 'reversal') {
+      final pct = attackerHpPercent;
+      final double bp = pct < 4.167 ? 200 : pct < 10.417 ? 150 : pct < 20.833 ? 100 : pct < 35.417 ? 80 : pct < 68.75 ? 40 : 20;
+      return (basePower: bp, note: 'Attacker at ${pct.toInt()}% HP → ${bp.toInt()} BP');
+    }
+    if (mName == 'hard press') {
+      final bp = (100.0 * (defenderHpPercent / 100.0)).floorToDouble().clamp(1.0, 100.0);
+      return (basePower: bp, note: 'Target at ${defenderHpPercent.toInt()}% HP → ${bp.toInt()} BP');
+    }
+
+    // ── Environment gimmicks (type changes handled by [effectiveMoveType]) ──
+    if (mName == 'weather ball') {
+      final effective = effectiveMoveType(moveName: moveName, moveType: 'normal', weather: weather);
+      final boosted = effective != 'normal';
+      if (boosted) {
+        return (basePower: 100.0, note: 'Weather turns it ${effective.toUpperCase()} → 100 BP');
+      }
+      return (basePower: basePower, note: null);
+    }
+    if (mName == 'terrain pulse') {
+      final effective = effectiveMoveType(moveName: moveName, moveType: 'normal', weather: weather, terrain: terrain);
+      final boosted = effective != 'normal';
+      if (boosted) {
+        return (basePower: 100.0, note: 'Terrain turns it ${effective.toUpperCase()} → 100 BP');
+      }
+      return (basePower: basePower, note: null);
+    }
+
+    return (basePower: basePower, note: null);
   }
+
+  /// Base power of Low Kick / Grass Knot against a target of [weightKg].
+  static int lowKickPowerFor(double weightKg) {
+    if (weightKg >= 200) return 120;
+    if (weightKg >= 100) return 100;
+    if (weightKg >= 50) return 80;
+    if (weightKg >= 25) return 60;
+    if (weightKg >= 10) return 40;
+    return 20;
+  }
+
+  /// Base power of Heavy Slam / Heat Crash for an attacker of
+  /// [attackerWeightKg] against a target of [defenderWeightKg].
+  static int heavySlamPowerFor(double attackerWeightKg, double defenderWeightKg) {
+    if (defenderWeightKg <= 0) return 0;
+    final ratio = attackerWeightKg / defenderWeightKg;
+    if (ratio >= 5) return 120;
+    if (ratio >= 4) return 100;
+    if (ratio >= 3) return 80;
+    if (ratio >= 2) return 60;
+    return 40;
+  }
+
+  static String _fmtKg(double kg) =>
+      '${kg.toStringAsFixed(1)} kg';
 
   static double getTypeEffectiveness(
     String moveType,

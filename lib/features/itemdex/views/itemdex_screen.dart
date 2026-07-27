@@ -4,6 +4,7 @@ import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/widgets/app_drawer.dart';
 import 'package:libredex/core/widgets/app_state_widgets.dart';
 import 'package:libredex/features/itemdex/data/itemdex_data.dart';
+import 'package:libredex/core/theme/app_spacing.dart';
 import 'package:libredex/features/itemdex/models/itemdex_entry.dart';
 
 class ItemDexScreen extends ConsumerStatefulWidget {
@@ -60,7 +61,7 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
           return Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, AppSpacing.topContentGap, AppSpacing.pagePadding, 8),
                 child: TextField(
                   controller: _searchController,
                   onChanged: (value) => setState(() => _query = value),
@@ -104,7 +105,7 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
                         message: 'Try a broader search such as “recovery”, “choice”, “weather”, or “damage”.',
                       )
                     : ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+                        padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 8, AppSpacing.pagePadding, AppSpacing.bottomScrollPadding),
                         itemCount: filtered.length,
                         itemBuilder: (context, index) => _ItemCard(item: filtered[index]),
                       ),

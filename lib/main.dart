@@ -54,7 +54,9 @@ class _StartupGateState extends ConsumerState<StartupGate> {
 
   Future<void> _seedIfNeeded() async {
     final repo = ref.read(syncRepositoryProvider);
-    if (!await repo.isSeeded) await repo.seedBundledData();
+    // Seeds on first launch and re-seeds whenever the bundled dataset
+    // version moved (new forms, refreshed learnsets, ...).
+    await repo.ensureSeeded();
   }
 
   void _retry() => setState(() => _bootstrap = _seedIfNeeded());

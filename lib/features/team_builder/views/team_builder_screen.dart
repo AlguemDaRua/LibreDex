@@ -1,16 +1,23 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:libredex/core/widgets/pokemon_sprite.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/database/app_database.dart';
+import 'package:libredex/core/navigation/navigation_provider.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/utils/type_utils.dart';
 import 'package:libredex/core/widgets/app_drawer.dart';
 import 'package:libredex/core/widgets/app_state_widgets.dart';
+import 'package:libredex/features/calculator/models/battle_ruleset.dart';
+import 'package:libredex/features/calculator/viewmodels/damage_calculator_viewmodel.dart';
 import 'package:libredex/features/pokedex/models/type_efficiency_calculator.dart';
 import 'package:libredex/features/pokedex/viewmodels/favorites_provider.dart';
 import 'package:libredex/features/pokedex/viewmodels/pokedex_viewmodel.dart';
 import 'package:libredex/features/pokedex/viewmodels/team_builder_provider.dart';
+import 'package:libredex/core/theme/app_spacing.dart';
 import 'package:libredex/features/pokedex/views/pokemon_detail_screen.dart';
+
+/// Section index of the Damage Calculator inside HomeScreen's IndexedStack.
+const int _damageCalculatorSectionIndex = 7;
 
 class TeamBuilderScreen extends ConsumerWidget {
   const TeamBuilderScreen({super.key});
@@ -19,6 +26,7 @@ class TeamBuilderScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final pokemonAsync = ref.watch(pokedexProvider);
     final slots = ref.watch(teamBuilderProvider);
+    final format = ref.watch(teamFormatProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -52,9 +60,13 @@ class TeamBuilderScreen extends ConsumerWidget {
           return CustomScrollView(
             slivers: [
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, AppSpacing.topContentGap, AppSpacing.pagePadding, 8),
                 sliver: SliverToBoxAdapter(
-                  child: _TeamHeader(count: selected.length),
+                  child: _TeamHeader(
+                    count: selected.length,
+                    format: format,
+                    onFormatChanged: (next) => ref.read(teamFormatProvider.notifier).setFormat(next),
+                  ),
                 ),
               ),
               SliverPadding(
@@ -71,13 +83,14 @@ class TeamBuilderScreen extends ConsumerWidget {
                     return _TeamSlotCard(
                       index: index,
                       pokemon: team[index],
+                      format: format,
                       onAdd: () => _showPokemonPicker(context, ref, pokemon, index),
                     );
                   },
                 ),
               ),
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 20, 16, 96),
+                padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 20, AppSpacing.pagePadding, AppSpacing.bottomScrollPadding),
                 sliver: SliverToBoxAdapter(
                   child: selected.isEmpty
                       ? const AppEmptyState(
@@ -85,7 +98,7 @@ class TeamBuilderScreen extends ConsumerWidget {
                           title: 'Start your team',
                           message: 'Add up to six Pokémon, then LibreDex will summarize defensive gaps and type spread.',
                         )
-                      : _TeamAnalysis(team: selected),
+                      : _TeamAnalysis(team: selected, format: format),
                 ),
               ),
             ],
@@ -112,12 +125,19 @@ class TeamBuilderScreen extends ConsumerWidget {
 
 class _TeamHeader extends StatelessWidget {
   final int count;
+  final TeamFormat format;
+  final ValueChanged<TeamFormat> onFormatChanged;
 
-  const _TeamHeader({required this.count});
+  const _TeamHeader({
+    required this.count,
+    required this.format,
+    required this.onFormatChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isChampions = format == TeamFormat.champions;
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -129,23 +149,72 @@ class _TeamHeader extends StatelessWidget {
         ),
         border: Border.all(color: AppTheme.pokemonRed.withValues(alpha: 0.18)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.groups_rounded, color: AppTheme.pokemonRed, size: 34),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
+            children: [
+              Icon(
+                isChampions ? Icons.emoji_events_rounded : Icons.groups_rounded,
+                color: isChampions ? Colors.deepPurpleAccent : AppTheme.pokemonRed,
+                size: 34,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '$count / 6 selected',
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      isChampions
+                          ? 'Plan a Champions squad — Lv. 50 battles, perfect IVs and 66 Stat Points each.'
+                          : 'Plan a balanced squad before jumping into the calculator.',
+                      style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          // "Mainline Team / Champions Team" — which game this squad is for.
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.black.withValues(alpha: 0.35) : Colors.white.withValues(alpha: 0.7),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
               children: [
-                Text(
-                  '$count / 6 selected',
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Plan a balanced squad before jumping into the calculator.',
-                  style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600]),
-                ),
+                for (final option in TeamFormat.values)
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => onFormatChanged(option),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 160),
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        decoration: BoxDecoration(
+                          color: format == option
+                              ? (option == TeamFormat.champions ? Colors.deepPurpleAccent : AppTheme.pokemonRed)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          option.label,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                            color: format == option ? Colors.white : Colors.grey,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -158,11 +227,13 @@ class _TeamHeader extends StatelessWidget {
 class _TeamSlotCard extends ConsumerWidget {
   final int index;
   final Pokemon? pokemon;
+  final TeamFormat format;
   final VoidCallback onAdd;
 
   const _TeamSlotCard({
     required this.index,
     required this.pokemon,
+    required this.format,
     required this.onAdd,
   });
 
@@ -220,10 +291,37 @@ class _TeamSlotCard extends ConsumerWidget {
             Positioned(
               top: 4,
               right: 4,
-              child: IconButton(
-                tooltip: 'Remove from team',
-                icon: const Icon(Icons.close_rounded, size: 18),
-                onPressed: () => ref.read(teamBuilderProvider.notifier).setSlot(index, null),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    tooltip: format == TeamFormat.champions
+                        ? 'Open in Damage Calculator (Champions)'
+                        : 'Open in Damage Calculator',
+                    icon: const Icon(Icons.calculate_outlined, size: 18),
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () {
+                      // Park a one-shot intent; the calculator applies it on
+                      // its first frame, so a Champions team always lands in
+                      // the Champions ruleset.
+                      ref.read(calculatorLaunchIntentProvider.notifier).request(
+                            CalculatorLaunchIntent(
+                              attackerPokemonId: p.id,
+                              ruleset: format == TeamFormat.champions ? BattleRuleset.champions : null,
+                            ),
+                          );
+                      ref
+                          .read(currentMenuIndexProvider.notifier)
+                          .setIndex(_damageCalculatorSectionIndex);
+                    },
+                  ),
+                  IconButton(
+                    tooltip: 'Remove from team',
+                    icon: const Icon(Icons.close_rounded, size: 18),
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () => ref.read(teamBuilderProvider.notifier).setSlot(index, null),
+                  ),
+                ],
               ),
             ),
             Padding(
@@ -242,10 +340,11 @@ class _TeamSlotCard extends ConsumerWidget {
                     child: Center(
                       child: p.spriteUrl.isEmpty
                           ? Icon(Icons.catching_pokemon, color: typeColor.withValues(alpha: 0.45), size: 54)
-                          : CachedNetworkImage(
+                          : PokemonSprite(
                               imageUrl: p.spriteUrl,
-                              fit: BoxFit.contain,
-                              errorWidget: (_, _, _) => Icon(Icons.catching_pokemon, color: typeColor.withValues(alpha: 0.45)),
+                              fallbackUrl: PokemonSprite.homeArtworkUrl(dex),
+                              errorIconSize: 54,
+                              errorIconColor: typeColor.withValues(alpha: 0.45),
                             ),
                     ),
                   ),
@@ -268,8 +367,9 @@ class _TeamSlotCard extends ConsumerWidget {
 
 class _TeamAnalysis extends StatelessWidget {
   final List<Pokemon> team;
+  final TeamFormat format;
 
-  const _TeamAnalysis({required this.team});
+  const _TeamAnalysis({required this.team, required this.format});
 
   @override
   Widget build(BuildContext context) {
@@ -294,11 +394,24 @@ class _TeamAnalysis extends StatelessWidget {
       ..sort((a, b) => b.value.compareTo(a.value));
     final gaps = pressure.where((e) => e.value >= 2 && resistCounts[e.key] == 0 && immuneCounts[e.key] == 0).take(4).toList();
 
+    final isChampions = format == TeamFormat.champions;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('Team readout', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
         const SizedBox(height: 12),
+        if (isChampions) ...[
+          const _AnalysisCard(
+            title: 'Pokémon Champions setup',
+            icon: Icons.emoji_events_rounded,
+            child: Text(
+              'Readout assumes Champions battles: Lv. 50 only, IVs always perfect, and 66 Stat Points (max 32 per stat) instead of EVs. Tap the calculator icon on any member to tune its spread in the Champions ruleset.',
+              style: TextStyle(height: 1.45),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
         _AnalysisCard(
           title: gaps.isEmpty ? 'Defensive shape looks solid' : 'Watch these matchups',
           icon: gaps.isEmpty ? Icons.verified_rounded : Icons.warning_amber_rounded,
@@ -405,7 +518,12 @@ class _PokemonPickerSheetState extends ConsumerState<_PokemonPickerSheet> {
                         height: 48,
                         child: pokemon.spriteUrl.isEmpty
                             ? Icon(Icons.catching_pokemon, color: color)
-                            : CachedNetworkImage(imageUrl: pokemon.spriteUrl, fit: BoxFit.contain),
+                            : PokemonSprite(
+                                imageUrl: pokemon.spriteUrl,
+                                fallbackUrl: PokemonSprite.homeArtworkUrl(dex),
+                                errorIconColor: color,
+                                errorIconSize: 24,
+                              ),
                       ),
                       title: Text(pokemon.name, style: const TextStyle(fontWeight: FontWeight.w800)),
                       subtitle: Text('#${dex.toString().padLeft(3, '0')} · ${titleCasePokemonText(pokemon.type1)}${pokemon.type2 == null ? '' : ' / ${titleCasePokemonText(pokemon.type2!)}'}'),

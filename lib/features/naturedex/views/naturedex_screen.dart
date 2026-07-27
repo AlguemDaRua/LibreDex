@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:libredex/core/theme/app_theme.dart';
+import 'package:libredex/core/theme/app_spacing.dart';
 import 'package:libredex/core/widgets/app_drawer.dart';
 
 class NaturedexScreen extends StatelessWidget {
@@ -117,7 +118,7 @@ class NaturedexScreen extends StatelessWidget {
               // Nature list
               Expanded(
                 child: ListView.separated(
-                  padding: const EdgeInsets.only(top: 8, bottom: 80),
+                  padding: const EdgeInsets.only(top: 8, bottom: AppSpacing.bottomScrollPadding),
                   itemCount: natures.length,
                   separatorBuilder: (context, index) => Divider(
                     color: isDark ? const Color(0xFF161616) : const Color(0xFFE5E7EB),

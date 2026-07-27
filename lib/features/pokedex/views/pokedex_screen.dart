@@ -1,6 +1,6 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:libredex/core/data/champions_catalog.dart';
 import 'package:libredex/core/data/ev_yield_data.dart';
 import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/core/theme/app_theme.dart';
@@ -8,8 +8,11 @@ import 'package:libredex/core/widgets/app_state_widgets.dart';
 import 'package:libredex/features/pokedex/utils/pokemon_data_helpers.dart';
 import 'package:libredex/features/pokedex/viewmodels/favorites_provider.dart';
 import 'package:libredex/features/pokedex/viewmodels/pokedex_viewmodel.dart';
+import 'package:libredex/features/pokedex/viewmodels/team_builder_provider.dart';
 import 'package:libredex/features/pokedex/views/pokemon_detail_screen.dart';
+import 'package:libredex/core/theme/app_spacing.dart';
 import 'package:libredex/core/widgets/app_drawer.dart';
+import 'package:libredex/core/widgets/pokemon_sprite.dart';
 
 class PokedexScreen extends ConsumerStatefulWidget {
   const PokedexScreen({super.key});
@@ -33,6 +36,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
   bool _showParadox = false;
   bool _showShinyOnly = false;
   bool _showFavoritesOnly = false;
+  bool _showTeamOnly = false;
   String _sortOption = 'id_asc';
 
   final List<String> _selectedFormats = [];
@@ -151,6 +155,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
       _showParadox = false;
       _showShinyOnly = false;
       _showFavoritesOnly = false;
+      _showTeamOnly = false;
       _sortOption = 'id_asc';
       _minBst = 100.0;
       _maxBst = 780.0;
@@ -175,6 +180,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
         _showParadox ||
         _showShinyOnly ||
         _showFavoritesOnly ||
+        _showTeamOnly ||
         _minBst > 100.0 ||
         _maxBst < 780.0 ||
         _minHp > 0.0 ||
@@ -186,7 +192,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
         _sortOption != 'id_asc';
   }
 
-  bool _matchesSearch(Pokemon pokemon, int dexNum, String query) {
+  bool _matchesSearch(Pokemon pokemon, int dexNum, String query, ChampionsCatalog? champions) {
     if (query.isEmpty) return true;
     final name = pokemon.name.toLowerCase();
     final form = pokemon.form.toLowerCase();
@@ -200,7 +206,21 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
         type2.contains(query) ||
         dex.contains(query) ||
         dex.padLeft(3, '0').contains(query) ||
+        // Champions / Legends Z-A forms also answer to alias searches such
+        // as "champions", "mega raichu x", "raichu x", "legends za",
+        // "eternal", "floette eternal" or a Champions ability name.
+        (champions?.matchesSearch(pokemon.id, query) ?? false) ||
+        // Order-free token search, so "floette eternal" still finds the
+        // "Eternal Flower Floette" display name (and "raichu x" the Mega).
+        _matchesTokens(query, name, form) ||
         _isSubsequence(query, name.replaceAll('-', ''));
+  }
+
+  bool _matchesTokens(String query, String name, String form) {
+    final tokens = query.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
+    if (tokens.length < 2) return false;
+    final haystack = '$name $form';
+    return tokens.every(haystack.contains);
   }
 
   bool _isSubsequence(String query, String text) {
@@ -217,6 +237,8 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
   Widget build(BuildContext context) {
     final listAsync = ref.watch(pokedexProvider);
     final favoriteDexNumbers = ref.watch(favoritePokemonProvider);
+    final teamPokemonIds = ref.watch(teamBuilderProvider).whereType<int>().toSet();
+    final championsCatalog = ref.watch(championsCatalogProvider).valueOrNull;
     final evYieldDataset = ref.watch(evYieldDatasetProvider);
     final syncState = ref.watch(pokedexSyncNotifierProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -292,9 +314,12 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                         if (_showFavoritesOnly && !favoriteDexNumbers.contains(dexNum)) {
                           return false;
                         }
+                        if (_showTeamOnly && !teamPokemonIds.contains(pokemon.id)) {
+                          return false;
+                        }
 
                         final query = _searchQuery.trim().toLowerCase();
-                        if (!_matchesSearch(pokemon, dexNum, query)) return false;
+                        if (!_matchesSearch(pokemon, dexNum, query, championsCatalog)) return false;
 
                         if (_selectedTypes.isNotEmpty) {
                           if (_selectedTypes.length == 1) {
@@ -333,7 +358,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                         }
 
                         if (_selectedFormats.isNotEmpty) {
-                          if (!_selectedFormats.any((fmt) => _matchesFormat(pokemon, fmt))) {
+                          if (!_selectedFormats.any((fmt) => _matchesFormat(pokemon, fmt, championsCatalog))) {
                             return false;
                           }
                         }
@@ -487,7 +512,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                                   ),
                                 )
                               : SliverPadding(
-                                  padding: const EdgeInsets.only(left: 12, right: 12, top: 8, bottom: 90),
+                                  padding: const EdgeInsets.only(left: AppSpacing.pagePadding, right: AppSpacing.pagePadding, top: 8, bottom: AppSpacing.bottomScrollPadding),
                                   sliver: SliverGrid(
                                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                                       crossAxisCount: 2,
@@ -640,21 +665,16 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                               child: Hero(
                                 tag: 'pokemon_${pokemon.id}',
                                 child: imageUrl.isNotEmpty
-                                    ? CachedNetworkImage(
+                                    ? PokemonSprite(
                                         imageUrl: imageUrl,
-                                        fit: BoxFit.contain,
-                                        maxHeightDiskCache: 240,
-                                        maxWidthDiskCache: 240,
-                                        placeholder: (context, url) => const SizedBox(
-                                          width: 26,
-                                          height: 26,
-                                          child: CircularProgressIndicator(strokeWidth: 2),
-                                        ),
-                                        errorWidget: (context, url, error) => Icon(
-                                          Icons.catching_pokemon,
-                                          size: 58,
-                                          color: typeColor.withValues(alpha: 0.36),
-                                        ),
+                                        // Shiny mode falls back to the
+                                        // normal render if the shiny one
+                                        // cannot be fetched.
+                                        fallbackUrl: imageUrl == pokemon.spriteUrl ? null : pokemon.spriteUrl,
+                                        loadingIndicatorSize: 26,
+                                        errorIconSize: 58,
+                                        errorIconColor: typeColor.withValues(alpha: 0.36),
+                                        diskCacheSize: 240,
                                       )
                                     : Icon(
                                         Icons.catching_pokemon,
@@ -686,11 +706,11 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
     );
   }
 
-  bool _matchesFormat(Pokemon p, String format) {
+  bool _matchesFormat(Pokemon p, String format, ChampionsCatalog? champions) {
     final f = p.form.toLowerCase();
     switch (format.toUpperCase()) {
       case 'MEGA':
-        return f.contains('mega');
+        return f.contains('mega') || (champions?.isOverlayMega(p.id) ?? false);
       case 'ALOLA':
         return f.contains('alolan');
       case 'GALAR':
@@ -699,6 +719,10 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
         return f.contains('hisuian');
       case 'PALDEA':
         return f.contains('paldean');
+      case 'CHAMPIONS':
+        return champions?.isChampionsForm(p.id) ?? false;
+      case 'LEGENDS Z-A':
+        return champions?.isLegendsZaForm(p.id) ?? false;
       default:
         return false;
     }
@@ -880,6 +904,14 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                                     setState(() => _showShinyOnly = val);
                                     setModalState(() {});
                                   }),
+                                  _buildSwitchRow('Favorites Only', _showFavoritesOnly, (val) {
+                                    setState(() => _showFavoritesOnly = val);
+                                    setModalState(() {});
+                                  }),
+                                  _buildSwitchRow('Team Members', _showTeamOnly, (val) {
+                                    setState(() => _showTeamOnly = val);
+                                    setModalState(() {});
+                                  }),
                                 ],
                               ),
                             ),
@@ -891,7 +923,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                             Wrap(
                               spacing: 8,
                               runSpacing: 8,
-                              children: ['MEGA', 'ALOLA', 'GALAR', 'HISUI', 'PALDEA'].map((fmt) {
+                              children: ['MEGA', 'ALOLA', 'GALAR', 'HISUI', 'PALDEA', 'CHAMPIONS', 'LEGENDS Z-A'].map((fmt) {
                                 final bool isSel = _selectedFormats.contains(fmt);
                                 return ChoiceChip(
                                   label: Text(
