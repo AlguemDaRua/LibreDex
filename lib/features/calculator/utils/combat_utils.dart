@@ -151,10 +151,6 @@ class CombatUtils {
     return 1.0;
   }
 
-  /// Result of [CombatUtils.resolveDynamicBasePower]: the effective base
-  /// power plus a short, human-readable explanation of the gimmick rule that
-  /// produced it (shown as an info chip in the duel tab).
-
   /// Every move whose base power depends on battle context rather than a
   /// fixed database value. Used to decide which low/no-power moves the duel
   /// move picker must still offer (Low Kick & co. have no `power` in
@@ -220,7 +216,10 @@ class CombatUtils {
     return moveType.toLowerCase();
   }
 
-  /// Calculate dynamic base power for special moves (Return, Frustration, Eruption, Water Spout, Facade, Acrobatics, Knock Off, Hex, Foul Play, etc.)
+  /// Effective base power for gimmick moves (Return, Frustration, Eruption,
+  /// Water Spout, Facade, Acrobatics, Knock Off, Hex, Low Kick & co.).
+  /// Thin wrapper over [resolveDynamicBasePower] for callers that only need
+  /// the number and not the explanation note.
   static double calculateDynamicBasePower({
     required String moveName,
     required double basePower,
