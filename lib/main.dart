@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/theme/theme_provider.dart';
+import 'package:libredex/core/widgets/ultra_wormhole_transition.dart';
 import 'package:libredex/features/home/views/home_screen.dart';
 import 'package:libredex/features/pokedex/repositories/sync_repository.dart';
 
@@ -15,12 +16,17 @@ class LibreDexApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
     return MaterialApp(
       title: 'LibreDex',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ref.watch(themeModeProvider),
+      themeMode: themeMode,
+      builder: (context, child) => UltraWormholeTransition(
+        trigger: themeMode,
+        child: child ?? const SizedBox.shrink(),
+      ),
       home: const StartupGate(),
     );
   }

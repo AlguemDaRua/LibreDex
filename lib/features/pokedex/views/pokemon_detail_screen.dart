@@ -2,14 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/core/theme/app_theme.dart';
+import 'package:libredex/core/utils/learn_method_utils.dart';
+import 'package:libredex/core/widgets/app_state_widgets.dart';
+import 'package:libredex/core/widgets/learn_method_badge.dart';
 import 'package:libredex/features/calculator/utils/held_items_data.dart';
 import 'package:libredex/features/pokedex/models/type_efficiency_calculator.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
+import 'package:libredex/features/pokedex/viewmodels/favorites_provider.dart';
+import 'package:libredex/features/pokedex/viewmodels/pokedex_viewmodel.dart';
 import 'package:libredex/features/pokedex/viewmodels/stats_calculator_viewmodel.dart';
+import 'package:libredex/features/pokedex/viewmodels/team_builder_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:libredex/features/abilitydex/views/ability_detail_screen.dart';
 import 'package:libredex/features/movedex/views/move_detail_screen.dart';
 import 'package:libredex/features/pokedex/utils/pokemon_data_helpers.dart';
+import 'package:libredex/core/data/ev_yield_data.dart';
+import 'package:libredex/core/data/pokedex_entry_data.dart';
 import 'package:libredex/core/data/species_data.dart';
 import 'package:libredex/features/pokedex/widgets/shiny_slider.dart';
 
@@ -80,10 +88,26 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
     super.dispose();
   }
 
+  Future<void> _addActivePokemonToTeam() async {
+    final added = await ref.read(teamBuilderProvider.notifier).addPokemon(_activePokemon.id);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          added
+              ? '${_activePokemon.name} is on your team.'
+              : 'Your team is full. Open Team Builder to replace a slot.',
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? Colors.white : Colors.black;
+    final dexNumber = _activePokemon.nationalDexNumber > 0 ? _activePokemon.nationalDexNumber : _activePokemon.id;
+    final isFavorite = ref.watch(favoritePokemonProvider).contains(dexNumber);
 
     return Scaffold(
       backgroundColor: isDark ? Colors.black : const Color(0xFFF9FAFB),
@@ -95,6 +119,20 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
         iconTheme: IconThemeData(color: primaryColor),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.group_add_rounded),
+            color: primaryColor,
+            tooltip: 'Add to team',
+            onPressed: () => _addActivePokemonToTeam(),
+          ),
+          IconButton(
+            icon: Icon(isFavorite ? Icons.star_rounded : Icons.star_border_rounded),
+            color: isFavorite ? Colors.amber : primaryColor,
+            tooltip: isFavorite ? 'Remove favorite' : 'Add favorite',
+            onPressed: () => ref.read(favoritePokemonProvider.notifier).toggle(dexNumber),
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
           child: TabBar(
@@ -113,7 +151,6 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
       ),
       body: Column(
         children: [
-          // Form selector sits in the body, below the AppBar — not inside it.
           if (widget.forms.length > 1)
             Container(
               height: 48,
@@ -172,9 +209,6 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
     );
   }
 
-  /// -------------------------------------------------------------
-  /// TAB 1: GENERAL TAB (Overview, Type Badges, Weaknesses & Abilities)
-  /// -------------------------------------------------------------
   Widget _buildGeneralTab() {
     final doubleEffs = TypeEfficiencyCalculator.getCombinedEffectiveness(
       _activePokemon.type1,
@@ -186,7 +220,6 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Sprite Comparison Slider
           ShinySlider(
             normalImageUrl: _activePokemon.spriteUrl,
             shinyImageUrl: _activePokemon.shinySpriteUrl,
@@ -196,7 +229,6 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
           ),
           const SizedBox(height: 20),
 
-          // Core Element Types
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -209,19 +241,18 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
           ),
           const SizedBox(height: 24),
 
-          // Abilities Card (Overview)
+          _buildPokedexEntryCard(),
+          const SizedBox(height: 20),
+
           _buildAbilitiesCard(),
           const SizedBox(height: 20),
 
-          // Breeding, Training & EV Yield Card (Bulbapedia / PokéDB style)
           _buildBiologicalDataCard(),
           const SizedBox(height: 20),
 
-          // Evolution Family & Forms Card
           _buildEvolutionCard(),
           const SizedBox(height: 20),
 
-          // Type Relations (TypeDex Card)
           _buildTypeDexCard(doubleEffs),
           const SizedBox(height: 12),
         ],
@@ -343,6 +374,46 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
     );
   }
 
+  Widget _buildPokedexEntryCard() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dexNumber = _activePokemon.nationalDexNumber > 0 ? _activePokemon.nationalDexNumber : _activePokemon.id;
+    final entriesAsync = ref.watch(pokedexEntryDatasetProvider);
+    final entry = entriesAsync.hasValue ? entriesAsync.requireValue[dexNumber] : null;
+    if (entry == null || (entry.genus.isEmpty && entry.flavor.isEmpty)) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF121212) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (entry.genus.isNotEmpty)
+            Text(
+              entry.genus,
+              style: const TextStyle(color: AppTheme.pokemonRed, fontWeight: FontWeight.w900, letterSpacing: 0.3),
+            ),
+          if (entry.genus.isNotEmpty) const SizedBox(height: 8),
+          Text(
+            entry.flavor,
+            style: TextStyle(
+              color: isDark ? Colors.grey[200] : const Color(0xFF1F2937),
+              fontSize: 16,
+              height: 1.45,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildAbilitiesCard() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final abilitiesAsync = ref.watch(pokemonAbilitiesStreamProvider(_activePokemon.id));
@@ -369,27 +440,12 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
           abilitiesAsync.when(
             data: (abilities) {
               if (abilities.isEmpty) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 20.0),
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.info_outline_rounded, color: Colors.grey[500], size: 28),
-                        const SizedBox(height: 8),
-                        Text(
-                          'No abilities linked yet.',
-                          style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 13, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Go to Settings → Fix Moves & Abilities Links',
-                          style: TextStyle(color: isDark ? Colors.grey[600] : Colors.grey[400], fontSize: 11),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
+                return AppEmptyState(
+                  icon: Icons.auto_awesome_rounded,
+                  title: 'No abilities linked yet',
+                  message: 'Rebuild the bundled links now, or open Settings and use “Fix Moves & Abilities Links”.',
+                  actionLabel: 'Fix links now',
+                  onAction: () => ref.read(pokedexSyncNotifierProvider.notifier).reseed(),
                 );
               }
               final sortedAbilities = List<Map<String, dynamic>>.from(abilities)
@@ -435,8 +491,8 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                               Text(
                                 name,
                                 style: TextStyle(
-                                    fontWeight: FontWeight.bold, 
-                                    fontSize: 14, 
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
                                     color: isDark ? Colors.white : Colors.black
                                 ),
                               ),
@@ -602,7 +658,6 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                           ),
                         Row(
                           children: [
-                            // From Pokémon (Clickable)
                             Expanded(
                               child: InkWell(
                                 onTap: () => _navigateToPokemon(step.fromId),
@@ -639,7 +694,6 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                               ),
                             ),
 
-                            // Arrow & Trigger Details
                             Expanded(
                               flex: 2,
                               child: Column(
@@ -666,7 +720,6 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                               ),
                             ),
 
-                            // To Pokémon (Clickable)
                             Expanded(
                               child: InkWell(
                                 onTap: () => _navigateToPokemon(step.toId),
@@ -727,9 +780,6 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
     );
   }
 
-  /// -------------------------------------------------------------
-  /// TAB 2: COMPETITIVE STATS SIMULATOR (Showdown Style)
-  /// -------------------------------------------------------------
   Widget _buildStatsTab() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? Colors.white : Colors.black;
@@ -745,7 +795,6 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Config Panel Card
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -760,7 +809,6 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
               children: [
                 Row(
                   children: [
-                    // Level Slider
                     Expanded(
                       flex: 4,
                       child: Column(
@@ -788,7 +836,6 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                       ),
                     ),
                     const SizedBox(width: 16),
-                    // Remaining EVs Box
                     Expanded(
                       flex: 3,
                       child: Container(
@@ -826,7 +873,6 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                 ),
                 const SizedBox(height: 16),
 
-                // Nature Dropdown
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -881,7 +927,6 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                 ),
                 const SizedBox(height: 16),
 
-                // Held Item Selector
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -944,7 +989,6 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
           ),
           const SizedBox(height: 24),
 
-          // Showdown Grid Table
           const Text(
             'Competitive Stat Distribution',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -1056,8 +1100,8 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 13,
-            color: upIndicator 
-                ? (isDark ? Colors.tealAccent : const Color(0xFF0F766E)) 
+            color: upIndicator
+                ? (isDark ? Colors.tealAccent : const Color(0xFF0F766E))
                 : downIndicator ? (isDark ? Colors.redAccent : const Color(0xFFBE123C)) : primaryColor
           ),
         ),
@@ -1096,7 +1140,6 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
             ),
             const SizedBox(width: 8),
 
-            // M3 Showdown Progressive Bar
             Expanded(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(4),
@@ -1120,7 +1163,6 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
             ),
             const SizedBox(width: 14),
 
-            // Stat Final
             SizedBox(
               width: 45,
               child: Text(
@@ -1137,7 +1179,6 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
             child: Column(
               children: [
                 const Divider(color: Color(0xFF2D2D2D), height: 12),
-                // IV Slider
                 Row(
                   children: [
                     const SizedBox(
@@ -1172,7 +1213,6 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                     ),
                   ],
                 ),
-                // EV Slider
                 Row(
                   children: [
                     const SizedBox(
@@ -1215,9 +1255,6 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
     );
   }
 
-  /// -------------------------------------------------------------
-  /// TAB 3: MOVES (Filtrable Moves List)
-  /// -------------------------------------------------------------
   Widget _buildMovesTab() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final movesAsync = ref.watch(pokemonMovesStreamProvider(_activePokemon.id));
@@ -1233,7 +1270,7 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
               const SizedBox(width: 8),
               _buildFilterChip('level', 'Level'),
               const SizedBox(width: 8),
-              _buildFilterChip('tm', 'TM / TR'),
+              _buildFilterChip('tm', learnMethodLabel('machine')),
               const SizedBox(width: 8),
               _buildFilterChip('tutor', 'Tutor'),
               const SizedBox(width: 8),
@@ -1245,50 +1282,39 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
           child: movesAsync.when(
             data: (movesList) {
               if (movesList.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.info_outline_rounded, color: Colors.grey[500], size: 32),
-                      const SizedBox(height: 12),
-                      Text(
-                        'No moves linked yet.',
-                        style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 14, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Go to Settings → Fix Moves & Abilities Links',
-                        style: TextStyle(color: isDark ? Colors.grey[600] : Colors.grey[400], fontSize: 12),
-                      ),
-                    ],
-                  ),
+                return AppEmptyState(
+                  icon: Icons.flash_off_rounded,
+                  title: 'No moves linked yet',
+                  message: 'Rebuild the bundled links now, or open Settings and use “Fix Moves & Abilities Links”.',
+                  actionLabel: 'Fix links now',
+                  onAction: () => ref.read(pokedexSyncNotifierProvider.notifier).reseed(),
                 );
               }
 
               final filteredMoves = movesList.where((item) {
                 if (_moveFilter == 'all') return true;
-                final method = (item['learnMethod'] ?? '').toString().toLowerCase();
-                if (_moveFilter == 'level') {
-                  return method.contains('level') || method == 'level-up';
+                final kind = learnMethodKind((item['learnMethod'] ?? '').toString());
+                switch (_moveFilter) {
+                  case 'level':
+                    return kind == LearnMethodKind.level;
+                  case 'tm':
+                    return kind == LearnMethodKind.machine;
+                  case 'tutor':
+                    return kind == LearnMethodKind.tutor;
+                  case 'egg':
+                    return kind == LearnMethodKind.egg;
+                  default:
+                    return false;
                 }
-                if (_moveFilter == 'tm') {
-                  return method.contains('tm') || method.contains('tr') || method == 'machine';
-                }
-                if (_moveFilter == 'tutor') {
-                  return method.contains('tutor');
-                }
-                if (_moveFilter == 'egg') {
-                  return method.contains('egg');
-                }
-                return method == _moveFilter;
               }).toList();
 
               if (filteredMoves.isEmpty) {
-                return const Center(
-                  child: Text(
-                    'No moves found with this filter.',
-                    style: TextStyle(color: Colors.grey),
-                  ),
+                return AppEmptyState(
+                  icon: Icons.filter_alt_off_rounded,
+                  title: 'No ${_moveFilter == "tm" ? learnMethodLabel("machine") : _moveFilter} moves',
+                  message: 'This Pokémon has no bundled moves for the selected learn method.',
+                  actionLabel: 'Show all moves',
+                  onAction: () => setState(() => _moveFilter = 'all'),
                 );
               }
 
@@ -1326,22 +1352,11 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                         SizedBox(
                           width: 50,
                           child: Center(
-                            child: learnMethod == 'level'
-                                ? Text(
-                                    'Lvl ${levelLearned ?? 1}',
-                                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.amberAccent, fontSize: 11),
-                                  )
-                                : Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey.withValues(alpha: 0.15),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(
-                                      learnMethod.toUpperCase(),
-                                      style: const TextStyle(color: Colors.grey, fontSize: 8, fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
+                            child: LearnMethodBadge(
+                              method: learnMethod,
+                              level: levelLearned,
+                              compact: true,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -1352,8 +1367,8 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                               Text(
                                 name,
                                 style: TextStyle(
-                                  fontWeight: FontWeight.bold, 
-                                  fontSize: 14, 
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
                                   color: isDark ? Colors.white : Colors.black
                                 ),
                               ),
@@ -1372,7 +1387,6 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                                     ),
                                   ),
                                   const SizedBox(width: 6),
-                                  // Category Badge
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
@@ -1407,7 +1421,7 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                             Text(
                               hasPower ? 'Power: $power' : 'Status',
                               style: TextStyle(
-                                color: hasPower 
+                                color: hasPower
                                     ? (isDark ? Colors.white : Colors.black87)
                                     : Colors.grey,
                                 fontSize: 12,
@@ -1430,13 +1444,11 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Divider(color: Color(0xFF2D2D2D), height: 12),
-                            // Description
                             Text(
                               description,
                               style: TextStyle(color: isDark ? Colors.grey[300] : Colors.grey[700], fontSize: 12, height: 1.4),
                             ),
                             const SizedBox(height: 12),
-                            // Accuracy, PP and category stats row
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -1638,9 +1650,6 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
     );
   }
 
-  /// -------------------------------------------------------------
-  /// CORE COLOR UTILITIES
-  /// -------------------------------------------------------------
   Color _getTypeColor(String type) {
     switch (type.toLowerCase()) {
       case 'normal':
@@ -1695,7 +1704,9 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
         _activePokemon.baseSpDef +
         _activePokemon.baseSpd;
 
-    final String evYield = PokemonDataHelpers.getEvYield(_activePokemon);
+    final evYieldAsync = ref.watch(evYieldDatasetProvider);
+    final realEvYield = evYieldAsync.hasValue ? evYieldAsync.requireValue[_activePokemon.id] : null;
+    final String evYield = realEvYield?.label ?? '${PokemonDataHelpers.getEvYield(_activePokemon)} (estimated)';
 
     // Authoritative facts from the bundled PokeAPI dataset. While the asset is
     // still decoding we simply omit these rows rather than showing guesses.
@@ -1846,7 +1857,6 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
             const SizedBox(height: 12),
           ],
 
-          // Gender Ratio
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

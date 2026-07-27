@@ -1,0 +1,20 @@
+{
+  "1":[{"from":1,"to":2,"trigger":"Lvl 16"},{"from":2,"to":3,"trigger":"Lvl 32"}],
+  "4":[{"from":4,"to":5,"trigger":"Lvl 16"},{"from":5,"to":6,"trigger":"Lvl 36"}],
+  "7":[{"from":7,"to":8,"trigger":"Lvl 16"},{"from":8,"to":9,"trigger":"Lvl 36"}],
+  "10":[{"from":10,"to":11,"trigger":"Lvl 7"},{"from":11,"to":12,"trigger":"Lvl 10"}],
+  "13":[{"from":13,"to":14,"trigger":"Lvl 7"},{"from":14,"to":15,"trigger":"Lvl 10"}],
+  "16":[{"from":16,"to":17,"trigger":"Lvl 18"},{"from":17,"to":18,"trigger":"Lvl 36"}],
+  "25":[{"from":172,"to":25,"trigger":"High Friendship"},{"from":25,"to":26,"trigger":"Thunder Stone"}],
+  "63":[{"from":63,"to":64,"trigger":"Lvl 16"},{"from":64,"to":65,"trigger":"Trade"}],
+  "66":[{"from":66,"to":67,"trigger":"Lvl 28"},{"from":67,"to":68,"trigger":"Trade"}],
+  "74":[{"from":74,"to":75,"trigger":"Lvl 25"},{"from":75,"to":76,"trigger":"Trade"}],
+  "92":[{"from":92,"to":93,"trigger":"Lvl 25"},{"from":93,"to":94,"trigger":"Trade"}],
+  "133":[{"from":133,"to":134,"trigger":"Water Stone"},{"from":133,"to":135,"trigger":"Thunder Stone"},{"from":133,"to":136,"trigger":"Fire Stone"},{"from":133,"to":196,"trigger":"High Friendship (Day)"},{"from":133,"to":197,"trigger":"High Friendship (Night)"},{"from":133,"to":470,"trigger":"Leaf Stone"},{"from":133,"to":471,"trigger":"Ice Stone"},{"from":133,"to":700,"trigger":"High Friendship + Fairy move"}],
+  "152":[{"from":152,"to":153,"trigger":"Lvl 16"},{"from":153,"to":154,"trigger":"Lvl 32"}],
+  "155":[{"from":155,"to":156,"trigger":"Lvl 14"},{"from":156,"to":157,"trigger":"Lvl 36"}],
+  "158":[{"from":158,"to":159,"trigger":"Lvl 18"},{"from":159,"to":160,"trigger":"Lvl 30"}],
+  "252":[{"from":252,"to":253,"trigger":"Lvl 16"},{"from":253,"to":254,"trigger":"Lvl 36"}],
+  "255":[{"from":255,"to":256,"trigger":"Lvl 16"},{"from":256,"to":257,"trigger":"Lvl 36"}],
+  "258":[{"from":258,"to":259,"trigger":"Lvl 16"},{"from":259,"to":260,"trigger":"Lvl 36"}]
+}

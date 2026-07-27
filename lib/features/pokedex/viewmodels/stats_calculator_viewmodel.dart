@@ -4,7 +4,7 @@ import 'package:libredex/core/database/app_database.dart';
 
 part 'stats_calculator_viewmodel.g.dart';
 
-/// Estado imutável para a calculadora reativa do Pokémon Showdown.
+/// Immutable state for the stat calculator.
 class StatsCalculatorState {
   final int level;
   final Map<String, int> ivs;
@@ -44,7 +44,7 @@ class StatsCalculator extends _$StatsCalculator {
   @override
   StatsCalculatorState build() {
     return StatsCalculatorState(
-      level: 100, // Nível padrão Showdown
+      level: 100,
       ivs: {
         'hp': 31,
         'atk': 31,
@@ -61,7 +61,7 @@ class StatsCalculator extends _$StatsCalculator {
         'spd': 0,
         'spe': 0,
       },
-      nature: 'serious', // Natureza neutra inicial
+      nature: 'serious',
     );
   }
 

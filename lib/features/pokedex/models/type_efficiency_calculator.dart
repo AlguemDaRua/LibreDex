@@ -170,8 +170,7 @@ class TypeEfficiencyCalculator {
     },
   };
 
-  /// Calculates defensive effectiveness multipliers for all types against the given dual tipagem.
-  /// Returns a map of: Attacking Type -> Combined Multiplier (e.g. 'fire' -> 2.0, 'electric' -> 0.0).
+  /// Calculates defensive multipliers for all attacking types.
   static Map<String, double> getCombinedEffectiveness(String type1, String? type2) {
     final Map<String, double> effectiveness = {};
 

@@ -65,7 +65,7 @@ class AbilityTable extends Table {
 class PokemonMovesTable extends Table {
   IntColumn get pokemonId => integer().references(PokemonTable, #id, onDelete: KeyAction.cascade)();
   IntColumn get moveId => integer().references(MoveTable, #id, onDelete: KeyAction.cascade)();
-  TextColumn get learnMethod => text()(); // level, tm, egg, tutor
+  TextColumn get learnMethod => text()(); // PokéAPI ids, e.g. level-up, machine, egg, tutor
   IntColumn get levelLearned => integer().nullable()();
 
   @override

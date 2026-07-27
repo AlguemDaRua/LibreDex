@@ -5,11 +5,13 @@ import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/widgets/offline_download_dialog.dart';
 import 'package:libredex/features/abilitydex/views/abilitydex_screen.dart';
 import 'package:libredex/features/calculator/views/damage_calculator_screen.dart';
+import 'package:libredex/features/itemdex/views/itemdex_screen.dart';
 import 'package:libredex/features/movedex/views/movedex_screen.dart';
 import 'package:libredex/features/naturedex/views/naturedex_screen.dart';
 import 'package:libredex/features/pokedex/repositories/deep_sync_repository.dart';
 import 'package:libredex/features/pokedex/views/pokedex_screen.dart';
 import 'package:libredex/features/settings/views/settings_screen.dart';
+import 'package:libredex/features/team_builder/views/team_builder_screen.dart';
 import 'package:libredex/features/typechart/views/typechart_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -27,11 +29,37 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   static bool _hasPromptedThisSession = false;
+  final Set<int> _visitedIndices = {0};
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybePromptForDownload());
+  }
+
+  Widget _buildSection(int index) {
+    switch (index) {
+      case 0:
+        return const PokedexScreen();
+      case 1:
+        return const TeamBuilderScreen();
+      case 2:
+        return const MovedexScreen();
+      case 3:
+        return const AbilitydexScreen();
+      case 4:
+        return const ItemDexScreen();
+      case 5:
+        return const NaturedexScreen();
+      case 6:
+        return const TypeChartScreen();
+      case 7:
+        return const DamageCalculatorScreen();
+      case 8:
+        return const SettingsScreen();
+      default:
+        return const PokedexScreen();
+    }
   }
 
   Future<void> _maybePromptForDownload() async {
@@ -50,8 +78,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final currentIndex = ref.watch(currentMenuIndexProvider);
+    _visitedIndices.add(currentIndex);
 
-    // Intercept back: from any sub-section, Back returns to the Pokédex first.
     return PopScope(
       canPop: currentIndex == 0,
       onPopInvokedWithResult: (didPop, _) {
@@ -64,15 +92,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           Expanded(
             child: IndexedStack(
               index: currentIndex,
-              children: const [
-                PokedexScreen(),
-                MovedexScreen(),
-                AbilitydexScreen(),
-                NaturedexScreen(),
-                TypeChartScreen(),
-                DamageCalculatorScreen(),
-                SettingsScreen(),
-              ],
+              children: List.generate(
+                9,
+                (index) => _visitedIndices.contains(index)
+                    ? _buildSection(index)
+                    : const SizedBox.shrink(),
+              ),
             ),
           ),
         ],

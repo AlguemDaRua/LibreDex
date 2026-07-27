@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
 import 'package:libredex/core/theme/app_theme.dart';
+import 'package:libredex/core/widgets/learn_method_badge.dart';
 import 'package:libredex/features/calculator/utils/combat_utils.dart';
 import 'package:libredex/features/pokedex/views/pokemon_detail_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -231,29 +232,6 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
   }
 
   Widget _buildLearnMethodBadge(String method, int? level) {
-    String label = method.toUpperCase();
-    Color color = Colors.grey;
-    if (method == 'level') {
-      label = 'LVL ${level ?? '?'}';
-      color = Colors.greenAccent;
-    } else if (method == 'tm') {
-      label = 'TM/HM';
-      color = Colors.amber;
-    } else if (method == 'egg') {
-      label = 'EGG MOVE';
-      color = Colors.pinkAccent;
-    } else if (method == 'tutor') {
-      label = 'TUTOR';
-      color = Colors.blueAccent;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(label, style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.bold)),
-    );
+    return LearnMethodBadge(method: method, level: level, compact: true);
   }
 }
