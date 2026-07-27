@@ -190,24 +190,32 @@ class _ItemCard extends StatelessWidget {
   void _showDetails(BuildContext context, ItemDexEntry item) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final accent = _itemColor(item.category);
-    showModalBottomSheet<void>(
+    showDialog<void>(
       context: context,
-      backgroundColor: Colors.transparent,
+      barrierDismissible: true,
       builder: (context) {
-        return Container(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF0C0C0C) : Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          child: SafeArea(
-            top: false,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(child: Container(width: 44, height: 5, decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.35), borderRadius: BorderRadius.circular(99)))),
-                const SizedBox(height: 18),
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          backgroundColor: isDark ? const Color(0xFF0C0C0C) : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 22),
+                        onPressed: () => Navigator.pop(context),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ],
+                  ),
                 Row(
                   children: [
                     Container(
@@ -235,7 +243,8 @@ class _ItemCard extends StatelessWidget {
                 Text(item.description, style: TextStyle(color: isDark ? Colors.grey[300] : Colors.grey[700], height: 1.45)),
                 const SizedBox(height: 16),
                 Wrap(spacing: 8, runSpacing: 8, children: item.tags.map((tag) => _Tag(label: tag, color: accent)).toList()),
-              ],
+                ],
+              ),
             ),
           ),
         );

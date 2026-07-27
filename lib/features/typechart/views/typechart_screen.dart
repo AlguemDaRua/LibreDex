@@ -219,43 +219,47 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
 
   void _showTypePicker(BuildContext context, bool isPrimary) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenHeight = MediaQuery.of(context).size.height;
 
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      backgroundColor: isDark ? const Color(0xFF141414) : Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+      barrierDismissible: true,
       builder: (ctx) {
         final options = isPrimary ? _allTypes : ['none', ..._allTypes];
 
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
+          backgroundColor: isDark ? const Color(0xFF141414) : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: screenHeight * 0.65),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Text(
-                      isPrimary ? 'Select Primary Type' : 'Select Secondary Type',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.black,
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 8, 0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        isPrimary ? 'Select Primary Type' : 'Select Secondary Type',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
                       ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(ctx),
-                    ),
-                  ],
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 22),
+                        onPressed: () => Navigator.pop(ctx),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 16),
                 Flexible(
                   child: GridView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                     shrinkWrap: true,
                     itemCount: options.length,
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(

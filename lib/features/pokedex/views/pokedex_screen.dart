@@ -748,57 +748,55 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
   }
 
   void _openAdvancedFilterBottomSheet(BuildContext context) {
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      barrierDismissible: true,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
             final isDark = Theme.of(context).brightness == Brightness.dark;
             final primaryColor = isDark ? Colors.white : Colors.black;
+            final screenHeight = MediaQuery.of(context).size.height;
 
-            return DraggableScrollableSheet(
-              initialChildSize: 0.85,
-              maxChildSize: 0.95,
-              minChildSize: 0.5,
-              builder: (context, scrollController) {
-                return Container(
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF0C0C0C) : Colors.white,
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                    border: Border.all(color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB), width: 1.2),
-                  ),
-                  padding: const EdgeInsets.only(left: 16, right: 16, top: 12),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 42,
-                        height: 5,
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF262626) : const Color(0xFFE2E8F0),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      Row(
+            return Dialog(
+              insetPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+              backgroundColor: isDark ? const Color(0xFF0C0C0C) : Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: screenHeight * 0.88),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 8, 0),
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text('ADVANCED FILTERS', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: primaryColor)),
-                          TextButton(
-                            onPressed: () {
-                              _clearAllFilters();
-                              setModalState(() {});
-                            },
-                            child: const Text('Reset All', style: TextStyle(color: Colors.orangeAccent, fontWeight: FontWeight.bold)),
-                          )
+                          Row(
+                            children: [
+                              TextButton(
+                                onPressed: () {
+                                  _clearAllFilters();
+                                  setModalState(() {});
+                                },
+                                child: const Text('Reset All', style: TextStyle(color: Colors.orangeAccent, fontWeight: FontWeight.bold)),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.close_rounded, size: 22),
+                                onPressed: () => Navigator.pop(context),
+                                visualDensity: VisualDensity.compact,
+                              ),
+                            ],
+                          ),
                         ],
                       ),
-                      const SizedBox(height: 12),
-                      Expanded(
-                        child: ListView(
-                          controller: scrollController,
-                          children: [
+                    ),
+                    Flexible(
+                      child: ListView(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                        children: [
+
                             _buildSectionLabel('TYPES SELECTOR (UP TO 2 FOR DUAL EXCLUSIVE MATCH)'),
                             const SizedBox(height: 8),
                             Wrap(
@@ -1106,13 +1104,12 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                               ),
                             ),
                             const SizedBox(height: 32),
-                          ],
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
-                );
-              },
+                    ),
+                  ],
+                ),
+              ),
             );
           },
         );

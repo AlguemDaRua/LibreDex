@@ -114,10 +114,9 @@ class TeamBuilderScreen extends ConsumerWidget {
     List<Pokemon> pokemon,
     int slotIndex,
   ) {
-    showModalBottomSheet<void>(
+    showDialog<void>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      barrierDismissible: true,
       builder: (context) => _PokemonPickerSheet(pokemon: pokemon, slotIndex: slotIndex),
     );
   }
@@ -479,34 +478,44 @@ class _PokemonPickerSheetState extends ConsumerState<_PokemonPickerSheet> {
         return favCompare != 0 ? favCompare : aDex.compareTo(bDex);
       });
 
-    return DraggableScrollableSheet(
-      initialChildSize: 0.82,
-      maxChildSize: 0.95,
-      minChildSize: 0.5,
-      builder: (context, controller) {
-        return Container(
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF0C0C0C) : Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          child: Column(
-            children: [
-              const SizedBox(height: 12),
-              Container(width: 44, height: 5, decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.35), borderRadius: BorderRadius.circular(99))),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: TextField(
-                  autofocus: true,
-                  onChanged: (value) => setState(() => _query = value),
-                  decoration: const InputDecoration(
-                    hintText: 'Search Pokémon, type, or #',
-                    prefixIcon: Icon(Icons.search_rounded),
+    final screenHeight = MediaQuery.of(context).size.height;
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
+      backgroundColor: isDark ? const Color(0xFF0C0C0C) : Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: screenHeight * 0.8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 8, 0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Add to Team', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 22),
+                    onPressed: () => Navigator.pop(context),
+                    visualDensity: VisualDensity.compact,
                   ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: TextField(
+                autofocus: true,
+                onChanged: (value) => setState(() => _query = value),
+                decoration: const InputDecoration(
+                  hintText: 'Search Pokémon, type, or #',
+                  prefixIcon: Icon(Icons.search_rounded),
                 ),
               ),
-              Expanded(
-                child: ListView.builder(
-                  controller: controller,
+            ),
+            Flexible(
+              child: ListView.builder(
+                padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
                   itemCount: options.length,
                   itemBuilder: (context, index) {
                     final pokemon = options[index];
@@ -536,10 +545,9 @@ class _PokemonPickerSheetState extends ConsumerState<_PokemonPickerSheet> {
                   },
                 ),
               ),
-            ],
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 }

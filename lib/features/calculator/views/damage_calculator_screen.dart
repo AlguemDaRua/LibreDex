@@ -1426,12 +1426,11 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
 
   void _showPokemonPicker(BuildContext context, List<Pokemon> list, bool isAttacker, DamageCalculatorViewModel vm) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenHeight = MediaQuery.of(context).size.height;
     String q = '';
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      barrierDismissible: true,
       builder: (ctx) => StatefulBuilder(builder: (ctx, ss) {
         final filtered = list
             .where((p) =>
@@ -1440,71 +1439,89 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                 p.type1.toLowerCase().contains(q.toLowerCase()) ||
                 (p.type2?.toLowerCase().contains(q.toLowerCase()) ?? false))
             .toList();
-        return DraggableScrollableSheet(
-          initialChildSize: 0.9, maxChildSize: 0.95, minChildSize: 0.5, expand: false,
-          builder: (ctx, sc) => Column(children: [
-            const SizedBox(height: 12),
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[700], borderRadius: BorderRadius.circular(2))),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: TextField(
-                autofocus: true,
-                onChanged: (v) => ss(() => q = v),
-                decoration: InputDecoration(
-                  hintText: 'Search Pokémon by name, ID or type...',
-                  prefixIcon: const Icon(Icons.search, color: AppTheme.pokemonRed),
-                  filled: true,
-                  fillColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF3F4F6),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
+          backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: screenHeight * 0.8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 8, 0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Select ${isAttacker ? 'Attacker' : 'Defender'}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 22),
+                        onPressed: () => Navigator.pop(ctx),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Expanded(
-              child: ListView.builder(
-                controller: sc,
-                itemCount: filtered.length,
-                itemBuilder: (ctx, i) {
-                  final p = filtered[i];
-                  return ListTile(
-                    leading: p.spriteUrl.isNotEmpty
-                        ? SizedBox(
-                            width: 40, height: 40,
-                            child: PokemonSprite(
-                              imageUrl: p.spriteUrl,
-                              fallbackUrl: PokemonSprite.homeArtworkUrl(p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id),
-                              errorIconColor: Colors.grey,
-                              errorIconSize: 24,
-                            ),
-                          )
-                        : const Icon(Icons.catching_pokemon, color: Colors.grey),
-                    title: Text(p.name, style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black, fontSize: 14)),
-                    subtitle: Text('${p.type1.toUpperCase()}${p.type2 != null ? " / ${p.type2!.toUpperCase()}" : ""}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                    onTap: () async {
-                      Navigator.pop(ctx);
-                      try {
-                        final abs = await ref.read(databaseProvider).getPokemonAbilities(p.id);
-                        final defAb = abs.isNotEmpty ? abs.first.ability.name : null;
-                        if (isAttacker) {
-                          vm.setAttacker(p, defaultAbility: defAb);
-                        } else {
-                          vm.setDefender(p, defaultAbility: defAb);
-                        }
-                      } catch (_) {
-                        if (isAttacker) {
-                          vm.setAttacker(p);
-                        } else {
-                          vm.setDefender(p);
-                        }
-                      }
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: TextField(
+                    autofocus: true,
+                    onChanged: (v) => ss(() => q = v),
+                    decoration: InputDecoration(
+                      hintText: 'Search Pokémon by name, ID or type...',
+                      prefixIcon: const Icon(Icons.search, color: AppTheme.pokemonRed),
+                      filled: true,
+                      fillColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF3F4F6),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    ),
+                  ),
+                ),
+                Flexible(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
+                    itemCount: filtered.length,
+                    itemBuilder: (ctx, i) {
+                      final p = filtered[i];
+                      return ListTile(
+                        leading: p.spriteUrl.isNotEmpty
+                            ? SizedBox(
+                                width: 40, height: 40,
+                                child: PokemonSprite(
+                                  imageUrl: p.spriteUrl,
+                                  fallbackUrl: PokemonSprite.homeArtworkUrl(p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id),
+                                  errorIconColor: Colors.grey,
+                                  errorIconSize: 24,
+                                ),
+                              )
+                            : const Icon(Icons.catching_pokemon, color: Colors.grey),
+                        title: Text(p.name, style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black, fontSize: 14)),
+                        subtitle: Text('${p.type1.toUpperCase()}${p.type2 != null ? " / ${p.type2!.toUpperCase()}" : ""}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                        onTap: () async {
+                          Navigator.pop(ctx);
+                          try {
+                            final abs = await ref.read(databaseProvider).getPokemonAbilities(p.id);
+                            final defAb = abs.isNotEmpty ? abs.first.ability.name : null;
+                            if (isAttacker) {
+                              vm.setAttacker(p, defaultAbility: defAb);
+                            } else {
+                              vm.setDefender(p, defaultAbility: defAb);
+                            }
+                          } catch (_) {
+                            if (isAttacker) {
+                              vm.setAttacker(p);
+                            } else {
+                              vm.setDefender(p);
+                            }
+                          }
+                        },
+                      );
                     },
-                  );
-                },
-              ),
+                  ),
+                ),
+              ],
             ),
-          ]),
+          ),
         );
       }),
     );
@@ -1512,12 +1529,11 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
 
   void _showMovePicker(BuildContext context, DamageCalculatorViewModel vm) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenHeight = MediaQuery.of(context).size.height;
     String q = '';
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      barrierDismissible: true,
       builder: (ctx) => StatefulBuilder(builder: (ctx, ss) {
         final filtered = _dbDamagingMoves
             .where((m) =>
@@ -1525,54 +1541,72 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                 m.type.toLowerCase().contains(q.toLowerCase()) ||
                 m.damageClass.toLowerCase().contains(q.toLowerCase()))
             .toList();
-        return DraggableScrollableSheet(
-          initialChildSize: 0.9, maxChildSize: 0.95, minChildSize: 0.5, expand: false,
-          builder: (ctx, sc) => Column(children: [
-            const SizedBox(height: 12),
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[700], borderRadius: BorderRadius.circular(2))),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: TextField(
-                autofocus: true,
-                onChanged: (v) => ss(() => q = v),
-                decoration: InputDecoration(
-                  hintText: 'Search moves by name, type, or category...',
-                  prefixIcon: const Icon(Icons.search, color: AppTheme.pokemonRed),
-                  filled: true,
-                  fillColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF3F4F6),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
+          backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: screenHeight * 0.8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 8, 0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Select Move', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 22),
+                        onPressed: () => Navigator.pop(ctx),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Expanded(
-              child: ListView.builder(
-                controller: sc,
-                itemCount: filtered.length,
-                itemBuilder: (ctx, i) {
-                  final m = filtered[i];
-                  final typeColor = CombatUtils.typeColors[m.type.toLowerCase()] ?? Colors.grey;
-                  return ListTile(
-                    leading: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(color: typeColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
-                      child: Text(m.type.toUpperCase(), style: TextStyle(color: typeColor, fontSize: 10, fontWeight: FontWeight.bold)),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: TextField(
+                    autofocus: true,
+                    onChanged: (v) => ss(() => q = v),
+                    decoration: InputDecoration(
+                      hintText: 'Search moves by name, type, or category...',
+                      prefixIcon: const Icon(Icons.search, color: AppTheme.pokemonRed),
+                      filled: true,
+                      fillColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF3F4F6),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                     ),
-                    title: Text(m.name, style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black, fontSize: 14)),
-                    subtitle: Text('${m.damageClass.toUpperCase()} • PP: ${m.pp}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                    trailing: Text('BP: ${m.power ?? "—"}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.pokemonRed)),
-                    onTap: () {
-                      vm.selectMove(m.name, m.type, m.damageClass, m.power?.toDouble() ?? 50.0);
-                      setState(() { _simpleSelectedMove = m; });
-                      Navigator.pop(ctx);
+                  ),
+                ),
+                Flexible(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
+                    itemCount: filtered.length,
+                    itemBuilder: (ctx, i) {
+                      final m = filtered[i];
+                      final typeColor = CombatUtils.typeColors[m.type.toLowerCase()] ?? Colors.grey;
+                      return ListTile(
+                        leading: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(color: typeColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
+                          child: Text(m.type.toUpperCase(), style: TextStyle(color: typeColor, fontSize: 10, fontWeight: FontWeight.bold)),
+                        ),
+                        title: Text(m.name, style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black, fontSize: 14)),
+                        subtitle: Text('${m.damageClass.toUpperCase()} \u2022 PP: ${m.pp}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                        trailing: Text('BP: ${m.power ?? "\u2014"}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.pokemonRed)),
+                        onTap: () {
+                          vm.selectMove(m.name, m.type, m.damageClass, m.power?.toDouble() ?? 50.0);
+                          setState(() { _simpleSelectedMove = m; });
+                          Navigator.pop(ctx);
+                        },
+                      );
                     },
-                  );
-                },
-              ),
+                  ),
+                ),
+              ],
             ),
-          ]),
+          ),
         );
       }),
     );
@@ -1580,75 +1614,90 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
 
   void _showItemPicker(BuildContext context, bool isAttacker, DamageCalculatorViewModel vm) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenHeight = MediaQuery.of(context).size.height;
     String q = '';
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      barrierDismissible: true,
       builder: (ctx) => StatefulBuilder(builder: (ctx, ss) {
         final items = HeldItemsData.allItems.where((item) =>
           item.name.toLowerCase().contains(q.toLowerCase()) ||
           item.description.toLowerCase().contains(q.toLowerCase()) ||
           item.category.toLowerCase().contains(q.toLowerCase())
         ).toList();
-        return DraggableScrollableSheet(
-          initialChildSize: 0.85, maxChildSize: 0.95, minChildSize: 0.5, expand: false,
-          builder: (ctx, sc) => Column(children: [
-            const SizedBox(height: 12),
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[700], borderRadius: BorderRadius.circular(2))),
-            const SizedBox(height: 12),
-            Text(isAttacker ? 'Select Attacker Held Item' : 'Select Defender Held Item', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: TextField(
-                autofocus: true,
-                onChanged: (v) => ss(() => q = v),
-                decoration: InputDecoration(
-                  hintText: 'Search held items (Choice, Berry, Vest, Boots...)...',
-                  prefixIcon: const Icon(Icons.search, color: AppTheme.pokemonRed),
-                  filled: true,
-                  fillColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF3F4F6),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
+          backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: screenHeight * 0.8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 8, 0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(isAttacker ? 'Attacker Held Item' : 'Defender Held Item', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 22),
+                        onPressed: () => Navigator.pop(ctx),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Expanded(
-              child: ListView.builder(
-                controller: sc,
-                itemCount: items.length,
-                itemBuilder: (ctx, i) {
-                  final item = items[i];
-                  return ListTile(
-                    title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text(item.description, style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                    trailing: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(color: AppTheme.pokemonRed.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-                      child: Text(item.category, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppTheme.pokemonRed)),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: TextField(
+                    autofocus: true,
+                    onChanged: (v) => ss(() => q = v),
+                    decoration: InputDecoration(
+                      hintText: 'Search held items (Choice, Berry, Vest, Boots...)...',
+                      prefixIcon: const Icon(Icons.search, color: AppTheme.pokemonRed),
+                      filled: true,
+                      fillColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF3F4F6),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                     ),
-                    onTap: () {
-                      if (isAttacker) {
-                        vm.setAttackerHeldItem(item.name);
-                      } else {
-                        vm.setDefenderHeldItem(item.name);
-                      }
-                      Navigator.pop(ctx);
+                  ),
+                ),
+                Flexible(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
+                    itemCount: items.length,
+                    itemBuilder: (ctx, i) {
+                      final item = items[i];
+                      return ListTile(
+                        title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        subtitle: Text(item.description, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                        trailing: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(color: AppTheme.pokemonRed.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
+                          child: Text(item.category, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppTheme.pokemonRed)),
+                        ),
+                        onTap: () {
+                          if (isAttacker) {
+                            vm.setAttackerHeldItem(item.name);
+                          } else {
+                            vm.setDefenderHeldItem(item.name);
+                          }
+                          Navigator.pop(ctx);
+                        },
+                      );
                     },
-                  );
-                },
-              ),
+                  ),
+                ),
+              ],
             ),
-          ]),
+          ),
         );
       }),
     );
   }
 
-  // ── Modal Bottom Sheet Setup Editor ──────────────────────────────────────
+  // ── Centered Dialog Setup Editor ────────────────────────────────────────
 
   void _showSetupEditorSheet(
     BuildContext context,
@@ -1660,12 +1709,11 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
   ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? Colors.white : Colors.black;
+    final screenHeight = MediaQuery.of(context).size.height;
 
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      barrierDismissible: true,
       builder: (ctx) => Consumer(
         builder: (context, ref, _) {
           final currentState = ref.watch(damageCalculatorViewModelProvider);
@@ -1847,14 +1895,34 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
             );
           }
 
-          return DraggableScrollableSheet(
-            initialChildSize: 0.88, maxChildSize: 0.96, minChildSize: 0.5, expand: false,
-            builder: (ctx, sc) => ListView(
-              controller: sc,
-              padding: const EdgeInsets.all(16),
-              children: [
-                Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[700], borderRadius: BorderRadius.circular(2)))),
-                const SizedBox(height: 12),
+          return Dialog(
+            insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
+            backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: screenHeight * 0.85),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Close button row
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 8, 0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded, size: 22),
+                          onPressed: () => Navigator.pop(ctx),
+                          tooltip: 'Close',
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Flexible(
+                    child: ListView(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      children: [
 
                 // Header Row
                 Row(
@@ -2308,7 +2376,11 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                 buildStatRow('Sp. Atk', 'spa', p.baseSpAtk, false),
                 buildStatRow('Sp. Def', 'spd', p.baseSpDef, false),
                 buildStatRow('Speed', 'spe', p.baseSpd, false),
-              ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         },

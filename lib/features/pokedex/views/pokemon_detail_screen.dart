@@ -478,9 +478,10 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
   Widget _buildAbilitiesCard() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final abilitiesAsync = ref.watch(pokemonAbilitiesStreamProvider(_activePokemon.id));
-    final abilityFallbackFrom = abilitiesAsync.value
-        ?.firstWhere((a) => a['abilityFallbackFrom'] != null, orElse: () => const <String, dynamic>{})
-            ['abilityFallbackFrom'] as String?;
+    final abilitiesList = abilitiesAsync.value;
+    final fallbackAbilityMap = abilitiesList
+        ?.firstWhere((a) => a['abilityFallbackFrom'] != null, orElse: () => const <String, dynamic>{});
+    final String? abilityFallbackFrom = fallbackAbilityMap?['abilityFallbackFrom'] as String?;
 
     return Container(
       width: double.infinity,
@@ -1333,9 +1334,10 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
 
     // Forms without direct learnset rows receive the base species learnset
     // tagged with `learnsetFallbackFrom` by the repository.
-    final fallbackFrom = movesAsync.value
-        ?.firstWhere((m) => m['learnsetFallbackFrom'] != null, orElse: () => const <String, dynamic>{})
-            ['learnsetFallbackFrom'] as String?;
+    final movesValue = movesAsync.value;
+    final fallbackMoveMap = movesValue
+        ?.firstWhere((m) => m['learnsetFallbackFrom'] != null, orElse: () => const <String, dynamic>{});
+    final fallbackFrom = fallbackMoveMap?['learnsetFallbackFrom'] as String?;
 
     return Column(
       children: [
@@ -1644,12 +1646,11 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
   void _showItemPickerForStats(StatsCalculator notifier) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? Colors.white : Colors.black;
+    final screenHeight = MediaQuery.of(context).size.height;
     String searchQuery = '';
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      barrierDismissible: true,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheet) {
           final items = HeldItemsData.allItems
@@ -1657,46 +1658,61 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                   i.name.toLowerCase().contains(searchQuery.toLowerCase()) ||
                   i.category.toLowerCase().contains(searchQuery.toLowerCase()))
               .toList();
-          return DraggableScrollableSheet(
-            initialChildSize: 0.85, maxChildSize: 0.95, minChildSize: 0.5, expand: false,
-            builder: (ctx, sc) => Padding(
-              padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-              child: Column(children: [
-                const SizedBox(height: 12),
-                Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(2))),
-                const SizedBox(height: 12),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: TextField(
-                    autofocus: true,
-                    onChanged: (v) => setSheet(() => searchQuery = v),
-                    decoration: InputDecoration(
-                      hintText: 'Search held items...',
-                      prefixIcon: const Icon(Icons.search, color: AppTheme.pokemonRed),
-                      filled: true,
-                      fillColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF3F4F6),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+          return Dialog(
+            insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
+            backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: screenHeight * 0.8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 8, 0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Held Item', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded, size: 22),
+                          onPressed: () => Navigator.pop(ctx),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ],
                     ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Expanded(
-                  child: ListView.builder(
-                    controller: sc,
-                    itemCount: items.length,
-                    itemBuilder: (ctx, i) {
-                      final item = items[i];
-                      return ListTile(
-                        leading: Icon(Icons.backpack_outlined, color: item.name == 'None' ? Colors.grey : AppTheme.pokemonRed, size: 20),
-                        title: Text(item.name, style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 13)),
-                        subtitle: Text(item.description, style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                        onTap: () { notifier.updateHeldItem(item.name); Navigator.pop(ctx); },
-                      );
-                    },
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: TextField(
+                      autofocus: true,
+                      onChanged: (v) => setSheet(() => searchQuery = v),
+                      decoration: InputDecoration(
+                        hintText: 'Search held items...',
+                        prefixIcon: const Icon(Icons.search, color: AppTheme.pokemonRed),
+                        filled: true,
+                        fillColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF3F4F6),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                      ),
+                    ),
                   ),
-                ),
-              ]),
+                  Flexible(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
+                      itemCount: items.length,
+                      itemBuilder: (ctx, i) {
+                        final item = items[i];
+                        return ListTile(
+                          leading: Icon(Icons.backpack_outlined, color: item.name == 'None' ? Colors.grey : AppTheme.pokemonRed, size: 20),
+                          title: Text(item.name, style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 13)),
+                          subtitle: Text(item.description, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                          onTap: () { notifier.updateHeldItem(item.name); Navigator.pop(ctx); },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         },
