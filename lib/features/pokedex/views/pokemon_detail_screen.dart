@@ -1808,9 +1808,12 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
       bstLabel = 'Mid Tier';
     }
 
-    final bool isGenderless = species?.gender.genderless ?? true;
-    final double malePct = species?.gender.malePercent ?? 0;
-    final double femalePct = species?.gender.femalePercent ?? 0;
+    // Form-level gender locks (Indeedee-Female & co.) win over the raw
+    // species ratio that PokéAPI reports.
+    final gender = dataset?.genderFor(_activePokemon.id, nationalDexNumber: dexNumber) ?? species?.gender;
+    final bool isGenderless = gender?.genderless ?? true;
+    final double malePct = gender?.malePercent ?? 0;
+    final double femalePct = gender?.femalePercent ?? 0;
 
     return Container(
       width: double.infinity,
@@ -1867,21 +1870,15 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
           if (form != null) ...[
             _buildBioRow('Height', form.heightLabel, Icons.height_rounded, isDark),
             const SizedBox(height: 12),
-            // Weight drives Low Kick, Grass Knot, Heavy Slam and Heat Crash.
+            // Weight feeds weight-based damage gimmicks (Low Kick, Grass
+            // Knot, Heavy Slam, Heat Crash) — those are resolved live in the
+            // damage calculator, so this row just reports the weight itself.
             _buildBioRow('Weight', form.weightLabel, Icons.monitor_weight_rounded, isDark),
             const SizedBox(height: 12),
             _buildBioRow(
               'Base EXP',
               '${form.baseExp} EXP when defeated',
               Icons.military_tech_rounded,
-              isDark,
-            ),
-            const SizedBox(height: 12),
-            _buildBioRow(
-              'Weight Moves',
-              'Low Kick / Grass Knot hit this Pokémon for '
-                  '${form.lowKickPower} base power',
-              Icons.sports_martial_arts_rounded,
               isDark,
             ),
             const SizedBox(height: 12),
