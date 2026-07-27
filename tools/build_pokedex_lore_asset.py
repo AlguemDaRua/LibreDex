@@ -20,7 +20,8 @@ EVOS_OUT = Path("assets/data/evolution_chains.json")
 
 
 def get_json(url: str) -> dict:
-    with urllib.request.urlopen(url, timeout=30) as response:
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    with urllib.request.urlopen(req, timeout=30) as response:
         return json.loads(response.read().decode("utf-8"))
 
 
@@ -73,6 +74,8 @@ def walk_chain(node: dict, steps: list[dict]) -> None:
         walk_chain(child, steps)
 
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 def main() -> int:
     try:
         index = get_json(f"{API}/pokemon-species?limit=20000")
@@ -80,26 +83,40 @@ def main() -> int:
         entries: dict[str, dict] = {}
         evolution_urls: dict[str, str] = {}
 
-        for i, row in enumerate(species, start=1):
+        def fetch_species(row: dict) -> tuple[int, dict, str | None]:
             raw = get_json(row["url"])
             dex = raw["id"]
-            entries[str(dex)] = {
+            entry = {
                 "genus": english_genus(raw.get("genera") or []),
                 "flavor": english_flavor(raw.get("flavor_text_entries") or []),
             }
             evo_url = raw.get("evolution_chain", {}).get("url")
-            if evo_url:
-                evolution_urls.setdefault(evo_url, str(dex))
-            if i % 100 == 0:
-                print(f"Fetched {i}/{len(species)} species...")
+            return (dex, entry, evo_url)
+
+        with ThreadPoolExecutor(max_workers=20) as executor:
+            futures = [executor.submit(fetch_species, row) for row in species]
+            for i, future in enumerate(as_completed(futures), start=1):
+                dex, entry, evo_url = future.result()
+                entries[str(dex)] = entry
+                if evo_url:
+                    evolution_urls.setdefault(evo_url, str(dex))
+                if i % 100 == 0:
+                    print(f"Fetched {i}/{len(species)} species...")
 
         chains: dict[str, list[dict]] = {}
-        for url, root_dex in evolution_urls.items():
+        def fetch_chain(item: tuple[str, str]) -> tuple[str, list[dict]]:
+            url, root_dex = item
             raw = get_json(url)
             steps: list[dict] = []
             walk_chain(raw["chain"], steps)
-            if steps:
-                chains[root_dex] = steps
+            return (root_dex, steps)
+
+        with ThreadPoolExecutor(max_workers=20) as executor:
+            chain_futures = [executor.submit(fetch_chain, item) for item in evolution_urls.items()]
+            for future in as_completed(chain_futures):
+                root_dex, steps = future.result()
+                if steps:
+                    chains[root_dex] = steps
     except (URLError, TimeoutError, OSError, KeyError, ValueError) as error:
         print(f"Could not build Pokédex lore assets: {error}", file=sys.stderr)
         print("Existing assets were left untouched.", file=sys.stderr)

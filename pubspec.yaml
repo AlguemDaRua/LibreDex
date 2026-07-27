@@ -58,6 +58,7 @@ dev_dependencies:
   drift_dev: ^2.16.0
   freezed: ^3.2.3
   json_serializable: ^6.8.0
+  http: ^1.2.1
 
 dependency_overrides:
   path_provider_android: 2.2.23

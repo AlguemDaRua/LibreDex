@@ -20,7 +20,8 @@ OUT = Path("assets/data/items.json")
 
 
 def get_json(url: str) -> dict:
-    with urllib.request.urlopen(url, timeout=30) as response:
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    with urllib.request.urlopen(req, timeout=30) as response:
         return json.loads(response.read().decode("utf-8"))
 
 
@@ -56,6 +57,8 @@ def normalize_item(raw: dict) -> dict:
     }
 
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 def main() -> int:
     try:
         index = get_json(f"{API}/item?limit=5000")
@@ -65,12 +68,17 @@ def main() -> int:
             return 1
 
         items: list[dict] = []
-        for i, item in enumerate(results, start=1):
+        def fetch_one(item: dict) -> dict:
             raw = get_json(item["url"])
-            items.append(normalize_item(raw))
-            if i % 100 == 0:
-                print(f"Fetched {i}/{len(results)} items...")
-                time.sleep(0.1)
+            return normalize_item(raw)
+
+        with ThreadPoolExecutor(max_workers=20) as executor:
+            futures = [executor.submit(fetch_one, item) for item in results]
+            for i, future in enumerate(as_completed(futures), start=1):
+                items.append(future.result())
+                if i % 100 == 0:
+                    print(f"Fetched {i}/{len(results)} items...")
+
     except (URLError, TimeoutError, OSError) as error:
         print(f"Could not fetch item data: {error}", file=sys.stderr)
         print("Existing asset was left untouched.", file=sys.stderr)

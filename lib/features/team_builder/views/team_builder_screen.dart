@@ -245,7 +245,7 @@ class _TeamSlotCard extends ConsumerWidget {
                           : CachedNetworkImage(
                               imageUrl: p.spriteUrl,
                               fit: BoxFit.contain,
-                              errorWidget: (_, __, ___) => Icon(Icons.catching_pokemon, color: typeColor.withValues(alpha: 0.45)),
+                              errorWidget: (_, _, _) => Icon(Icons.catching_pokemon, color: typeColor.withValues(alpha: 0.45)),
                             ),
                     ),
                   ),

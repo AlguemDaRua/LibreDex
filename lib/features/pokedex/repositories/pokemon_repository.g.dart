@@ -8,20 +8,17 @@ part of 'pokemon_repository.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Database provider since we cannot modify app_database.dart.
-/// Keeps database singleton and closes it on dispose.
+/// Single shared database instance, closed when the app scope is disposed.
 
 @ProviderFor(database)
 final databaseProvider = DatabaseProvider._();
 
-/// Database provider since we cannot modify app_database.dart.
-/// Keeps database singleton and closes it on dispose.
+/// Single shared database instance, closed when the app scope is disposed.
 
 final class DatabaseProvider
     extends $FunctionalProvider<AppDatabase, AppDatabase, AppDatabase>
     with $Provider<AppDatabase> {
-  /// Database provider since we cannot modify app_database.dart.
-  /// Keeps database singleton and closes it on dispose.
+  /// Single shared database instance, closed when the app scope is disposed.
   DatabaseProvider._()
     : super(
         from: null,
