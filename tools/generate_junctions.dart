@@ -4,7 +4,12 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
+// 'champions' only owns the exclusive 'train' learn method, so listing it
+// first cannot clobber Scarlet/Violet rows; it just lets regeneration pick
+// up Champions data once the GraphQL endpoint ships it. Snapshots that
+// predate it are patched offline by tools/apply_pokeapi_csv_junctions.py.
 const _versionGroupsNewestFirst = [
+  'champions',
   'scarlet-violet',
   'sword-shield',
   'ultra-sun-ultra-moon',
