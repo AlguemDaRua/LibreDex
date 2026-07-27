@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:libredex/core/widgets/pokemon_sprite.dart';
 import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/features/calculator/models/battle_ruleset.dart';
@@ -956,11 +956,13 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
               SizedBox(
                 height: 80,
                 child: p.spriteUrl.isNotEmpty
-                    ? CachedNetworkImage(
+                    ? PokemonSprite(
                         imageUrl: p.spriteUrl,
-                        fit: BoxFit.contain,
-                        placeholder: (context, url) => const Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(AppTheme.pokemonRed)))),
-                        errorWidget: (context, url, error) => Icon(Icons.catching_pokemon, size: 48, color: typeColor.withValues(alpha: 0.4)),
+                        fallbackUrl: PokemonSprite.homeArtworkUrl(p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id),
+                        loadingIndicatorSize: 24,
+                        loadingColor: AppTheme.pokemonRed,
+                        errorIconSize: 48,
+                        errorIconColor: typeColor.withValues(alpha: 0.4),
                       )
                     : Icon(Icons.catching_pokemon, size: 48, color: typeColor.withValues(alpha: 0.4)),
               ),
@@ -1414,10 +1416,11 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                     leading: p.spriteUrl.isNotEmpty
                         ? SizedBox(
                             width: 40, height: 40,
-                            child: CachedNetworkImage(
+                            child: PokemonSprite(
                               imageUrl: p.spriteUrl,
-                              fit: BoxFit.contain,
-                              errorWidget: (context, url, error) => const Icon(Icons.catching_pokemon, color: Colors.grey),
+                              fallbackUrl: PokemonSprite.homeArtworkUrl(p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id),
+                              errorIconColor: Colors.grey,
+                              errorIconSize: 24,
                             ),
                           )
                         : const Icon(Icons.catching_pokemon, color: Colors.grey),
@@ -1804,7 +1807,16 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                     Row(
                       children: [
                         if (p.spriteUrl.isNotEmpty)
-                          SizedBox(width: 36, height: 36, child: CachedNetworkImage(imageUrl: p.spriteUrl, fit: BoxFit.contain)),
+                          SizedBox(
+                            width: 36,
+                            height: 36,
+                            child: PokemonSprite(
+                              imageUrl: p.spriteUrl,
+                              fallbackUrl: PokemonSprite.homeArtworkUrl(p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id),
+                              errorIconColor: Colors.grey,
+                              errorIconSize: 24,
+                            ),
+                          ),
                         const SizedBox(width: 8),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,

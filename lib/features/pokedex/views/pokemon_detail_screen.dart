@@ -116,6 +116,10 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
         title: Text(
           '#${_activePokemon.nationalDexNumber > 0 ? _activePokemon.nationalDexNumber.toString().padLeft(3, '0') : _activePokemon.id.toString().padLeft(3, '0')} ${_activePokemon.name.toUpperCase()}',
           style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1, color: primaryColor, fontSize: 18),
+          // Long form names ("#1007 KORAIDON-LIMITED-BUILD" & co.) must
+          // ellipsize instead of overflowing next to the action icons.
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
         iconTheme: IconThemeData(color: primaryColor),
         backgroundColor: Colors.transparent,
@@ -216,6 +220,14 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
       _activePokemon.type2,
     );
 
+    // Forms without their own render (transportation/cosplay forms) already
+    // point at the base artwork in the bundle. Passing the base form's URLs
+    // as fallbacks also keeps every form looking right on flaky networks.
+    final Pokemon baseForm = widget.forms.firstWhere(
+      (p) => p.form == 'normal',
+      orElse: () => widget.forms.first,
+    );
+
     return SingleChildScrollView(
       padding: const EdgeInsets.only(left: AppSpacing.pagePadding, right: AppSpacing.pagePadding, top: AppSpacing.topContentGap, bottom: AppSpacing.bottomScrollPadding),
       child: Column(
@@ -224,6 +236,8 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
           ShinySlider(
             normalImageUrl: _activePokemon.spriteUrl,
             shinyImageUrl: _activePokemon.shinySpriteUrl,
+            normalFallbackUrl: baseForm.spriteUrl,
+            shinyFallbackUrl: baseForm.shinySpriteUrl,
             normalLabel: 'Normal',
             shinyLabel: 'Shiny',
             pokemonId: _activePokemon.id,

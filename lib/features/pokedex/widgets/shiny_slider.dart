@@ -1,6 +1,6 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:libredex/core/theme/app_theme.dart';
+import 'package:libredex/core/widgets/pokemon_sprite.dart';
 
 /// Um widget interativo e premium para comparar os sprites Normal (Esquerda) e Shiny (Direita).
 /// O fundo muda dinamicamente de acordo com o brilho (Light/Dark Mode).
@@ -11,6 +11,12 @@ class ShinySlider extends StatefulWidget {
   final String shinyLabel;
   final int? pokemonId;
 
+  /// Base-species renders used when this form's own renders cannot be
+  /// fetched (network hiccup, upstream file removal, fully offline use).
+  /// Audited bundles never 404, so these usually never fire.
+  final String? normalFallbackUrl;
+  final String? shinyFallbackUrl;
+
   const ShinySlider({
     super.key,
     required this.normalImageUrl,
@@ -18,6 +24,8 @@ class ShinySlider extends StatefulWidget {
     this.normalLabel = 'Normal',
     this.shinyLabel = '★ Shiny',
     this.pokemonId,
+    this.normalFallbackUrl,
+    this.shinyFallbackUrl,
   });
 
   @override
@@ -70,16 +78,16 @@ class _ShinySliderState extends State<ShinySlider> {
               child: widget.pokemonId != null
                   ? Hero(
                       tag: 'pokemon_${widget.pokemonId}',
-                      child: CachedNetworkImage(
+                      child: PokemonSprite(
                         imageUrl: widget.normalImageUrl,
-                        fit: BoxFit.contain,
-                        errorWidget: (context, url, error) => const Icon(Icons.broken_image, color: Colors.grey, size: 40),
+                        fallbackUrl: widget.normalFallbackUrl,
+                        errorIcon: Icons.broken_image,
                       ),
                     )
-                  : CachedNetworkImage(
+                  : PokemonSprite(
                       imageUrl: widget.normalImageUrl,
-                      fit: BoxFit.contain,
-                      errorWidget: (context, url, error) => const Icon(Icons.broken_image, color: Colors.grey, size: 40),
+                      fallbackUrl: widget.normalFallbackUrl,
+                      errorIcon: Icons.broken_image,
                     ),
             ),
             Positioned(
@@ -150,24 +158,16 @@ class _ShinySliderState extends State<ShinySlider> {
                         child: widget.pokemonId != null
                             ? Hero(
                                 tag: 'pokemon_${widget.pokemonId}',
-                                child: CachedNetworkImage(
+                                child: PokemonSprite(
                                   imageUrl: widget.normalImageUrl,
-                                  fit: BoxFit.contain,
-                                  errorWidget: (context, url, error) => const Icon(
-                                    Icons.broken_image,
-                                    color: Colors.grey,
-                                    size: 40,
-                                  ),
+                                  fallbackUrl: widget.normalFallbackUrl,
+                                  errorIcon: Icons.broken_image,
                                 ),
                               )
-                            : CachedNetworkImage(
+                            : PokemonSprite(
                                 imageUrl: widget.normalImageUrl,
-                                fit: BoxFit.contain,
-                                errorWidget: (context, url, error) => const Icon(
-                                  Icons.broken_image,
-                                  color: Colors.grey,
-                                  size: 40,
-                                ),
+                                fallbackUrl: widget.normalFallbackUrl,
+                                errorIcon: Icons.broken_image,
                               ),
                       ),
                     ),
@@ -181,14 +181,10 @@ class _ShinySliderState extends State<ShinySlider> {
                         child: SizedBox(
                           width: width,
                           height: height,
-                          child: CachedNetworkImage(
+                          child: PokemonSprite(
                             imageUrl: widget.shinyImageUrl,
-                            fit: BoxFit.contain,
-                            errorWidget: (context, url, error) => const Icon(
-                              Icons.broken_image,
-                              color: Colors.grey,
-                              size: 40,
-                            ),
+                            fallbackUrl: widget.shinyFallbackUrl,
+                            errorIcon: Icons.broken_image,
                           ),
                         ),
                       ),

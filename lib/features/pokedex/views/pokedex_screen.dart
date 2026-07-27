@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/data/champions_catalog.dart';
@@ -13,6 +12,7 @@ import 'package:libredex/features/pokedex/viewmodels/team_builder_provider.dart'
 import 'package:libredex/features/pokedex/views/pokemon_detail_screen.dart';
 import 'package:libredex/core/theme/app_spacing.dart';
 import 'package:libredex/core/widgets/app_drawer.dart';
+import 'package:libredex/core/widgets/pokemon_sprite.dart';
 
 class PokedexScreen extends ConsumerStatefulWidget {
   const PokedexScreen({super.key});
@@ -665,21 +665,16 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                               child: Hero(
                                 tag: 'pokemon_${pokemon.id}',
                                 child: imageUrl.isNotEmpty
-                                    ? CachedNetworkImage(
+                                    ? PokemonSprite(
                                         imageUrl: imageUrl,
-                                        fit: BoxFit.contain,
-                                        maxHeightDiskCache: 240,
-                                        maxWidthDiskCache: 240,
-                                        placeholder: (context, url) => const SizedBox(
-                                          width: 26,
-                                          height: 26,
-                                          child: CircularProgressIndicator(strokeWidth: 2),
-                                        ),
-                                        errorWidget: (context, url, error) => Icon(
-                                          Icons.catching_pokemon,
-                                          size: 58,
-                                          color: typeColor.withValues(alpha: 0.36),
-                                        ),
+                                        // Shiny mode falls back to the
+                                        // normal render if the shiny one
+                                        // cannot be fetched.
+                                        fallbackUrl: imageUrl == pokemon.spriteUrl ? null : pokemon.spriteUrl,
+                                        loadingIndicatorSize: 26,
+                                        errorIconSize: 58,
+                                        errorIconColor: typeColor.withValues(alpha: 0.36),
+                                        diskCacheSize: 240,
                                       )
                                     : Icon(
                                         Icons.catching_pokemon,

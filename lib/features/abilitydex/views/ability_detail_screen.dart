@@ -4,7 +4,7 @@ import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/features/pokedex/views/pokemon_detail_screen.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:libredex/core/widgets/pokemon_sprite.dart';
 
 class AbilityDetailScreen extends ConsumerStatefulWidget {
   final int abilityId;
@@ -174,11 +174,12 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
                                           width: 60,
                                           height: 60,
                                           child: p.spriteUrl.isNotEmpty
-                                              ? CachedNetworkImage(
+                                              ? PokemonSprite(
                                                   imageUrl: p.spriteUrl,
-                                                  fit: BoxFit.contain,
-                                                  placeholder: (context, url) => const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))),
-                                                  errorWidget: (context, url, error) => Icon(Icons.catching_pokemon, color: typeColor.withValues(alpha: 0.3)),
+                                                  fallbackUrl: PokemonSprite.homeArtworkUrl(p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id),
+                                                  loadingIndicatorSize: 20,
+                                                  errorIconColor: typeColor.withValues(alpha: 0.3),
+                                                  errorIconSize: 24,
                                                 )
                                               : Icon(Icons.catching_pokemon, color: typeColor.withValues(alpha: 0.3)),
                                         ),

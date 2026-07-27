@@ -1,4 +1,4 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:libredex/core/widgets/pokemon_sprite.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/database/app_database.dart';
@@ -340,10 +340,11 @@ class _TeamSlotCard extends ConsumerWidget {
                     child: Center(
                       child: p.spriteUrl.isEmpty
                           ? Icon(Icons.catching_pokemon, color: typeColor.withValues(alpha: 0.45), size: 54)
-                          : CachedNetworkImage(
+                          : PokemonSprite(
                               imageUrl: p.spriteUrl,
-                              fit: BoxFit.contain,
-                              errorWidget: (_, _, _) => Icon(Icons.catching_pokemon, color: typeColor.withValues(alpha: 0.45)),
+                              fallbackUrl: PokemonSprite.homeArtworkUrl(dex),
+                              errorIconSize: 54,
+                              errorIconColor: typeColor.withValues(alpha: 0.45),
                             ),
                     ),
                   ),
@@ -517,7 +518,12 @@ class _PokemonPickerSheetState extends ConsumerState<_PokemonPickerSheet> {
                         height: 48,
                         child: pokemon.spriteUrl.isEmpty
                             ? Icon(Icons.catching_pokemon, color: color)
-                            : CachedNetworkImage(imageUrl: pokemon.spriteUrl, fit: BoxFit.contain),
+                            : PokemonSprite(
+                                imageUrl: pokemon.spriteUrl,
+                                fallbackUrl: PokemonSprite.homeArtworkUrl(dex),
+                                errorIconColor: color,
+                                errorIconSize: 24,
+                              ),
                       ),
                       title: Text(pokemon.name, style: const TextStyle(fontWeight: FontWeight.w800)),
                       subtitle: Text('#${dex.toString().padLeft(3, '0')} · ${titleCasePokemonText(pokemon.type1)}${pokemon.type2 == null ? '' : ' / ${titleCasePokemonText(pokemon.type2!)}'}'),
