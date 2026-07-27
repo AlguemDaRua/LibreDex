@@ -14,6 +14,9 @@ Checks (exit code 1 when anything fails):
   Staraptor, Mega Floette, Eternal Flower Floette override)
 * sprite fields are URLs of the expected shape unless explicitly blanked via
   an override
+* the bundled pokemon.json sprite URLs follow the audited HOME render map:
+  forms whose render 404s upstream reuse the base species artwork, and forms
+  whose shiny 404s ship a blank shiny URL (see tools/fix_sprite_urls.py)
 * the bundled pokemon_moves.json keeps non-empty learnsets for National Dex
   16 / 18 / 201 / 351 / 676
 
@@ -26,6 +29,13 @@ import json
 import re
 import sys
 from pathlib import Path
+
+from fix_sprite_urls import (
+    BROKEN_NORMAL_FALLBACK_DEX,
+    BROKEN_SHINY_IDS,
+    HOME_BASE,
+    home_url,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "assets" / "data"
@@ -119,6 +129,35 @@ def main() -> None:
         sprite = form.get("spriteUrl", "")
         if not re.match(r"^https://[^\s]+$", sprite):
             problems.append(f"{label}: spriteUrl is not a URL (got {sprite!r})")
+
+    # --- Bundled sprite audit (mirrors tools/fix_sprite_urls.py). ---
+    normal_re = re.compile(rf"^{re.escape(HOME_BASE)}/\d+\.png$")
+    shiny_re = re.compile(rf"^{re.escape(HOME_BASE)}/shiny/\d+\.png$")
+    base_by_id = {p["id"]: p for p in base_pokemon}
+    for pid, fallback_dex in BROKEN_NORMAL_FALLBACK_DEX.items():
+        record = base_by_id.get(pid)
+        if record is None:
+            problems.append(f"sprite audit: form id {pid} missing from pokemon.json")
+            continue
+        if record.get("spriteUrl") != home_url(fallback_dex):
+            problems.append(
+                f"sprite audit: #{pid} {record.get('name')} must reuse the dex "
+                f"{fallback_dex} render (404 upstream), got {record.get('spriteUrl')!r}"
+            )
+    for pid in BROKEN_SHINY_IDS:
+        record = base_by_id.get(pid)
+        if record is not None and record.get("shinySpriteUrl") != "":
+            problems.append(
+                f"sprite audit: #{pid} {record.get('name')} has no shiny render "
+                f"upstream; shinySpriteUrl must be blank"
+            )
+    for pokemon in base_pokemon:
+        pid = pokemon["id"]
+        if not normal_re.match(pokemon.get("spriteUrl") or ""):
+            problems.append(f"sprite audit: #{pid} spriteUrl has unexpected shape: {pokemon.get('spriteUrl')!r}")
+        shiny = pokemon.get("shinySpriteUrl") or ""
+        if shiny and not shiny_re.match(shiny):
+            problems.append(f"sprite audit: #{pid} shinySpriteUrl has unexpected shape: {shiny!r}")
 
     for required in REQUIRED_FORMS:
         if required not in names:

@@ -17,9 +17,14 @@ class SyncRepository {
   static const int _chunkSize = 500;
 
   /// Bump whenever the bundled assets change contents (new forms, fixed
-  /// learnsets, real item/lore data replacing placeholders, ...). Existing
-  /// installs re-seed once at startup instead of keeping stale tables.
-  static const int bundledDataVersion = 2;
+  /// learnsets, real item/lore data replacing placeholders, audited sprite
+  /// URLs, ...). Existing installs re-seed once at startup instead of
+  /// keeping stale tables.
+  ///
+  /// History: v1 initial bundle; v2 Champions/Z-A forms overlay + Champions
+  /// train learnsets; v3 fixes form sprite URLs that 404 upstream
+  /// (transportation/cosplay forms now reuse the base species render).
+  static const int bundledDataVersion = 3;
 
   static const String _bundledDataVersionKey = 'bundled_data_version';
 
