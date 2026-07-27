@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:libredex/core/data/species_data.dart';
 import 'package:libredex/core/database/app_database.dart';
+import 'package:libredex/features/calculator/utils/combat_utils.dart';
 import 'package:libredex/features/pokedex/repositories/deep_sync_repository.dart';
 import 'package:libredex/features/pokedex/viewmodels/pokedex_viewmodel.dart';
 import 'package:libredex/features/pokedex/views/pokedex_screen.dart';
@@ -26,26 +27,31 @@ void main() {
 
   group('FormFacts', () {
     const snorlax = FormFacts(heightM: 2.1, weightKg: 460.0, baseExp: 189);
-    const gastly = FormFacts(heightM: 1.3, weightKg: 0.1, baseExp: 62);
 
     test('formats weight in metric and imperial', () {
       expect(snorlax.weightLabel, '460.0 kg (1014.1 lbs)');
     });
+  });
 
-    test('derives Low Kick base power from weight', () {
-      // >= 200 kg is the heaviest bracket, <= 9.9 kg is the lightest.
-      expect(snorlax.lowKickPower, 120);
-      expect(gastly.lowKickPower, 20);
-      expect(const FormFacts(heightM: 1, weightKg: 50, baseExp: 1).lowKickPower, 80);
-      expect(const FormFacts(heightM: 1, weightKg: 49.9, baseExp: 1).lowKickPower, 60);
+  group('CombatUtils weight gimmick tiers', () {
+    // The tier logic moved from FormFacts into the damage calculator, where
+    // weight gimmicks are resolved against both combatants.
+    test('Low Kick / Grass Knot brackets', () {
+      expect(CombatUtils.lowKickPowerFor(460.0), 120); // Snorlax
+      expect(CombatUtils.lowKickPowerFor(200.0), 120);
+      expect(CombatUtils.lowKickPowerFor(100.0), 100);
+      expect(CombatUtils.lowKickPowerFor(50), 80);
+      expect(CombatUtils.lowKickPowerFor(49.9), 60);
+      expect(CombatUtils.lowKickPowerFor(10), 40);
+      expect(CombatUtils.lowKickPowerFor(0.1), 20); // Gastly
     });
 
-    test('derives Heavy Slam power from the weight ratio', () {
-      expect(snorlax.heavySlamPower(90), 120); // 5.1x the target's weight
-      expect(snorlax.heavySlamPower(115), 100); // exactly 4x
-      expect(snorlax.heavySlamPower(230), 60); // exactly 2x
-      expect(snorlax.heavySlamPower(300), 40); // under 2x is the floor
-      expect(snorlax.heavySlamPower(0), 0); // guards divide-by-zero
+    test('Heavy Slam / Heat Crash weight ratios', () {
+      expect(CombatUtils.heavySlamPowerFor(460.0, 90), 120); // 5.1x
+      expect(CombatUtils.heavySlamPowerFor(460.0, 115), 100); // exactly 4x
+      expect(CombatUtils.heavySlamPowerFor(460.0, 230), 60); // exactly 2x
+      expect(CombatUtils.heavySlamPowerFor(460.0, 300), 40); // under 2x floor
+      expect(CombatUtils.heavySlamPowerFor(460.0, 0), 0); // divide-by-zero guard
     });
   });
 

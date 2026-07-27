@@ -8,6 +8,7 @@ import 'package:libredex/features/calculator/utils/held_items_data.dart';
 import 'package:libredex/features/pokedex/models/stat_calculator.dart';
 import 'package:libredex/features/pokedex/viewmodels/pokedex_viewmodel.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
+import 'package:libredex/core/data/species_data.dart';
 import 'package:libredex/core/widgets/app_drawer.dart';
 import 'package:libredex/features/calculator/utils/combat_utils.dart';
 import 'package:libredex/core/theme/app_spacing.dart';
@@ -112,7 +113,9 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
       final db = ref.read(databaseProvider);
       final allMoves = await db.select(db.moveTable).get();
       final damaging = allMoves
-          .where((m) => m.power != null && m.power! > 0 && m.damageClass != 'status')
+          .where((m) =>
+              m.damageClass != 'status' &&
+              ((m.power != null && m.power! > 0) || CombatUtils.supportsDynamicBasePower(m.name)))
           .toList();
       damaging.sort((a, b) => a.name.compareTo(b.name));
       if (mounted) {
@@ -762,21 +765,6 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
       activeMove = p1Moves.first;
     }
 
-    // Dynamic Move Power calculation (Return, Frustration, Eruption, Water Spout, Facade, Acrobatics, Knock Off, Hex, Foul Play, etc.)
-    final double rawBp = activeMove.power?.toDouble() ?? 50.0;
-    final double basePowerVal = CombatUtils.calculateDynamicBasePower(
-      moveName: activeMove.name,
-      basePower: rawBp,
-      friendship: state.attackerFriendship,
-      attackerHpPercent: state.attackerHpPercent,
-      defenderHpPercent: state.defenderHpPercent,
-      attackerStatus: state.attackerStatus,
-      defenderStatus: state.defenderStatus,
-      attackerHeldItem: state.attackerHeldItem,
-      defenderHeldItem: state.defenderHeldItem,
-      rageFistHits: state.rageFistHits,
-    );
-
     // Speed calculation with Paralysis check
     final int rawAttackerSpeed = sideStat(
       attacker: true, key: 'spe', base: p1.baseSpd, natureLabel: 'Speed',
@@ -794,6 +782,49 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     if (state.defenderStatus != 'none' && state.defenderAbility == 'quick feet') defSpdMult *= 1.5;
     final int defenderSpeed = (rawDefenderSpeed * defSpdMult).toInt();
 
+    // Dynamic Move Power: gimmick moves (weight, speed, status, item, HP%,
+    // weather/terrain, ...) resolve from the live battle context instead of
+    // their — often missing — database power. Runs after the speed block so
+    // Gyro Ball / Electro Ball can use the final, paralysis-adjusted stats.
+    final speciesDataset = ref.watch(speciesDatasetProvider).valueOrNull;
+    final double attackerWeightKg = speciesDataset
+            ?.formFacts(p1.id, nationalDexNumber: p1.nationalDexNumber)
+            ?.weightKg ??
+        0.0;
+    final double defenderWeightKg = speciesDataset
+            ?.formFacts(p2.id, nationalDexNumber: p2.nationalDexNumber)
+            ?.weightKg ??
+        0.0;
+    final double rawBp = activeMove.power?.toDouble() ?? 50.0;
+    final dynamicBp = CombatUtils.resolveDynamicBasePower(
+      moveName: activeMove.name,
+      basePower: rawBp,
+      friendship: state.attackerFriendship,
+      attackerHpPercent: state.attackerHpPercent,
+      defenderHpPercent: state.defenderHpPercent,
+      attackerStatus: state.attackerStatus,
+      defenderStatus: state.defenderStatus,
+      attackerHeldItem: state.attackerHeldItem,
+      defenderHeldItem: state.defenderHeldItem,
+      rageFistHits: state.rageFistHits,
+      attackerWeightKg: attackerWeightKg,
+      defenderWeightKg: defenderWeightKg,
+      attackerSpeedStat: attackerSpeed.toDouble(),
+      defenderSpeedStat: defenderSpeed.toDouble(),
+      weather: state.weather,
+      terrain: state.terrain,
+    );
+    final double basePowerVal = dynamicBp.basePower;
+    final String? dynamicBpNote = dynamicBp.note;
+
+    // Weather Ball / Terrain Pulse transform into the matching type.
+    final String effectiveMoveType = CombatUtils.effectiveMoveType(
+      moveName: activeMove.name,
+      moveType: activeMove.type,
+      weather: state.weather,
+      terrain: state.terrain,
+    );
+
     final isSpecial = activeMove.damageClass.toLowerCase() == 'special';
     final bool isBodyPress = activeMove.name.toLowerCase() == 'body press';
     final bool isFoulPlay = activeMove.name.toLowerCase() == 'foul play';
@@ -809,7 +840,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
       final int defAtkStage = state.defenderStages['atk'] ?? 0;
       final int effDefAtkStage = state.isCriticalHit ? (defAtkStage < 0 ? 0 : defAtkStage) : defAtkStage;
       attackerAtk = (rawDefAtk * CombatUtils.getStageMultiplier(effDefAtkStage)).toInt();
-      atkItemMult = HeldItemsData.getAttackMultiplier(state.attackerHeldItem, activeMove.type, false);
+      atkItemMult = HeldItemsData.getAttackMultiplier(state.attackerHeldItem, effectiveMoveType, false);
     } else if (isBodyPress) {
       final int rawAttackerDef = sideStat(
         attacker: true, key: 'def', base: p1.baseDef, natureLabel: 'Defense',
@@ -833,7 +864,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
       double gutsMult = 1.0;
       if (!isSpecial && state.attackerStatus != 'none' && state.attackerAbility == 'guts') gutsMult = 1.5;
       attackerAtk = (rawAttackerAtk * CombatUtils.getStageMultiplier(effStageVal) * gutsMult).toInt();
-      atkItemMult = HeldItemsData.getAttackMultiplier(state.attackerHeldItem, activeMove.type, isSpecial);
+      atkItemMult = HeldItemsData.getAttackMultiplier(state.attackerHeldItem, effectiveMoveType, isSpecial);
     }
 
     final int rawDefenderDef = sideStat(
@@ -860,14 +891,14 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
           );
 
     double weatherMult = 1.0;
-    if (state.weather == 'sunny' && activeMove.type.toLowerCase() == 'fire') weatherMult = 1.5;
-    if (state.weather == 'sunny' && activeMove.type.toLowerCase() == 'water') weatherMult = 0.5;
-    if (state.weather == 'rainy' && activeMove.type.toLowerCase() == 'water') weatherMult = 1.5;
-    if (state.weather == 'rainy' && activeMove.type.toLowerCase() == 'fire') weatherMult = 0.5;
+    if (state.weather == 'sunny' && effectiveMoveType == 'fire') weatherMult = 1.5;
+    if (state.weather == 'sunny' && effectiveMoveType == 'water') weatherMult = 0.5;
+    if (state.weather == 'rainy' && effectiveMoveType == 'water') weatherMult = 1.5;
+    if (state.weather == 'rainy' && effectiveMoveType == 'fire') weatherMult = 0.5;
 
     // Gen 9 Terastallization STAB multiplier
     double stabMult = 1.0;
-    final moveTypeLower = activeMove.type.toLowerCase();
+    final moveTypeLower = effectiveMoveType;
     if (state.attackerTeraActive && state.attackerTeraType != null) {
       final teraTypeLower = state.attackerTeraType!.toLowerCase();
       final isOriginalStab = p1.type1.toLowerCase() == moveTypeLower || p1.type2?.toLowerCase() == moveTypeLower;
@@ -883,7 +914,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     }
 
     double effectivenessMult = CombatUtils.getTypeEffectiveness(
-      activeMove.type,
+      effectiveMoveType,
       p2.type1,
       p2.type2,
       attackerAbility: state.attackerAbility,
@@ -900,9 +931,9 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     }
 
     double terrainMult = 1.0;
-    if (state.terrain == 'electric' && activeMove.type.toLowerCase() == 'electric') terrainMult = 1.3;
-    if (state.terrain == 'grassy' && activeMove.type.toLowerCase() == 'grass') terrainMult = 1.3;
-    if (state.terrain == 'psychic' && activeMove.type.toLowerCase() == 'psychic') terrainMult = 1.3;
+    if (state.terrain == 'electric' && effectiveMoveType == 'electric') terrainMult = 1.3;
+    if (state.terrain == 'grassy' && effectiveMoveType == 'grass') terrainMult = 1.3;
+    if (state.terrain == 'psychic' && effectiveMoveType == 'psychic') terrainMult = 1.3;
 
     double hhMult = state.helpingHandActive ? 1.5 : 1.0;
     double finalBp = basePowerVal * weatherMult * terrainMult * hhMult;
@@ -916,7 +947,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     // Critical Hit multiplier (1.5x)
     final double critMult = state.isCriticalHit ? 1.5 : 1.0;
 
-    final double defResistMult = HeldItemsData.getDefenderResistMultiplier(state.defenderHeldItem, activeMove.type, effectivenessMult);
+    final double defResistMult = HeldItemsData.getDefenderResistMultiplier(state.defenderHeldItem, effectiveMoveType, effectivenessMult);
     final double defStatItemMult = HeldItemsData.getDefenseMultiplier(state.defenderHeldItem, isSpecial);
 
     final int finalAttackerSpeed = (attackerSpeed * HeldItemsData.getSpeedMultiplier(state.attackerHeldItem)).toInt();
@@ -1089,6 +1120,31 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
             ),
           ),
 
+          // Explains which gimmick rule produced the resolved base power.
+          if (dynamicBpNote != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.teal.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.teal.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.auto_fix_high_rounded, size: 14, color: Colors.tealAccent),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      dynamicBpNote,
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.tealAccent),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
           // Dynamic Move Steppers (Rage Fist / Return / Eruption)
           if (activeMove.name.toLowerCase() == 'rage fist') ...[
             const SizedBox(height: 8),
@@ -1171,7 +1227,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
 
                 // Contextual ability badge
                 if (CombatUtils.getAbilityContextBadge(
-                  moveType: activeMove.type,
+                  moveType: effectiveMoveType,
                   t1: p2.type1,
                   t2: p2.type2,
                   attackerAbility: state.attackerAbility,
@@ -1190,7 +1246,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                     ),
                     child: Text(
                       CombatUtils.getAbilityContextBadge(
-                        moveType: activeMove.type,
+                        moveType: effectiveMoveType,
                         t1: p2.type1,
                         t2: p2.type2,
                         attackerAbility: state.attackerAbility,
