@@ -4,6 +4,7 @@ import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/widgets/app_drawer.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
+import 'package:libredex/core/theme/app_spacing.dart';
 import 'package:libredex/features/movedex/views/move_detail_screen.dart';
 
 class MovedexScreen extends ConsumerStatefulWidget {
@@ -139,7 +140,7 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
                     child: _filteredMoves.isEmpty
                         ? const Center(child: Text('No moves found.', style: TextStyle(color: Colors.grey)))
                         : ListView.separated(
-                            padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 80),
+                            padding: const EdgeInsets.only(left: AppSpacing.pagePadding, right: AppSpacing.pagePadding, top: 8, bottom: AppSpacing.bottomScrollPadding),
                             itemCount: _filteredMoves.length,
                             separatorBuilder: (context, index) => Divider(
                               color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB),

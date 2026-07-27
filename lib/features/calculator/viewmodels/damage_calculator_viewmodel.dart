@@ -1,11 +1,20 @@
+import 'dart:async';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:libredex/core/database/app_database.dart';
+import 'package:libredex/features/calculator/models/battle_ruleset.dart';
 
 part 'damage_calculator_viewmodel.g.dart';
 
 class DamageCalculatorState {
   final Pokemon? attacker;
   final Pokemon? defender;
+
+  /// Which game's stat system drives the duel math. Mainline by default —
+  /// Pokémon Champions is an additional mode, never a replacement.
+  final BattleRuleset ruleset;
 
   // Attacker Stats Settings
   final int attackerLevel;
@@ -56,9 +65,16 @@ class DamageCalculatorState {
   final double simpleStab;
   final double simpleEffectiveness;
 
+  // Pokémon Champions Stat Points (66 total, max 32 per stat). Kept
+  // alongside — never merged into — the EV/IV maps, so toggling the ruleset
+  // back and forth preserves each mode's setup.
+  final Map<String, int> attackerSps;
+  final Map<String, int> defenderSps;
+
   DamageCalculatorState({
     this.attacker,
     this.defender,
+    this.ruleset = BattleRuleset.mainline,
     this.attackerLevel = 50,
     this.attackerNature = 'adamant',
     required this.attackerIvs,
@@ -98,11 +114,14 @@ class DamageCalculatorState {
     this.simpleDefenderStat = 150.0,
     this.simpleStab = 1.5,
     this.simpleEffectiveness = 1.0,
+    required this.attackerSps,
+    required this.defenderSps,
   });
 
   DamageCalculatorState copyWith({
     Pokemon? attacker,
     Pokemon? defender,
+    BattleRuleset? ruleset,
     int? attackerLevel,
     String? attackerNature,
     Map<String, int>? attackerIvs,
@@ -142,10 +161,13 @@ class DamageCalculatorState {
     double? simpleDefenderStat,
     double? simpleStab,
     double? simpleEffectiveness,
+    Map<String, int>? attackerSps,
+    Map<String, int>? defenderSps,
   }) {
     return DamageCalculatorState(
       attacker: attacker ?? this.attacker,
       defender: defender ?? this.defender,
+      ruleset: ruleset ?? this.ruleset,
       attackerLevel: attackerLevel ?? this.attackerLevel,
       attackerNature: attackerNature ?? this.attackerNature,
       attackerIvs: attackerIvs ?? Map<String, int>.from(this.attackerIvs),
@@ -185,6 +207,8 @@ class DamageCalculatorState {
       simpleDefenderStat: simpleDefenderStat ?? this.simpleDefenderStat,
       simpleStab: simpleStab ?? this.simpleStab,
       simpleEffectiveness: simpleEffectiveness ?? this.simpleEffectiveness,
+      attackerSps: attackerSps ?? Map<String, int>.from(this.attackerSps),
+      defenderSps: defenderSps ?? Map<String, int>.from(this.defenderSps),
     );
   }
 }
@@ -195,8 +219,17 @@ class _Sentinel {
 
 @riverpod
 class DamageCalculatorViewModel extends _$DamageCalculatorViewModel {
+  static const _rulesetPrefsKey = 'damage_calculator_ruleset';
+
+  /// Completes once the persisted ruleset has been applied, so in-flight
+  /// launch intents (e.g. "open in calculator" from a Champions team) are
+  /// never clobbered by the preferences load.
+  final Completer<void> _rulesetReady = Completer<void>();
+  Future<void> get rulesetReady => _rulesetReady.future;
+
   @override
   DamageCalculatorState build() {
+    _loadRuleset();
     return DamageCalculatorState(
       attackerIvs: {'hp': 31, 'atk': 31, 'def': 31, 'spa': 31, 'spd': 31, 'spe': 31},
       attackerEvs: {'hp': 252, 'atk': 252, 'def': 0, 'spa': 0, 'spd': 0, 'spe': 4},
@@ -204,7 +237,65 @@ class DamageCalculatorViewModel extends _$DamageCalculatorViewModel {
       defenderIvs: {'hp': 31, 'atk': 31, 'def': 31, 'spa': 31, 'spd': 31, 'spe': 31},
       defenderEvs: {'hp': 252, 'atk': 0, 'def': 252, 'spa': 0, 'spd': 4, 'spe': 0},
       defenderStages: {'atk': 0, 'def': 0, 'spa': 0, 'spd': 0, 'spe': 0},
+      // Champions defaults mirror the competitive mainline spreads on the
+      // left: a fast physical attacker vs. a bulky physical defender.
+      attackerSps: Map<String, int>.from(ChampionsStatPreset.presets.first.spread),
+      defenderSps: Map<String, int>.from(ChampionsStatPreset.presets[2].spread),
     );
+  }
+
+  Future<void> _loadRuleset() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getString(_rulesetPrefsKey);
+      if (saved == BattleRuleset.champions.name) {
+        _applyRuleset(BattleRuleset.champions);
+      }
+    } finally {
+      if (!_rulesetReady.isCompleted) _rulesetReady.complete();
+    }
+  }
+
+  /// Applies a ruleset change in-memory only; Champions natures that do not
+  /// exist as Stat Alignments (Hardy/Docile/Bashful/Quirky) normalize to
+  /// Serious, the single neutral alignment.
+  void _applyRuleset(BattleRuleset next) {
+    String normalize(String nature) =>
+        next.isChampions && !ChampionsRules.isValidAlignment(nature) ? 'serious' : nature;
+    final attacker = normalize(state.attackerNature);
+    final defender = normalize(state.defenderNature);
+    state = state.copyWith(
+      ruleset: next,
+      attackerNature: attacker,
+      defenderNature: defender,
+    );
+  }
+
+  Future<void> setRuleset(BattleRuleset next) async {
+    if (state.ruleset == next) return;
+    _applyRuleset(next);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_rulesetPrefsKey, next.name);
+  }
+
+  void updateAttackerSp(String key, int val) {
+    final map = Map<String, int>.from(state.attackerSps);
+    map[key] = ChampionsRules.clampStatPoint(map, key, val);
+    state = state.copyWith(attackerSps: map);
+  }
+
+  void updateDefenderSp(String key, int val) {
+    final map = Map<String, int>.from(state.defenderSps);
+    map[key] = ChampionsRules.clampStatPoint(map, key, val);
+    state = state.copyWith(defenderSps: map);
+  }
+
+  void applyChampionsPreset({required bool isAttacker, required ChampionsStatPreset preset}) {
+    if (isAttacker) {
+      state = state.copyWith(attackerSps: Map<String, int>.from(preset.spread));
+    } else {
+      state = state.copyWith(defenderSps: Map<String, int>.from(preset.spread));
+    }
   }
 
   void setAttacker(Pokemon p, {String? defaultAbility}) {
@@ -316,4 +407,36 @@ class DamageCalculatorViewModel extends _$DamageCalculatorViewModel {
   void toggleLightScreen(bool val) => state = state.copyWith(lightScreenActive: val);
   void toggleHelpingHand(bool val) => state = state.copyWith(helpingHandActive: val);
   void toggleTrickRoom(bool val) => state = state.copyWith(trickRoomActive: val);
+}
+
+/// A one-shot request for the damage calculator to open in a specific
+/// configuration — e.g. the Team Builder's "analyze in calculator" action,
+/// which switches straight to the team's ruleset with the member loaded as
+/// attacker. Cross-section navigation cannot pass arguments through the
+/// home IndexedStack, so the intent is parked here and consumed once by the
+/// calculator screen after the first frame.
+class CalculatorLaunchIntent {
+  final int? attackerPokemonId;
+  final BattleRuleset? ruleset;
+
+  const CalculatorLaunchIntent({this.attackerPokemonId, this.ruleset});
+}
+
+final calculatorLaunchIntentProvider =
+    NotifierProvider<CalculatorLaunchIntentNotifier, CalculatorLaunchIntent?>(
+  CalculatorLaunchIntentNotifier.new,
+);
+
+class CalculatorLaunchIntentNotifier extends Notifier<CalculatorLaunchIntent?> {
+  @override
+  CalculatorLaunchIntent? build() => null;
+
+  void request(CalculatorLaunchIntent intent) => state = intent;
+
+  /// Returns the pending intent, if any, and clears it.
+  CalculatorLaunchIntent? consume() {
+    final pending = state;
+    state = null;
+    return pending;
+  }
 }

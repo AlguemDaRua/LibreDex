@@ -7,6 +7,7 @@ import 'package:libredex/core/widgets/offline_download_dialog.dart';
 import 'package:libredex/features/home/views/home_screen.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
 import 'package:libredex/features/pokedex/repositories/sync_repository.dart';
+import 'package:libredex/core/theme/app_spacing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -29,7 +30,7 @@ class SettingsScreen extends ConsumerWidget {
       body: SafeArea(
         bottom: true,
         child: ListView(
-          padding: const EdgeInsets.only(left: 20, right: 20, top: 12, bottom: 80),
+          padding: const EdgeInsets.only(left: 20, right: 20, top: AppSpacing.topContentGap, bottom: AppSpacing.bottomScrollPadding),
           children: [
             // ─── Section: Sync & Offline Data Management ─────────────────────────
             _buildSectionHeader('SYNC & LOCAL STORAGE MANAGEMENT', isDark),
@@ -58,7 +59,7 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'All 1025+ Pokémon (Gen 1–9+), alternate forms, Moves, Abilities, and full Learnsets are stored locally for instant offline usage. High-res sprites stream online dynamically or can be downloaded for offline use.',
+                    'All 1025+ Pokémon (Gen 1–9+), alternate forms, the Pokémon Legends Z-A & Pokémon Champions Mega Evolutions, Moves, Abilities, and full Learnsets (including Champions “Train” moves) are stored locally for instant offline usage. High-res sprites stream online dynamically or can be downloaded for offline use.',
                     style: TextStyle(
                       color: isDark ? Colors.grey[400] : Colors.grey[600],
                       fontSize: 12,

@@ -46,6 +46,74 @@ class _ShinySliderState extends State<ShinySlider> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // Some forms ship without a bundled shiny render — Eternal Flower
+    // Floette's only public shiny sprite is an upside-down broken model, for
+    // example (and AZ's Floette cannot be shiny officially, so none exists).
+    // Instead of a one-sided slider we show the normal artwork centered with
+    // a short, honest note.
+    if (widget.shinyImageUrl.isEmpty) {
+      return Container(
+        width: double.infinity,
+        height: 240.0,
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF3F4F6),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB),
+            width: 1.5,
+          ),
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Center(
+              child: widget.pokemonId != null
+                  ? Hero(
+                      tag: 'pokemon_${widget.pokemonId}',
+                      child: CachedNetworkImage(
+                        imageUrl: widget.normalImageUrl,
+                        fit: BoxFit.contain,
+                        errorWidget: (context, url, error) => const Icon(Icons.broken_image, color: Colors.grey, size: 40),
+                      ),
+                    )
+                  : CachedNetworkImage(
+                      imageUrl: widget.normalImageUrl,
+                      fit: BoxFit.contain,
+                      errorWidget: (context, url, error) => const Icon(Icons.broken_image, color: Colors.grey, size: 40),
+                    ),
+            ),
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.85),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.auto_awesome_outlined, size: 13, color: Colors.grey),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        'No shiny sprite bundled for this form',
+                        style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Colors.grey[isDark ? 400 : 600]),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final double width = constraints.maxWidth;

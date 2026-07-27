@@ -51,4 +51,44 @@ class StatCalculator {
     final double finalValue = (mainCalculation + 5) * natureModifier;
     return finalValue.floor();
   }
+
+  /// Calculates the final HP stat under the **Pokémon Champions** ruleset.
+  ///
+  /// Champions fixes battles at level 50 and treats IVs as perfect (31), so
+  /// the level-50 mainline core collapses to `(2 * Base + 31) * 50 ~/ 100 + 60`.
+  /// EVs are replaced by Stat Points, and — unlike EVs, which are divided by
+  /// 4 *inside* the truncation — each Stat Point adds **exactly +1 at Lv. 50,
+  /// applied after the floor**. That is why this does not reuse the EV path:
+  /// pretending 1 SP = 4 EV would round half of the points away.
+  ///
+  /// Formula (community-verified against the Champions stat guide):
+  /// `HP = floor((2 * Base + 31) * 50 / 100) + 50 + 10 + SP`
+  ///
+  /// Special Case: Shedinja's HP is always 1, in every ruleset.
+  static int calculateChampionsHp({
+    required int base,
+    int sp = 0,
+    bool isShedinja = false,
+  }) {
+    if (isShedinja) return 1;
+    final int core = ((base * 2 + 31) * 50) ~/ 100; // Lv. 50, 31 IVs
+    return core + 50 + 10 + sp;
+  }
+
+  /// Calculates any non-HP stat under the **Pokémon Champions** ruleset.
+  ///
+  /// Same reasoning as [calculateChampionsHp]: Lv. 50 core with perfect IVs,
+  /// Stat Point added as a flat +1 after the floor, then the Stat Alignment
+  /// modifier (±10%; Serious is the only neutral alignment).
+  ///
+  /// Formula (community-verified against the Champions stat guide):
+  /// `Stat = floor((floor((2 * Base + 31) * 50 / 100) + 5 + SP) * Alignment)`
+  static int calculateChampionsStat({
+    required int base,
+    int sp = 0,
+    double alignmentModifier = 1.0,
+  }) {
+    final int core = ((base * 2 + 31) * 50) ~/ 100; // Lv. 50, 31 IVs
+    return ((core + 5 + sp) * alignmentModifier).floor();
+  }
 }

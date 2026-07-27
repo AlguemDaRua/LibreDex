@@ -19,6 +19,7 @@ import 'package:libredex/features/pokedex/utils/pokemon_data_helpers.dart';
 import 'package:libredex/core/data/ev_yield_data.dart';
 import 'package:libredex/core/data/pokedex_entry_data.dart';
 import 'package:libredex/core/data/species_data.dart';
+import 'package:libredex/core/theme/app_spacing.dart';
 import 'package:libredex/features/pokedex/widgets/shiny_slider.dart';
 
 /// Static dictionary of Pokémon Natures in alphabetical order.
@@ -216,7 +217,7 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
     );
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 16.0, bottom: 80.0),
+      padding: const EdgeInsets.only(left: AppSpacing.pagePadding, right: AppSpacing.pagePadding, top: AppSpacing.topContentGap, bottom: AppSpacing.bottomScrollPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -414,9 +415,45 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
     );
   }
 
+  /// Small contextual note shown when a form borrows the base species'
+  /// learnset or abilities (bundle Mega/G-Max forms and Z-A Megas whose
+  /// Champions data has not shipped yet).
+  Widget _buildFallbackNote(String message, {required String source, required bool isDark}) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.deepPurpleAccent.withValues(alpha: isDark ? 0.14 : 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.deepPurpleAccent.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.info_outline_rounded, size: 16, color: Colors.deepPurpleAccent),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '$message ($source)',
+              style: TextStyle(
+                fontSize: 11,
+                height: 1.35,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.grey[300] : Colors.grey[700],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildAbilitiesCard() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final abilitiesAsync = ref.watch(pokemonAbilitiesStreamProvider(_activePokemon.id));
+    final abilityFallbackFrom = abilitiesAsync.valueOrNull
+        ?.firstWhere((a) => a['abilityFallbackFrom'] != null, orElse: () => const <String, dynamic>{})
+            ['abilityFallbackFrom'] as String?;
 
     return Container(
       width: double.infinity,
@@ -437,6 +474,14 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black),
           ),
           Divider(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB), height: 24),
+          if (abilityFallbackFrom != null) ...[
+            _buildFallbackNote(
+              'Using base species abilities for this form.',
+              source: abilityFallbackFrom,
+              isDark: isDark,
+            ),
+            const SizedBox(height: 12),
+          ],
           abilitiesAsync.when(
             data: (abilities) {
               if (abilities.isEmpty) {
@@ -791,7 +836,7 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
     final int remainingEvs = 508 - statsState.totalEvs;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 16.0, bottom: 80.0),
+      padding: const EdgeInsets.only(left: AppSpacing.pagePadding, right: AppSpacing.pagePadding, top: AppSpacing.topContentGap, bottom: AppSpacing.bottomScrollPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1259,6 +1304,12 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final movesAsync = ref.watch(pokemonMovesStreamProvider(_activePokemon.id));
 
+    // Forms without direct learnset rows receive the base species learnset
+    // tagged with `learnsetFallbackFrom` by the repository.
+    final fallbackFrom = movesAsync.valueOrNull
+        ?.firstWhere((m) => m['learnsetFallbackFrom'] != null, orElse: () => const <String, dynamic>{})
+            ['learnsetFallbackFrom'] as String?;
+
     return Column(
       children: [
         SingleChildScrollView(
@@ -1275,9 +1326,17 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
               _buildFilterChip('tutor', 'Tutor'),
               const SizedBox(width: 8),
               _buildFilterChip('egg', 'Egg'),
+              const SizedBox(width: 8),
+              _buildFilterChip('train', learnMethodLabel('train')),
             ],
           ),
         ),
+        if (fallbackFrom != null)
+          _buildFallbackNote(
+            'Using base species learnset for this form.',
+            source: fallbackFrom,
+            isDark: isDark,
+          ),
         Expanded(
           child: movesAsync.when(
             data: (movesList) {
@@ -1303,6 +1362,9 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                     return kind == LearnMethodKind.tutor;
                   case 'egg':
                     return kind == LearnMethodKind.egg;
+                  case 'train':
+                    // Pokémon Champions trains moves with Victory Points.
+                    return (item['learnMethod'] ?? '').toString() == 'train';
                   default:
                     return false;
                 }
@@ -1319,7 +1381,7 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
               }
 
               return ListView.separated(
-                padding: const EdgeInsets.only(left: 16, right: 16, top: 4, bottom: 80),
+                padding: const EdgeInsets.only(left: AppSpacing.pagePadding, right: AppSpacing.pagePadding, top: 4, bottom: AppSpacing.bottomScrollPadding),
                 itemCount: filteredMoves.length,
                 separatorBuilder: (context, index) => Divider(
                   color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB),
