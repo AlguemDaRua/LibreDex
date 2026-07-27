@@ -188,8 +188,8 @@ class PokemonRepository {
     return _abilitiesAsMaps(base.$1);
   }
 
-  /// Fetches evolution chain steps for a given National Dex ID and available forms.
-  Future<List<EvolutionStep>> fetchEvolutionSteps(int dexNum, List<Pokemon> forms) async {
+  /// Fetches evolution chain steps for a given National Dex ID.
+  Future<List<EvolutionStep>> fetchEvolutionSteps(int dexNum) async {
     final List<EvolutionStep> steps = [];
 
     try {
@@ -218,14 +218,14 @@ class PokemonRepository {
     ) as Map<String, dynamic>;
 
     List<dynamic>? chain = _localEvolutionChains![dexNum.toString()] as List<dynamic>?;
-    chain ??= _localEvolutionChains!.values.cast<List<dynamic>?>().firstWhere(
-      (rows) => rows?.any((raw) {
+    chain ??= _localEvolutionChains!.values.whereType<List<dynamic>>().firstWhere(
+      (rows) => rows.any((raw) {
             final row = raw as Map<String, dynamic>;
             return row['from'] == dexNum || row['to'] == dexNum;
-          }) ?? false,
-      orElse: () => null,
+          }),
+      orElse: () => <dynamic>[],
     );
-    if (chain == null || chain.isEmpty) return const [];
+    if (chain.isEmpty) return const [];
 
     final steps = <EvolutionStep>[];
     for (final raw in chain) {
@@ -414,7 +414,7 @@ Stream<List<Map<String, dynamic>>> pokemonMovesStream(Ref ref, int pokemonId) {
   return repo.watchMovesWithFallback(pokemonId);
 }
 
-final pokemonEvolutionChainProvider = FutureProvider.family<List<EvolutionStep>, ({int dexNum, List<Pokemon> forms})>((ref, arg) {
+final pokemonEvolutionChainProvider = FutureProvider.family<List<EvolutionStep>, int>((ref, dexNum) {
   final repo = ref.watch(pokemonRepositoryProvider);
-  return repo.fetchEvolutionSteps(arg.dexNum, arg.forms);
+  return repo.fetchEvolutionSteps(dexNum);
 });

@@ -649,7 +649,7 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
   Widget _buildEvolutionCard() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final int dexNum = _activePokemon.nationalDexNumber > 0 ? _activePokemon.nationalDexNumber : _activePokemon.id;
-    final evoAsync = ref.watch(pokemonEvolutionChainProvider((dexNum: dexNum, forms: widget.forms)));
+    final evoAsync = ref.watch(pokemonEvolutionChainProvider(dexNum));
 
     return Container(
       width: double.infinity,
