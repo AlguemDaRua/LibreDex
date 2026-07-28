@@ -1,0 +1,11 @@
+LibreDex is a premium, open-source, and 100% offline-first Pokédex application featuring an elegant AMOLED Dark Mode aesthetic.
+
+Core features:
+* Pokédex: Explore Gen 1 Pokémons with dynamic type badges and custom shiny sliders.
+* Relational details: View statistics, nature indicators, and complete lists of learned moves and abilities.
+* Database Dexes: Full MoveDex, AbilityDex, and NatureDex profiles.
+* Type Chart: Seamless defensive type effectiveness multiplier cards.
+* Standalone Damage Calculator: A global dashboard equipped with basic Move Power conditions (weather/terrain adjustments) and an advanced Showdown-style double-sided calculator with stats EV sliders, preset chips, and custom health bars.
+
+Privacy and Transparency:
+LibreDex requests the android.permission.INTERNET permission exclusively for the initial synchronization on startup to retrieve stats and descriptions from PokéAPI. Once downloaded, the application works entirely offline with zero trackers, analytics, or network overhead.

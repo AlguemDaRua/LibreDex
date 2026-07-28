@@ -1,0 +1,1790 @@
+{
+  "meta": {
+    "title": "LibreDex forms overlay — Pokémon Champions / Legends Z-A",
+    "source": "PokéAPI CSV master (official ids 10278-10326) cross-checked with Serebii Legends Z-A & Pokémon Champions pages",
+    "idNamespace": "Official PokéAPI form ids (10278..10326); no collisions with the bundled pokemon.json snapshot",
+    "flags": {
+      "mega": "Mega Evolution",
+      "champions": "usable in Pokémon Champions",
+      "legendsZA": "introduced in Pokémon Legends Z-A"
+    }
+  },
+  "pokemon": [
+    {
+      "id": 10278,
+      "name": "Mega Clefable",
+      "form": "Mega",
+      "nationalDexNumber": 36,
+      "pokedexIdentifier": "clefable",
+      "type1": "fairy",
+      "type2": "flying",
+      "baseHp": 95,
+      "baseAtk": 80,
+      "baseDef": 93,
+      "baseSpAtk": 135,
+      "baseSpDef": 110,
+      "baseSpd": 70,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10278.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10278.png",
+      "abilities": [
+        {
+          "abilityId": 156,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "Magic Bounce"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10279,
+      "name": "Mega Victreebel",
+      "form": "Mega",
+      "nationalDexNumber": 71,
+      "pokedexIdentifier": "victreebel",
+      "type1": "grass",
+      "type2": "poison",
+      "baseHp": 80,
+      "baseAtk": 125,
+      "baseDef": 85,
+      "baseSpAtk": 135,
+      "baseSpDef": 95,
+      "baseSpd": 70,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10279.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10279.png",
+      "abilities": [
+        {
+          "abilityId": 215,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "Innards Out"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10280,
+      "name": "Mega Starmie",
+      "form": "Mega",
+      "nationalDexNumber": 121,
+      "pokedexIdentifier": "starmie",
+      "type1": "water",
+      "type2": "psychic",
+      "baseHp": 60,
+      "baseAtk": 100,
+      "baseDef": 105,
+      "baseSpAtk": 130,
+      "baseSpDef": 105,
+      "baseSpd": 120,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10280.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10280.png",
+      "abilities": [
+        {
+          "abilityId": 37,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "Huge Power"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10281,
+      "name": "Mega Dragonite",
+      "form": "Mega",
+      "nationalDexNumber": 149,
+      "pokedexIdentifier": "dragonite",
+      "type1": "dragon",
+      "type2": "flying",
+      "baseHp": 91,
+      "baseAtk": 124,
+      "baseDef": 115,
+      "baseSpAtk": 145,
+      "baseSpDef": 125,
+      "baseSpd": 100,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10281.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10281.png",
+      "abilities": [
+        {
+          "abilityId": 136,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "Multiscale"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10282,
+      "name": "Mega Meganium",
+      "form": "Mega",
+      "nationalDexNumber": 154,
+      "pokedexIdentifier": "meganium",
+      "type1": "grass",
+      "type2": "fairy",
+      "baseHp": 80,
+      "baseAtk": 92,
+      "baseDef": 115,
+      "baseSpAtk": 143,
+      "baseSpDef": 115,
+      "baseSpd": 80,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10282.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10282.png",
+      "abilities": [
+        {
+          "abilityId": 310,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "Mega Sol"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10283,
+      "name": "Mega Feraligatr",
+      "form": "Mega",
+      "nationalDexNumber": 160,
+      "pokedexIdentifier": "feraligatr",
+      "type1": "water",
+      "type2": "dragon",
+      "baseHp": 85,
+      "baseAtk": 160,
+      "baseDef": 125,
+      "baseSpAtk": 89,
+      "baseSpDef": 93,
+      "baseSpd": 78,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10283.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10283.png",
+      "abilities": [
+        {
+          "abilityId": 309,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "Dragonize"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10284,
+      "name": "Mega Skarmory",
+      "form": "Mega",
+      "nationalDexNumber": 227,
+      "pokedexIdentifier": "skarmory",
+      "type1": "steel",
+      "type2": "flying",
+      "baseHp": 65,
+      "baseAtk": 140,
+      "baseDef": 110,
+      "baseSpAtk": 40,
+      "baseSpDef": 100,
+      "baseSpd": 110,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10284.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10284.png",
+      "abilities": [
+        {
+          "abilityId": 242,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "Stalwart"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10285,
+      "name": "Mega Froslass",
+      "form": "Mega",
+      "nationalDexNumber": 478,
+      "pokedexIdentifier": "froslass",
+      "type1": "ice",
+      "type2": "ghost",
+      "baseHp": 70,
+      "baseAtk": 80,
+      "baseDef": 70,
+      "baseSpAtk": 140,
+      "baseSpDef": 100,
+      "baseSpd": 120,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10285.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10285.png",
+      "abilities": [
+        {
+          "abilityId": 117,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "Snow Warning"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10286,
+      "name": "Mega Emboar",
+      "form": "Mega",
+      "nationalDexNumber": 500,
+      "pokedexIdentifier": "emboar",
+      "type1": "fire",
+      "type2": "fighting",
+      "baseHp": 110,
+      "baseAtk": 148,
+      "baseDef": 75,
+      "baseSpAtk": 110,
+      "baseSpDef": 110,
+      "baseSpd": 75,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10286.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10286.png",
+      "abilities": [
+        {
+          "abilityId": 104,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "Mold Breaker"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10287,
+      "name": "Mega Excadrill",
+      "form": "Mega",
+      "nationalDexNumber": 530,
+      "pokedexIdentifier": "excadrill",
+      "type1": "ground",
+      "type2": "steel",
+      "baseHp": 110,
+      "baseAtk": 165,
+      "baseDef": 100,
+      "baseSpAtk": 65,
+      "baseSpDef": 65,
+      "baseSpd": 103,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10287.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10287.png",
+      "abilities": [
+        {
+          "abilityId": 308,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "Piercing Drill"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10288,
+      "name": "Mega Scolipede",
+      "form": "Mega",
+      "nationalDexNumber": 545,
+      "pokedexIdentifier": "scolipede",
+      "type1": "bug",
+      "type2": "poison",
+      "baseHp": 60,
+      "baseAtk": 140,
+      "baseDef": 149,
+      "baseSpAtk": 75,
+      "baseSpDef": 99,
+      "baseSpd": 62,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10288.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10288.png",
+      "abilities": [
+        {
+          "abilityId": 75,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "Shell Armor"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10289,
+      "name": "Mega Scrafty",
+      "form": "Mega",
+      "nationalDexNumber": 560,
+      "pokedexIdentifier": "scrafty",
+      "type1": "dark",
+      "type2": "fighting",
+      "baseHp": 65,
+      "baseAtk": 130,
+      "baseDef": 135,
+      "baseSpAtk": 55,
+      "baseSpDef": 135,
+      "baseSpd": 68,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10289.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10289.png",
+      "abilities": [
+        {
+          "abilityId": 22,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "Intimidate"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10290,
+      "name": "Mega Eelektross",
+      "form": "Mega",
+      "nationalDexNumber": 604,
+      "pokedexIdentifier": "eelektross",
+      "type1": "electric",
+      "type2": null,
+      "baseHp": 85,
+      "baseAtk": 145,
+      "baseDef": 80,
+      "baseSpAtk": 135,
+      "baseSpDef": 90,
+      "baseSpd": 80,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10290.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10290.png",
+      "abilities": [
+        {
+          "abilityId": 312,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "Eelevate"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10291,
+      "name": "Mega Chandelure",
+      "form": "Mega",
+      "nationalDexNumber": 609,
+      "pokedexIdentifier": "chandelure",
+      "type1": "ghost",
+      "type2": "fire",
+      "baseHp": 60,
+      "baseAtk": 75,
+      "baseDef": 110,
+      "baseSpAtk": 175,
+      "baseSpDef": 110,
+      "baseSpd": 90,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10291.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10291.png",
+      "abilities": [
+        {
+          "abilityId": 151,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "Infiltrator"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10292,
+      "name": "Mega Chesnaught",
+      "form": "Mega",
+      "nationalDexNumber": 652,
+      "pokedexIdentifier": "chesnaught",
+      "type1": "grass",
+      "type2": "fighting",
+      "baseHp": 88,
+      "baseAtk": 137,
+      "baseDef": 172,
+      "baseSpAtk": 74,
+      "baseSpDef": 115,
+      "baseSpd": 44,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10292.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10292.png",
+      "abilities": [
+        {
+          "abilityId": 171,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "Bulletproof"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10293,
+      "name": "Mega Delphox",
+      "form": "Mega",
+      "nationalDexNumber": 655,
+      "pokedexIdentifier": "delphox",
+      "type1": "fire",
+      "type2": "psychic",
+      "baseHp": 75,
+      "baseAtk": 69,
+      "baseDef": 72,
+      "baseSpAtk": 159,
+      "baseSpDef": 125,
+      "baseSpd": 134,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10293.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10293.png",
+      "abilities": [
+        {
+          "abilityId": 26,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "Levitate"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10294,
+      "name": "Mega Greninja",
+      "form": "Mega",
+      "nationalDexNumber": 658,
+      "pokedexIdentifier": "greninja",
+      "type1": "water",
+      "type2": "dark",
+      "baseHp": 72,
+      "baseAtk": 125,
+      "baseDef": 77,
+      "baseSpAtk": 133,
+      "baseSpDef": 81,
+      "baseSpd": 142,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10294.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10294.png",
+      "abilities": [
+        {
+          "abilityId": 168,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "Protean"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10295,
+      "name": "Mega Pyroar",
+      "form": "Mega",
+      "nationalDexNumber": 668,
+      "pokedexIdentifier": "pyroar",
+      "type1": "fire",
+      "type2": "normal",
+      "baseHp": 86,
+      "baseAtk": 88,
+      "baseDef": 92,
+      "baseSpAtk": 129,
+      "baseSpDef": 86,
+      "baseSpd": 126,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10295.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10295.png",
+      "abilities": [
+        {
+          "abilityId": 313,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "Fire Mane"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10296,
+      "name": "Mega Floette",
+      "form": "Mega",
+      "nationalDexNumber": 670,
+      "pokedexIdentifier": "floette",
+      "type1": "fairy",
+      "type2": null,
+      "baseHp": 74,
+      "baseAtk": 85,
+      "baseDef": 87,
+      "baseSpAtk": 155,
+      "baseSpDef": 148,
+      "baseSpd": 102,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10296.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10296.png",
+      "abilities": [
+        {
+          "abilityId": 187,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "Fairy Aura"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10297,
+      "name": "Mega Malamar",
+      "form": "Mega",
+      "nationalDexNumber": 687,
+      "pokedexIdentifier": "malamar",
+      "type1": "dark",
+      "type2": "psychic",
+      "baseHp": 86,
+      "baseAtk": 102,
+      "baseDef": 88,
+      "baseSpAtk": 98,
+      "baseSpDef": 120,
+      "baseSpd": 88,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10297.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10297.png",
+      "abilities": [
+        {
+          "abilityId": 126,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "Contrary"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10298,
+      "name": "Mega Barbaracle",
+      "form": "Mega",
+      "nationalDexNumber": 689,
+      "pokedexIdentifier": "barbaracle",
+      "type1": "rock",
+      "type2": "fighting",
+      "baseHp": 72,
+      "baseAtk": 140,
+      "baseDef": 130,
+      "baseSpAtk": 64,
+      "baseSpDef": 106,
+      "baseSpd": 88,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10298.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10298.png",
+      "abilities": [
+        {
+          "abilityId": 181,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "Tough Claws"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10299,
+      "name": "Mega Dragalge",
+      "form": "Mega",
+      "nationalDexNumber": 691,
+      "pokedexIdentifier": "dragalge",
+      "type1": "poison",
+      "type2": "dragon",
+      "baseHp": 65,
+      "baseAtk": 85,
+      "baseDef": 105,
+      "baseSpAtk": 132,
+      "baseSpDef": 163,
+      "baseSpd": 44,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10299.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10299.png",
+      "abilities": [
+        {
+          "abilityId": 144,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "Regenerator"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10300,
+      "name": "Mega Hawlucha",
+      "form": "Mega",
+      "nationalDexNumber": 701,
+      "pokedexIdentifier": "hawlucha",
+      "type1": "fighting",
+      "type2": "flying",
+      "baseHp": 78,
+      "baseAtk": 137,
+      "baseDef": 100,
+      "baseSpAtk": 74,
+      "baseSpDef": 93,
+      "baseSpd": 118,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10300.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10300.png",
+      "abilities": [
+        {
+          "abilityId": 99,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "No Guard"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10301,
+      "name": "Mega Zygarde",
+      "form": "Mega",
+      "nationalDexNumber": 718,
+      "pokedexIdentifier": "zygarde",
+      "type1": "dragon",
+      "type2": "ground",
+      "baseHp": 216,
+      "baseAtk": 70,
+      "baseDef": 91,
+      "baseSpAtk": 216,
+      "baseSpDef": 85,
+      "baseSpd": 100,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10301.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10301.png",
+      "abilities": [],
+      "abilityNames": [],
+      "championsAbility": false,
+      "flags": [
+        "mega",
+        "legendsZA"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10302,
+      "name": "Mega Drampa",
+      "form": "Mega",
+      "nationalDexNumber": 780,
+      "pokedexIdentifier": "drampa",
+      "type1": "normal",
+      "type2": "dragon",
+      "baseHp": 78,
+      "baseAtk": 85,
+      "baseDef": 110,
+      "baseSpAtk": 160,
+      "baseSpDef": 116,
+      "baseSpd": 36,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10302.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10302.png",
+      "abilities": [
+        {
+          "abilityId": 201,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "Berserk"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10303,
+      "name": "Mega Falinks",
+      "form": "Mega",
+      "nationalDexNumber": 870,
+      "pokedexIdentifier": "falinks",
+      "type1": "fighting",
+      "type2": null,
+      "baseHp": 65,
+      "baseAtk": 135,
+      "baseDef": 135,
+      "baseSpAtk": 70,
+      "baseSpDef": 65,
+      "baseSpd": 100,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10303.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10303.png",
+      "abilities": [
+        {
+          "abilityId": 128,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "Defiant"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10304,
+      "name": "Mega Raichu X",
+      "form": "Mega X",
+      "nationalDexNumber": 26,
+      "pokedexIdentifier": "raichu",
+      "type1": "electric",
+      "type2": null,
+      "baseHp": 60,
+      "baseAtk": 135,
+      "baseDef": 95,
+      "baseSpAtk": 90,
+      "baseSpDef": 95,
+      "baseSpd": 110,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10304.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10304.png",
+      "abilities": [
+        {
+          "abilityId": 226,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "Electric Surge"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10305,
+      "name": "Mega Raichu Y",
+      "form": "Mega Y",
+      "nationalDexNumber": 26,
+      "pokedexIdentifier": "raichu",
+      "type1": "electric",
+      "type2": null,
+      "baseHp": 60,
+      "baseAtk": 100,
+      "baseDef": 55,
+      "baseSpAtk": 160,
+      "baseSpDef": 80,
+      "baseSpd": 130,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10305.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10305.png",
+      "abilities": [
+        {
+          "abilityId": 99,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "No Guard"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10306,
+      "name": "Mega Chimecho",
+      "form": "Mega",
+      "nationalDexNumber": 358,
+      "pokedexIdentifier": "chimecho",
+      "type1": "psychic",
+      "type2": "steel",
+      "baseHp": 75,
+      "baseAtk": 50,
+      "baseDef": 110,
+      "baseSpAtk": 135,
+      "baseSpDef": 120,
+      "baseSpd": 65,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10306.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10306.png",
+      "abilities": [
+        {
+          "abilityId": 26,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "Levitate"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10307,
+      "name": "Mega Absol Z",
+      "form": "Mega Z",
+      "nationalDexNumber": 359,
+      "pokedexIdentifier": "absol",
+      "type1": "dark",
+      "type2": "ghost",
+      "baseHp": 65,
+      "baseAtk": 154,
+      "baseDef": 60,
+      "baseSpAtk": 75,
+      "baseSpDef": 60,
+      "baseSpd": 151,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10307.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10307.png",
+      "abilities": [],
+      "abilityNames": [],
+      "championsAbility": false,
+      "flags": [
+        "mega",
+        "legendsZA"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10308,
+      "name": "Mega Staraptor",
+      "form": "Mega",
+      "nationalDexNumber": 398,
+      "pokedexIdentifier": "staraptor",
+      "type1": "fighting",
+      "type2": "flying",
+      "baseHp": 85,
+      "baseAtk": 140,
+      "baseDef": 100,
+      "baseSpAtk": 60,
+      "baseSpDef": 90,
+      "baseSpd": 110,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10308.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10308.png",
+      "abilities": [
+        {
+          "abilityId": 126,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "Contrary"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10309,
+      "name": "Mega Garchomp Z",
+      "form": "Mega Z",
+      "nationalDexNumber": 445,
+      "pokedexIdentifier": "garchomp",
+      "type1": "dragon",
+      "type2": null,
+      "baseHp": 108,
+      "baseAtk": 130,
+      "baseDef": 85,
+      "baseSpAtk": 141,
+      "baseSpDef": 85,
+      "baseSpd": 151,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10309.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10309.png",
+      "abilities": [],
+      "abilityNames": [],
+      "championsAbility": false,
+      "flags": [
+        "mega",
+        "legendsZA"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10310,
+      "name": "Mega Lucario Z",
+      "form": "Mega Z",
+      "nationalDexNumber": 448,
+      "pokedexIdentifier": "lucario",
+      "type1": "fighting",
+      "type2": "steel",
+      "baseHp": 70,
+      "baseAtk": 100,
+      "baseDef": 70,
+      "baseSpAtk": 164,
+      "baseSpDef": 70,
+      "baseSpd": 151,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10310.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10310.png",
+      "abilities": [],
+      "abilityNames": [],
+      "championsAbility": false,
+      "flags": [
+        "mega",
+        "legendsZA"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10311,
+      "name": "Mega Heatran",
+      "form": "Mega",
+      "nationalDexNumber": 485,
+      "pokedexIdentifier": "heatran",
+      "type1": "fire",
+      "type2": "steel",
+      "baseHp": 91,
+      "baseAtk": 120,
+      "baseDef": 106,
+      "baseSpAtk": 175,
+      "baseSpDef": 141,
+      "baseSpd": 67,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10311.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10311.png",
+      "abilities": [],
+      "abilityNames": [],
+      "championsAbility": false,
+      "flags": [
+        "mega",
+        "legendsZA"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10312,
+      "name": "Mega Darkrai",
+      "form": "Mega",
+      "nationalDexNumber": 491,
+      "pokedexIdentifier": "darkrai",
+      "type1": "dark",
+      "type2": null,
+      "baseHp": 70,
+      "baseAtk": 120,
+      "baseDef": 130,
+      "baseSpAtk": 165,
+      "baseSpDef": 130,
+      "baseSpd": 85,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10312.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10312.png",
+      "abilities": [],
+      "abilityNames": [],
+      "championsAbility": false,
+      "flags": [
+        "mega",
+        "legendsZA"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10313,
+      "name": "Mega Golurk",
+      "form": "Mega",
+      "nationalDexNumber": 623,
+      "pokedexIdentifier": "golurk",
+      "type1": "ground",
+      "type2": "ghost",
+      "baseHp": 89,
+      "baseAtk": 159,
+      "baseDef": 105,
+      "baseSpAtk": 70,
+      "baseSpDef": 105,
+      "baseSpd": 55,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10313.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10313.png",
+      "abilities": [
+        {
+          "abilityId": 260,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "Unseen Fist"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10314,
+      "name": "Mega Meowstic (Male)",
+      "form": "Mega (Male)",
+      "nationalDexNumber": 678,
+      "pokedexIdentifier": "meowstic-male",
+      "type1": "psychic",
+      "type2": null,
+      "baseHp": 74,
+      "baseAtk": 48,
+      "baseDef": 76,
+      "baseSpAtk": 143,
+      "baseSpDef": 101,
+      "baseSpd": 124,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10314.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10314.png",
+      "abilities": [
+        {
+          "abilityId": 36,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "Trace"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10315,
+      "name": "Mega Crabominable",
+      "form": "Mega",
+      "nationalDexNumber": 740,
+      "pokedexIdentifier": "crabominable",
+      "type1": "fighting",
+      "type2": "ice",
+      "baseHp": 97,
+      "baseAtk": 157,
+      "baseDef": 122,
+      "baseSpAtk": 62,
+      "baseSpDef": 107,
+      "baseSpd": 33,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10315.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10315.png",
+      "abilities": [
+        {
+          "abilityId": 89,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "Iron Fist"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10316,
+      "name": "Mega Golisopod",
+      "form": "Mega",
+      "nationalDexNumber": 768,
+      "pokedexIdentifier": "golisopod",
+      "type1": "bug",
+      "type2": "steel",
+      "baseHp": 75,
+      "baseAtk": 150,
+      "baseDef": 175,
+      "baseSpAtk": 70,
+      "baseSpDef": 120,
+      "baseSpd": 40,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10316.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10316.png",
+      "abilities": [],
+      "abilityNames": [],
+      "championsAbility": false,
+      "flags": [
+        "mega",
+        "legendsZA"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10317,
+      "name": "Mega Magearna",
+      "form": "Mega",
+      "nationalDexNumber": 801,
+      "pokedexIdentifier": "magearna",
+      "type1": "steel",
+      "type2": "fairy",
+      "baseHp": 80,
+      "baseAtk": 125,
+      "baseDef": 115,
+      "baseSpAtk": 170,
+      "baseSpDef": 115,
+      "baseSpd": 95,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10317.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10317.png",
+      "abilities": [],
+      "abilityNames": [],
+      "championsAbility": false,
+      "flags": [
+        "mega",
+        "legendsZA"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10318,
+      "name": "Mega Magearna (Original Color)",
+      "form": "Mega (Original Color)",
+      "nationalDexNumber": 801,
+      "pokedexIdentifier": "magearna-original",
+      "type1": "steel",
+      "type2": "fairy",
+      "baseHp": 80,
+      "baseAtk": 125,
+      "baseDef": 115,
+      "baseSpAtk": 170,
+      "baseSpDef": 115,
+      "baseSpd": 95,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10318.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10318.png",
+      "abilities": [],
+      "abilityNames": [],
+      "championsAbility": false,
+      "flags": [
+        "mega",
+        "legendsZA"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10319,
+      "name": "Mega Zeraora",
+      "form": "Mega",
+      "nationalDexNumber": 807,
+      "pokedexIdentifier": "zeraora",
+      "type1": "electric",
+      "type2": null,
+      "baseHp": 88,
+      "baseAtk": 157,
+      "baseDef": 75,
+      "baseSpAtk": 147,
+      "baseSpDef": 80,
+      "baseSpd": 153,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10319.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10319.png",
+      "abilities": [],
+      "abilityNames": [],
+      "championsAbility": false,
+      "flags": [
+        "mega",
+        "legendsZA"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10320,
+      "name": "Mega Scovillain",
+      "form": "Mega",
+      "nationalDexNumber": 952,
+      "pokedexIdentifier": "scovillain",
+      "type1": "grass",
+      "type2": "fire",
+      "baseHp": 65,
+      "baseAtk": 138,
+      "baseDef": 85,
+      "baseSpAtk": 138,
+      "baseSpDef": 85,
+      "baseSpd": 75,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10320.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10320.png",
+      "abilities": [
+        {
+          "abilityId": 311,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "Spicy Spray"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10321,
+      "name": "Mega Glimmora",
+      "form": "Mega",
+      "nationalDexNumber": 970,
+      "pokedexIdentifier": "glimmora",
+      "type1": "rock",
+      "type2": "poison",
+      "baseHp": 83,
+      "baseAtk": 90,
+      "baseDef": 105,
+      "baseSpAtk": 150,
+      "baseSpDef": 96,
+      "baseSpd": 101,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10321.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10321.png",
+      "abilities": [
+        {
+          "abilityId": 91,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "Adaptability"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10322,
+      "name": "Mega Tatsugiri (Curly)",
+      "form": "Mega (Curly)",
+      "nationalDexNumber": 978,
+      "pokedexIdentifier": "tatsugiri-curly",
+      "type1": "dragon",
+      "type2": "water",
+      "baseHp": 68,
+      "baseAtk": 65,
+      "baseDef": 90,
+      "baseSpAtk": 135,
+      "baseSpDef": 125,
+      "baseSpd": 92,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10322.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10322.png",
+      "abilities": [],
+      "abilityNames": [],
+      "championsAbility": false,
+      "flags": [
+        "mega",
+        "legendsZA"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10323,
+      "name": "Mega Tatsugiri (Droopy)",
+      "form": "Mega (Droopy)",
+      "nationalDexNumber": 978,
+      "pokedexIdentifier": "tatsugiri-droopy",
+      "type1": "dragon",
+      "type2": "water",
+      "baseHp": 68,
+      "baseAtk": 65,
+      "baseDef": 90,
+      "baseSpAtk": 135,
+      "baseSpDef": 125,
+      "baseSpd": 92,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10323.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10323.png",
+      "abilities": [],
+      "abilityNames": [],
+      "championsAbility": false,
+      "flags": [
+        "mega",
+        "legendsZA"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10324,
+      "name": "Mega Tatsugiri (Stretchy)",
+      "form": "Mega (Stretchy)",
+      "nationalDexNumber": 978,
+      "pokedexIdentifier": "tatsugiri-stretchy",
+      "type1": "dragon",
+      "type2": "water",
+      "baseHp": 68,
+      "baseAtk": 65,
+      "baseDef": 90,
+      "baseSpAtk": 135,
+      "baseSpDef": 125,
+      "baseSpd": 92,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10324.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10324.png",
+      "abilities": [],
+      "abilityNames": [],
+      "championsAbility": false,
+      "flags": [
+        "mega",
+        "legendsZA"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10325,
+      "name": "Mega Baxcalibur",
+      "form": "Mega",
+      "nationalDexNumber": 998,
+      "pokedexIdentifier": "baxcalibur",
+      "type1": "dragon",
+      "type2": "ice",
+      "baseHp": 115,
+      "baseAtk": 175,
+      "baseDef": 117,
+      "baseSpAtk": 105,
+      "baseSpDef": 101,
+      "baseSpd": 87,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10325.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10325.png",
+      "abilities": [],
+      "abilityNames": [],
+      "championsAbility": false,
+      "flags": [
+        "mega",
+        "legendsZA"
+      ],
+      "provisional": false
+    },
+    {
+      "id": 10326,
+      "name": "Mega Meowstic (Female)",
+      "form": "Mega (Female)",
+      "nationalDexNumber": 678,
+      "pokedexIdentifier": "meowstic-female",
+      "type1": "psychic",
+      "type2": null,
+      "baseHp": 74,
+      "baseAtk": 48,
+      "baseDef": 76,
+      "baseSpAtk": 143,
+      "baseSpDef": 101,
+      "baseSpd": 124,
+      "isLegendary": false,
+      "isMythical": false,
+      "isParadox": false,
+      "isUltraBeast": false,
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/10326.png",
+      "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/10326.png",
+      "abilities": [
+        {
+          "abilityId": 36,
+          "isHidden": false,
+          "slot": 1
+        }
+      ],
+      "abilityNames": [
+        "Trace"
+      ],
+      "championsAbility": true,
+      "flags": [
+        "mega",
+        "legendsZA",
+        "champions"
+      ],
+      "provisional": false
+    }
+  ],
+  "extraAbilities": [
+    {
+      "id": 308,
+      "name": "Piercing Drill",
+      "description": "When the Pokémon uses contact moves, it can hit even targets that are protecting themselves."
+    },
+    {
+      "id": 309,
+      "name": "Dragonize",
+      "description": "The Pokémon's Normal-type moves become Dragon-type moves and their power is boosted by 20%."
+    },
+    {
+      "id": 310,
+      "name": "Mega Sol",
+      "description": "The Pokémon can use its moves as if the weather were harsh sunlight."
+    },
+    {
+      "id": 311,
+      "name": "Spicy Spray",
+      "description": "When the Pokémon takes damage from a move, it burns the attacker."
+    },
+    {
+      "id": 312,
+      "name": "Eelevate",
+      "description": "The Pokémon floats off the ground, making it immune to Ground-type moves, as well as the Spikes, Toxic Spikes, and Sticky Web statuses. When the Pokémon knocks out a target with an attack, its highest stat is boosted by 1 stage."
+    },
+    {
+      "id": 313,
+      "name": "Fire Mane",
+      "description": "Boosts the power of the Pokémon's Fire-type moves by 50%."
+    }
+  ],
+  "pokemonOverrides": [
+    {
+      "id": 10061,
+      "name": "Eternal Flower Floette",
+      "shinySpriteUrl": "",
+      "note": "PokeAPI's shiny/10061.png render is an upside-down broken model; hidden on purpose so the UI shows its graceful no-shiny state. Eternal Flower Floette cannot be shiny officially."
+    }
+  ]
+}
