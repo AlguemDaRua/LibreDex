@@ -1,0 +1,13 @@
+LibreDex is a free, open-source Pokédex and team-planning companion. It includes a Pokédex, MoveDex, AbilityDex, ItemDex, NatureDex, type chart, team builder and damage calculator.
+
+There are no ads, subscriptions, in-app purchases or account sign-in requirements.
+
+Connection and storage
+
+LibreDex uses the internet by default for Pokémon artwork and current evolution-chain lookups. Artwork is cached as you browse. On first launch, LibreDex asks whether you want to download the artwork collection for offline use; the download only begins if you choose it. The optional library is kept separately from the temporary cache, resumes by skipping completed files, and can be paused or cancelled. You can ask later, disable the prompt, or use Settings at any time.
+
+Pokémon, moves, abilities, learnsets and the supporting reference data are bundled with the app and copied into a local SQLite database on your device. Searches and calculators work without a connection. The evolution section uses a bundled fallback when PokéAPI cannot be reached; artwork that has not been cached or downloaded will not be available offline.
+
+Privacy
+
+LibreDex has no analytics, ads or account system. It contacts PokéAPI for evolution data and the PokeAPI sprite repository on GitHub for artwork. Favorites, team data and app preferences remain in private app storage on your device.
