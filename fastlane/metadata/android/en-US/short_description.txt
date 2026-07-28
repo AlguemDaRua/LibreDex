@@ -1,1 +1,1 @@
-AMOLED Offline-First Pokédex & Damage Calculator.
+Pokédex with live artwork and optional offline downloads.

@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:libredex/core/app_restart.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/theme/theme_provider.dart';
-import 'package:libredex/core/widgets/ultra_wormhole_transition.dart';
+import 'package:libredex/core/widgets/wavy_theme_transition.dart';
 import 'package:libredex/features/home/views/home_screen.dart';
 import 'package:libredex/features/pokedex/repositories/sync_repository.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const ProviderScope(child: LibreDexApp()));
+  runApp(const AppRestart(child: ProviderScope(child: LibreDexApp())));
 }
 
 class LibreDexApp extends ConsumerWidget {
@@ -23,8 +24,7 @@ class LibreDexApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
-      builder: (context, child) => UltraWormholeTransition(
-        trigger: themeMode,
+      builder: (context, child) => WavyThemeTransition(
         child: child ?? const SizedBox.shrink(),
       ),
       home: const StartupGate(),
@@ -78,7 +78,7 @@ class _StartupGateState extends ConsumerState<StartupGate> {
   }
 }
 
-/// First-launch screen shown while the bundled database is unpacked.
+/// First-launch screen shown while the bundled reference database is prepared.
 class _StartupScreen extends StatelessWidget {
   final String? error;
   final VoidCallback? onRetry;
@@ -118,8 +118,8 @@ class _StartupScreen extends StatelessWidget {
               Text(
                 hasError
                     ? error!
-                    : 'Unpacking the offline Pokédex — every Pokémon, move and '
-                        'ability is bundled, so no connection is needed.',
+                    : 'Preparing the local reference database. Artwork and up-to-date evolution '
+                        'details load online when a connection is available.',
                 style: TextStyle(
                   fontSize: 13,
                   height: 1.5,

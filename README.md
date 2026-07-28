@@ -1,80 +1,70 @@
-# LibreDex 📱🌐
+# LibreDex
 
-[![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white)](https://flutter.dev)
-[![Dart](https://img.shields.io/badge/dart-%230175C2.svg?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
-[![SQLite](https://img.shields.io/badge/SQLite-07405E?style=for-the-badge&logo=sqlite&logoColor=white)](https://sqlite.org)
-[![F-Droid](https://img.shields.io/badge/F--Droid-Active-blue?style=for-the-badge&logo=f-droid&logoColor=white)](https://f-droid.org)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+LibreDex is a free, open-source Pokédex and team-planning companion built with Flutter. It includes a Pokédex, MoveDex, AbilityDex, ItemDex, NatureDex, type chart, team builder and damage calculator.
 
-A beautiful, premium, **100% Offline-First & Open-Source Pokedex** application built with Flutter, Riverpod state management, and a high-performance relational database powered by Drift (SQLite). LibreDex features a striking AMOLED Dark Mode design and comprehensive game database sheets, tailored for absolute efficiency.
+There are no ads, subscriptions, in-app purchases or account sign-in requirements.
 
----
+## How it works
 
-## 🌟 Key Features
+LibreDex is **online-first for artwork**, with a local reference database and an optional artwork download for offline use.
 
-* **Pokédex**: Clean grid interface listing Gen 1 Pokémons with dynamic type badges and shiny toggle animations.
-* **Relational Details**: Inspect specific stats, stats modifier sliders (EV/IV configuration in real-time), and deep-relationship tables linking moves (categorized by learning method) and abilities.
-* **MoveDex & AbilityDex**: Searchable databases containing complete power, category, description, and effects for all Gen 1 moves and abilities.
-* **NatureDex**: Explore full Nature profiles, complete with dynamic high-contrast teals (up) and roses/reds (down) reflecting stat impact indicators.
-* **Type Chart**: Complete defensive coverage matrix showing incoming damage multipliers dynamically for dual-type pairings.
-* **Global Damage Calculator**:
-  * *Normal (Basic) Tab*: Select a move and examine modified move power influenced by active **Weather** (Sun, Rain, Sandstorm, Snow) and **Terrain** (Electric, Grassy, Psychic, Misty) chips, complete with conditional gameplay cards (e.g. Blizzard accuracy, Solar Beam skips, Aurora Veil).
-  * *Advanced (Showdown) Tab*: Search both the attacker and defender targets, configure EV presets, adjust Defensive items (Eviolite, Assault Vest, Leftovers), status indicators (Burn), and visualize OHKO probability banners with an overlay health bar.
+- Pokémon artwork loads from the PokeAPI sprite repository as you browse. Previously viewed artwork is kept in the normal app cache.
+- The evolution section asks PokéAPI for the current chain when a connection is available. Successful lookups are kept for the current app session; a bundled evolution record is used when the request is unavailable. You can turn off live evolution data in Settings to use only the bundled records.
+- Pokémon, moves, abilities, learnsets and the supporting reference data ship with the app. On first launch, LibreDex copies the needed records into its local database. This setup step does not need the internet.
+- Searches, stat calculations, type-chart calculations, team building and the bundled reference data remain available without a connection. Artwork that has not been cached or downloaded cannot appear offline.
+- On first launch, LibreDex asks whether you want to download artwork for offline use. It does not start a download unless you choose **Download**; choose **Ask me later** to see the question next time, **Never ask again** to hide it, or use **Settings → Download artwork for offline use** whenever you want. This user-requested library is stored separately from the normal cache and survives cache cleanup.
 
----
+## Internet and privacy
 
-## 🛠️ Technology Stack
+The Android `INTERNET` permission is present because the app needs it for live artwork, optional artwork downloads and online evolution lookups.
 
-* **UI Framework**: Flutter (Material 3 AMOLED theme, glassmorphic card widgets).
-* **State Management**: Riverpod (with compile-time safe code generator integration).
-* **Database**: Drift (relational SQLite binding allowing asynchronous streams and complex relation JOINs).
-* **Networking**: Dio (used strictly for the initial offline sync phase).
+LibreDex has no accounts, advertising SDKs, analytics SDKs or payment processing. It does not send a LibreDex profile, favorites, team or calculator data to a LibreDex server. As with any internet connection, the services contacted for artwork and evolution data can receive standard request information such as your IP address and requested URL.
 
----
+The external services used by the app are:
 
-## 🔒 Permission Transparency & Privacy
+- [PokéAPI](https://pokeapi.co/) for live evolution-chain lookups.
+- [PokeAPI sprites](https://github.com/PokeAPI/sprites) on GitHub for artwork.
 
-LibreDex operates under a **strictly transparent, 100% tracker-free, zero-analytics policy**. The application only requests a single permission from your device:
+## What is stored on the device
 
-### `android.permission.INTERNET`
-* **Why it is needed**: During the very first launch, the app connects to the public, open-source [PokéAPI](https://pokeapi.co) to perform a complete initial data synchronization. This populates your local SQLite database with all stats, moves, types, and descriptions.
-* **Offline Operations**: Once this initial synchronization is complete, **LibreDex does not send or receive any network packets**. The internet connection can be completely disabled, and the app will continue to run with full database calculations, calculator features, and search tools completely offline.
+LibreDex stores its app data in private, app-specific storage. Other apps cannot read it without elevated device access.
 
----
+| Data | Location and purpose |
+| --- | --- |
+| Reference database | `libredex.db` in the app documents directory. This is a SQLite database populated from the JSON files bundled with the app. |
+| Browsing artwork cache | The Flutter image cache in the app cache directory. It holds artwork viewed online and may be reclaimed by the operating system when storage is low. |
+| Offline artwork library | `offline_artwork` in LibreDex's private app-support directory. It contains only artwork the user deliberately downloaded, plus a manifest with quality and size. It is not removed by **Clear browsing artwork cache**. |
+| Preferences | The platform's private preferences store: theme choice, last open section, favorites, team slots, team format, calculator ruleset, bundled-data version and the first-launch download-prompt choice. |
 
-## 🚀 Build and Installation
+On a typical Android install, the database is under `/data/user/0/com.alguemdarua.libredex/app_flutter/`; the image cache and offline artwork library are in the same private app sandbox. Android version and manufacturer can change the exact path, and normal file managers cannot browse these folders.
 
-### Prerequisites
-* Flutter SDK (Version `>=3.10.4`)
-* Android SDK (for compiling the APK)
+Use **Settings → Clear browsing artwork cache** for temporary images, **Delete downloaded artwork** for the durable library, or **Delete everything** to erase LibreDex data before closing, uninstalling or restarting the app.
 
-### Step 1: Clone the repository
+## Run from source
+
+### Requirements
+
+- Flutter SDK compatible with Dart `^3.10.4`
+- Android SDK for Android builds
+
 ```bash
-git clone https://github.com/thedragon/LibreDex.git
+git clone https://github.com/AlguemDaRua/LibreDex.git
 cd LibreDex
-```
-
-### Step 2: Install dependencies & run generator
-```bash
 flutter pub get
-flutter pub run build_runner build --delete-conflicting-outputs
+dart run build_runner build --delete-conflicting-outputs
+flutter run
 ```
 
-### Step 3: Compile a release APK
+To build a release APK:
+
 ```bash
-flutter build apk --release --split-per-abi
+flutter build apk --release
 ```
-The compiled APK will be available under `build/app/outputs/flutter-apk/app-release.apk`.
 
----
+## License and attribution
 
-## 🚧 Active Development & Road Map
-LibreDex is actively maintained and expanding:
-- [ ] Support for subsequent Generations (Gen 2 - Gen 9).
-- [ ] Complete in-game held item database indexing.
-- [ ] Full competitive Showdown Team Builder & Team Exporter dashboard.
+The LibreDex source code is available under the [MIT License](LICENSE). That license applies to the code written for LibreDex; it does not grant rights to Pokémon names, characters, game data or artwork.
 
----
+Pokémon and Pokémon character names are trademarks of Nintendo. LibreDex is an unofficial fan project and is not affiliated with, endorsed by or sponsored by Nintendo, Game Freak, Creatures or The Pokémon Company.
 
-## 📄 License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+See [NOTICE.md](NOTICE.md) for PokéAPI and artwork attribution, including the third-party license notice.

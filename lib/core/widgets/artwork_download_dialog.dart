@@ -2,28 +2,81 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/features/pokedex/repositories/deep_sync_repository.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-/// Shows the sprite-quality picker and starts the download if confirmed.
-///
-/// Used by both the first-run prompt and the Settings screen so the two paths
-/// can never drift apart.
-Future<void> showOfflineDownloadDialog(BuildContext context) {
+/// Preference that suppresses the optional first-launch artwork prompt.
+const String kArtworkDownloadPromptDisabledKey =
+    'artwork_download_prompt_disabled';
+
+/// Shows the artwork-quality picker from Settings or another explicit action.
+Future<void> showArtworkDownloadDialog(BuildContext context) {
   return showDialog<void>(
     context: context,
-    builder: (_) => const OfflineDownloadDialog(),
+    builder: (_) => const ArtworkDownloadDialog(),
   );
 }
 
-/// Lets the user pick a sprite quality before downloading for offline use.
-class OfflineDownloadDialog extends ConsumerStatefulWidget {
-  const OfflineDownloadDialog({super.key});
-
-  @override
-  ConsumerState<OfflineDownloadDialog> createState() => _OfflineDownloadDialogState();
+/// Shows the optional first-launch artwork prompt.
+///
+/// No download starts unless the user selects [Download]. Choosing [Ask me
+/// later] leaves the prompt available for a future app launch, while [Never
+/// ask again] only hides this prompt; the download remains in Settings.
+Future<void> showFirstLaunchArtworkDownloadDialog(BuildContext context) {
+  return showDialog<void>(
+    context: context,
+    builder: (_) => const ArtworkDownloadDialog(isFirstLaunchPrompt: true),
+  );
 }
 
-class _OfflineDownloadDialogState extends ConsumerState<OfflineDownloadDialog> {
+/// Lets the user pick an artwork quality for offline use.
+class ArtworkDownloadDialog extends ConsumerStatefulWidget {
+  const ArtworkDownloadDialog({
+    super.key,
+    this.isFirstLaunchPrompt = false,
+  });
+
+  final bool isFirstLaunchPrompt;
+
+  @override
+  ConsumerState<ArtworkDownloadDialog> createState() =>
+      _ArtworkDownloadDialogState();
+}
+
+class _ArtworkDownloadDialogState extends ConsumerState<ArtworkDownloadDialog> {
   SpriteQuality _quality = SpriteQuality.standard;
+  bool _isSubmitting = false;
+
+  Future<void> _disableFirstLaunchPrompt() async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setBool(kArtworkDownloadPromptDisabledKey, true);
+  }
+
+  Future<void> _neverAskAgain() async {
+    setState(() => _isSubmitting = true);
+    try {
+      await _disableFirstLaunchPrompt();
+      if (mounted) Navigator.pop(context);
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
+  Future<void> _startDownload() async {
+    setState(() => _isSubmitting = true);
+    try {
+      // A manual download from Settings is also an answer to the first-launch
+      // question, so it should not be asked again on the next launch.
+      try {
+        await _disableFirstLaunchPrompt();
+      } catch (_) {
+        // A preferences write must not prevent a user-requested download.
+      }
+      ref.read(deepSyncControllerProvider.notifier).start(quality: _quality);
+      if (mounted) Navigator.pop(context);
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +92,7 @@ class _OfflineDownloadDialogState extends ConsumerState<OfflineDownloadDialog> {
           SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Use LibreDex offline',
+              'Download artwork',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 19),
             ),
           ),
@@ -50,24 +103,37 @@ class _OfflineDownloadDialogState extends ConsumerState<OfflineDownloadDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'All stats, moves, abilities and learnsets already work offline. '
-            'Download the artwork too so images appear without a connection.',
+            'Reference data is already stored on this device. Download the artwork too '
+            'to save a durable offline library of Pokémon images.',
             style: TextStyle(
               fontSize: 13,
               height: 1.45,
               color: isDark ? Colors.grey[400] : Colors.grey[700],
             ),
           ),
+          if (widget.isFirstLaunchPrompt) ...[
+            const SizedBox(height: 10),
+            Text(
+              'Nothing downloads unless you choose Download. Ask me later will ask again next time, and Settings is always available.',
+              style: TextStyle(
+                fontSize: 11,
+                height: 1.4,
+                color: isDark ? Colors.grey[500] : Colors.grey[600],
+              ),
+            ),
+          ],
           const SizedBox(height: 18),
           for (final quality in SpriteQuality.values)
             _QualityOption(
               quality: quality,
               selected: _quality == quality,
-              onTap: () => setState(() => _quality = quality),
+              onTap: _isSubmitting
+                  ? null
+                  : () => setState(() => _quality = quality),
             ),
           const SizedBox(height: 6),
           Text(
-            'You can keep using the app while it downloads, and pause or cancel any time.',
+            'Artwork is downloaded from the internet. You can keep using the app, pause or cancel any time.',
             style: TextStyle(
               fontSize: 11,
               height: 1.4,
@@ -80,20 +146,24 @@ class _OfflineDownloadDialogState extends ConsumerState<OfflineDownloadDialog> {
       actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Not now', style: TextStyle(color: Colors.grey)),
+          onPressed: _isSubmitting ? null : () => Navigator.pop(context),
+          child: Text(
+            widget.isFirstLaunchPrompt ? 'Ask me later' : 'Not now',
+            style: const TextStyle(color: Colors.grey),
+          ),
         ),
+        if (widget.isFirstLaunchPrompt)
+          TextButton(
+            onPressed: _isSubmitting ? null : _neverAskAgain,
+            child: const Text('Never ask again'),
+          ),
         FilledButton(
           style: FilledButton.styleFrom(
             backgroundColor: AppTheme.pokemonRed,
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
-          onPressed: () {
-            // Fire and forget: the loop reports progress through the banner.
-            ref.read(deepSyncControllerProvider.notifier).start(quality: _quality);
-            Navigator.pop(context);
-          },
+          onPressed: _isSubmitting ? null : _startDownload,
           child: const Text('Download', style: TextStyle(fontWeight: FontWeight.bold)),
         ),
       ],
@@ -104,7 +174,7 @@ class _OfflineDownloadDialogState extends ConsumerState<OfflineDownloadDialog> {
 class _QualityOption extends StatelessWidget {
   final SpriteQuality quality;
   final bool selected;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _QualityOption({
     required this.quality,

@@ -1,13 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:libredex/core/database/app_database.dart';
+import 'package:libredex/core/storage/offline_artwork_store.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
 
-/// Sprite quality the user can pick before starting an offline download.
+/// Artwork quality the user can pick before starting an optional download.
 enum SpriteQuality {
-  /// Pixel sprites from the games — tiny download, good for limited storage.
+  /// Pixel sprites from the games — small and useful on limited storage.
   small(
     label: 'Small',
     description: 'Pixel game sprites',
@@ -32,21 +33,12 @@ enum SpriteQuality {
   final String approximateSizeLabel;
 }
 
-/// Lifecycle of the offline sprite download.
+/// Lifecycle of the optional artwork download.
 enum DownloadStatus { idle, running, paused, completed, failed }
 
-/// Immutable snapshot of the offline sprite download, rendered by the UI.
+/// Immutable snapshot of the artwork download, rendered by the UI.
 @immutable
 class DeepSyncState {
-  final DownloadStatus status;
-  final int completed;
-  final int total;
-  final int failed;
-
-  /// Name of the Pokémon currently being fetched, for the progress banner.
-  final String currentLabel;
-  final String? errorMessage;
-
   const DeepSyncState({
     this.status = DownloadStatus.idle,
     this.completed = 0,
@@ -56,9 +48,20 @@ class DeepSyncState {
     this.errorMessage,
   });
 
-  double get progress => total == 0 ? 0 : (completed / total).clamp(0.0, 1.0);
+  final DownloadStatus status;
+  final int completed;
+  final int total;
+  final int failed;
 
-  bool get isActive => status == DownloadStatus.running || status == DownloadStatus.paused;
+  /// Name of the Pokémon currently being fetched, for the progress banner.
+  final String currentLabel;
+  final String? errorMessage;
+
+  double get progress =>
+      total == 0 ? 0 : (completed / total).clamp(0.0, 1.0).toDouble();
+
+  bool get isActive =>
+      status == DownloadStatus.running || status == DownloadStatus.paused;
 
   /// Whether the progress banner should be visible.
   bool get isVisible => isActive || status == DownloadStatus.failed;
@@ -83,23 +86,30 @@ class DeepSyncState {
   }
 }
 
-/// Drives the offline sprite download.
-///
-/// The download runs as a plain async loop that yields between each image, so
-/// the UI thread stays responsive and the whole app remains usable while data
-/// is being fetched. It can be paused, resumed and cancelled at any time.
-class DeepSyncController extends Notifier<DeepSyncState> {
-  static const int _maxConsecutiveFailures = 25;
+/// Summary for the durable, user-requested offline artwork library.
+final offlineArtworkSummaryProvider = FutureProvider<OfflineArtworkSummary>(
+  (ref) => OfflineArtworkStore.instance.summary(),
+);
 
-  final BaseCacheManager _cacheManager;
+/// Drives the optional artwork download.
+///
+/// Three workers download independent Pokémon at a time. Existing durable
+/// files are skipped, so starting the same quality again resumes an interrupted
+/// library without re-downloading finished artwork.
+class DeepSyncController extends Notifier<DeepSyncState> {
+  static const int _parallelDownloads = 3;
+  static const int _maxAllFailureAttempts = 25;
+  static const int _attemptsPerArtwork = 2;
+
+  final OfflineArtworkStore _artworkStore;
 
   /// Completes while the download is paused; null when running.
   Completer<void>? _pauseGate;
   bool _cancelRequested = false;
   bool _isRunning = false;
 
-  DeepSyncController({BaseCacheManager? cacheManager})
-      : _cacheManager = cacheManager ?? DefaultCacheManager();
+  DeepSyncController({OfflineArtworkStore? artworkStore})
+      : _artworkStore = artworkStore ?? OfflineArtworkStore.instance;
 
   @override
   DeepSyncState build() => const DeepSyncState();
@@ -126,7 +136,6 @@ class DeepSyncController extends Notifier<DeepSyncState> {
     try {
       final db = ref.read(databaseProvider);
       final pokemon = await db.select(db.pokemonTable).get();
-
       if (pokemon.isEmpty) {
         state = const DeepSyncState(status: DownloadStatus.completed);
         return;
@@ -138,76 +147,124 @@ class DeepSyncController extends Notifier<DeepSyncState> {
         currentLabel: 'Preparing download…',
       );
 
+      var nextIndex = 0;
       var completed = 0;
       var failed = 0;
-      var consecutiveFailures = 0;
+      var abortForMissingConnection = false;
 
-      for (final p in pokemon) {
-        if (_cancelRequested) {
-          state = const DeepSyncState();
-          return;
-        }
+      Future<void> worker() async {
+        while (true) {
+          if (_cancelRequested || abortForMissingConnection) return;
+          if (!await _waitUntilResumed()) return;
 
-        // Block here while paused, without burning CPU.
-        final gate = _pauseGate;
-        if (gate != null) await gate.future;
-        if (_cancelRequested) {
-          state = const DeepSyncState();
-          return;
-        }
+          if (nextIndex >= pokemon.length) return;
+          final current = pokemon[nextIndex++];
+          state = state.copyWith(currentLabel: current.name);
 
-        state = state.copyWith(currentLabel: p.name);
+          final sawFailure = await _downloadPokemon(current, quality);
+          if (_cancelRequested || abortForMissingConnection) return;
 
-        var sawFailure = false;
-        for (final url in {p.spriteUrl, p.shinySpriteUrl}) {
-          if (url.isEmpty) continue;
-          final resolved = resolveUrl(url, quality);
-          try {
-            final cached = await _cacheManager.getFileFromCache(resolved);
-            if (cached == null) await _cacheManager.downloadFile(resolved);
-          } catch (_) {
-            sawFailure = true;
+          completed++;
+          if (sawFailure) failed++;
+
+          // Stop only when every early request failed. Individual missing
+          // images should not stop a usable partial library.
+          if (completed >= _maxAllFailureAttempts && failed == completed) {
+            abortForMissingConnection = true;
+            state = state.copyWith(
+              status: DownloadStatus.failed,
+              completed: completed,
+              failed: failed,
+              errorMessage: 'Download stopped — no internet connection detected. '
+                  'Your downloaded artwork is safe; resume any time.',
+            );
+            return;
           }
-        }
 
-        completed++;
-        if (sawFailure) {
-          failed++;
-          consecutiveFailures++;
-        } else {
-          consecutiveFailures = 0;
+          state = state.copyWith(completed: completed, failed: failed);
         }
-
-        // A long unbroken failure streak means the network is gone; stop early
-        // instead of grinding through 2,000 doomed requests.
-        if (consecutiveFailures >= _maxConsecutiveFailures) {
-          state = state.copyWith(
-            status: DownloadStatus.failed,
-            completed: completed,
-            failed: failed,
-            errorMessage: 'Download stopped — no internet connection detected. '
-                'Your existing data is safe; resume any time.',
-          );
-          return;
-        }
-
-        state = state.copyWith(completed: completed, failed: failed);
       }
 
-      state = state.copyWith(
-        status: DownloadStatus.completed,
-        currentLabel: '',
-        clearError: true,
-      );
-    } catch (e) {
+      await Future.wait([
+        for (var workerIndex = 0;
+            workerIndex < _parallelDownloads && workerIndex < pokemon.length;
+            workerIndex++)
+          worker(),
+      ]);
+
+      if (_cancelRequested) {
+        state = const DeepSyncState();
+      } else if (!abortForMissingConnection) {
+        state = state.copyWith(
+          status: DownloadStatus.completed,
+          currentLabel: '',
+          clearError: true,
+        );
+      }
+    } catch (error) {
       state = state.copyWith(
         status: DownloadStatus.failed,
-        errorMessage: 'Download failed: $e',
+        errorMessage: 'Download failed: $error',
       );
     } finally {
       _isRunning = false;
       _pauseGate = null;
+      _artworkStore.notifyLibraryChanged();
+      ref.invalidate(offlineArtworkSummaryProvider);
     }
+  }
+
+  Future<bool> _waitUntilResumed() async {
+    while (_pauseGate != null) {
+      final gate = _pauseGate;
+      if (gate != null) await gate.future;
+      if (_cancelRequested) return false;
+    }
+    return !_cancelRequested;
+  }
+
+  /// Returns whether either render failed after retrying.
+  Future<bool> _downloadPokemon(Pokemon pokemon, SpriteQuality quality) async {
+    var sawFailure = false;
+    for (final sourceUrl in {pokemon.spriteUrl, pokemon.shinySpriteUrl}) {
+      if (sourceUrl.isEmpty || _cancelRequested) continue;
+      if (!await _waitUntilResumed()) return sawFailure;
+
+      if (await _artworkStore.hasArtwork(sourceUrl, quality: quality.name)) {
+        continue;
+      }
+
+      try {
+        await _downloadArtworkWithRetry(sourceUrl, quality);
+      } catch (_) {
+        sawFailure = true;
+      }
+    }
+    return sawFailure;
+  }
+
+  Future<void> _downloadArtworkWithRetry(
+    String sourceUrl,
+    SpriteQuality quality,
+  ) async {
+    Object? lastError;
+    for (var attempt = 0; attempt < _attemptsPerArtwork; attempt++) {
+      if (_cancelRequested || !await _waitUntilResumed()) return;
+      try {
+        await _artworkStore.downloadArtwork(
+          sourceUrl: sourceUrl,
+          remoteUrl: resolveUrl(sourceUrl, quality),
+          quality: quality.name,
+        );
+        return;
+      } catch (error) {
+        lastError = error;
+        if (attempt + 1 < _attemptsPerArtwork) {
+          await Future<void>.delayed(Duration(milliseconds: 350 * (attempt + 1)));
+        }
+      }
+    }
+    throw lastError ?? StateError('Artwork download failed.');
   }
 
   void pause() {
@@ -225,7 +282,7 @@ class DeepSyncController extends Notifier<DeepSyncState> {
 
   void cancel() {
     _cancelRequested = true;
-    // Release a paused loop so it can observe the cancellation and exit.
+    // Release paused workers so they can observe the cancellation and exit.
     _pauseGate?.complete();
     _pauseGate = null;
     if (!_isRunning) state = const DeepSyncState();
@@ -239,6 +296,4 @@ class DeepSyncController extends Notifier<DeepSyncState> {
 }
 
 final deepSyncControllerProvider =
-    NotifierProvider<DeepSyncController, DeepSyncState>(() {
-  return DeepSyncController();
-});
+    NotifierProvider<DeepSyncController, DeepSyncState>(DeepSyncController.new);

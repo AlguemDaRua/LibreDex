@@ -11,7 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Seeds the local database from the JSON assets bundled inside the app.
 ///
 /// LibreDex ships every Pokémon, move, ability and learnset, so this never
-/// touches the network — a fresh install is fully usable while offline.
+/// touches the network — a fresh install has its reference data without a connection.
 class SyncRepository {
   /// SQLite has a variable limit per statement, so rows are inserted in chunks.
   static const int _chunkSize = 500;
@@ -57,12 +57,17 @@ class SyncRepository {
   /// junction rows from older bundles cannot linger. Favorites and team
   /// slots live in SharedPreferences and survive the rebuild.
   Future<void> reseedBundledData() async {
-    await db.delete(db.pokemonMovesTable).go();
-    await db.delete(db.pokemonAbilitiesTable).go();
-    await db.delete(db.pokemonTable).go();
-    await db.delete(db.moveTable).go();
-    await db.delete(db.abilityTable).go();
-    await seedBundledData();
+    // Keep the existing database usable until every bundled row is ready.
+    // If unpacking fails or the process is interrupted, Drift rolls the whole
+    // transaction back instead of leaving a partially rebuilt Pokédex.
+    await db.transaction(() async {
+      await db.delete(db.pokemonMovesTable).go();
+      await db.delete(db.pokemonAbilitiesTable).go();
+      await db.delete(db.pokemonTable).go();
+      await db.delete(db.moveTable).go();
+      await db.delete(db.abilityTable).go();
+      await _seedBundledData();
+    });
   }
 
   /// Loads a bundled JSON array, decoding it off the UI isolate.
@@ -121,7 +126,11 @@ class SyncRepository {
 
   /// Seeds Pokémon, moves, abilities and both junction tables from the bundled
   /// assets. Safe to run repeatedly — every row is inserted as an upsert.
-  Future<void> seedBundledData() async {
+  Future<void> seedBundledData() {
+    return db.transaction(_seedBundledData);
+  }
+
+  Future<void> _seedBundledData() async {
     final pokemonRows = (await _loadJsonList('assets/data/pokemon.json'))
         .map((p) => Map<dynamic, dynamic>.from(p as Map<dynamic, dynamic>))
         .toList();

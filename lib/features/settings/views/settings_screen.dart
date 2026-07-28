@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:libredex/core/app_restart.dart';
+import 'package:libredex/core/network/network_preferences.dart';
+import 'package:libredex/core/storage/app_data_resetter.dart';
+import 'package:libredex/core/storage/offline_artwork_store.dart';
+import 'package:libredex/core/theme/app_spacing.dart';
 import 'package:libredex/core/theme/app_theme.dart';
+import 'package:libredex/core/widgets/artwork_download_dialog.dart';
 import 'package:libredex/core/widgets/app_drawer.dart';
-import 'package:libredex/core/widgets/offline_download_dialog.dart';
-import 'package:libredex/features/home/views/home_screen.dart';
+import 'package:libredex/features/pokedex/repositories/deep_sync_repository.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
 import 'package:libredex/features/pokedex/repositories/sync_repository.dart';
-import 'package:libredex/core/theme/app_spacing.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -17,6 +21,9 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? Colors.white : Colors.black;
+    final artworkSummary = ref.watch(offlineArtworkSummaryProvider);
+    final artworkDownload = ref.watch(deepSyncControllerProvider);
+    final useLiveEvolutionData = ref.watch(liveEvolutionDataProvider);
 
     return Scaffold(
       backgroundColor: isDark ? Colors.black : const Color(0xFFF9FAFB),
@@ -32,11 +39,11 @@ class SettingsScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.only(left: 20, right: 20, top: AppSpacing.topContentGap, bottom: AppSpacing.bottomScrollPadding),
           children: [
-            // ─── Section: Sync & Offline Data Management ─────────────────────────
-            _buildSectionHeader('SYNC & LOCAL STORAGE MANAGEMENT', isDark),
+            // ─── Section: Data & storage ─────────────────────────────────────────
+            _buildSectionHeader('DATA & STORAGE', isDark),
             const SizedBox(height: 12),
 
-            // Sync Status Card
+            // Storage overview
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -52,14 +59,14 @@ class SettingsScreen extends ConsumerWidget {
                       const Icon(Icons.storage_rounded, color: AppTheme.pokemonRed, size: 22),
                       const SizedBox(width: 12),
                       Text(
-                        'Database Sync & Storage',
+                        'Local data and online artwork',
                         style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 15),
                       ),
                     ],
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'All 1025+ Pokémon (Gen 1–9+), alternate forms, the Pokémon Legends Z-A & Pokémon Champions Mega Evolutions, Moves, Abilities, and full Learnsets (including Champions “Train” moves) are stored locally for instant offline usage. High-res sprites stream online dynamically or can be downloaded for offline use.',
+                    'Reference data is bundled with LibreDex and copied into a local database on this device. Artwork loads from the internet by default and is cached as you browse. Download the artwork collection below to keep a separate, durable offline library. Evolution details check PokéAPI when online and fall back to bundled records when it is not.',
                     style: TextStyle(
                       color: isDark ? Colors.grey[400] : Colors.grey[600],
                       fontSize: 12,
@@ -70,49 +77,83 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 12),
+            _buildLiveEvolutionDataTile(
+              useLiveEvolutionData,
+              isDark,
+              primaryColor,
+              ref,
+            ),
+            const SizedBox(height: 12),
+            _buildOfflineArtworkStatus(
+              artworkSummary,
+              artworkDownload,
+              isDark,
+              primaryColor,
+            ),
+            const SizedBox(height: 12),
 
-            // Re-seed Moves & Abilities (fix empty Move/Ability detail for existing users)
+            // Repair bundled relation data
             _buildActionTile(
               isDark: isDark,
               primaryColor: primaryColor,
               icon: Icons.auto_fix_high_rounded,
-              title: 'Fix Moves & Abilities Links',
-              subtitle: 'Re-seeds Move, Ability & Learnset data without re-downloading Pokémon. Run this if Move or Ability detail pages show no Pokémon.',
+              title: 'Repair move and ability links',
+              subtitle: 'Rebuilds Move, Ability and Learnset links from the data bundled with the app. Use this if a detail page is missing a related Pokémon.',
               onTap: () => _reseedBundledData(context, ref),
             ),
             const SizedBox(height: 12),
 
-            // Download Offline Sprites
+            // Download artwork
             _buildActionTile(
               isDark: isDark,
               primaryColor: primaryColor,
               icon: Icons.download_rounded,
-              title: 'Download Offline Sprites',
-              subtitle: 'Pick a quality and download every sprite for offline use. '
-                  'The app stays usable, and you can pause or cancel at any time.',
-              onTap: () => showOfflineDownloadDialog(context),
+              title: 'Download artwork for offline use',
+              subtitle: 'Choose a quality and save a durable artwork library in private app storage. Existing files are skipped, so this safely resumes an interrupted download.',
+              onTap: () => showArtworkDownloadDialog(context),
             ),
             const SizedBox(height: 12),
 
-            // Delete Cached Sprites
+            // Clear the ordinary, system-managed image cache.
             _buildActionTile(
               isDark: isDark,
               primaryColor: primaryColor,
-              icon: Icons.delete_outline_rounded,
-              title: 'Delete Offline Sprites',
-              subtitle: 'Clear cached high-quality sprites to free up storage space',
-              onTap: () => _confirmDeleteOfflineData(context, ref),
+              icon: Icons.cached_rounded,
+              title: 'Clear browsing artwork cache',
+              subtitle: 'Remove artwork saved automatically while browsing. Your downloaded offline artwork stays intact.',
+              onTap: () => _confirmClearCachedArtwork(context),
             ),
             const SizedBox(height: 12),
 
-            // Force Full Re-Sync
+            // Delete the durable library the user explicitly downloaded.
+            _buildActionTile(
+              isDark: isDark,
+              primaryColor: primaryColor,
+              icon: Icons.folder_delete_outlined,
+              title: 'Delete downloaded artwork',
+              subtitle: 'Remove the offline artwork library from private storage while keeping your database, favorites and team.',
+              onTap: () => _confirmDeleteOfflineArtwork(context, ref),
+            ),
+            const SizedBox(height: 12),
+
+            // Rebuild local data
             _buildActionTile(
               isDark: isDark,
               primaryColor: primaryColor,
               icon: Icons.sync_problem_rounded,
-              title: 'Rebuild Local Database',
-              subtitle: 'Clear and rebuild every table from the data bundled in the app. Works fully offline.',
+              title: 'Rebuild local data',
+              subtitle: 'Clear and rebuild the reference tables from the data bundled in the app. No internet connection is needed.',
               onTap: () => _confirmResetAndSync(context, ref),
+            ),
+            const SizedBox(height: 12),
+
+            _buildActionTile(
+              isDark: isDark,
+              primaryColor: primaryColor,
+              icon: Icons.delete_forever_rounded,
+              title: 'Delete everything',
+              subtitle: 'Erase LibreDex data, downloads, cache, favorites, teams and settings from this device. You can then close or restart the app.',
+              onTap: () => _confirmDeleteEverything(context, ref),
             ),
 
             const SizedBox(height: 32),
@@ -132,9 +173,11 @@ class SettingsScreen extends ConsumerWidget {
                 children: [
                   _buildInfoRow('App Name', 'LibreDex', isDark, primaryColor),
                   Divider(height: 1, color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
-                  _buildInfoRow('Version', '1.0.0 (F-Droid Public Beta)', isDark, primaryColor),
+                  _buildInfoRow('Version', '1.0.0', isDark, primaryColor),
                   Divider(height: 1, color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
-                  _buildInfoRow('Source Code', 'Open Source (MIT)', isDark, primaryColor),
+                  _buildInfoRow('Cost & ads', 'Free — no ads or purchases', isDark, primaryColor),
+                  Divider(height: 1, color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
+                  _buildInfoRow('Source Code', 'Open source (MIT)', isDark, primaryColor),
                 ],
               ),
             ),
@@ -152,6 +195,106 @@ class SettingsScreen extends ConsumerWidget {
         fontWeight: FontWeight.w900,
         color: Colors.grey[500],
         letterSpacing: 0.8,
+      ),
+    );
+  }
+
+  Widget _buildLiveEvolutionDataTile(
+    bool enabled,
+    bool isDark,
+    Color primaryColor,
+    WidgetRef ref,
+  ) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB),
+        ),
+      ),
+      child: SwitchListTile.adaptive(
+        value: enabled,
+        onChanged: (value) =>
+            ref.read(liveEvolutionDataProvider.notifier).setEnabled(value),
+        activeThumbColor: AppTheme.pokemonRed,
+        secondary: const Icon(Icons.account_tree_outlined, color: AppTheme.pokemonRed),
+        title: Text(
+          'Use live evolution data',
+          style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 14),
+        ),
+        subtitle: const Text(
+          'When off, evolution pages use only the bundled records and make no PokéAPI request.',
+          style: TextStyle(fontSize: 11, color: Colors.grey, height: 1.35),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOfflineArtworkStatus(
+    AsyncValue<OfflineArtworkSummary> summary,
+    DeepSyncState download,
+    bool isDark,
+    Color primaryColor,
+  ) {
+    final description = summary.when(
+      data: (value) {
+        if (value.fileCount == 0) {
+          return 'No offline artwork library yet. Browsed images use the temporary cache.';
+        }
+        return '${value.fileCount} images · ${value.sizeLabel} · ${value.qualityLabel}';
+      },
+      loading: () => 'Checking downloaded artwork…',
+      error: (_, __) => 'Could not read offline artwork storage.',
+    );
+    final isDownloading = download.isActive;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isDownloading ? Icons.downloading_rounded : Icons.folder_copy_outlined,
+            color: AppTheme.pokemonRed,
+            size: 22,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isDownloading ? 'Offline artwork download' : 'Offline artwork library',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: primaryColor,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  isDownloading
+                      ? '${download.completed}/${download.total} Pokémon · ${download.currentLabel}'
+                      : description,
+                  style: TextStyle(
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    fontSize: 12,
+                    height: 1.35,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -200,7 +343,7 @@ class SettingsScreen extends ConsumerWidget {
     String message;
     try {
       await ref.read(syncRepositoryProvider).seedBundledData();
-      message = '✓ Moves, Abilities & Learnsets re-seeded successfully.';
+      message = 'Moves, abilities and learnsets were rebuilt.';
     } catch (e) {
       message = 'Re-seed failed: $e';
     }
@@ -225,16 +368,8 @@ class SettingsScreen extends ConsumerWidget {
 
     String message;
     try {
-      final db = ref.read(databaseProvider);
-      await db.transaction(() async {
-        await db.delete(db.pokemonAbilitiesTable).go();
-        await db.delete(db.pokemonMovesTable).go();
-        await db.delete(db.pokemonTable).go();
-        await db.delete(db.moveTable).go();
-        await db.delete(db.abilityTable).go();
-      });
-      await ref.read(syncRepositoryProvider).seedBundledData();
-      message = '✓ Local database rebuilt successfully.';
+      await ref.read(syncRepositoryProvider).reseedBundledData();
+      message = 'Local database rebuilt.';
     } catch (e) {
       message = 'Rebuild failed: $e';
     }
@@ -312,7 +447,7 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  void _confirmDeleteOfflineData(BuildContext context, WidgetRef ref) {
+  void _confirmClearCachedArtwork(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog<void>(
       context: context,
@@ -320,9 +455,9 @@ class SettingsScreen extends ConsumerWidget {
         return AlertDialog(
           backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Delete Offline Sprites?', style: TextStyle(fontWeight: FontWeight.bold)),
+          title: const Text('Clear browsing cache?', style: TextStyle(fontWeight: FontWeight.bold)),
           content: const Text(
-            'This will delete all downloaded high-quality Pokémon sprites from your device cache to free up storage space. The text database will remain fully intact.',
+            'This removes artwork saved automatically while browsing. Your downloaded offline artwork library, local database, favorites and team stay intact. Browsed artwork downloads again when you view it online.',
             style: TextStyle(fontSize: 13, height: 1.4),
           ),
           actions: [
@@ -339,23 +474,172 @@ class SettingsScreen extends ConsumerWidget {
               onPressed: () async {
                 Navigator.pop(ctx);
                 await DefaultCacheManager().emptyCache();
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.setBool(kOfflinePromptShownKey, false);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Offline sprites deleted successfully.'),
+                      content: Text('Browsing artwork cache cleared.'),
                       backgroundColor: Colors.green,
                       duration: Duration(seconds: 2),
                     ),
                   );
                 }
               },
-              child: const Text('Delete Sprites', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text('Clear artwork', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         );
       },
+    );
+  }
+
+  void _confirmDeleteOfflineArtwork(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          'Delete downloaded artwork?',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          'This deletes the offline artwork library stored by LibreDex. Your local database, favorites, team and normal browsing cache stay intact. You can download the artwork again later from Settings.',
+          style: TextStyle(fontSize: 13, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.pokemonRed,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              _showBlockingProgress(context, 'Deleting downloaded artwork…');
+              try {
+                ref.read(deepSyncControllerProvider.notifier).cancel();
+                await OfflineArtworkStore.instance.deleteAll();
+                ref.invalidate(offlineArtworkSummaryProvider);
+                if (!context.mounted) return;
+                Navigator.of(context, rootNavigator: true).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Downloaded artwork deleted.'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              } catch (error) {
+                if (!context.mounted) return;
+                Navigator.of(context, rootNavigator: true).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Could not delete artwork: $error')),
+                );
+              }
+            },
+            child: const Text('Delete artwork'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDeleteEverything(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          'Delete everything?',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          'This removes the local database, downloaded artwork, browsing cache, favorites, team, theme and all LibreDex settings from this device. Built-in app files remain until you uninstall, but reopening LibreDex will start like a new installation.',
+          style: TextStyle(fontSize: 13, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.pokemonRed,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              _deleteEverything(context, ref);
+            },
+            child: const Text('Delete everything'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteEverything(BuildContext context, WidgetRef ref) async {
+    _showBlockingProgress(context, 'Deleting LibreDex data from this device…');
+    try {
+      ref.read(deepSyncControllerProvider.notifier).cancel();
+      await ref.read(databaseProvider).close();
+      await AppDataResetter.deleteEverything();
+      ref.invalidate(offlineArtworkSummaryProvider);
+
+      if (!context.mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+      _showAfterDeleteEverythingDialog(context);
+    } catch (error) {
+      if (!context.mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not delete all app data: $error')),
+      );
+    }
+  }
+
+  void _showAfterDeleteEverythingDialog(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          'LibreDex data deleted',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          'Close the app if you want to uninstall it now. Restart rebuilds the local reference database and opens LibreDex as a fresh installation; artwork will not download unless you choose it.',
+          style: TextStyle(fontSize: 13, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => SystemNavigator.pop(),
+            child: const Text('Close app', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.pokemonRed,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () {
+              Navigator.of(ctx, rootNavigator: true).pop();
+              AppRestart.restart(context);
+            },
+            child: const Text('Restart'),
+          ),
+        ],
+      ),
     );
   }
 

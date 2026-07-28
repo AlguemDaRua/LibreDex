@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/database/app_database.dart';
+import 'package:libredex/core/storage/offline_artwork_store.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/utils/learn_method_utils.dart';
 import 'package:libredex/core/widgets/app_state_widgets.dart';
 import 'package:libredex/core/widgets/learn_method_badge.dart';
+import 'package:libredex/core/widgets/pokemon_sprite.dart';
 import 'package:libredex/features/calculator/utils/held_items_data.dart';
 import 'package:libredex/features/pokedex/models/type_efficiency_calculator.dart';
+import 'package:libredex/features/pokedex/repositories/deep_sync_repository.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
 import 'package:libredex/features/pokedex/viewmodels/favorites_provider.dart';
 import 'package:libredex/features/pokedex/viewmodels/pokedex_viewmodel.dart';
 import 'package:libredex/features/pokedex/viewmodels/stats_calculator_viewmodel.dart';
 import 'package:libredex/features/pokedex/viewmodels/team_builder_provider.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:libredex/features/abilitydex/views/ability_detail_screen.dart';
 import 'package:libredex/features/movedex/views/move_detail_screen.dart';
 import 'package:libredex/features/pokedex/utils/pokemon_data_helpers.dart';
@@ -65,6 +67,7 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
   late TabController _tabController;
   String _moveFilter = 'all';
   late int _selectedFormIndex;
+  var _isSavingArtwork = false;
 
   Pokemon get _activePokemon => widget.forms[_selectedFormIndex];
 
@@ -109,6 +112,46 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
     );
   }
 
+  Future<void> _downloadActiveArtwork() async {
+    if (_isSavingArtwork) return;
+    setState(() => _isSavingArtwork = true);
+
+    var failed = false;
+    try {
+      final store = OfflineArtworkStore.instance;
+      for (final url in {
+        _activePokemon.spriteUrl,
+        _activePokemon.shinySpriteUrl,
+      }) {
+        if (url.isEmpty) continue;
+        try {
+          await store.downloadArtwork(
+            sourceUrl: url,
+            remoteUrl: DeepSyncController.resolveUrl(url, SpriteQuality.standard),
+            quality: SpriteQuality.standard.name,
+          );
+        } catch (_) {
+          failed = true;
+        }
+      }
+      store.notifyLibraryChanged();
+      ref.invalidate(offlineArtworkSummaryProvider);
+    } finally {
+      if (mounted) setState(() => _isSavingArtwork = false);
+    }
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          failed
+              ? 'Some artwork could not be downloaded. Check your connection and try again.'
+              : '${_activePokemon.name} artwork is available offline.',
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.forms.isEmpty) {
@@ -138,6 +181,16 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
+          IconButton(
+            icon: Icon(
+              _isSavingArtwork
+                  ? Icons.downloading_rounded
+                  : Icons.download_for_offline_outlined,
+            ),
+            color: primaryColor,
+            tooltip: 'Download this artwork for offline use',
+            onPressed: _isSavingArtwork ? null : _downloadActiveArtwork,
+          ),
           IconButton(
             icon: const Icon(Icons.group_add_rounded),
             color: primaryColor,
@@ -746,12 +799,13 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                                   child: Column(
                                     children: [
                                       if (step.fromSprite != null && step.fromSprite!.isNotEmpty)
-                                        CachedNetworkImage(
-                                          imageUrl: step.fromSprite!,
+                                        SizedBox(
                                           height: 54,
                                           width: 54,
-                                          fit: BoxFit.contain,
-                                          errorWidget: (context, url, error) => const Icon(Icons.catching_pokemon, size: 40, color: Colors.grey),
+                                          child: PokemonSprite(
+                                            imageUrl: step.fromSprite!,
+                                            loadingIndicatorSize: 18,
+                                          ),
                                         )
                                       else
                                         const Icon(Icons.catching_pokemon, size: 40, color: Colors.grey),
@@ -808,12 +862,13 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                                   child: Column(
                                     children: [
                                       if (step.toSprite != null && step.toSprite!.isNotEmpty)
-                                        CachedNetworkImage(
-                                          imageUrl: step.toSprite!,
+                                        SizedBox(
                                           height: 54,
                                           width: 54,
-                                          fit: BoxFit.contain,
-                                          errorWidget: (context, url, error) => const Icon(Icons.catching_pokemon, size: 40, color: Colors.grey),
+                                          child: PokemonSprite(
+                                            imageUrl: step.toSprite!,
+                                            loadingIndicatorSize: 18,
+                                          ),
                                         )
                                       else
                                         const Icon(Icons.catching_pokemon, size: 40, color: Colors.grey),

@@ -288,7 +288,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                 ? IconButton(
                     icon: const Icon(Icons.sync),
                     onPressed: () => ref.read(pokedexSyncNotifierProvider.notifier).reseed(),
-                    tooltip: 'Rebuild offline database',
+                    tooltip: 'Rebuild local database',
                   )
                 : const SizedBox.shrink(),
             error: (err, stack) => const SizedBox.shrink(),
@@ -1207,7 +1207,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
           ),
           const SizedBox(height: 20),
           const Text(
-            'Syncing Pokedex Offline...',
+            'Preparing local Pokédex...',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
@@ -1294,7 +1294,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
             ElevatedButton.icon(
               onPressed: () => ref.read(pokedexSyncNotifierProvider.notifier).reseed(),
               icon: const Icon(Icons.restart_alt_rounded),
-              label: const Text('Rebuild offline database'),
+              label: const Text('Rebuild local database'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.pokemonRed,
                 foregroundColor: Colors.white,

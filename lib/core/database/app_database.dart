@@ -118,8 +118,26 @@ class AppDatabase extends _$AppDatabase {
   MigrationStrategy get migration {
     return MigrationStrategy(
       beforeOpen: (details) async {
-        // Enable Foreign Key support in SQLite
+        // Enable Foreign Key support and reverse-lookup indexes used by the
+        // MoveDex and AbilityDex detail pages.
         await customStatement('PRAGMA foreign_keys = ON');
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_pokemon_moves_move_id '
+          'ON pokemon_moves_table (move_id)',
+        );
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_pokemon_abilities_ability_id '
+          'ON pokemon_abilities_table (ability_id)',
+        );
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_pokemon_name ON pokemon_table (name)',
+        );
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_move_name ON move_table (name)',
+        );
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_ability_name ON ability_table (name)',
+        );
       },
       onUpgrade: (m, from, to) async {
         if (from < 2) {

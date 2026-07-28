@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/navigation/navigation_provider.dart';
 import 'package:libredex/core/navigation/section_back_stack.dart';
 import 'package:libredex/core/theme/app_theme.dart';
-import 'package:libredex/core/widgets/offline_download_dialog.dart';
+import 'package:libredex/core/widgets/artwork_download_dialog.dart';
 import 'package:libredex/features/abilitydex/views/abilitydex_screen.dart';
 import 'package:libredex/features/calculator/views/damage_calculator_screen.dart';
 import 'package:libredex/features/itemdex/views/itemdex_screen.dart';
@@ -17,10 +17,7 @@ import 'package:libredex/features/team_builder/views/team_builder_screen.dart';
 import 'package:libredex/features/typechart/views/typechart_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Preference key marking that the first-run offline download prompt was shown.
-const String kOfflinePromptShownKey = 'promptedOfflineDownload';
-
-/// Hosts the main sections of the app and keeps the offline download banner
+/// Hosts the main sections of the app and keeps the artwork-download banner
 /// pinned above whichever section is active.
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -30,14 +27,28 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  static bool _hasPromptedThisSession = false;
+  var _hasPromptedThisSession = false;
+
   final Set<int> _visitedIndices = {0};
   final SectionBackStack _backStack = SectionBackStack();
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _maybePromptForDownload());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybePromptForArtwork());
+  }
+
+  Future<void> _maybePromptForArtwork() async {
+    if (_hasPromptedThisSession) return;
+    _hasPromptedThisSession = true;
+
+    final preferences = await SharedPreferences.getInstance();
+    if (preferences.getBool(kArtworkDownloadPromptDisabledKey) ?? false) {
+      return;
+    }
+    if (!mounted) return;
+
+    await showFirstLaunchArtworkDownloadDialog(context);
   }
 
   Widget _buildSection(int index) {
@@ -63,19 +74,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       default:
         return const PokedexScreen();
     }
-  }
-
-  Future<void> _maybePromptForDownload() async {
-    if (_hasPromptedThisSession) return;
-    _hasPromptedThisSession = true;
-
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool(kOfflinePromptShownKey) ?? false) return;
-    if (!mounted) return;
-
-    await prefs.setBool(kOfflinePromptShownKey, true);
-    if (!mounted) return;
-    await showOfflineDownloadDialog(context);
   }
 
   @override
@@ -119,7 +117,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
-/// Compact, always-visible progress strip shown while sprites download.
+/// Compact, always-visible progress strip shown while artwork downloads.
 ///
 /// It sits above the active screen rather than covering it, so the app stays
 /// fully usable while data is being fetched in the background.
@@ -155,10 +153,10 @@ class _DownloadBanner extends ConsumerWidget {
                   Expanded(
                     child: Text(
                       hasFailed
-                          ? 'Offline download paused'
+                          ? 'Artwork download paused'
                           : sync.status == DownloadStatus.paused
                               ? 'Download paused'
-                              : 'Downloading sprites for offline use',
+                              : 'Downloading artwork for offline use',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 13,

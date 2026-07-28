@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:libredex/core/navigation/navigation_provider.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/theme/theme_provider.dart';
-import 'package:libredex/core/navigation/navigation_provider.dart';
+import 'package:libredex/core/widgets/wavy_theme_transition.dart';
 
 class AppDrawer extends ConsumerWidget {
   final String currentRoute;
@@ -59,7 +60,7 @@ class AppDrawer extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Complete Online & Offline Dex',
+                    'Live artwork, local reference data',
                     style: TextStyle(
                       fontSize: 12,
                       color: isDark ? Colors.grey[500] : Colors.white70,
@@ -161,10 +162,14 @@ class AppDrawer extends ConsumerWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.blur_circular_rounded, size: 15, color: isDark ? const Color(0xFFA78BFA) : AppTheme.pokemonRed),
+                      Icon(
+                        Icons.water_drop_outlined,
+                        size: 15,
+                        color: isDark ? const Color(0xFFA78BFA) : AppTheme.pokemonRed,
+                      ),
                       const SizedBox(width: 6),
                       Text(
-                        'ULTRA WORMHOLE THEME',
+                        'APPEARANCE',
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w900,
@@ -178,75 +183,27 @@ class AppDrawer extends ConsumerWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildThemeButton(ref, ThemeMode.system, Icons.settings_brightness_rounded, 'System', isDark),
-                      _buildThemeButton(ref, ThemeMode.light, Icons.light_mode_rounded, 'Light', isDark),
-                      _buildThemeButton(ref, ThemeMode.dark, Icons.dark_mode_rounded, 'Dark', isDark),
+                      const _ThemeChoiceButton(
+                        mode: ThemeMode.system,
+                        icon: Icons.settings_brightness_rounded,
+                        label: 'System',
+                      ),
+                      const _ThemeChoiceButton(
+                        mode: ThemeMode.light,
+                        icon: Icons.light_mode_rounded,
+                        label: 'Light',
+                      ),
+                      const _ThemeChoiceButton(
+                        mode: ThemeMode.dark,
+                        icon: Icons.dark_mode_rounded,
+                        label: 'Dark',
+                      ),
                     ],
                   ),
                 ],
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildThemeButton(
-    WidgetRef ref,
-    ThemeMode mode,
-    IconData icon,
-    String label,
-    bool isDark,
-  ) {
-    final currentMode = ref.watch(themeModeProvider);
-    final isSelected = currentMode == mode;
-
-    final accent = mode == ThemeMode.dark
-        ? const Color(0xFFA78BFA)
-        : mode == ThemeMode.light
-            ? const Color(0xFFF59E0B)
-            : AppTheme.pokemonBlue;
-    final unselectedBorder = isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB);
-
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => ref.read(themeModeProvider.notifier).setThemeMode(mode),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOutCubic,
-          margin: const EdgeInsets.symmetric(horizontal: 4),
-          padding: const EdgeInsets.symmetric(vertical: 9),
-          decoration: BoxDecoration(
-            gradient: isSelected
-                ? LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [accent.withValues(alpha: 0.28), AppTheme.pokemonRed.withValues(alpha: 0.12)],
-                  )
-                : null,
-            color: isSelected ? null : Colors.transparent,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: isSelected ? accent : unselectedBorder, width: 1.4),
-            boxShadow: isSelected
-                ? [BoxShadow(color: accent.withValues(alpha: 0.18), blurRadius: 14, offset: const Offset(0, 6))]
-                : const [],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 17, color: isSelected ? accent : (isDark ? Colors.grey[400] : Colors.grey[600])),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
-                  color: isSelected ? (isDark ? Colors.white : const Color(0xFF111827)) : (isDark ? Colors.grey[400] : Colors.grey[600]),
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
@@ -303,6 +260,139 @@ class AppDrawer extends ConsumerWidget {
           }
         },
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+}
+
+/// A theme choice that supplies the reveal with the exact point the user
+/// touched. Keyboard and accessibility activation fall back to the control's
+/// center, so the transition remains anchored to the button.
+class _ThemeChoiceButton extends ConsumerStatefulWidget {
+  const _ThemeChoiceButton({
+    required this.mode,
+    required this.icon,
+    required this.label,
+  });
+
+  final ThemeMode mode;
+  final IconData icon;
+  final String label;
+
+  @override
+  ConsumerState<_ThemeChoiceButton> createState() => _ThemeChoiceButtonState();
+}
+
+class _ThemeChoiceButtonState extends ConsumerState<_ThemeChoiceButton> {
+  Offset? _tapOrigin;
+  bool _isChangingTheme = false;
+
+  Future<void> _selectTheme() async {
+    if (_isChangingTheme || ref.read(themeModeProvider) == widget.mode) return;
+
+    setState(() => _isChangingTheme = true);
+    try {
+      final renderBox = context.findRenderObject() as RenderBox?;
+      final origin = _tapOrigin ??
+          (renderBox?.localToGlobal(renderBox.size.center(Offset.zero)) ?? Offset.zero);
+      final applyTheme = () => ref.read(themeModeProvider.notifier).setThemeMode(widget.mode);
+      final transition = ThemeTransitionScope.maybeOf(context);
+
+      if (transition == null) {
+        await applyTheme();
+      } else {
+        await transition.transitionTo(origin: origin, applyTheme: applyTheme);
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isChangingTheme = false;
+          _tapOrigin = null;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isSelected = ref.watch(themeModeProvider) == widget.mode;
+    final accent = switch (widget.mode) {
+      ThemeMode.dark => const Color(0xFFA78BFA),
+      ThemeMode.light => const Color(0xFFF59E0B),
+      ThemeMode.system => AppTheme.pokemonBlue,
+    };
+    final unselectedBorder = isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB);
+
+    return Expanded(
+      child: Semantics(
+        button: true,
+        label: 'Use ${widget.label} theme',
+        selected: isSelected,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapDown: _isChangingTheme
+              ? null
+              : (details) => _tapOrigin = details.globalPosition,
+          onTapCancel: () => _tapOrigin = null,
+          onTap: _isChangingTheme ? null : _selectTheme,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+            padding: const EdgeInsets.symmetric(vertical: 9),
+            decoration: BoxDecoration(
+              gradient: isSelected
+                  ? LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        accent.withValues(alpha: 0.28),
+                        AppTheme.pokemonRed.withValues(alpha: 0.12),
+                      ],
+                    )
+                  : null,
+              color: isSelected ? null : Colors.transparent,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isSelected ? accent : unselectedBorder,
+                width: 1.4,
+              ),
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: accent.withValues(alpha: 0.18),
+                        blurRadius: 14,
+                        offset: const Offset(0, 6),
+                      ),
+                    ]
+                  : const [],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  widget.icon,
+                  size: 17,
+                  color: isSelected
+                      ? accent
+                      : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  widget.label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
+                    color: isSelected
+                        ? (isDark ? Colors.white : const Color(0xFF111827))
+                        : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

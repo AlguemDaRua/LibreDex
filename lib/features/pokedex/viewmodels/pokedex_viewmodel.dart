@@ -17,7 +17,7 @@ class PokedexSyncNotifier extends AsyncNotifier<void> {
     return null;
   }
 
-  /// Rebuilds the local dataset from the app bundle. Works entirely offline.
+  /// Rebuilds the local dataset from the app bundle without using the network.
   Future<void> reseed() async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(

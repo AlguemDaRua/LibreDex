@@ -160,7 +160,7 @@ class SpeciesFacts {
 }
 
 /// The bundled species dataset, extracted from the open-source PokéAPI CSV data
-/// and shipped with the app so every fact is available fully offline.
+/// and bundled with the app so these facts remain available without a connection.
 @immutable
 class SpeciesDataset {
   final Map<int, FormFacts> _forms;

@@ -484,7 +484,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                                 style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 12),
                                 items: const [
                                   DropdownMenuItem(value: 'physical', child: Text('PHYSICAL ⚔️')),
-                                  DropdownMenuItem(value: 'special', child: Text('SPECIAL ✨')),
+                                  DropdownMenuItem(value: 'special', child: Text('SPECIAL')),
                                 ],
                                 onChanged: (c) { if (c != null) vm.updateMoveCategory(c); },
                               ),

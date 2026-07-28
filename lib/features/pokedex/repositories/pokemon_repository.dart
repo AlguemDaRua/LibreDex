@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/core/network/api_client.dart';
+import 'package:libredex/core/network/network_preferences.dart';
 import 'package:libredex/features/pokedex/models/evolution_chain_model.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -25,10 +26,11 @@ PokemonRepository pokemonRepository(Ref ref) {
   return PokemonRepository(db: db);
 }
 
-/// Repository responsible for syncing and retrieving offline-first Pokémon data.
+/// Repository for local reference data and online-first evolution lookups.
 class PokemonRepository {
   final AppDatabase db;
   Map<String, dynamic>? _localEvolutionChains;
+  final Map<int, List<EvolutionStep>> _onlineEvolutionCache = {};
 
   PokemonRepository({required this.db});
 
@@ -189,11 +191,20 @@ class PokemonRepository {
   }
 
   /// Fetches evolution chain steps for a given National Dex ID.
-  Future<List<EvolutionStep>> fetchEvolutionSteps(int dexNum) async {
+  Future<List<EvolutionStep>> fetchEvolutionSteps(
+    int dexNum, {
+    bool preferOnline = true,
+  }) async {
+    if (!preferOnline) return _fetchLocalEvolutionSteps(dexNum);
+
+    final cached = _onlineEvolutionCache[dexNum];
+    if (cached != null) return cached;
+
     final List<EvolutionStep> steps = [];
 
     try {
-      // 1. Fetch species data from PokeAPI to get evolution chain URL
+      // Prefer the current PokéAPI chain when online, but keep the result for
+      // this app session rather than requesting the same resource repeatedly.
       final speciesRes = await ApiClient.get('pokemon-species/$dexNum');
       final evoChainUrl = speciesRes.data['evolution_chain']?['url'] as String?;
 
@@ -208,7 +219,11 @@ class PokemonRepository {
       // Offline fallback is loaded below.
     }
 
-    if (steps.isNotEmpty) return steps;
+    if (steps.isNotEmpty) {
+      final result = List<EvolutionStep>.unmodifiable(steps);
+      _onlineEvolutionCache[dexNum] = result;
+      return result;
+    }
     return _fetchLocalEvolutionSteps(dexNum);
   }
 
@@ -414,7 +429,9 @@ Stream<List<Map<String, dynamic>>> pokemonMovesStream(Ref ref, int pokemonId) {
   return repo.watchMovesWithFallback(pokemonId);
 }
 
-final pokemonEvolutionChainProvider = FutureProvider.family<List<EvolutionStep>, int>((ref, dexNum) {
+final pokemonEvolutionChainProvider =
+    FutureProvider.family<List<EvolutionStep>, int>((ref, dexNum) {
   final repo = ref.watch(pokemonRepositoryProvider);
-  return repo.fetchEvolutionSteps(dexNum);
+  final preferOnline = ref.watch(liveEvolutionDataProvider);
+  return repo.fetchEvolutionSteps(dexNum, preferOnline: preferOnline);
 });

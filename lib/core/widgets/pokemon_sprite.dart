@@ -1,16 +1,17 @@
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:libredex/core/storage/offline_artwork_store.dart';
 
 /// Displays a Pokémon sprite with an ordered recovery chain:
 ///
-///   primary URL  →  [fallbackUrl]  →  placeholder icon
+///   durable offline artwork → primary URL → fallback URL → placeholder icon
 ///
-/// The bundled dataset is audited at build time (tools/fix_sprite_urls.py),
-/// so every URL should resolve. This widget is the runtime safety net: a
-/// flaky connection, an upstream file removal or an offline session degrades
-/// to the base species render (usually already disk-cached from the grid)
-/// instead of a broken-image icon.
-class PokemonSprite extends StatelessWidget {
+/// The user-managed offline library is checked before network image providers,
+/// so a deliberately downloaded sprite works even when the normal cache has
+/// been cleared or the device is disconnected.
+class PokemonSprite extends StatefulWidget {
   const PokemonSprite({
     super.key,
     required this.imageUrl,
@@ -34,9 +35,8 @@ class PokemonSprite extends StatelessWidget {
 
   final BoxFit fit;
 
-  /// When set, shows a centered [CircularProgressIndicator] of this size
-  /// while the primary render downloads. When null, nothing is shown while
-  /// loading (matching the previous slider/hero behavior).
+  /// When set, shows a centered [CircularProgressIndicator] while artwork is
+  /// being located or fetched. When null, the layout stays empty until ready.
   final double? loadingIndicatorSize;
 
   /// Color of the loading indicator; null keeps the ambient theme color.
@@ -46,8 +46,8 @@ class PokemonSprite extends StatelessWidget {
   final double errorIconSize;
   final Color errorIconColor;
 
-  /// Downscales the disk-cached copy to this many pixels on both axes —
-  /// pass ~240 for grid thumbnails to keep memory usage flat.
+  /// Downscales the normal network disk cache to this many pixels on both
+  /// axes — pass ~240 for grid thumbnails to keep memory usage flat.
   final int? diskCacheSize;
 
   static const String _homeBase =
@@ -59,42 +59,120 @@ class PokemonSprite extends StatelessWidget {
   /// Shiny HOME render for [id].
   static String homeShinyUrl(int id) => '$_homeBase/shiny/$id.png';
 
-  Widget _errorIcon() => Icon(errorIcon, size: errorIconSize, color: errorIconColor);
+  @override
+  State<PokemonSprite> createState() => _PokemonSpriteState();
+}
+
+class _PokemonSpriteState extends State<PokemonSprite> {
+  late Future<File?> _offlineArtwork;
+
+  @override
+  void initState() {
+    super.initState();
+    OfflineArtworkStore.instance.revision.addListener(_refreshOfflineArtwork);
+    _offlineArtwork = _findOfflineArtwork();
+  }
+
+  void _refreshOfflineArtwork() {
+    if (!mounted) return;
+    setState(() => _offlineArtwork = _findOfflineArtwork());
+  }
+
+  @override
+  void didUpdateWidget(covariant PokemonSprite oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.imageUrl != widget.imageUrl ||
+        oldWidget.fallbackUrl != widget.fallbackUrl) {
+      _offlineArtwork = _findOfflineArtwork();
+    }
+  }
+
+  @override
+  void dispose() {
+    OfflineArtworkStore.instance.revision.removeListener(_refreshOfflineArtwork);
+    super.dispose();
+  }
+
+  Future<File?> _findOfflineArtwork() async {
+    final store = OfflineArtworkStore.instance;
+    final primary = await store.fileForUrl(widget.imageUrl);
+    if (primary != null) return primary;
+
+    final fallback = widget.fallbackUrl;
+    if (fallback == null || fallback.isEmpty || fallback == widget.imageUrl) {
+      return null;
+    }
+    return store.fileForUrl(fallback);
+  }
+
+  Widget _errorIcon() => Icon(
+        widget.errorIcon,
+        size: widget.errorIconSize,
+        color: widget.errorIconColor,
+      );
 
   Widget _loading() => Center(
         child: SizedBox(
-          width: loadingIndicatorSize,
-          height: loadingIndicatorSize,
+          width: widget.loadingIndicatorSize,
+          height: widget.loadingIndicatorSize,
           child: CircularProgressIndicator(
             strokeWidth: 2,
-            valueColor:
-                loadingColor == null ? null : AlwaysStoppedAnimation<Color>(loadingColor!),
+            valueColor: widget.loadingColor == null
+                ? null
+                : AlwaysStoppedAnimation<Color>(widget.loadingColor!),
           ),
         ),
       );
 
-  @override
-  Widget build(BuildContext context) {
-    if (imageUrl.isEmpty) return _errorIcon();
+  Widget _networkImage() {
+    if (widget.imageUrl.isEmpty) return _errorIcon();
 
-    final String? fallback = fallbackUrl;
+    final fallback = widget.fallbackUrl;
     return CachedNetworkImage(
-      imageUrl: imageUrl,
-      fit: fit,
-      maxHeightDiskCache: diskCacheSize,
-      maxWidthDiskCache: diskCacheSize,
-      placeholder: loadingIndicatorSize == null ? null : (context, url) => _loading(),
-      errorWidget: (context, url, error) {
-        if (fallback != null && fallback.isNotEmpty && fallback != imageUrl) {
+      imageUrl: widget.imageUrl,
+      fit: widget.fit,
+      maxHeightDiskCache: widget.diskCacheSize,
+      maxWidthDiskCache: widget.diskCacheSize,
+      placeholder:
+          widget.loadingIndicatorSize == null ? null : (_, __) => _loading(),
+      errorWidget: (_, __, ___) {
+        if (fallback != null &&
+            fallback.isNotEmpty &&
+            fallback != widget.imageUrl) {
           return CachedNetworkImage(
             imageUrl: fallback,
-            fit: fit,
-            maxHeightDiskCache: diskCacheSize,
-            maxWidthDiskCache: diskCacheSize,
-            errorWidget: (context, url, error) => _errorIcon(),
+            fit: widget.fit,
+            maxHeightDiskCache: widget.diskCacheSize,
+            maxWidthDiskCache: widget.diskCacheSize,
+            errorWidget: (_, __, ___) => _errorIcon(),
           );
         }
         return _errorIcon();
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.imageUrl.isEmpty) return _errorIcon();
+
+    return FutureBuilder<File?>(
+      future: _offlineArtwork,
+      builder: (context, snapshot) {
+        final file = snapshot.data;
+        if (file != null) {
+          return Image.file(
+            file,
+            fit: widget.fit,
+            errorBuilder: (_, __, ___) => _networkImage(),
+          );
+        }
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return widget.loadingIndicatorSize == null
+              ? const SizedBox.expand()
+              : _loading();
+        }
+        return _networkImage();
       },
     );
   }
