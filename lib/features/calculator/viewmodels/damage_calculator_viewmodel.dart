@@ -37,6 +37,10 @@ class DamageCalculatorState {
   final double movePower;
   final int rageFistHits;
 
+  /// Completed turns since the attacker entered battle (0–5). Slow Start
+  /// halves Attack and Speed until five turns have completed.
+  final int attackerTurnsOnField;
+
   // Defender Stats Settings
   final int defenderLevel;
   final String defenderNature;
@@ -58,6 +62,7 @@ class DamageCalculatorState {
   final bool lightScreenActive;
   final bool helpingHandActive;
   final bool trickRoomActive;
+  final bool defenderProtected;
 
   // Simple Tab Sandbox Fields
   final double simpleAttackerStat;
@@ -65,7 +70,7 @@ class DamageCalculatorState {
   final double simpleStab;
   final double simpleEffectiveness;
 
-  // Pokémon Champions Stat Points (66 total, max 32 per stat). Kept
+  // Pokémon Champions Stat Points (65 total, max 32 per stat). Kept
   // alongside — never merged into — the EV/IV maps, so toggling the ruleset
   // back and forth preserves each mode's setup.
   final Map<String, int> attackerSps;
@@ -92,6 +97,7 @@ class DamageCalculatorState {
     this.moveCategory = 'physical',
     this.movePower = 90.0,
     this.rageFistHits = 0,
+    this.attackerTurnsOnField = 0,
     this.defenderLevel = 50,
     this.defenderNature = 'bold',
     required this.defenderIvs,
@@ -110,6 +116,7 @@ class DamageCalculatorState {
     this.lightScreenActive = false,
     this.helpingHandActive = false,
     this.trickRoomActive = false,
+    this.defenderProtected = false,
     this.simpleAttackerStat = 200.0,
     this.simpleDefenderStat = 150.0,
     this.simpleStab = 1.5,
@@ -139,6 +146,7 @@ class DamageCalculatorState {
     String? moveCategory,
     double? movePower,
     int? rageFistHits,
+    int? attackerTurnsOnField,
     int? defenderLevel,
     String? defenderNature,
     Map<String, int>? defenderIvs,
@@ -157,6 +165,7 @@ class DamageCalculatorState {
     bool? lightScreenActive,
     bool? helpingHandActive,
     bool? trickRoomActive,
+    bool? defenderProtected,
     double? simpleAttackerStat,
     double? simpleDefenderStat,
     double? simpleStab,
@@ -185,6 +194,7 @@ class DamageCalculatorState {
       moveCategory: moveCategory ?? this.moveCategory,
       movePower: movePower ?? this.movePower,
       rageFistHits: rageFistHits ?? this.rageFistHits,
+      attackerTurnsOnField: attackerTurnsOnField ?? this.attackerTurnsOnField,
       defenderLevel: defenderLevel ?? this.defenderLevel,
       defenderNature: defenderNature ?? this.defenderNature,
       defenderIvs: defenderIvs ?? Map<String, int>.from(this.defenderIvs),
@@ -203,6 +213,7 @@ class DamageCalculatorState {
       lightScreenActive: lightScreenActive ?? this.lightScreenActive,
       helpingHandActive: helpingHandActive ?? this.helpingHandActive,
       trickRoomActive: trickRoomActive ?? this.trickRoomActive,
+      defenderProtected: defenderProtected ?? this.defenderProtected,
       simpleAttackerStat: simpleAttackerStat ?? this.simpleAttackerStat,
       simpleDefenderStat: simpleDefenderStat ?? this.simpleDefenderStat,
       simpleStab: simpleStab ?? this.simpleStab,
@@ -328,6 +339,8 @@ class DamageCalculatorViewModel extends _$DamageCalculatorViewModel {
   void setAttackerHpPercent(double val) => state = state.copyWith(attackerHpPercent: val.clamp(1.0, 100.0));
   void setDefenderHpPercent(double val) => state = state.copyWith(defenderHpPercent: val.clamp(1.0, 100.0));
   void toggleCriticalHit(bool val) => state = state.copyWith(isCriticalHit: val);
+  void setAttackerTurnsOnField(int turns) =>
+      state = state.copyWith(attackerTurnsOnField: turns.clamp(0, 5));
 
   void setRageFistHits(int hits) {
     final clamped = hits.clamp(0, 6);
@@ -406,6 +419,7 @@ class DamageCalculatorViewModel extends _$DamageCalculatorViewModel {
   void toggleReflect(bool val) => state = state.copyWith(reflectActive: val);
   void toggleLightScreen(bool val) => state = state.copyWith(lightScreenActive: val);
   void toggleHelpingHand(bool val) => state = state.copyWith(helpingHandActive: val);
+  void toggleDefenderProtected(bool val) => state = state.copyWith(defenderProtected: val);
   void toggleTrickRoom(bool val) => state = state.copyWith(trickRoomActive: val);
 }
 
