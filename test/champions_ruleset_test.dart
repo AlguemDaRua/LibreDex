@@ -10,9 +10,9 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('Champions stat formulas', () {
-    // Canonical formula from the Champions stat guide:
-    //   HP    = floor((2*Base + 31) * 50 / 100) + 60 + SP
-    //   Other = floor((floor((2*Base + 31) * 50 / 100) + 5 + SP) * Alignment)
+    // Canonical formula verified against Pokémon Showdown Champions mode:
+    //   HP    = Base + SP + 75
+    //   Other = floor((Base + SP + 20) * Alignment)
     test('HP core matches the official formula', () {
       expect(StatCalculator.calculateChampionsHp(base: 60, sp: 2), 137);
       expect(StatCalculator.calculateChampionsHp(base: 100, sp: 0), 175);
@@ -81,7 +81,7 @@ void main() {
     test('championsFinalStats builds the full six-stat spread for Mega Raichu X', () {
       final stats = championsFinalStats(
         base: const {'hp': 60, 'atk': 135, 'def': 95, 'spa': 90, 'spd': 95, 'spe': 110},
-        spread: const {'hp': 2, 'atk': 32, 'def': 0, 'spa': 0, 'spd': 0, 'spe': 32},
+        spread: const {'hp': 1, 'atk': 32, 'def': 0, 'spa': 0, 'spd': 0, 'spe': 32},
         alignment: 'adamant',
         alignmentModifierFor: (label) => CombatUtils.getNatureMultiplier('adamant', label),
       );
@@ -94,10 +94,10 @@ void main() {
   });
 
   group('Champions rules constants & alignments', () {
-    test('battles are fixed at level 50 with perfect IVs', () {
+    test('damage level is fixed at 50 and SP budget is canonical', () {
       expect(ChampionsRules.level, 50);
       expect(ChampionsRules.fixedIv, 31);
-      expect(ChampionsRules.totalStatPoints, 66);
+      expect(ChampionsRules.totalStatPoints, 65);
       expect(ChampionsRules.maxStatPointsPerStat, 32);
     });
 
@@ -123,7 +123,7 @@ void main() {
       }
     });
 
-    test('SP edits respect the 32 per-stat cap and the 66 total budget', () {
+    test('SP edits respect the 32 per-stat cap and the 65 total budget', () {
       final spread = ChampionsRules.emptySpread();
       expect(ChampionsRules.clampStatPoint(spread, 'atk', 40), 32);
       expect(ChampionsRules.clampStatPoint(spread, 'atk', -5), 0);
@@ -152,7 +152,7 @@ void main() {
       final physical = ChampionsStatPreset.presets.first;
       expect(physical.spread['atk'], 32);
       expect(physical.spread['spe'], 32);
-      expect(physical.spread['hp'], 2);
+      expect(physical.spread['hp'], 1);
     });
   });
 
@@ -213,9 +213,9 @@ void main() {
       );
       vm.updateAttackerSp('def', 32);
       final state = container.read(damageCalculatorViewModelProvider);
-      // Only 2 points remained (66 - 32 - 32), so Def caps at 2.
-      expect(state.attackerSps['def'], 2);
-      expect(ChampionsRules.usedStatPoints(state.attackerSps), 66);
+      // Only 1 point remains (65 - 32 - 32), so Def caps at 1.
+      expect(state.attackerSps['def'], 1);
+      expect(ChampionsRules.usedStatPoints(state.attackerSps), 65);
     });
 
     test('ruleset choice persists via SharedPreferences', () async {

@@ -188,32 +188,82 @@ class CombatUtils {
     required String moveType,
     String weather = 'none',
     String terrain = 'none',
+    String? attackerAbility,
   }) {
     final mName = _normalizeName(moveName);
+    final ability = _normalizeName(attackerAbility ?? '');
+    var type = moveType.toLowerCase();
     if (mName == 'weather ball') {
-      switch (weather) {
-        case 'sunny':
-          return 'fire';
-        case 'rainy':
-          return 'water';
-        case 'sandstorm':
-          return 'rock';
-        case 'snow':
-          return 'ice';
-      }
+      type = switch (weather) {
+        'sunny' => 'fire', 'rainy' => 'water', 'sandstorm' => 'rock',
+        'snow' => 'ice', _ => type,
+      };
     } else if (mName == 'terrain pulse') {
-      switch (terrain) {
-        case 'electric':
-          return 'electric';
-        case 'grassy':
-          return 'grass';
-        case 'psychic':
-          return 'psychic';
-        case 'misty':
-          return 'fairy';
-      }
+      type = switch (terrain) {
+        'electric' => 'electric', 'grassy' => 'grass', 'psychic' => 'psychic',
+        'misty' => 'fairy', _ => type,
+      };
     }
-    return moveType.toLowerCase();
+
+    // Generation IX "-ate" abilities change Normal attacking moves before
+    // STAB and type effectiveness. Normalize converts every attacking move.
+    // (Status moves are never sent to this damage path.)
+    if (ability == 'pixilate' && type == 'normal') return 'fairy';
+    if (ability == 'aerilate' && type == 'normal') return 'flying';
+    if (ability == 'refrigerate' && type == 'normal') return 'ice';
+    if (ability == 'galvanize' && type == 'normal') return 'electric';
+    if (ability == 'normalize') return 'normal';
+    return type;
+  }
+
+  /// Protection interaction used by the current one-turn calculator.
+  /// Moves that explicitly bypass/break protection deal normal damage; Unseen
+  /// Fist only applies to contact moves and deals the protected 1/4 damage.
+  static bool breaksProtect(String moveName) => const {
+    'phantom force', 'shadow force', 'hyperspace fury', 'hyperspace hole',
+    'feint', 'g max one blow', 'g max rapid flow',
+  }.contains(_normalizeName(moveName));
+
+  static bool isContactMove(String moveName) => const {
+    'surging strikes', 'wicked blow', 'close combat', 'drain punch', 'body slam',
+    'triple axel', 'dual wingbeat', 'double iron bash', 'flower trick',
+    'knock off', 'u turn', 'flip turn', 'jet punch', 'aqua jet', 'fake out',
+  }.contains(_normalizeName(moveName));
+
+  static bool isUnseenFistProtectionHit(String moveName, String? ability) =>
+      _normalizeName(ability ?? '') == 'unseen fist' && isContactMove(moveName);
+
+  /// Whether a move is guaranteed to land as a critical hit in Gen IX.
+  /// This is not a user toggle: Flower Trick and the listed high-crit moves
+  /// must still be critical when the checkbox is off.
+  static bool alwaysCriticalHit(String moveName) => const {
+    'flower trick', 'wicked blow', 'surging strikes', 'frost breath', 'storm throw',
+  }.contains(_normalizeName(moveName));
+
+  /// Base power for each guaranteed strike. Variable-hit moves deliberately
+  /// remain one hit until the calculator has an explicit hit-count control.
+  /// Triple Axel is intentionally [20, 40, 60], not three 20 BP attacks.
+  static List<int> guaranteedHitBasePowers(String moveName, int basePower) {
+    final bp = basePower < 1 ? 1 : basePower;
+    return switch (_normalizeName(moveName)) {
+      'surging strikes' => const [25, 25, 25],
+      'triple axel' => const [20, 40, 60],
+      'dual wingbeat' || 'double iron bash' || 'double kick' || 'twineedle' => [bp, bp],
+      _ => [bp],
+    };
+  }
+
+  static int guaranteedHitCount(String moveName) =>
+      guaranteedHitBasePowers(moveName, 1).length;
+
+  /// Gen IX -ate/Normalize power bonus (20%) after a Normal move is changed.
+  static double typeChangingAbilityPowerMultiplier(String? attackerAbility, String originalMoveType) {
+    final ability = _normalizeName(attackerAbility ?? '');
+    final original = originalMoveType.toLowerCase();
+    if (original == 'normal' && const {'pixilate', 'aerilate', 'refrigerate', 'galvanize'}.contains(ability)) {
+      return 1.2;
+    }
+    return ability == 'normalize' ? 1.2 : 1.0;
   }
 
   /// Effective base power for gimmick moves (Return, Frustration, Eruption,
@@ -237,6 +287,7 @@ class CombatUtils {
     double defenderSpeedStat = 0,
     String weather = 'none',
     String terrain = 'none',
+    bool championsRules = false,
   }) {
     return resolveDynamicBasePower(
       moveName: moveName,
@@ -255,6 +306,7 @@ class CombatUtils {
       defenderSpeedStat: defenderSpeedStat,
       weather: weather,
       terrain: terrain,
+      championsRules: championsRules,
     ).basePower;
   }
 
@@ -278,6 +330,7 @@ class CombatUtils {
     double defenderSpeedStat = 0,
     String weather = 'none',
     String terrain = 'none',
+    bool championsRules = false,
   }) {
     final mName = _normalizeName(moveName);
 
@@ -310,8 +363,12 @@ class CombatUtils {
       return (basePower: boosted ? 130.0 : 65.0, note: boosted ? 'Target is statused → 130 BP' : null);
     }
     if (mName == 'rage fist') {
-      final bp = 50.0 + (rageFistHits.clamp(0, 6) * 50.0);
-      return (basePower: bp, note: '$rageFistHits hits taken → ${bp.toInt()} BP');
+      // Champions deliberately removes Rage Fist's "hits taken" scaling;
+      // Pokémon Showdown's Champions ruleset keeps it at its printed 50 BP.
+      if (championsRules) return (basePower: 50.0, note: 'Champions: fixed at 50 BP');
+      final hits = rageFistHits.clamp(0, 6).toInt();
+      final bp = 50.0 + (hits * 50.0);
+      return (basePower: bp, note: '$hits hits taken → ${bp.toInt()} BP');
     }
     if (mName == 'brine') {
       final boosted = defenderHpPercent <= 50.0;
@@ -445,8 +502,13 @@ class CombatUtils {
         : t2?.toLowerCase();
 
     final atkAbility = attackerAbility?.toLowerCase().replaceAll('-', ' ').replaceAll('_', ' ').trim() ?? '';
-    final defAbility = defenderAbility?.toLowerCase().replaceAll('-', ' ').replaceAll('_', ' ').trim() ?? '';
+    var defAbility = defenderAbility?.toLowerCase().replaceAll('-', ' ').replaceAll('_', ' ').trim() ?? '';
     final mName = moveName?.toLowerCase().replaceAll('-', ' ').replaceAll('_', ' ').trim() ?? '';
+    // These abilities suppress defender abilities for damage purposes, but
+    // never erase a defender's actual typing/immunity.
+    if (const {'mold breaker', 'turboblaze', 'teravolt'}.contains(atkAbility)) {
+      defAbility = '';
+    }
 
     // Check Mind's Eye or Scrappy bypass against Ghost types
     final hasGhostBypass = atkAbility == 'minds eye' || atkAbility == 'mind\'s eye' || atkAbility == 'scrappy';
