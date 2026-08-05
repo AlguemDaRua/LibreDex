@@ -240,21 +240,43 @@ class CombatUtils {
     'flower trick', 'wicked blow', 'surging strikes', 'frost breath', 'storm throw',
   }.contains(_normalizeName(moveName));
 
-  /// Base power for each guaranteed strike. Variable-hit moves deliberately
-  /// remain one hit until the calculator has an explicit hit-count control.
+  /// Whether a move hits 2 to 5 times randomly (or up to 10 for Population Bomb).
+  static bool isVariableMultiHitMove(String moveName) {
+    return const {
+      'bullet seed', 'icicle spear', 'rock blast', 'pin missile',
+      'tail slap', 'arm thrust', 'bone rush', 'fury swipes',
+      'spike cannon', 'scale shot', 'water shuriken', 'population bomb',
+    }.contains(_normalizeName(moveName));
+  }
+
+  /// Base power for each guaranteed strike. Variable-hit moves support explicit hit count override.
   /// Triple Axel is intentionally [20, 40, 60], not three 20 BP attacks.
-  static List<int> guaranteedHitBasePowers(String moveName, int basePower) {
+  static List<int> guaranteedHitBasePowers(String moveName, int basePower, {int? hitCount}) {
     final bp = basePower < 1 ? 1 : basePower;
-    return switch (_normalizeName(moveName)) {
+    final norm = _normalizeName(moveName);
+    if (isVariableMultiHitMove(norm)) {
+      final count = (hitCount ?? 3).clamp(2, 10);
+      return List.filled(count, bp);
+    }
+    return switch (norm) {
       'surging strikes' => const [25, 25, 25],
       'triple axel' => const [20, 40, 60],
-      'dual wingbeat' || 'double iron bash' || 'double kick' || 'twineedle' => [bp, bp],
+      'triple kick' => const [10, 20, 30],
+      'dual wingbeat' || 'double iron bash' || 'double kick' || 'twineedle' || 'bonemerang' || 'double hit' || 'dual chop' || 'dragon darts' || 'tachyon cutter' => [bp, bp],
       _ => [bp],
     };
   }
 
-  static int guaranteedHitCount(String moveName) =>
-      guaranteedHitBasePowers(moveName, 1).length;
+  /// Calculates proportional hit base powers when move power is modified by abilities/items/etc.
+  static List<int> getHitBasePowers(String moveName, int defaultBp, int effectiveBp, {int? hitCount}) {
+    final baseHits = guaranteedHitBasePowers(moveName, defaultBp, hitCount: hitCount);
+    if (baseHits.length <= 1) return [effectiveBp];
+    final double mult = defaultBp > 0 ? effectiveBp / defaultBp : 1.0;
+    return baseHits.map((bp) => (bp * mult).round()).toList();
+  }
+
+  static int guaranteedHitCount(String moveName, {int? hitCount}) =>
+      guaranteedHitBasePowers(moveName, 1, hitCount: hitCount).length;
 
   /// Gen IX -ate/Normalize power bonus (20%) after a Normal move is changed.
   static double typeChangingAbilityPowerMultiplier(String? attackerAbility, String originalMoveType) {

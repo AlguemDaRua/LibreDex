@@ -8,6 +8,8 @@ import 'package:libredex/features/calculator/utils/combat_utils.dart';
 import 'package:libredex/features/pokedex/views/pokemon_detail_screen.dart';
 import 'package:libredex/core/widgets/pokemon_sprite.dart';
 
+import 'package:flutter/services.dart';
+
 class MoveDetailScreen extends ConsumerStatefulWidget {
   final int moveId;
   final String moveName;
@@ -60,6 +62,19 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
     return CombatUtils.typeColors[type.toLowerCase()] ?? Colors.grey;
   }
 
+  void _copyMoveDetailsToClipboard() {
+    if (_moveDetails == null) return;
+    final m = _moveDetails!;
+    final text = '${m.name.toUpperCase()} (${m.type.toUpperCase()}, ${m.damageClass.toUpperCase()})\n'
+        'Power: ${m.power ?? '—'} | Accuracy: ${m.accuracy != null ? '${m.accuracy}%' : '—'} | PP: ${m.pp}\n'
+        '${m.description ?? ''}';
+    Clipboard.setData(ClipboardData(text: text));
+    HapticFeedback.lightImpact();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Move info copied to clipboard.')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -75,6 +90,14 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
         iconTheme: IconThemeData(color: primaryColor),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        actions: [
+          if (_moveDetails != null)
+            IconButton(
+              icon: const Icon(Icons.copy_rounded),
+              tooltip: 'Copy move info',
+              onPressed: _copyMoveDetailsToClipboard,
+            ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: AppTheme.pokemonRed))

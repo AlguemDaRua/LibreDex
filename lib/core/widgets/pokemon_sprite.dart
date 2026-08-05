@@ -132,10 +132,9 @@ class _PokemonSpriteState extends State<PokemonSprite> {
       imageUrl: widget.imageUrl,
       fit: widget.fit,
       maxHeightDiskCache: widget.diskCacheSize,
-      maxWidthDiskCache: widget.diskCacheSize,
       placeholder:
-          widget.loadingIndicatorSize == null ? null : (_, __) => _loading(),
-      errorWidget: (_, __, ___) {
+          widget.loadingIndicatorSize == null ? null : (ctx, url) => _loading(),
+      errorWidget: (ctx, url, err) {
         if (fallback != null &&
             fallback.isNotEmpty &&
             fallback != widget.imageUrl) {
@@ -144,7 +143,7 @@ class _PokemonSpriteState extends State<PokemonSprite> {
             fit: widget.fit,
             maxHeightDiskCache: widget.diskCacheSize,
             maxWidthDiskCache: widget.diskCacheSize,
-            errorWidget: (_, __, ___) => _errorIcon(),
+            errorWidget: (ctx, url, err) => _errorIcon(),
           );
         }
         return _errorIcon();
@@ -164,7 +163,7 @@ class _PokemonSpriteState extends State<PokemonSprite> {
           return Image.file(
             file,
             fit: widget.fit,
-            errorBuilder: (_, __, ___) => _networkImage(),
+            errorBuilder: (ctx, err, stack) => _networkImage(),
           );
         }
         if (snapshot.connectionState == ConnectionState.waiting) {

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/data/champions_catalog.dart';
 import 'package:libredex/core/data/ev_yield_data.dart';
 import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/widgets/app_state_widgets.dart';
+import 'package:libredex/features/calculator/utils/combat_utils.dart';
 import 'package:libredex/features/pokedex/utils/pokemon_data_helpers.dart';
 import 'package:libredex/features/pokedex/viewmodels/favorites_provider.dart';
 import 'package:libredex/features/pokedex/viewmodels/pokedex_viewmodel.dart';
@@ -497,6 +499,11 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                             ),
                           ),
 
+                          if (_hasActiveFilters)
+                            SliverToBoxAdapter(
+                              child: _buildActiveFiltersRow(context),
+                            ),
+
                           sortedKeys.isEmpty
                               ? SliverFillRemaining(
                                   child: AppEmptyState(
@@ -592,6 +599,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
               child: InkWell(
                 borderRadius: BorderRadius.circular(26),
                 onTap: () {
+                  HapticFeedback.lightImpact();
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -728,6 +736,168 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
     }
   }
 
+  Widget _buildActiveFiltersRow(BuildContext context) {
+    final chips = <Widget>[];
+
+    for (final type in _selectedTypes) {
+      chips.add(_buildFilterChip(
+        label: 'Type: ${type.toUpperCase()}',
+        color: CombatUtils.typeColors[type.toLowerCase()] ?? Colors.orangeAccent,
+        onDeleted: () => setState(() {
+          _selectedTypes.remove(type);
+        }),
+      ));
+    }
+
+    if (_selectedGenerations.isNotEmpty) {
+      chips.add(_buildFilterChip(
+        label: 'Gens: ${_selectedGenerations.join(', ')}',
+        onDeleted: () => setState(() => _selectedGenerations.clear()),
+      ));
+    }
+
+    if (_showLegendary) {
+      chips.add(_buildFilterChip(
+        label: 'Legendary',
+        onDeleted: () => setState(() => _showLegendary = false),
+      ));
+    }
+    if (_showMythical) {
+      chips.add(_buildFilterChip(
+        label: 'Mythical',
+        onDeleted: () => setState(() => _showMythical = false),
+      ));
+    }
+    if (_showUltraBeast) {
+      chips.add(_buildFilterChip(
+        label: 'Ultra Beast',
+        onDeleted: () => setState(() => _showUltraBeast = false),
+      ));
+    }
+    if (_showParadox) {
+      chips.add(_buildFilterChip(
+        label: 'Paradox',
+        onDeleted: () => setState(() => _showParadox = false),
+      ));
+    }
+    if (_showShinyOnly) {
+      chips.add(_buildFilterChip(
+        label: 'Has Shiny Form',
+        onDeleted: () => setState(() => _showShinyOnly = false),
+      ));
+    }
+    if (_showFavoritesOnly) {
+      chips.add(_buildFilterChip(
+        label: 'Favorites',
+        onDeleted: () => setState(() => _showFavoritesOnly = false),
+      ));
+    }
+    if (_showTeamOnly) {
+      chips.add(_buildFilterChip(
+        label: 'Team Members',
+        onDeleted: () => setState(() => _showTeamOnly = false),
+      ));
+    }
+    if (_selectedFormats.isNotEmpty) {
+      chips.add(_buildFilterChip(
+        label: 'Format: ${_selectedFormats.join(', ')}',
+        onDeleted: () => setState(() => _selectedFormats.clear()),
+      ));
+    }
+    if (_minBst > 100.0 || _maxBst < 780.0) {
+      chips.add(_buildFilterChip(
+        label: 'BST: ${_minBst.round()}–${_maxBst.round()}',
+        onDeleted: () => setState(() {
+          _minBst = 100.0;
+          _maxBst = 780.0;
+        }),
+      ));
+    }
+    if (_minHp > 0 || _minAtk > 0 || _minDef > 0 || _minSpAtk > 0 || _minSpDef > 0 || _minSpd > 0) {
+      chips.add(_buildFilterChip(
+        label: 'Stat Thresholds',
+        onDeleted: () => setState(() {
+          _minHp = 0.0;
+          _minAtk = 0.0;
+          _minDef = 0.0;
+          _minSpAtk = 0.0;
+          _minSpDef = 0.0;
+          _minSpd = 0.0;
+        }),
+      ));
+    }
+    if (_selectedEvYieldStat != null) {
+      chips.add(_buildFilterChip(
+        label: 'EV: ${_selectedEvYieldStat!.toUpperCase()}',
+        onDeleted: () => setState(() => _selectedEvYieldStat = null),
+      ));
+    }
+
+    if (chips.isEmpty) return const SizedBox.shrink();
+
+    chips.add(
+      GestureDetector(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          _clearAllFilters();
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.redAccent.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.clear_all_rounded, size: 14, color: Colors.redAccent),
+              SizedBox(width: 4),
+              Text('Clear All', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.redAccent)),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    return Container(
+      height: 36,
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: chips.length,
+        separatorBuilder: (context, index) => const SizedBox(width: 6),
+        itemBuilder: (context, index) => chips[index],
+      ),
+    );
+  }
+
+  Widget _buildFilterChip({required String label, Color? color, required VoidCallback onDeleted}) {
+    final chipColor = color ?? Colors.orangeAccent;
+    return Container(
+      padding: const EdgeInsets.only(left: 10, right: 4, top: 3, bottom: 3),
+      decoration: BoxDecoration(
+        color: chipColor.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: chipColor.withValues(alpha: 0.4), width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: chipColor)),
+          const SizedBox(width: 2),
+          GestureDetector(
+            onTap: () {
+              HapticFeedback.selectionClick();
+              onDeleted();
+            },
+            child: Icon(Icons.cancel_rounded, size: 16, color: chipColor.withValues(alpha: 0.7)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTypeBadge(String type, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -768,15 +938,34 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 8, 0),
+                      padding: const EdgeInsets.fromLTRB(16, 16, 12, 4),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('ADVANCED FILTERS', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: primaryColor)),
+                          Row(
+                            children: [
+                              Text('ADVANCED FILTERS', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: primaryColor)),
+                              if (_hasActiveFilters) ...[
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.pokemonRed,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Text(
+                                    'ACTIVE',
+                                    style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
                           Row(
                             children: [
                               TextButton(
                                 onPressed: () {
+                                  HapticFeedback.lightImpact();
                                   _clearAllFilters();
                                   setModalState(() {});
                                 },
@@ -797,7 +986,12 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                         padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                         children: [
 
-                            _buildSectionLabel('TYPES SELECTOR (UP TO 2 FOR DUAL EXCLUSIVE MATCH)'),
+                            _buildSectionLabel('ELEMENTAL TYPES (UP TO 2)'),
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Select 1 type to match primary/secondary, or 2 types for exact dual-type matching.',
+                              style: TextStyle(fontSize: 11, color: Colors.grey),
+                            ),
                             const SizedBox(height: 8),
                             Wrap(
                               spacing: 6,
@@ -818,6 +1012,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                                   selectedColor: col,
                                   backgroundColor: col.withValues(alpha: 0.1),
                                   onSelected: (selected) {
+                                    HapticFeedback.selectionClick();
                                     setState(() {
                                       if (selected) {
                                         if (_selectedTypes.length < 2) {
@@ -855,6 +1050,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                                       selectedColor: AppTheme.pokemonRed,
                                       backgroundColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFEDF2F7),
                                       onSelected: (selected) {
+                                        HapticFeedback.selectionClick();
                                         setState(() {
                                           if (selected) {
                                             _selectedGenerations.add(gen);
@@ -871,7 +1067,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                             ),
                             const SizedBox(height: 18),
 
-                            _buildSectionLabel('SPECIAL CATEGORIES'),
+                            _buildSectionLabel('SPECIAL CLASSIFICATIONS & COLLECTION'),
                             const SizedBox(height: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -883,30 +1079,38 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                               child: Column(
                                 children: [
                                   _buildSwitchRow('Legendary Pokémon', _showLegendary, (val) {
+                                    HapticFeedback.selectionClick();
                                     setState(() => _showLegendary = val);
                                     setModalState(() {});
                                   }),
                                   _buildSwitchRow('Mythical Pokémon', _showMythical, (val) {
+                                    HapticFeedback.selectionClick();
                                     setState(() => _showMythical = val);
                                     setModalState(() {});
                                   }),
                                   _buildSwitchRow('Ultra Beasts (UB)', _showUltraBeast, (val) {
+                                    HapticFeedback.selectionClick();
                                     setState(() => _showUltraBeast = val);
                                     setModalState(() {});
                                   }),
                                   _buildSwitchRow('Paradox Pokémon', _showParadox, (val) {
+                                    HapticFeedback.selectionClick();
                                     setState(() => _showParadox = val);
                                     setModalState(() {});
                                   }),
-                                  _buildSwitchRow('Shiny Sprite Verified', _showShinyOnly, (val) {
+                                  const Divider(height: 12),
+                                  _buildSwitchRow('Has Shiny Form / Artwork', _showShinyOnly, (val) {
+                                    HapticFeedback.selectionClick();
                                     setState(() => _showShinyOnly = val);
                                     setModalState(() {});
                                   }),
-                                  _buildSwitchRow('Favorites Only', _showFavoritesOnly, (val) {
+                                  _buildSwitchRow('Saved Favorites Only', _showFavoritesOnly, (val) {
+                                    HapticFeedback.selectionClick();
                                     setState(() => _showFavoritesOnly = val);
                                     setModalState(() {});
                                   }),
-                                  _buildSwitchRow('Team Members', _showTeamOnly, (val) {
+                                  _buildSwitchRow('Current Team Members Only', _showTeamOnly, (val) {
+                                    HapticFeedback.selectionClick();
                                     setState(() => _showTeamOnly = val);
                                     setModalState(() {});
                                   }),

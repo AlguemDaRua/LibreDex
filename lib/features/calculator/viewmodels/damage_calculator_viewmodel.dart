@@ -4,7 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:libredex/core/database/app_database.dart';
-import 'package:libredex/features/calculator/models/battle_ruleset.dart';
+import 'package:libredex/features/battle_engine/battle_engine.dart';
+import 'package:libredex/features/calculator/utils/combat_utils.dart';
 
 part 'damage_calculator_viewmodel.g.dart';
 
@@ -35,6 +36,7 @@ class DamageCalculatorState {
   final String moveType;
   final String moveCategory;
   final double movePower;
+  final int moveHits;
   final int rageFistHits;
 
   /// Completed turns since the attacker entered battle (0–5). Slow Start
@@ -96,6 +98,7 @@ class DamageCalculatorState {
     this.moveType = 'fire',
     this.moveCategory = 'physical',
     this.movePower = 90.0,
+    this.moveHits = 3,
     this.rageFistHits = 0,
     this.attackerTurnsOnField = 0,
     this.defenderLevel = 50,
@@ -145,6 +148,7 @@ class DamageCalculatorState {
     String? moveType,
     String? moveCategory,
     double? movePower,
+    int? moveHits,
     int? rageFistHits,
     int? attackerTurnsOnField,
     int? defenderLevel,
@@ -221,6 +225,80 @@ class DamageCalculatorState {
       attackerSps: attackerSps ?? Map<String, int>.from(this.attackerSps),
       defenderSps: defenderSps ?? Map<String, int>.from(this.defenderSps),
     );
+  }
+
+  /// Convert calculator state to pure-Dart [BattleState].
+  BattleState? toBattleState() {
+    if (attacker == null || defender == null) return null;
+
+    final atkState = PokemonState.fromDatabase(
+      attacker!,
+      level: attackerLevel,
+      nature: attackerNature,
+      ivs: attackerIvs,
+      evs: attackerEvs,
+      sps: attackerSps,
+      stages: attackerStages,
+      heldItem: attackerHeldItem,
+      ability: attackerAbility,
+      status: attackerStatus,
+      teraActive: attackerTeraActive,
+      teraType: attackerTeraType,
+      hpPercent: attackerHpPercent,
+      turnsOnField: attackerTurnsOnField,
+      friendship: attackerFriendship,
+    );
+
+    final defState = PokemonState.fromDatabase(
+      defender!,
+      level: defenderLevel,
+      nature: defenderNature,
+      ivs: defenderIvs,
+      evs: defenderEvs,
+      sps: defenderSps,
+      stages: defenderStages,
+      heldItem: defenderHeldItem,
+      ability: defenderAbility,
+      status: defenderStatus,
+      teraActive: defenderTeraActive,
+      teraType: defenderTeraType,
+      hpPercent: defenderHpPercent,
+    );
+
+    final moveState = MoveState(
+      name: selectedMoveName ?? 'Custom Move',
+      type: moveType,
+      basePower: movePower.round(),
+      damageClass: moveCategory,
+      isCritical: isCriticalHit,
+      hits: moveHits,
+      rageFistHits: rageFistHits,
+    );
+
+    final fieldState = FieldState(
+      weather: weather,
+      terrain: terrain,
+      reflectActive: reflectActive,
+      lightScreenActive: lightScreenActive,
+      helpingHandActive: helpingHandActive,
+      trickRoomActive: trickRoomActive,
+      defenderProtected: defenderProtected,
+    );
+
+    return BattleState(
+      attacker: atkState,
+      defender: defState,
+      move: moveState,
+      field: fieldState,
+      ruleset: ruleset,
+    );
+  }
+
+  /// Calculate damage using the pure-Dart [BattleEngine].
+  DamageResult? calculateDamage() {
+    final bState = toBattleState();
+    if (bState == null) return null;
+    return BattleEngine.calculate(bState);
   }
 }
 
@@ -398,17 +476,20 @@ class DamageCalculatorViewModel extends _$DamageCalculatorViewModel {
     if (name.toLowerCase() == 'rage fist') {
       actualPower = 50.0 + (hits * 50.0);
     }
+    final isVariableMulti = CombatUtils.isVariableMultiHitMove(name);
     state = state.copyWith(
       selectedMoveName: name,
       moveType: type,
       moveCategory: category,
       movePower: actualPower,
+      moveHits: isVariableMulti ? 3 : 1,
     );
   }
 
   void updateMoveType(String type) => state = state.copyWith(moveType: type);
   void updateMoveCategory(String category) => state = state.copyWith(moveCategory: category);
   void updateMovePower(double power) => state = state.copyWith(movePower: power);
+  void updateMoveHits(int hits) => state = state.copyWith(moveHits: hits.clamp(1, 10));
   void setSimpleAttackerStat(double stat) => state = state.copyWith(simpleAttackerStat: stat);
   void setSimpleDefenderStat(double stat) => state = state.copyWith(simpleDefenderStat: stat);
   void setSimpleStab(double stab) => state = state.copyWith(simpleStab: stab);
@@ -421,6 +502,39 @@ class DamageCalculatorViewModel extends _$DamageCalculatorViewModel {
   void toggleHelpingHand(bool val) => state = state.copyWith(helpingHandActive: val);
   void toggleDefenderProtected(bool val) => state = state.copyWith(defenderProtected: val);
   void toggleTrickRoom(bool val) => state = state.copyWith(trickRoomActive: val);
+
+  /// Swaps Attacker and Defender Pokémon and all their associated battle stats.
+  void swapAttackerAndDefender() {
+    final s = state;
+    state = s.copyWith(
+      attacker: s.defender,
+      defender: s.attacker,
+      attackerLevel: s.defenderLevel,
+      defenderLevel: s.attackerLevel,
+      attackerNature: s.defenderNature,
+      defenderNature: s.attackerNature,
+      attackerIvs: Map.of(s.defenderIvs),
+      defenderIvs: Map.of(s.attackerIvs),
+      attackerEvs: Map.of(s.defenderEvs),
+      defenderEvs: Map.of(s.attackerEvs),
+      attackerSps: Map.of(s.defenderSps),
+      defenderSps: Map.of(s.attackerSps),
+      attackerStages: Map.of(s.defenderStages),
+      defenderStages: Map.of(s.attackerStages),
+      attackerHeldItem: s.defenderHeldItem,
+      defenderHeldItem: s.attackerHeldItem,
+      attackerAbility: s.defenderAbility,
+      defenderAbility: s.attackerAbility,
+      attackerTeraActive: s.defenderTeraActive,
+      defenderTeraActive: s.attackerTeraActive,
+      attackerTeraType: s.defenderTeraType,
+      defenderTeraType: s.attackerTeraType,
+      attackerStatus: s.defenderStatus,
+      defenderStatus: s.attackerStatus,
+      attackerHpPercent: s.defenderHpPercent,
+      defenderHpPercent: s.attackerHpPercent,
+    );
+  }
 }
 
 /// A one-shot request for the damage calculator to open in a specific

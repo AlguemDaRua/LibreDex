@@ -115,7 +115,6 @@ class DeepSyncController extends Notifier<DeepSyncState> {
   DeepSyncState build() => const DeepSyncState();
 
   /// Rewrites a HOME sprite URL to the much smaller pixel sprite variant.
-  @visibleForTesting
   static String resolveUrl(String url, SpriteQuality quality) {
     if (quality == SpriteQuality.standard) return url;
     // HOME:  .../sprites/pokemon/other/home/25.png       (and /home/shiny/25.png)

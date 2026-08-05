@@ -96,10 +96,18 @@ class AppDrawer extends ConsumerWidget {
                   _buildDrawerItem(
                     context: context,
                     ref: ref,
+                    icon: Icons.compare_arrows_rounded,
+                    label: 'Stat Comparison',
+                    route: 'stat_comparison',
+                    index: 2,
+                  ),
+                  _buildDrawerItem(
+                    context: context,
+                    ref: ref,
                     icon: Icons.flash_on_rounded,
                     label: 'MoveDex',
                     route: 'moves',
-                    index: 2,
+                    index: 3,
                   ),
                   _buildDrawerItem(
                     context: context,
@@ -107,7 +115,7 @@ class AppDrawer extends ConsumerWidget {
                     icon: Icons.auto_awesome_rounded,
                     label: 'AbilityDex',
                     route: 'abilities',
-                    index: 3,
+                    index: 4,
                   ),
                   _buildDrawerItem(
                     context: context,
@@ -115,7 +123,7 @@ class AppDrawer extends ConsumerWidget {
                     icon: Icons.inventory_2_rounded,
                     label: 'ItemDex',
                     route: 'items',
-                    index: 4,
+                    index: 5,
                   ),
                   _buildDrawerItem(
                     context: context,
@@ -123,7 +131,7 @@ class AppDrawer extends ConsumerWidget {
                     icon: Icons.analytics_rounded,
                     label: 'NatureDex',
                     route: 'natures',
-                    index: 5,
+                    index: 6,
                   ),
                   _buildDrawerItem(
                     context: context,
@@ -131,7 +139,7 @@ class AppDrawer extends ConsumerWidget {
                     icon: Icons.grid_on_rounded,
                     label: 'Type Chart',
                     route: 'type_chart',
-                    index: 6,
+                    index: 7,
                   ),
                   _buildDrawerItem(
                     context: context,
@@ -139,7 +147,7 @@ class AppDrawer extends ConsumerWidget {
                     icon: Icons.calculate_rounded,
                     label: 'Damage Calculator',
                     route: 'calculator',
-                    index: 7,
+                    index: 8,
                   ),
                   Divider(height: 32, color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
                   _buildDrawerItem(
@@ -148,7 +156,7 @@ class AppDrawer extends ConsumerWidget {
                     icon: Icons.settings_rounded,
                     label: 'Settings',
                     route: 'settings',
-                    index: 8,
+                    index: 9,
                   ),
                 ],
               ),
@@ -295,11 +303,11 @@ class _ThemeChoiceButtonState extends ConsumerState<_ThemeChoiceButton> {
       final renderBox = context.findRenderObject() as RenderBox?;
       final origin = _tapOrigin ??
           (renderBox?.localToGlobal(renderBox.size.center(Offset.zero)) ?? Offset.zero);
-      final applyTheme = () => ref.read(themeModeProvider.notifier).setThemeMode(widget.mode);
+      void applyTheme() => ref.read(themeModeProvider.notifier).setThemeMode(widget.mode);
       final transition = ThemeTransitionScope.maybeOf(context);
 
       if (transition == null) {
-        await applyTheme();
+        applyTheme();
       } else {
         await transition.transitionTo(origin: origin, applyTheme: applyTheme);
       }

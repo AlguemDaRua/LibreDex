@@ -13,6 +13,7 @@ import 'package:libredex/features/naturedex/views/naturedex_screen.dart';
 import 'package:libredex/features/pokedex/repositories/deep_sync_repository.dart';
 import 'package:libredex/features/pokedex/views/pokedex_screen.dart';
 import 'package:libredex/features/settings/views/settings_screen.dart';
+import 'package:libredex/features/stat_comparison/views/stat_comparison_screen.dart';
 import 'package:libredex/features/team_builder/views/team_builder_screen.dart';
 import 'package:libredex/features/typechart/views/typechart_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -58,18 +59,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       case 1:
         return const TeamBuilderScreen();
       case 2:
-        return const MovedexScreen();
+        return const StatComparisonScreen();
       case 3:
-        return const AbilitydexScreen();
+        return const MovedexScreen();
       case 4:
-        return const ItemDexScreen();
+        return const AbilitydexScreen();
       case 5:
-        return const NaturedexScreen();
+        return const ItemDexScreen();
       case 6:
-        return const TypeChartScreen();
+        return const NaturedexScreen();
       case 7:
-        return const DamageCalculatorScreen();
+        return const TypeChartScreen();
       case 8:
+        return const DamageCalculatorScreen();
+      case 9:
         return const SettingsScreen();
       default:
         return const PokedexScreen();
@@ -104,7 +107,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: IndexedStack(
               index: currentIndex,
               children: List.generate(
-                9,
+                10,
                 (index) => _visitedIndices.contains(index)
                     ? _buildSection(index)
                     : const SizedBox.shrink(),

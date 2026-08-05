@@ -10,17 +10,90 @@ import 'package:libredex/core/widgets/app_state_widgets.dart';
 import 'package:libredex/features/calculator/models/battle_ruleset.dart';
 import 'package:libredex/features/calculator/viewmodels/damage_calculator_viewmodel.dart';
 import 'package:libredex/features/pokedex/models/type_efficiency_calculator.dart';
+import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
 import 'package:libredex/features/pokedex/viewmodels/favorites_provider.dart';
 import 'package:libredex/features/pokedex/viewmodels/pokedex_viewmodel.dart';
 import 'package:libredex/features/pokedex/viewmodels/team_builder_provider.dart';
 import 'package:libredex/core/theme/app_spacing.dart';
 import 'package:libredex/features/pokedex/views/pokemon_detail_screen.dart';
 
+import 'package:libredex/features/team_builder/utils/showdown_parser.dart';
+import 'package:libredex/features/team_builder/widgets/team_defense_matrix.dart';
+
 /// Section index of the Damage Calculator inside HomeScreen's IndexedStack.
-const int _damageCalculatorSectionIndex = 7;
+const int _damageCalculatorSectionIndex = 8;
 
 class TeamBuilderScreen extends ConsumerWidget {
   const TeamBuilderScreen({super.key});
+
+  void _showExportDialog(BuildContext context, List<Pokemon?> team) {
+    final text = ShowdownParser.exportTeam(team);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.import_export_rounded, color: AppTheme.pokemonRed),
+            SizedBox(width: 8),
+            Text('Export Showdown Team'),
+          ],
+        ),
+        content: SelectableText(
+          text.isEmpty ? 'Add Pokémon to export your team.' : text,
+          style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showImportDialog(BuildContext context, WidgetRef ref, List<Pokemon> catalog) async {
+    final controller = TextEditingController();
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.paste_rounded, color: AppTheme.pokemonRed),
+            SizedBox(width: 8),
+            Text('Import Showdown Paste'),
+          ],
+        ),
+        content: TextField(
+          controller: controller,
+          maxLines: 8,
+          decoration: const InputDecoration(
+            hintText: 'Paste Showdown team text here...\ne.g.\nPikachu @ Light Ball\nAbility: Static\n- Volt Tackle',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final db = ref.read(databaseProvider);
+              final imported = await ShowdownParser.parseShowdownText(controller.text, db);
+              final notifier = ref.read(teamBuilderProvider.notifier);
+              for (int i = 0; i < imported.length; i++) {
+                await notifier.setSlot(i, imported[i]?.id);
+              }
+              if (ctx.mounted) Navigator.pop(ctx);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.pokemonRed, foregroundColor: Colors.white),
+            child: const Text('Import'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -36,6 +109,28 @@ class TeamBuilderScreen extends ConsumerWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
+          pokemonAsync.maybeWhen(
+            data: (pokemon) => Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  tooltip: 'Import Showdown Paste',
+                  icon: const Icon(Icons.file_upload_outlined),
+                  onPressed: () => _showImportDialog(context, ref, pokemon),
+                ),
+                IconButton(
+                  tooltip: 'Export Showdown Text',
+                  icon: const Icon(Icons.file_download_outlined),
+                  onPressed: () {
+                    final byId = {for (final p in pokemon) p.id: p};
+                    final team = slots.map((id) => id == null ? null : byId[id]).toList();
+                    _showExportDialog(context, team);
+                  },
+                ),
+              ],
+            ),
+            orElse: () => const SizedBox.shrink(),
+          ),
           if (slots.any((id) => id != null))
             IconButton(
               tooltip: 'Clear team',
@@ -398,6 +493,8 @@ class _TeamAnalysis extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        TeamDefenseMatrix(team: team),
+        const SizedBox(height: 16),
         const Text('Team readout', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
         const SizedBox(height: 12),
         if (isChampions) ...[

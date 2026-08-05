@@ -245,7 +245,7 @@ class SettingsScreen extends ConsumerWidget {
         return '${value.fileCount} images · ${value.sizeLabel} · ${value.qualityLabel}';
       },
       loading: () => 'Checking downloaded artwork…',
-      error: (_, __) => 'Could not read offline artwork storage.',
+      error: (err, stack) => 'Could not read offline artwork storage.',
     );
     final isDownloading = download.isActive;
 

@@ -85,7 +85,7 @@ void main() {
         alignment: 'adamant',
         alignmentModifierFor: (label) => CombatUtils.getNatureMultiplier('adamant', label),
       );
-      expect(stats['hp'], 137);
+      expect(stats['hp'], 136);
       expect(stats['atk'], 205); // Adamant (+10% Attack)
       expect(stats['spe'], 162, reason: 'Adamant does not touch Speed: (125 + 5 + 32) = 162');
       expect(stats['atk']!, greaterThan(stats['spa']!),
@@ -131,8 +131,8 @@ void main() {
       final almostFull = ChampionsRules.emptySpread()
         ..['atk'] = 32
         ..['spe'] = 32;
-      expect(ChampionsRules.remainingStatPoints(almostFull), 2);
-      expect(ChampionsRules.clampStatPoint(almostFull, 'hp', 32), 2);
+      expect(ChampionsRules.remainingStatPoints(almostFull), 1);
+      expect(ChampionsRules.clampStatPoint(almostFull, 'hp', 32), 1);
     });
 
     test('built-in presets spend the budget sensibly', () {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/widgets/pokemon_sprite.dart';
 import 'package:libredex/core/database/app_database.dart';
@@ -13,7 +14,13 @@ import 'package:libredex/core/widgets/app_drawer.dart';
 import 'package:libredex/features/calculator/utils/combat_utils.dart';
 import 'package:libredex/features/calculator/utils/damage_math.dart';
 import 'package:libredex/core/theme/app_spacing.dart';
+import 'package:libredex/core/data/battle_data_manifest.dart';
+import 'package:libredex/features/battle_engine/battle_engine.dart';
 import 'package:libredex/features/calculator/viewmodels/damage_calculator_viewmodel.dart';
+import 'package:libredex/features/calculator/views/damage_summary_card.dart';
+import 'package:libredex/features/calculator/widgets/item_ability_picker_dialog.dart';
+import 'package:libredex/features/calculator/widgets/move_picker_dialog.dart';
+import 'package:libredex/features/calculator/widgets/pokemon_picker_dialog.dart';
 
 const Map<String, String> natureFormattedNames = {
   'hardy': 'HARDY (Neutral)',
@@ -294,6 +301,12 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                   ),
                 ),
               ],
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.verified_outlined, size: 18, color: Colors.blueAccent),
+                tooltip: 'Engine Parity & Data Manifest',
+                onPressed: () => _showManifestDialog(context),
+              ),
             ],
           ),
           if (isChampions) ...[
@@ -307,6 +320,53 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  void _showManifestDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.verified, color: Colors.blueAccent),
+            SizedBox(width: 8),
+            Text('Battle Engine Manifest', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (final entry in BattleDataManifest.details.entries)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(entry.key, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        entry.value,
+                        textAlign: TextAlign.end,
+                        style: const TextStyle(fontSize: 11, color: Colors.grey),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
         ],
       ),
     );
@@ -1094,12 +1154,35 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                 buildPokemonDuelCard(p1, true, state.attackerHeldItem),
               ])),
               Padding(
-                padding: const EdgeInsets.only(top: 44),
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                  decoration: BoxDecoration(color: Colors.orange.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
-                  child: const Text('VS', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Colors.orangeAccent)),
+                padding: const EdgeInsets.only(top: 40),
+                child: Tooltip(
+                  message: 'Swap Attacker and Defender',
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () {
+                        HapticFeedback.mediumImpact();
+                        vm.swapAttackerAndDefender();
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.orangeAccent.withValues(alpha: 0.4)),
+                        ),
+                        child: const Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.swap_horiz_rounded, size: 20, color: Colors.orangeAccent),
+                            Text('VS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.orangeAccent)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
               Expanded(child: Column(children: [
@@ -1191,6 +1274,48 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
             ),
           ],
 
+          // Variable Multi-Hit Strike Count Selector (Rock Blast, Bullet Seed, Icicle Spear, Scale Shot, etc.)
+          if (CombatUtils.isVariableMultiHitMove(activeMove.name)) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppTheme.pokemonRed.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.pokemonRed.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    const Text('Multi-Hit Strikes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.pokemonRed)),
+                    Text('${state.moveHits} strikes (${(basePowerVal.toInt() * state.moveHits)} total BP)', style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                  ]),
+                  Row(
+                    children: [2, 3, 4, 5].map((h) {
+                      final isSelected = state.moveHits == h;
+                      return Padding(
+                        padding: const EdgeInsets.only(left: 4),
+                        child: ChoiceChip(
+                          label: Text('$h'),
+                          selected: isSelected,
+                          onSelected: (_) => vm.updateMoveHits(h),
+                          visualDensity: VisualDensity.compact,
+                          labelStyle: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: isSelected ? Colors.white : (isDark ? Colors.grey : Colors.black87),
+                          ),
+                          selectedColor: AppTheme.pokemonRed,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
           // Dynamic Move Steppers (Rage Fist / Return / Eruption)
           if (activeMove.name.toLowerCase() == 'rage fist' && !isChampions) ...[
             const SizedBox(height: 8),
@@ -1263,7 +1388,16 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
           ],
           const SizedBox(height: 16),
 
-          // Damage Result Card
+          // Engine-Powered Damage Summary Card
+          if (state.calculateDamage() != null) ...[
+            DamageSummaryCard(
+              result: state.calculateDamage()!,
+              moveName: activeMove.name,
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          // Legacy Quick Reference Range Card
           Card(
             elevation: 0,
             color: isDark ? const Color(0xFF0F0F0F) : Colors.white,
@@ -1511,287 +1645,34 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
   }
 
   Widget _buildSwitchListTile(String title, bool val, ValueChanged<bool> onChanged) {
-    return SwitchListTile(
-      title: Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-      value: val,
-      activeThumbColor: AppTheme.pokemonRed,
-      onChanged: onChanged,
+    return Material(
+      color: Colors.transparent,
+      child: SwitchListTile(
+        title: Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+        value: val,
+        activeThumbColor: AppTheme.pokemonRed,
+        onChanged: onChanged,
+      ),
     );
   }
 
   // ── Searchable Pickers ───────────────────────────────────────────────────
 
   void _showPokemonPicker(BuildContext context, List<Pokemon> list, bool isAttacker, DamageCalculatorViewModel vm) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final screenHeight = MediaQuery.of(context).size.height;
-    String q = '';
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (ctx) => StatefulBuilder(builder: (ctx, ss) {
-        final filtered = list
-            .where((p) =>
-                p.name.toLowerCase().contains(q.toLowerCase()) ||
-                p.id.toString().contains(q) ||
-                p.type1.toLowerCase().contains(q.toLowerCase()) ||
-                (p.type2?.toLowerCase().contains(q.toLowerCase()) ?? false))
-            .toList();
-        return Dialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
-          backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: screenHeight * 0.8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 8, 0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Select ${isAttacker ? 'Attacker' : 'Defender'}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      IconButton(
-                        icon: const Icon(Icons.close_rounded, size: 22),
-                        onPressed: () => Navigator.pop(ctx),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: TextField(
-                    autofocus: true,
-                    onChanged: (v) => ss(() => q = v),
-                    decoration: InputDecoration(
-                      hintText: 'Search Pokémon by name, ID or type...',
-                      prefixIcon: const Icon(Icons.search, color: AppTheme.pokemonRed),
-                      filled: true,
-                      fillColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF3F4F6),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                    ),
-                  ),
-                ),
-                Flexible(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
-                    itemCount: filtered.length,
-                    itemBuilder: (ctx, i) {
-                      final p = filtered[i];
-                      return ListTile(
-                        leading: p.spriteUrl.isNotEmpty
-                            ? SizedBox(
-                                width: 40, height: 40,
-                                child: PokemonSprite(
-                                  imageUrl: p.spriteUrl,
-                                  fallbackUrl: PokemonSprite.homeArtworkUrl(p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id),
-                                  errorIconColor: Colors.grey,
-                                  errorIconSize: 24,
-                                ),
-                              )
-                            : const Icon(Icons.catching_pokemon, color: Colors.grey),
-                        title: Text(p.name, style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black, fontSize: 14)),
-                        subtitle: Text('${p.type1.toUpperCase()}${p.type2 != null ? " / ${p.type2!.toUpperCase()}" : ""}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                        onTap: () async {
-                          Navigator.pop(ctx);
-                          try {
-                            final abs = await ref.read(databaseProvider).getPokemonAbilities(p.id);
-                            final defAb = abs.isNotEmpty ? abs.first.ability.name : null;
-                            if (isAttacker) {
-                              vm.setAttacker(p, defaultAbility: defAb);
-                            } else {
-                              vm.setDefender(p, defaultAbility: defAb);
-                            }
-                          } catch (_) {
-                            if (isAttacker) {
-                              vm.setAttacker(p);
-                            } else {
-                              vm.setDefender(p);
-                            }
-                          }
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      }),
-    );
+    PokemonPickerDialog.show(context, list: list, isAttacker: isAttacker, vm: vm);
   }
 
   void _showMovePicker(BuildContext context, DamageCalculatorViewModel vm) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final screenHeight = MediaQuery.of(context).size.height;
-    String q = '';
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (ctx) => StatefulBuilder(builder: (ctx, ss) {
-        final filtered = _dbDamagingMoves
-            .where((m) =>
-                m.name.toLowerCase().contains(q.toLowerCase()) ||
-                m.type.toLowerCase().contains(q.toLowerCase()) ||
-                m.damageClass.toLowerCase().contains(q.toLowerCase()))
-            .toList();
-        return Dialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
-          backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: screenHeight * 0.8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 8, 0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Select Move', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      IconButton(
-                        icon: const Icon(Icons.close_rounded, size: 22),
-                        onPressed: () => Navigator.pop(ctx),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: TextField(
-                    autofocus: true,
-                    onChanged: (v) => ss(() => q = v),
-                    decoration: InputDecoration(
-                      hintText: 'Search moves by name, type, or category...',
-                      prefixIcon: const Icon(Icons.search, color: AppTheme.pokemonRed),
-                      filled: true,
-                      fillColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF3F4F6),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                    ),
-                  ),
-                ),
-                Flexible(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
-                    itemCount: filtered.length,
-                    itemBuilder: (ctx, i) {
-                      final m = filtered[i];
-                      final typeColor = CombatUtils.typeColors[m.type.toLowerCase()] ?? Colors.grey;
-                      return ListTile(
-                        leading: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(color: typeColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
-                          child: Text(m.type.toUpperCase(), style: TextStyle(color: typeColor, fontSize: 10, fontWeight: FontWeight.bold)),
-                        ),
-                        title: Text(m.name, style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black, fontSize: 14)),
-                        subtitle: Text('${m.damageClass.toUpperCase()} \u2022 PP: ${m.pp}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                        trailing: Text('BP: ${m.power ?? "\u2014"}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.pokemonRed)),
-                        onTap: () {
-                          vm.selectMove(m.name, m.type, m.damageClass, m.power?.toDouble() ?? 50.0);
-                          setState(() { _simpleSelectedMove = m; });
-                          Navigator.pop(ctx);
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      }),
+    MovePickerDialog.show(
+      context,
+      moves: _dbDamagingMoves,
+      vm: vm,
+      onMoveSelected: (m) => setState(() => _simpleSelectedMove = m),
     );
   }
 
   void _showItemPicker(BuildContext context, bool isAttacker, DamageCalculatorViewModel vm) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final screenHeight = MediaQuery.of(context).size.height;
-    String q = '';
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (ctx) => StatefulBuilder(builder: (ctx, ss) {
-        final items = HeldItemsData.allItems.where((item) =>
-          item.name.toLowerCase().contains(q.toLowerCase()) ||
-          item.description.toLowerCase().contains(q.toLowerCase()) ||
-          item.category.toLowerCase().contains(q.toLowerCase())
-        ).toList();
-        return Dialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
-          backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: screenHeight * 0.8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 8, 0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(isAttacker ? 'Attacker Held Item' : 'Defender Held Item', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      IconButton(
-                        icon: const Icon(Icons.close_rounded, size: 22),
-                        onPressed: () => Navigator.pop(ctx),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: TextField(
-                    autofocus: true,
-                    onChanged: (v) => ss(() => q = v),
-                    decoration: InputDecoration(
-                      hintText: 'Search held items (Choice, Berry, Vest, Boots...)...',
-                      prefixIcon: const Icon(Icons.search, color: AppTheme.pokemonRed),
-                      filled: true,
-                      fillColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF3F4F6),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                    ),
-                  ),
-                ),
-                Flexible(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
-                    itemCount: items.length,
-                    itemBuilder: (ctx, i) {
-                      final item = items[i];
-                      return ListTile(
-                        title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text(item.description, style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                        trailing: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(color: AppTheme.pokemonRed.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-                          child: Text(item.category, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppTheme.pokemonRed)),
-                        ),
-                        onTap: () {
-                          if (isAttacker) {
-                            vm.setAttackerHeldItem(item.name);
-                          } else {
-                            vm.setDefenderHeldItem(item.name);
-                          }
-                          Navigator.pop(ctx);
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      }),
-    );
+    ItemPickerDialog.show(context, isAttacker: isAttacker, vm: vm);
   }
 
   // ── Centered Dialog Setup Editor ────────────────────────────────────────

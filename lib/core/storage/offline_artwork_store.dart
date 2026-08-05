@@ -84,7 +84,7 @@ class OfflineArtworkStore {
   Future<void> _queuePersist() {
     final queued = _persistQueue.then(
       (_) => _persist(),
-      onError: (_, __) => _persist(),
+      onError: (err, stack) => _persist(),
     );
     _persistQueue = queued;
     return queued;
@@ -200,6 +200,42 @@ class OfflineArtworkStore {
 
   /// Refreshes visible sprite widgets after a batched library change.
   void notifyLibraryChanged() => revision.value++;
+
+  /// Whether the offline artwork for [pokemon] is already stored locally.
+  Future<bool> isPokemonArtworkDownloaded(dynamic pokemon) async {
+    await _ensureReady();
+    final String spriteUrl = pokemon.spriteUrl ?? '';
+    final String shinySpriteUrl = pokemon.shinySpriteUrl ?? '';
+    final urls = [spriteUrl, shinySpriteUrl].where((u) => u.isNotEmpty);
+    if (urls.isEmpty) return false;
+    for (final url in urls) {
+      final record = _records[url];
+      if (record != null && await File(p.join(_directory.path, record.fileName)).exists()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /// Removes offline artwork files and manifest records for [pokemon].
+  Future<void> deletePokemonArtwork(dynamic pokemon) async {
+    await _ensureReady();
+    final String spriteUrl = pokemon.spriteUrl ?? '';
+    final String shinySpriteUrl = pokemon.shinySpriteUrl ?? '';
+    for (final url in [spriteUrl, shinySpriteUrl]) {
+      if (url.isNotEmpty) {
+        final record = _records.remove(url);
+        if (record != null) {
+          final file = File(p.join(_directory.path, record.fileName));
+          if (await file.exists()) {
+            await file.delete();
+          }
+        }
+      }
+    }
+    await _queuePersist();
+    notifyLibraryChanged();
+  }
 
   /// Removes only the durable offline artwork library.
   Future<void> deleteAll() async {

@@ -6,6 +6,8 @@ import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/features/pokedex/views/pokemon_detail_screen.dart';
 import 'package:libredex/core/widgets/pokemon_sprite.dart';
 
+import 'package:flutter/services.dart';
+
 class AbilityDetailScreen extends ConsumerStatefulWidget {
   final int abilityId;
   final String abilityName;
@@ -81,6 +83,15 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
     }
   }
 
+  void _copyAbilityDetailsToClipboard() {
+    final text = 'ABILITY: ${widget.abilityName.toUpperCase()}\n${_abilityDescription ?? 'No description available.'}';
+    Clipboard.setData(ClipboardData(text: text));
+    HapticFeedback.lightImpact();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Ability info copied to clipboard.')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -96,6 +107,13 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
         iconTheme: IconThemeData(color: primaryColor),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.copy_rounded),
+            tooltip: 'Copy ability info',
+            onPressed: _copyAbilityDetailsToClipboard,
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: AppTheme.pokemonRed))
