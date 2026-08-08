@@ -83,7 +83,7 @@ class _ArtworkDownloadDialogState extends ConsumerState<ArtworkDownloadDialog> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return AlertDialog(
-      backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+      backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
       title: const Row(

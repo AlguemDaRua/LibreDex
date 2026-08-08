@@ -2,13 +2,14 @@ import 'package:libredex/core/widgets/pokemon_sprite.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/database/app_database.dart';
-import 'package:libredex/core/navigation/navigation_provider.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/utils/type_utils.dart';
-import 'package:libredex/core/widgets/app_drawer.dart';
+import 'package:libredex/core/widgets/analysis_card.dart';
+import 'package:libredex/core/widgets/type_pill.dart';
+import 'package:libredex/core/widgets/stat_tile.dart';
+import 'package:libredex/core/widgets/section_header.dart';
 import 'package:libredex/core/widgets/app_state_widgets.dart';
-import 'package:libredex/features/calculator/models/battle_ruleset.dart';
-import 'package:libredex/features/calculator/viewmodels/damage_calculator_viewmodel.dart';
+import 'package:libredex/features/calculator/utils/combat_utils.dart';
 import 'package:libredex/features/pokedex/models/type_efficiency_calculator.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
 import 'package:libredex/features/pokedex/viewmodels/favorites_provider.dart';
@@ -19,9 +20,7 @@ import 'package:libredex/features/pokedex/views/pokemon_detail_screen.dart';
 
 import 'package:libredex/features/team_builder/utils/showdown_parser.dart';
 import 'package:libredex/features/team_builder/widgets/team_defense_matrix.dart';
-
-/// Section index of the Damage Calculator inside HomeScreen's IndexedStack.
-const int _damageCalculatorSectionIndex = 8;
+import 'package:libredex/features/team_comparison/views/team_comparison_screen.dart';
 
 class TeamBuilderScreen extends ConsumerWidget {
   const TeamBuilderScreen({super.key});
@@ -149,7 +148,6 @@ class TeamBuilderScreen extends ConsumerWidget {
             ),
         ],
       ),
-      drawer: const AppDrawer(currentRoute: 'team'),
       body: pokemonAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => AppEmptyState(
@@ -351,7 +349,7 @@ class _TeamSlotCard extends ConsumerWidget {
         onTap: onAdd,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF101010) : Colors.white,
+            color: isDark ? const Color(0xFF121212) : Colors.white,
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0)),
           ),
@@ -385,7 +383,7 @@ class _TeamSlotCard extends ConsumerWidget {
           borderRadius: BorderRadius.circular(24),
           gradient: LinearGradient(
             colors: isDark
-                ? [Color.alphaBlend(typeColor.withValues(alpha: 0.22), const Color(0xFF090909)), const Color(0xFF101010)]
+                ? [Color.alphaBlend(typeColor.withValues(alpha: 0.22), const Color(0xFF090909)), const Color(0xFF121212)]
                 : [typeColor.withValues(alpha: 0.18), Colors.white],
           ),
           border: Border.all(color: typeColor.withValues(alpha: 0.28)),
@@ -395,37 +393,11 @@ class _TeamSlotCard extends ConsumerWidget {
             Positioned(
               top: 4,
               right: 4,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    tooltip: format == TeamFormat.champions
-                        ? 'Open in Damage Calculator (Champions)'
-                        : 'Open in Damage Calculator',
-                    icon: const Icon(Icons.calculate_outlined, size: 18),
-                    visualDensity: VisualDensity.compact,
-                    onPressed: () {
-                      // Park a one-shot intent; the calculator applies it on
-                      // its first frame, so a Champions team always lands in
-                      // the Champions ruleset.
-                      ref.read(calculatorLaunchIntentProvider.notifier).request(
-                            CalculatorLaunchIntent(
-                              attackerPokemonId: p.id,
-                              ruleset: format == TeamFormat.champions ? BattleRuleset.champions : null,
-                            ),
-                          );
-                      ref
-                          .read(currentMenuIndexProvider.notifier)
-                          .setIndex(_damageCalculatorSectionIndex);
-                    },
-                  ),
-                  IconButton(
-                    tooltip: 'Remove from team',
-                    icon: const Icon(Icons.close_rounded, size: 18),
-                    visualDensity: VisualDensity.compact,
-                    onPressed: () => ref.read(teamBuilderProvider.notifier).setSlot(index, null),
-                  ),
-                ],
+              child: IconButton(
+                tooltip: 'Remove from team',
+                icon: const Icon(Icons.close_rounded, size: 18),
+                visualDensity: VisualDensity.compact,
+                onPressed: () => ref.read(teamBuilderProvider.notifier).setSlot(index, null),
               ),
             ),
             Padding(
@@ -455,8 +427,8 @@ class _TeamSlotCard extends ConsumerWidget {
                   Wrap(
                     spacing: 6,
                     children: [
-                      _TypePill(type: p.type1),
-                      if (p.type2 != null) _TypePill(type: p.type2!),
+                      TypePill(type: p.type1),
+                      if (p.type2 != null) TypePill(type: p.type2!),
                     ],
                   ),
                 ],
@@ -481,6 +453,8 @@ class _TeamAnalysis extends StatelessWidget {
     final resistCounts = <String, int>{for (final type in pokemonTypes) type: 0};
     final immuneCounts = <String, int>{for (final type in pokemonTypes) type: 0};
     final ownedTypes = <String>{};
+    // Offensive: which defending types can this team hit super-effectively?
+    final offensiveHits = <String, int>{for (final type in pokemonTypes) type: 0};
 
     for (final pokemon in team) {
       ownedTypes.add(pokemon.type1);
@@ -492,33 +466,57 @@ class _TeamAnalysis extends StatelessWidget {
         if (value > 1) weaknessCounts[type] = weaknessCounts[type]! + 1;
         if (value > 0 && value < 1) resistCounts[type] = resistCounts[type]! + 1;
       }
+      // Offensive: this Pokémon's STAB types as attackers
+      for (final atkType in [pokemon.type1, if (pokemon.type2 != null) pokemon.type2!]) {
+        final atkMap = CombatUtils.effectivenessMap[atkType.toLowerCase()];
+        if (atkMap == null) continue;
+        for (final defType in (atkMap['double'] ?? const [])) {
+          offensiveHits[defType.toLowerCase()] = (offensiveHits[defType.toLowerCase()] ?? 0) + 1;
+        }
+      }
     }
 
     final pressure = weaknessCounts.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
     final gaps = pressure.where((e) => e.value >= 2 && resistCounts[e.key] == 0 && immuneCounts[e.key] == 0).take(4).toList();
 
+    final offensiveSorted = offensiveHits.entries.where((e) => e.value > 0).toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final uncoveredOffense = pokemonTypes.where((t) => (offensiveHits[t] ?? 0) == 0).toList();
+
+    // Snapshot stats — purely informational, no simulation
+    final totalBst = team.fold<int>(0, (s, p) => s + p.baseHp + p.baseAtk + p.baseDef + p.baseSpAtk + p.baseSpDef + p.baseSpd);
+    final avgBst = team.isEmpty ? 0 : (totalBst / team.length).round();
+    final avgSpeed = team.isEmpty ? 0 : (team.fold<int>(0, (s, p) => s + p.baseSpd) / team.length).round();
+    final fastest = team.isEmpty ? null : team.reduce((a, b) => a.baseSpd > b.baseSpd ? a : b);
+    final slowest = team.isEmpty ? null : team.reduce((a, b) => a.baseSpd < b.baseSpd ? a : b);
+
     final isChampions = format == TeamFormat.champions;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // ── SECTION: Defensive Overview ──
+        SectionHeader(icon: Icons.shield_rounded, title: 'Defensive Overview', subtitle: 'How your team soaks hits — Pokédex math, not a battle'),
+        const SizedBox(height: 10),
         TeamDefenseMatrix(team: team),
         const SizedBox(height: 16),
-        const Text('Team readout', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 12),
+
+        // ── SECTION: Readout ──
+        SectionHeader(icon: Icons.insights_rounded, title: 'Team readout', subtitle: 'Informational — no turns, no simulation'),
+        const SizedBox(height: 10),
         if (isChampions) ...[
-          const _AnalysisCard(
+          const AnalysisCard(
             title: 'Pokémon Champions setup',
             icon: Icons.emoji_events_rounded,
             child: Text(
-              'Readout assumes Champions battles: Lv. 50 only, IVs always perfect, and 66 Stat Points (max 32 per stat) instead of EVs. Tap the calculator icon on any member to tune its spread in the Champions ruleset.',
+              'Readout assumes Champions: Lv. 50, perfect IVs, 66 Stat Points (max 32 per stat). Use Stat Comparison to tune spreads.',
               style: TextStyle(height: 1.45),
             ),
           ),
           const SizedBox(height: 12),
         ],
-        _AnalysisCard(
+        AnalysisCard(
           title: gaps.isEmpty ? 'Defensive shape looks solid' : 'Watch these matchups',
           icon: gaps.isEmpty ? Icons.verified_rounded : Icons.warning_amber_rounded,
           child: gaps.isEmpty
@@ -526,11 +524,39 @@ class _TeamAnalysis extends StatelessWidget {
               : Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: gaps.map((e) => _CountPill(type: e.key, count: e.value, label: 'weak')).toList(),
+                  children: gaps.map((e) => CountPill(type: e.key, count: e.value, label: 'weak')).toList(),
                 ),
         ),
         const SizedBox(height: 12),
-        _AnalysisCard(
+        // Offensive coverage — what can your STABs hit?
+        AnalysisCard(
+          title: offensiveSorted.isEmpty ? 'Offensive coverage — add members' : 'Offensive coverage (STAB super-effective)',
+          icon: Icons.flash_on_rounded,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (offensiveSorted.isNotEmpty)
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: offensiveSorted.take(12).map((e) => CountPill(type: e.key, count: e.value, label: 'hit')).toList(),
+                ),
+              if (uncoveredOffense.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Text(
+                  'No STAB super-effective vs: ${uncoveredOffense.map((t) => t.toUpperCase()).take(6).join(', ')}${uncoveredOffense.length > 6 ? '…' : ''}',
+                  style: const TextStyle(fontSize: 11, color: Colors.grey, height: 1.4),
+                ),
+              ] else if (offensiveSorted.isNotEmpty)
+                const Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: Text('Covers every type super-effectively with STAB.', style: TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.w700)),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        AnalysisCard(
           title: 'Type spread',
           icon: Icons.bubble_chart_rounded,
           child: Wrap(
@@ -540,12 +566,74 @@ class _TeamAnalysis extends StatelessWidget {
               final owned = ownedTypes.contains(type);
               return Opacity(
                 opacity: owned ? 1 : 0.42,
-                child: _TypePill(type: type),
+                child: TypePill(type: type),
               );
             }).toList(),
           ),
         ),
+        const SizedBox(height: 12),
+        // Snapshot — averages, no simulation
+        AnalysisCard(
+          title: 'Snapshot (info only)',
+          icon: Icons.analytics_outlined,
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(child: StatTile(label: 'Avg BST', value: '$avgBst', sub: 'team ${team.length}/6')),
+                  const SizedBox(width: 8),
+                  Expanded(child: StatTile(label: 'Avg Speed', value: '$avgSpeed', sub: 'fastest ${fastest?.name ?? '-'}')),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(child: StatTile(label: 'Slowest', value: slowest?.name ?? '-', sub: 'base ${slowest?.baseSpd ?? '-'} Spe')),
+                  const SizedBox(width: 8),
+                  Expanded(child: StatTile(label: 'Weak ≥3', value: '${pressure.where((e) => e.value >= 3).length}', sub: 'types')),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        SectionHeader(icon: Icons.compare_arrows_rounded, title: 'Team Comparison', subtitle: 'Compare two teams side-by-side — Pokédex info only'),
+        const SizedBox(height: 10),
+        _TeamCompareButton(team: team, format: format),
       ],
+    );
+  }
+}
+
+class _TeamCompareButton extends ConsumerWidget {
+  final List<Pokemon> team;
+  final TeamFormat format;
+  const _TeamCompareButton({required this.team, required this.format});
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF121212) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('Team vs Team — type & stat overview. No turns, no rolls, just Pokédex math.', style: TextStyle(fontSize: 11, color: Colors.grey, height: 1.4)),
+        const SizedBox(height: 10),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            icon: const Icon(Icons.compare_rounded, size: 18),
+            label: const Text('Compare Teams', style: TextStyle(fontWeight: FontWeight.w900)),
+            style: FilledButton.styleFrom(backgroundColor: AppTheme.pokemonRed, padding: const EdgeInsets.symmetric(vertical: 14)),
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => TeamComparisonScreen(myTeam: team, format: format)));
+            },
+          ),
+        ),
+      ]),
     );
   }
 }
@@ -588,7 +676,7 @@ class _PokemonPickerSheetState extends ConsumerState<_PokemonPickerSheet> {
     final screenHeight = MediaQuery.of(context).size.height;
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
-      backgroundColor: isDark ? const Color(0xFF0C0C0C) : Colors.white,
+      backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: ConstrainedBox(
         constraints: BoxConstraints(maxHeight: screenHeight * 0.8),
@@ -659,66 +747,7 @@ class _PokemonPickerSheetState extends ConsumerState<_PokemonPickerSheet> {
   }
 }
 
-class _AnalysisCard extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final Widget child;
 
-  const _AnalysisCard({required this.title, required this.icon, required this.child});
 
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF101010) : Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(children: [Icon(icon, color: AppTheme.pokemonRed), const SizedBox(width: 8), Text(title, style: const TextStyle(fontWeight: FontWeight.w900))]),
-          const SizedBox(height: 12),
-          child,
-        ],
-      ),
-    );
-  }
-}
 
-class _CountPill extends StatelessWidget {
-  final String type;
-  final int count;
-  final String label;
 
-  const _CountPill({required this.type, required this.count, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    final color = pokemonTypeColor(type);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(12), border: Border.all(color: color.withValues(alpha: 0.25))),
-      child: Text('${titleCasePokemonText(type)} · $count $label', style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 12)),
-    );
-  }
-}
-
-class _TypePill extends StatelessWidget {
-  final String type;
-
-  const _TypePill({required this.type});
-
-  @override
-  Widget build(BuildContext context) {
-    final color = pokemonTypeColor(type);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(9)),
-      child: Text(titleCasePokemonText(type), style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w900)),
-    );
-  }
-}

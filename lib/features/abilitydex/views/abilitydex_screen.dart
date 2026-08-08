@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/core/theme/app_theme.dart';
-import 'package:libredex/core/widgets/app_drawer.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
 import 'package:libredex/core/theme/app_spacing.dart';
 import 'package:libredex/features/abilitydex/views/ability_detail_screen.dart';
@@ -331,7 +330,6 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      drawer: const AppDrawer(currentRoute: 'abilities'),
       body: SafeArea(
         bottom: true,
         child: _isLoading

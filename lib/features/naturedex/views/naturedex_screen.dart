@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:libredex/core/theme/app_theme.dart';
-import 'package:libredex/core/widgets/app_drawer.dart';
 import 'package:libredex/core/widgets/dex_filter_bar.dart';
 import 'package:libredex/core/widgets/dex_sort_menu.dart';
 import 'package:libredex/core/widgets/dex_filter_sheet.dart';
@@ -241,7 +240,6 @@ class _NaturedexScreenState extends State<NaturedexScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      drawer: const AppDrawer(currentRoute: 'natures'),
       body: SafeArea(
         bottom: true,
         child: Padding(
@@ -391,7 +389,7 @@ class _NaturedexScreenState extends State<NaturedexScreen> {
                           return Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF101010) : Colors.white,
+                              color: isDark ? const Color(0xFF121212) : Colors.white,
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
                                 color: isNeutral
@@ -462,7 +460,7 @@ class _NaturedexScreenState extends State<NaturedexScreen> {
       width: 260,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+        color: isDark ? const Color(0xFF121212) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
       ),

@@ -10,7 +10,6 @@ import 'package:libredex/features/pokedex/models/stat_calculator.dart';
 import 'package:libredex/features/pokedex/viewmodels/pokedex_viewmodel.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
 import 'package:libredex/core/data/species_data.dart';
-import 'package:libredex/core/widgets/app_drawer.dart';
 import 'package:libredex/features/calculator/utils/combat_utils.dart';
 import 'package:libredex/features/calculator/utils/damage_math.dart';
 import 'package:libredex/core/theme/app_spacing.dart';
@@ -179,7 +178,6 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
           ],
         ),
       ),
-      drawer: const AppDrawer(currentRoute: 'calculator'),
       body: Column(
         children: [
           _buildRulesetBar(isDark, state, vm),
@@ -314,7 +312,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 6),
               child: Text(
-                'Champions uses 65 Stat Points instead of EVs and its own fixed stat formula.',
+                'Champions uses 66 Stat Points instead of EVs and its own fixed stat formula.',
                 style: TextStyle(fontSize: 10.5, height: 1.35, color: Colors.grey, fontWeight: FontWeight.w600),
                 textAlign: TextAlign.center,
               ),
@@ -385,67 +383,68 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     final double bp = state.movePower;
     final moveType = state.moveType.toLowerCase();
 
-    // Attacker Raw Stat calculation with Boost Stage
+    // Integer-parity sandbox — same fixed-point path as the Duel tab & Showdown.
+    final int sandboxLevel = state.ruleset.isChampions ? ChampionsRules.level : state.attackerLevel;
+
+    // Stages are ignored correctly on crit (negative Atk / positive Def don't apply).
     final double atkRaw = state.simpleAttackerStat;
     final int atkStage = state.attackerStages['atk'] ?? 0;
     final int effectiveAtkStage = state.isCriticalHit ? (atkStage < 0 ? 0 : atkStage) : atkStage;
     final double atkWithStage = (atkRaw * CombatUtils.getStageMultiplier(effectiveAtkStage)).clamp(1.0, 9999.0);
-
-    // Defender Raw Stat calculation with Boost Stage
     final double defRaw = state.simpleDefenderStat;
     final int defStage = state.defenderStages['def'] ?? 0;
     final int effectiveDefStage = state.isCriticalHit ? (defStage > 0 ? 0 : defStage) : defStage;
     final double defWithStage = (defRaw * CombatUtils.getStageMultiplier(effectiveDefStage)).clamp(1.0, 9999.0);
 
-    // Item multipliers
     final double atkItemMult = HeldItemsData.getAttackMultiplier(state.attackerHeldItem, moveType, isSpecial);
     final double defStatItemMult = HeldItemsData.getDefenseMultiplier(state.defenderHeldItem, isSpecial);
     final double defResistMult = HeldItemsData.getDefenderResistMultiplier(state.defenderHeldItem, moveType, state.simpleEffectiveness);
+    final int atkFinal = (atkWithStage * atkItemMult).round().clamp(1, 9999);
+    final int defFinal = (defWithStage * defStatItemMult).round().clamp(1, 9999);
 
-    final double atkFinal = atkWithStage * atkItemMult;
-    final double defFinal = (defWithStage * defStatItemMult).clamp(1.0, 9999.0);
-
-    // Weather multiplier
     double weatherMult = 1.0;
     if (state.weather == 'sunny' && moveType == 'fire') weatherMult = 1.5;
     if (state.weather == 'sunny' && moveType == 'water') weatherMult = 0.5;
     if (state.weather == 'rainy' && moveType == 'water') weatherMult = 1.5;
     if (state.weather == 'rainy' && moveType == 'fire') weatherMult = 0.5;
 
-    // Terrain multiplier
     double terrainMult = 1.0;
     if (state.terrain == 'electric' && moveType == 'electric') terrainMult = 1.3;
     if (state.terrain == 'grassy' && moveType == 'grass') terrainMult = 1.3;
     if (state.terrain == 'psychic' && moveType == 'psychic') terrainMult = 1.3;
-
-    // Helping Hand
     double hhMult = state.helpingHandActive ? 1.5 : 1.0;
+    final double typeAbilityBpMult = CombatUtils.typeChangingAbilityPowerMultiplier(state.attackerAbility, state.moveType);
+    final int finalBasePower = (bp * terrainMult * hhMult * typeAbilityBpMult).round().clamp(1, 9999);
 
-    // Final Base Power
-    final double finalBp = bp * weatherMult * terrainMult * hhMult;
-
-    // Screen multiplier (ignored on Critical Hit)
+    // Screens: 0.5 singles, 2732/4096 doubles; Champions supports both formats like mainline.
     double screenMult = 1.0;
     if (!state.isCriticalHit) {
-      if (isSpecial && state.lightScreenActive) screenMult = 0.5;
-      if (!isSpecial && state.reflectActive) screenMult = 0.5;
+      final double doublesScreen = 2732 / 4096;
+      final bool isDoubles = state.isDoubleBattle;
+      if (isSpecial && state.lightScreenActive) screenMult = isDoubles ? doublesScreen : 0.5;
+      if (!isSpecial && state.reflectActive) screenMult = isDoubles ? doublesScreen : 0.5;
     }
-
-    // Burn penalty (0.5x on physical moves if burned)
-    double burnMult = 1.0;
-    if (!isSpecial && state.attackerStatus == 'burn' && state.attackerAbility != 'guts' && state.selectedMoveName?.toLowerCase() != 'facade') {
-      burnMult = 0.5;
-    }
-
-    // Critical Hit multiplier (1.5x)
-    final double critMult = state.isCriticalHit ? 1.5 : 1.0;
-
-    // Damage Formula Base — Champions locks the level term to 50, matching
-    // its fixed battle level; mainline keeps the editable level.
-    final int sandboxLevel = state.ruleset.isChampions ? ChampionsRules.level : state.attackerLevel;
-    final double damageBase = ((((2 * sandboxLevel / 5) + 2) * finalBp * atkFinal / defFinal) / 50) + 2;
-    final double rawMinDamage = damageBase * state.simpleStab * state.simpleEffectiveness * screenMult * burnMult * critMult * defResistMult * 0.85;
-    final double rawMaxDamage = damageBase * state.simpleStab * state.simpleEffectiveness * screenMult * burnMult * critMult * defResistMult * 1.0;
+    final bool burned = !isSpecial && state.attackerStatus == 'burn' && state.attackerAbility?.toLowerCase() != 'guts' && state.selectedMoveName?.toLowerCase() != 'facade';
+    final double spreadMult = CombatUtils.spreadMultiplier(state.selectedMoveName ?? 'custom move', state.isDoubleBattle);
+    final List<double> sandboxFinalMods = [
+      if (screenMult != 1.0) screenMult,
+      if (defResistMult != 1.0) defResistMult,
+      if (spreadMult != 1.0) spreadMult,
+    ];
+    final DamageRange sandboxRange = DamageMath.calculate(
+      level: sandboxLevel,
+      basePower: finalBasePower,
+      attack: atkFinal,
+      defense: defFinal,
+      stab: state.simpleStab,
+      effectiveness: state.simpleEffectiveness,
+      critical: state.isCriticalHit,
+      weather: weatherMult,
+      burned: burned,
+      finalModifiers: sandboxFinalMods,
+    );
+    final int rawMinDamage = sandboxRange.min;
+    final int rawMaxDamage = sandboxRange.max;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, AppSpacing.topContentGap, AppSpacing.pagePadding, AppSpacing.bottomScrollPadding),
@@ -713,7 +712,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
           // Result Sandbox Display
           Card(
             elevation: 0,
-            color: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+            color: isDark ? const Color(0xFF121212) : Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
               side: BorderSide(color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE2E8F0), width: 1.2),
@@ -750,6 +749,8 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                       if (state.attackerHeldItem != 'None') _modChip(state.attackerHeldItem, Colors.purple),
                       if (state.defenderHeldItem != 'None') _modChip('Def Item: ${state.defenderHeldItem}', Colors.blue),
                       if (state.isCriticalHit) _modChip('CRITICAL HIT ×1.5', Colors.redAccent),
+                      if (spreadMult != 1.0) _modChip('Spread ×0.75', Colors.indigo),
+                      if (state.isDoubleBattle) _modChip('Doubles', Colors.cyan),
                       if (state.weather != 'none') _modChip('☁ ${state.weather}', Colors.teal),
                       if (state.helpingHandActive) _modChip('Helping Hand ×1.5', Colors.orange),
                     ],
@@ -996,8 +997,10 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
 
     double screenMult = 1.0;
     if (!isCritical) {
-      if (isSpecial && state.lightScreenActive) screenMult = 0.5;
-      if (!isSpecial && state.reflectActive) screenMult = 0.5;
+      final double doublesScreen = 2732 / 4096;
+      final bool isDoubles = state.isDoubleBattle;
+      if (isSpecial && state.lightScreenActive) screenMult = isDoubles ? doublesScreen : 0.5;
+      if (!isSpecial && state.reflectActive) screenMult = isDoubles ? doublesScreen : 0.5;
     }
 
     double terrainMult = 1.0;
@@ -1042,14 +1045,15 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     final hasParentalBond = state.attackerAbility?.toLowerCase() == 'parental bond' &&
         hitBasePowers.length == 1;
     final breaksProtection = CombatUtils.breaksProtect(activeMove.name);
-    final unseenFistProtectionHit = CombatUtils.isUnseenFistProtectionHit(
-      activeMove.name,
-      state.attackerAbility,
-    );
+    // Use DB isContact flag first (100% accurate), fallback to curated name set for sandbox/synthetic moves.
+    final bool unseenFistProtectionHit = state.attackerAbility?.toLowerCase().replaceAll('-', ' ').replaceAll('_', ' ').trim() == 'unseen fist' &&
+        (activeMove.isContact || CombatUtils.isContactMove(activeMove.name));
     final blockedByProtect = state.defenderProtected && !breaksProtection && !unseenFistProtectionHit;
+    final double spreadMult = CombatUtils.spreadMultiplier(activeMove.name, state.isDoubleBattle);
     final finalDamageModifiers = <double>[
-      screenMult,
-      defResistMult,
+      if (screenMult != 1.0) screenMult,
+      if (defResistMult != 1.0) defResistMult,
+      if (spreadMult != 1.0) spreadMult,
       if (state.defenderProtected && unseenFistProtectionHit) 0.25,
     ];
     final multiHitDamage = DamageMath.calculateMultiHit(
@@ -1224,7 +1228,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+                color: isDark ? const Color(0xFF121212) : Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: state.selectedMoveName != null ? AppTheme.pokemonRed.withValues(alpha: 0.5) : (isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE2E8F0)), width: 1.2),
               ),
@@ -1400,7 +1404,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
           // Legacy Quick Reference Range Card
           Card(
             elevation: 0,
-            color: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+            color: isDark ? const Color(0xFF121212) : Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
               side: BorderSide(color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE2E8F0), width: 1.2),
@@ -1514,6 +1518,8 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                   if (blockedByProtect) _modChip('PROTECT — BLOCKED', Colors.grey),
                   if (state.defenderProtected && unseenFistProtectionHit) _modChip('Unseen Fist through Protect (¼)', Colors.blueAccent),
                   if (state.defenderProtected && breaksProtection) _modChip('Breaks Protect', Colors.green),
+                  if (spreadMult != 1.0) _modChip('Spread Move ×0.75', Colors.indigo),
+                  if (state.isDoubleBattle) _modChip('Doubles', Colors.cyan),
                   if (state.attackerStatus == 'burn' && !isSpecial) _modChip('BURN (Halved Atk)', Colors.deepOrange),
                   if (isSlowStartActive) _modChip('Slow Start (½ Atk / Spe)', Colors.orangeAccent),
                   if (state.weather != 'none') _modChip('☁ ${state.weather}', Colors.teal),
@@ -1530,11 +1536,12 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+              color: isDark ? const Color(0xFF121212) : Colors.white,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE2E8F0)),
             ),
             child: Column(children: [
+              _buildSwitchListTile('⚔ Double Battle (Spread 0.75× / Screens 0.667×)', state.isDoubleBattle, vm.toggleDoubleBattle),
               _buildSwitchListTile('💥 Critical Hit (1.5x, Ignores Defense Boosts)', state.isCriticalHit, vm.toggleCriticalHit),
               _buildSwitchListTile('🛡 Defender used Protect / Detect', state.defenderProtected, vm.toggleDefenderProtected),
               const Divider(),
@@ -1548,7 +1555,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
                           value: state.weather,
-                          dropdownColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+                          dropdownColor: isDark ? const Color(0xFF121212) : Colors.white,
                           isExpanded: true,
                           style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 12),
                           items: const [
@@ -1576,7 +1583,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
                           value: state.terrain,
-                          dropdownColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+                          dropdownColor: isDark ? const Color(0xFF121212) : Colors.white,
                           isExpanded: true,
                           style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 12),
                           items: const [
@@ -1636,7 +1643,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+        color: isDark ? const Color(0xFF121212) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE2E8F0), width: 1.2),
       ),
@@ -1812,7 +1819,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                           onChanged: (val) {
                             final parsed = int.tryParse(val) ?? 0;
                             if (isChampions) {
-                              // Stat Points: 32 per stat cap, 65 overall —
+                              // Stat Points: 32 per stat cap, 66 overall —
                               // the view model enforces the total budget.
                               if (isAttacker) {
                                 vm.updateAttackerSp(key, parsed);
@@ -1880,7 +1887,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
 
           return Dialog(
             insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
-            backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+            backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
             child: ConstrainedBox(
               constraints: BoxConstraints(maxHeight: screenHeight * 0.85),
@@ -1967,7 +1974,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                         SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Pokémon Champions — 65 Stat Points in total, max 32 per stat, using Champions stat formulas.',
+                            'Pokémon Champions — 66 Stat Points in total, max 32 per stat, using Champions stat formulas.',
                             style: TextStyle(fontSize: 10.5, height: 1.35, fontWeight: FontWeight.w600, color: Colors.grey),
                           ),
                         ),

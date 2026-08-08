@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:libredex/core/theme/app_theme.dart';
-import 'package:libredex/core/widgets/app_drawer.dart';
 import 'package:libredex/core/widgets/app_state_widgets.dart';
 import 'package:libredex/features/itemdex/data/itemdex_data.dart';
 import 'package:libredex/core/theme/app_spacing.dart';
@@ -413,7 +412,6 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
             ),
         ],
       ),
-      drawer: const AppDrawer(currentRoute: 'items'),
       body: itemsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppTheme.pokemonRed)),
         error: (error, _) => AppEmptyState(
@@ -551,7 +549,7 @@ class _ItemCard extends StatelessWidget {
           child: Ink(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF101010) : Colors.white,
+              color: isDark ? const Color(0xFF121212) : Colors.white,
               borderRadius: BorderRadius.circular(22),
               border: Border.all(color: accent.withValues(alpha: isDark ? 0.35 : 0.20)),
             ),
@@ -630,7 +628,7 @@ class _ItemCard extends StatelessWidget {
       builder: (context) {
         return Dialog(
           insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          backgroundColor: isDark ? const Color(0xFF0C0C0C) : Colors.white,
+          backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 480),

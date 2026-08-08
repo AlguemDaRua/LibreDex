@@ -6,6 +6,7 @@ import 'package:libredex/features/pokedex/models/type_efficiency_calculator.dart
 import 'package:libredex/features/stat_comparison/models/stat_modifier.dart';
 import 'package:libredex/features/battle_engine/models/applied_modifier.dart';
 import 'package:libredex/features/battle_engine/models/battle_state.dart';
+import 'package:libredex/features/calculator/utils/combat_utils.dart';
 
 class ModifierPipelineResult {
   final int effectiveBasePower;
@@ -121,12 +122,12 @@ class ModifierPipeline {
       warnings.add('Base power is 0 for an attacking move. Check move configuration.');
     }
 
-    // Move category checks
-    final isPunching = moveName.contains('punch') || moveName == 'hammer arm' || moveName == 'bullet punch';
-    final isSlicing = moveName.contains('slash') || moveName.contains('blade') || moveName == 'cut' || moveName == 'air cutter' || moveName == 'bitter blade' || moveName == 'sacred sword' || moveName == 'stone axe' || moveName == 'psyblade' || moveName == 'kowtow cleave';
-    final isBiting = moveName.contains('bite') || moveName.contains('fang') || moveName == 'crunch' || moveName == 'jaw lock';
-    final isPulse = moveName.contains('pulse') || moveName.contains('aura') || moveName == 'dark pulse' || moveName == 'dragon pulse' || moveName == 'water shuriken';
-    final isRecoil = moveName.contains('recoil') || moveName == 'take down' || moveName == 'double edge' || moveName == 'brave bird' || moveName == 'flare blitz' || moveName == 'wave crash' || moveName == 'head smash' || moveName == 'volt tackle' || moveName == 'wood hammer';
+    // DB-accurate category checks — no more `contains('punch')` hacks
+    final isPunching = CombatUtils.isPunchingMove(moveName);
+    final isSlicing = CombatUtils.isSlicingMove(moveName);
+    final isBiting = CombatUtils.isBitingMove(moveName);
+    final isPulse = CombatUtils.isPulseMove(moveName);
+    final isRecoil = CombatUtils.isRecoilMove(moveName);
 
     // Dynamic Base Power logic
     if (moveName == 'facade' && state.attacker.status != 'none') {
@@ -295,6 +296,12 @@ class ModifierPipeline {
     if (state.field.helpingHandActive) {
       finalModifiers.add(1.5);
       applied.add(const AppliedModifier(name: 'Helping Hand', multiplier: 1.5, category: ModifierCategory.finalModifier));
+    }
+
+    // Spread move penalty in doubles (0.75× per Showdown)
+    if (state.field.isDoubleBattle && CombatUtils.isSpreadMove(state.move.name)) {
+      finalModifiers.add(0.75);
+      applied.add(const AppliedModifier(name: 'Spread Move (Doubles 0.75×)', multiplier: 0.75, category: ModifierCategory.finalModifier));
     }
 
     // Life Orb

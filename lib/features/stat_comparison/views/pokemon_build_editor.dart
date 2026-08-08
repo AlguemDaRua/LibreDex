@@ -95,7 +95,7 @@ class _BuildEditorDialogState extends State<_BuildEditorDialog> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF0C0C0C) : Colors.white;
+    final bg = isDark ? const Color(0xFF121212) : Colors.white;
 
     return Center(
       child: Material(

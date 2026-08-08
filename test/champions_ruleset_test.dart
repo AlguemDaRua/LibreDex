@@ -97,7 +97,7 @@ void main() {
     test('damage level is fixed at 50 and SP budget is canonical', () {
       expect(ChampionsRules.level, 50);
       expect(ChampionsRules.fixedIv, 31);
-      expect(ChampionsRules.totalStatPoints, 65);
+      expect(ChampionsRules.totalStatPoints, 66);
       expect(ChampionsRules.maxStatPointsPerStat, 32);
     });
 
@@ -123,7 +123,7 @@ void main() {
       }
     });
 
-    test('SP edits respect the 32 per-stat cap and the 65 total budget', () {
+    test('SP edits respect the 32 per-stat cap and the 66 total budget', () {
       final spread = ChampionsRules.emptySpread();
       expect(ChampionsRules.clampStatPoint(spread, 'atk', 40), 32);
       expect(ChampionsRules.clampStatPoint(spread, 'atk', -5), 0);
@@ -152,7 +152,7 @@ void main() {
       final physical = ChampionsStatPreset.presets.first;
       expect(physical.spread['atk'], 32);
       expect(physical.spread['spe'], 32);
-      expect(physical.spread['hp'], 1);
+      expect(physical.spread['hp'], 2);
     });
   });
 
@@ -213,9 +213,9 @@ void main() {
       );
       vm.updateAttackerSp('def', 32);
       final state = container.read(damageCalculatorViewModelProvider);
-      // Only 1 point remains (65 - 32 - 32), so Def caps at 1.
-      expect(state.attackerSps['def'], 1);
-      expect(ChampionsRules.usedStatPoints(state.attackerSps), 65);
+      // Only 2 points remain (66 - 32 - 32), so Def caps at 2.
+      expect(state.attackerSps['def'], 2);
+      expect(ChampionsRules.usedStatPoints(state.attackerSps), 66);
     });
 
     test('ruleset choice persists via SharedPreferences', () async {

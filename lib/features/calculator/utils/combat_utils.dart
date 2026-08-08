@@ -224,14 +224,82 @@ class CombatUtils {
     'feint', 'g max one blow', 'g max rapid flow',
   }.contains(_normalizeName(moveName));
 
+  // Prefer DB flag (Move.isContact) when you have a Move object; this
+  // fallback set is for sandbox/duel calculations that only have a name.
+  // Curated from PokeAPI + Showdown contact list — Unseen Fist must work
+  // on any contact move, not just 15 samples, to match Showdown parity.
   static bool isContactMove(String moveName) => const {
+    // original core
     'surging strikes', 'wicked blow', 'close combat', 'drain punch', 'body slam',
     'triple axel', 'dual wingbeat', 'double iron bash', 'flower trick',
     'knock off', 'u turn', 'flip turn', 'jet punch', 'aqua jet', 'fake out',
+    // expanded — most common contact moves
+    'tackle', 'quick attack', 'mach punch', 'bullet punch', 'shadow punch',
+    'shadow sneak', 'ice punch', 'fire punch', 'thunder punch', 'power up punch',
+    'drain punch', 'hammer arm', 'superpower', 'double slap', 'comet punch',
+    'flame charge', 'aqua tail', 'dragon claw', 'outrage', 'play rough',
+    'spirit break', 'throat chop', 'cross chop', 'brick break', 'low kick',
+    'high horsepower', 'headbutt', 'zen headbutt', 'iron head', 'iron tail',
+    'poison jab', 'x scissor', 'leaf blade', 'psycho cut', 'night slash',
+    'slash', 'cut', 'fury swipes', 'scratch', 'pound', 'double hit',
+    'double kick', 'triple kick', 'arm thrust', 'bullet seed', 'pin missile',
+    'rock blast', 'scale shot', 'population bomb', 'tail slap', 'crabhammer',
+    'wood hammer', 'brave bird', 'flare blitz', 'volt tackle', 'head smash',
+    'double edge', 'take down', 'submission', 'fury cutter', 'aqua jet',
+    'sucker punch', 'shadow claw', 'dragon hammer', 'power whip', 'horn leech',
+    'bite', 'crunch', 'psychic fangs', 'fishious rend', 'bolt beak',
   }.contains(_normalizeName(moveName));
+
+  /// Moves that hit all adjacent foes/allies in doubles and therefore do
+  /// 0.75× damage per target (Showdown `isSpread` / `spreadDamage`).
+  /// Accurate Gen IX list — singles ignores it, doubles applies 0.75.
+  static bool isSpreadMove(String moveName) => const {
+    'earthquake', 'surf', 'heat wave', 'dazzling gleam', 'discharge',
+    'lava plume', 'muddy water', 'sludge wave', 'blizzard', 'rock slide',
+    'hyper voice', 'boomburst', 'eruption', 'water spout', 'electroweb',
+    'bulldoze', 'icy wind', 'petal blizzard', 'twister', 'parabolic charge',
+    'origin pulse', 'precipice blades', 'explosion', 'self destruct',
+    'misty explosion', 'expanding force',
+  }.contains(_normalizeName(moveName));
+
+  /// Spread damage multiplier: 0.75 in doubles if the move is a spread move.
+  static double spreadMultiplier(String moveName, bool isDoubleBattle) =>
+      isDoubleBattle && isSpreadMove(moveName) ? 0.75 : 1.0;
 
   static bool isUnseenFistProtectionHit(String moveName, String? ability) =>
       _normalizeName(ability ?? '') == 'unseen fist' && isContactMove(moveName);
+
+  /// DB-accurate move-property helpers — mirror Move.isPunching/isSlicing/etc.
+  /// Used by ModifierPipeline so it doesn't rely on `name.contains('punch')` hacks.
+  static bool isPunchingMove(String moveName) => const {
+    'bullet punch', 'comet punch', 'drain punch', 'dynamic punch', 'fire punch',
+    'focus punch', 'hammer arm', 'ice punch', 'jet punch', 'mach punch',
+    'mega punch', 'power up punch', 'shadow punch', 'sky uppercut',
+    'thunder punch', 'double iron bash',
+  }.contains(_normalizeName(moveName));
+
+  static bool isSlicingMove(String moveName) => const {
+    'aerial ace', 'air cutter', 'air slash', 'behemoth blade', 'bitter blade',
+    'ceaseless edge', 'cross poison', 'cut', 'false swipe', 'fury cutter',
+    'kowtow cleave', 'leaf blade', 'night slash', 'psycho cut', 'razor leaf',
+    'razor shell', 'sacred sword', 'slash', 'stone axe', 'x scissor',
+    'psyblade',
+  }.contains(_normalizeName(moveName));
+
+  static bool isBitingMove(String moveName) => const {
+    'bite', 'crunch', 'fire fang', 'hyper fang', 'ice fang', 'jaw lock',
+    'poison fang', 'psychic fangs', 'thunder fang',
+  }.contains(_normalizeName(moveName));
+
+  static bool isPulseMove(String moveName) => const {
+    'aura sphere', 'dark pulse', 'dragon pulse', 'heal pulse', 'origin pulse',
+    'terrain pulse', 'water pulse',
+  }.contains(_normalizeName(moveName));
+
+  static bool isRecoilMove(String moveName) => const {
+    'brave bird', 'double edge', 'flare blitz', 'head smash', 'take down',
+    'volt tackle', 'wave crash', 'wood hammer', 'submission',
+  }.contains(_normalizeName(moveName));
 
   /// Whether a move is guaranteed to land as a critical hit in Gen IX.
   /// This is not a user toggle: Flower Trick and the listed high-crit moves
