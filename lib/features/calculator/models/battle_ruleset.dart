@@ -16,7 +16,7 @@ enum BattleRuleset {
   /// Classic mainline games (default; keeps the classic calculator intact).
   mainline,
 
-  /// Pokémon Champions: its own fixed stat formula, 65 Stat Points total
+  /// Pokémon Champions: its own fixed stat formula, 66 Stat Points total
   /// (max 32 per stat) and Stat Alignments.
   champions,
 }
@@ -42,8 +42,8 @@ class ChampionsRules {
   static const int fixedIv = 31;
 
   /// Total Stat Points that can be distributed across the six stats.
-  /// The official Champions calculator shows a 65-point budget.
-  static const int totalStatPoints = 65;
+  /// The official Champions calculator shows a 66-point budget.
+  static const int totalStatPoints = 66;
 
   /// Maximum Stat Points allowed in a single stat (each point is +1 stat).
   static const int maxStatPointsPerStat = 32;
@@ -78,7 +78,7 @@ class ChampionsRules {
       totalStatPoints - usedStatPoints(spread);
 
   /// Clamps a Stat Point edit so it respects both the 32 per-stat cap and
-  /// the 65 point total budget. Returns the effective value for [key].
+  /// the 66 point total budget. Returns the effective value for [key].
   static int clampStatPoint(Map<String, int> spread, String key, int requested) {
     final otherStats = usedStatPoints(spread) - (spread[key] ?? 0);
     final budgetLeft = totalStatPoints - otherStats;
@@ -105,19 +105,19 @@ class ChampionsStatPreset {
 
   static const List<ChampionsStatPreset> presets = [
     ChampionsStatPreset('Physical Attacker', {
-      'hp': 1, 'atk': 32, 'def': 0, 'spa': 0, 'spd': 0, 'spe': 32,
+      'hp': 2, 'atk': 32, 'def': 0, 'spa': 0, 'spd': 0, 'spe': 32,
     }),
     ChampionsStatPreset('Special Attacker', {
-      'hp': 1, 'atk': 0, 'def': 0, 'spa': 32, 'spd': 0, 'spe': 32,
+      'hp': 2, 'atk': 0, 'def': 0, 'spa': 32, 'spd': 0, 'spe': 32,
     }),
     ChampionsStatPreset('Bulky Physical', {
-      'hp': 32, 'atk': 32, 'def': 1, 'spa': 0, 'spd': 0, 'spe': 0,
+      'hp': 32, 'atk': 32, 'def': 1, 'spa': 0, 'spd': 1, 'spe': 0,
     }),
     ChampionsStatPreset('Bulky Special', {
-      'hp': 32, 'atk': 0, 'def': 0, 'spa': 32, 'spd': 1, 'spe': 0,
+      'hp': 32, 'atk': 0, 'def': 0, 'spa': 32, 'spd': 1, 'spe': 1,
     }),
     ChampionsStatPreset('Trick Room Attacker', {
-      'hp': 32, 'atk': 32, 'def': 1, 'spa': 0, 'spd': 0, 'spe': 0,
+      'hp': 32, 'atk': 32, 'def': 2, 'spa': 0, 'spd': 0, 'spe': 0,
     }),
   ];
 }

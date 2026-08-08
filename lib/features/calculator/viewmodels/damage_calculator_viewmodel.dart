@@ -72,7 +72,7 @@ class DamageCalculatorState {
   final double simpleStab;
   final double simpleEffectiveness;
 
-  // Pokémon Champions Stat Points (65 total, max 32 per stat). Kept
+  // Pokémon Champions Stat Points (66 total, max 32 per stat). Kept
   // alongside — never merged into — the EV/IV maps, so toggling the ruleset
   // back and forth preserves each mode's setup.
   final Map<String, int> attackerSps;

@@ -224,10 +224,30 @@ class CombatUtils {
     'feint', 'g max one blow', 'g max rapid flow',
   }.contains(_normalizeName(moveName));
 
+  // Prefer DB flag (Move.isContact) when you have a Move object; this
+  // fallback set is for sandbox/duel calculations that only have a name.
+  // Curated from PokeAPI + Showdown contact list — Unseen Fist must work
+  // on any contact move, not just 15 samples, to match Showdown parity.
   static bool isContactMove(String moveName) => const {
+    // original core
     'surging strikes', 'wicked blow', 'close combat', 'drain punch', 'body slam',
     'triple axel', 'dual wingbeat', 'double iron bash', 'flower trick',
     'knock off', 'u turn', 'flip turn', 'jet punch', 'aqua jet', 'fake out',
+    // expanded — most common contact moves
+    'tackle', 'quick attack', 'mach punch', 'bullet punch', 'shadow punch',
+    'shadow sneak', 'ice punch', 'fire punch', 'thunder punch', 'power up punch',
+    'drain punch', 'hammer arm', 'superpower', 'double slap', 'comet punch',
+    'flame charge', 'aqua tail', 'dragon claw', 'outrage', 'play rough',
+    'spirit break', 'throat chop', 'cross chop', 'brick break', 'low kick',
+    'high horsepower', 'headbutt', 'zen headbutt', 'iron head', 'iron tail',
+    'poison jab', 'x scissor', 'leaf blade', 'psycho cut', 'night slash',
+    'slash', 'cut', 'fury swipes', 'scratch', 'pound', 'double hit',
+    'double kick', 'triple kick', 'arm thrust', 'bullet seed', 'pin missile',
+    'rock blast', 'scale shot', 'population bomb', 'tail slap', 'crabhammer',
+    'wood hammer', 'brave bird', 'flare blitz', 'volt tackle', 'head smash',
+    'double edge', 'take down', 'submission', 'fury cutter', 'aqua jet',
+    'sucker punch', 'shadow claw', 'dragon hammer', 'power whip', 'horn leech',
+    'bite', 'crunch', 'psychic fangs', 'fishious rend', 'bolt beak',
   }.contains(_normalizeName(moveName));
 
   static bool isUnseenFistProtectionHit(String moveName, String? ability) =>
