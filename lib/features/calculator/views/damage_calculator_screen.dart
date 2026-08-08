@@ -416,18 +416,20 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     final double typeAbilityBpMult = CombatUtils.typeChangingAbilityPowerMultiplier(state.attackerAbility, state.moveType);
     final int finalBasePower = (bp * terrainMult * hhMult * typeAbilityBpMult).round().clamp(1, 9999);
 
-    // Screens: 0.5 singles, 2732/4096 ≈0.667 doubles (Champions is doubles-only).
+    // Screens: 0.5 singles, 2732/4096 doubles; Champions supports both formats like mainline.
     double screenMult = 1.0;
     if (!state.isCriticalHit) {
       final double doublesScreen = 2732 / 4096;
-      final bool isDoubles = state.ruleset.isChampions;
+      final bool isDoubles = state.isDoubleBattle;
       if (isSpecial && state.lightScreenActive) screenMult = isDoubles ? doublesScreen : 0.5;
       if (!isSpecial && state.reflectActive) screenMult = isDoubles ? doublesScreen : 0.5;
     }
     final bool burned = !isSpecial && state.attackerStatus == 'burn' && state.attackerAbility?.toLowerCase() != 'guts' && state.selectedMoveName?.toLowerCase() != 'facade';
+    final double spreadMult = CombatUtils.spreadMultiplier(state.selectedMoveName ?? 'custom move', state.isDoubleBattle);
     final List<double> sandboxFinalMods = [
       if (screenMult != 1.0) screenMult,
       if (defResistMult != 1.0) defResistMult,
+      if (spreadMult != 1.0) spreadMult,
     ];
     final DamageRange sandboxRange = DamageMath.calculate(
       level: sandboxLevel,
@@ -747,6 +749,8 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                       if (state.attackerHeldItem != 'None') _modChip(state.attackerHeldItem, Colors.purple),
                       if (state.defenderHeldItem != 'None') _modChip('Def Item: ${state.defenderHeldItem}', Colors.blue),
                       if (state.isCriticalHit) _modChip('CRITICAL HIT ×1.5', Colors.redAccent),
+                      if (spreadMult != 1.0) _modChip('Spread ×0.75', Colors.indigo),
+                      if (state.isDoubleBattle) _modChip('Doubles', Colors.cyan),
                       if (state.weather != 'none') _modChip('☁ ${state.weather}', Colors.teal),
                       if (state.helpingHandActive) _modChip('Helping Hand ×1.5', Colors.orange),
                     ],
@@ -994,7 +998,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     double screenMult = 1.0;
     if (!isCritical) {
       final double doublesScreen = 2732 / 4096;
-      final bool isDoubles = state.ruleset.isChampions;
+      final bool isDoubles = state.isDoubleBattle;
       if (isSpecial && state.lightScreenActive) screenMult = isDoubles ? doublesScreen : 0.5;
       if (!isSpecial && state.reflectActive) screenMult = isDoubles ? doublesScreen : 0.5;
     }
@@ -1046,9 +1050,11 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
       state.attackerAbility,
     );
     final blockedByProtect = state.defenderProtected && !breaksProtection && !unseenFistProtectionHit;
+    final double spreadMult = CombatUtils.spreadMultiplier(activeMove.name, state.isDoubleBattle);
     final finalDamageModifiers = <double>[
-      screenMult,
-      defResistMult,
+      if (screenMult != 1.0) screenMult,
+      if (defResistMult != 1.0) defResistMult,
+      if (spreadMult != 1.0) spreadMult,
       if (state.defenderProtected && unseenFistProtectionHit) 0.25,
     ];
     final multiHitDamage = DamageMath.calculateMultiHit(
@@ -1513,6 +1519,8 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                   if (blockedByProtect) _modChip('PROTECT — BLOCKED', Colors.grey),
                   if (state.defenderProtected && unseenFistProtectionHit) _modChip('Unseen Fist through Protect (¼)', Colors.blueAccent),
                   if (state.defenderProtected && breaksProtection) _modChip('Breaks Protect', Colors.green),
+                  if (spreadMult != 1.0) _modChip('Spread Move ×0.75', Colors.indigo),
+                  if (state.isDoubleBattle) _modChip('Doubles', Colors.cyan),
                   if (state.attackerStatus == 'burn' && !isSpecial) _modChip('BURN (Halved Atk)', Colors.deepOrange),
                   if (isSlowStartActive) _modChip('Slow Start (½ Atk / Spe)', Colors.orangeAccent),
                   if (state.weather != 'none') _modChip('☁ ${state.weather}', Colors.teal),
@@ -1534,6 +1542,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
               border: Border.all(color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE2E8F0)),
             ),
             child: Column(children: [
+              _buildSwitchListTile('⚔ Double Battle (Spread 0.75× / Screens 0.667×)', state.isDoubleBattle, vm.toggleDoubleBattle),
               _buildSwitchListTile('💥 Critical Hit (1.5x, Ignores Defense Boosts)', state.isCriticalHit, vm.toggleCriticalHit),
               _buildSwitchListTile('🛡 Defender used Protect / Detect', state.defenderProtected, vm.toggleDefenderProtected),
               const Divider(),

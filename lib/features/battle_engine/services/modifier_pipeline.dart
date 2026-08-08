@@ -6,6 +6,7 @@ import 'package:libredex/features/pokedex/models/type_efficiency_calculator.dart
 import 'package:libredex/features/stat_comparison/models/stat_modifier.dart';
 import 'package:libredex/features/battle_engine/models/applied_modifier.dart';
 import 'package:libredex/features/battle_engine/models/battle_state.dart';
+import 'package:libredex/features/calculator/utils/combat_utils.dart';
 
 class ModifierPipelineResult {
   final int effectiveBasePower;
@@ -295,6 +296,12 @@ class ModifierPipeline {
     if (state.field.helpingHandActive) {
       finalModifiers.add(1.5);
       applied.add(const AppliedModifier(name: 'Helping Hand', multiplier: 1.5, category: ModifierCategory.finalModifier));
+    }
+
+    // Spread move penalty in doubles (0.75× per Showdown)
+    if (state.field.isDoubleBattle && CombatUtils.isSpreadMove(state.move.name)) {
+      finalModifiers.add(0.75);
+      applied.add(const AppliedModifier(name: 'Spread Move (Doubles 0.75×)', multiplier: 0.75, category: ModifierCategory.finalModifier));
     }
 
     // Life Orb

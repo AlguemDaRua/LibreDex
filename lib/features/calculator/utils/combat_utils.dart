@@ -250,6 +250,22 @@ class CombatUtils {
     'bite', 'crunch', 'psychic fangs', 'fishious rend', 'bolt beak',
   }.contains(_normalizeName(moveName));
 
+  /// Moves that hit all adjacent foes/allies in doubles and therefore do
+  /// 0.75× damage per target (Showdown `isSpread` / `spreadDamage`).
+  /// Accurate Gen IX list — singles ignores it, doubles applies 0.75.
+  static bool isSpreadMove(String moveName) => const {
+    'earthquake', 'surf', 'heat wave', 'dazzling gleam', 'discharge',
+    'lava plume', 'muddy water', 'sludge wave', 'blizzard', 'rock slide',
+    'hyper voice', 'boomburst', 'eruption', 'water spout', 'electroweb',
+    'bulldoze', 'icy wind', 'petal blizzard', 'twister', 'parabolic charge',
+    'origin pulse', 'precipice blades', 'explosion', 'self destruct',
+    'misty explosion', 'expanding force',
+  }.contains(_normalizeName(moveName));
+
+  /// Spread damage multiplier: 0.75 in doubles if the move is a spread move.
+  static double spreadMultiplier(String moveName, bool isDoubleBattle) =>
+      isDoubleBattle && isSpreadMove(moveName) ? 0.75 : 1.0;
+
   static bool isUnseenFistProtectionHit(String moveName, String? ability) =>
       _normalizeName(ability ?? '') == 'unseen fist' && isContactMove(moveName);
 

@@ -65,6 +65,7 @@ class DamageCalculatorState {
   final bool helpingHandActive;
   final bool trickRoomActive;
   final bool defenderProtected;
+  final bool isDoubleBattle;
 
   // Simple Tab Sandbox Fields
   final double simpleAttackerStat;
@@ -120,6 +121,7 @@ class DamageCalculatorState {
     this.helpingHandActive = false,
     this.trickRoomActive = false,
     this.defenderProtected = false,
+    this.isDoubleBattle = false,
     this.simpleAttackerStat = 200.0,
     this.simpleDefenderStat = 150.0,
     this.simpleStab = 1.5,
@@ -170,6 +172,7 @@ class DamageCalculatorState {
     bool? helpingHandActive,
     bool? trickRoomActive,
     bool? defenderProtected,
+    bool? isDoubleBattle,
     double? simpleAttackerStat,
     double? simpleDefenderStat,
     double? simpleStab,
@@ -218,6 +221,7 @@ class DamageCalculatorState {
       helpingHandActive: helpingHandActive ?? this.helpingHandActive,
       trickRoomActive: trickRoomActive ?? this.trickRoomActive,
       defenderProtected: defenderProtected ?? this.defenderProtected,
+      isDoubleBattle: isDoubleBattle ?? this.isDoubleBattle,
       simpleAttackerStat: simpleAttackerStat ?? this.simpleAttackerStat,
       simpleDefenderStat: simpleDefenderStat ?? this.simpleDefenderStat,
       simpleStab: simpleStab ?? this.simpleStab,
@@ -283,6 +287,7 @@ class DamageCalculatorState {
       helpingHandActive: helpingHandActive,
       trickRoomActive: trickRoomActive,
       defenderProtected: defenderProtected,
+      isDoubleBattle: isDoubleBattle,
     );
 
     return BattleState(
@@ -502,6 +507,7 @@ class DamageCalculatorViewModel extends _$DamageCalculatorViewModel {
   void toggleHelpingHand(bool val) => state = state.copyWith(helpingHandActive: val);
   void toggleDefenderProtected(bool val) => state = state.copyWith(defenderProtected: val);
   void toggleTrickRoom(bool val) => state = state.copyWith(trickRoomActive: val);
+  void toggleDoubleBattle(bool val) => state = state.copyWith(isDoubleBattle: val);
 
   /// Swaps Attacker and Defender Pokémon and all their associated battle stats.
   void swapAttackerAndDefender() {
