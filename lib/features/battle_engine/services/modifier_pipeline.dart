@@ -122,12 +122,12 @@ class ModifierPipeline {
       warnings.add('Base power is 0 for an attacking move. Check move configuration.');
     }
 
-    // Move category checks
-    final isPunching = moveName.contains('punch') || moveName == 'hammer arm' || moveName == 'bullet punch';
-    final isSlicing = moveName.contains('slash') || moveName.contains('blade') || moveName == 'cut' || moveName == 'air cutter' || moveName == 'bitter blade' || moveName == 'sacred sword' || moveName == 'stone axe' || moveName == 'psyblade' || moveName == 'kowtow cleave';
-    final isBiting = moveName.contains('bite') || moveName.contains('fang') || moveName == 'crunch' || moveName == 'jaw lock';
-    final isPulse = moveName.contains('pulse') || moveName.contains('aura') || moveName == 'dark pulse' || moveName == 'dragon pulse' || moveName == 'water shuriken';
-    final isRecoil = moveName.contains('recoil') || moveName == 'take down' || moveName == 'double edge' || moveName == 'brave bird' || moveName == 'flare blitz' || moveName == 'wave crash' || moveName == 'head smash' || moveName == 'volt tackle' || moveName == 'wood hammer';
+    // DB-accurate category checks — no more `contains('punch')` hacks
+    final isPunching = CombatUtils.isPunchingMove(moveName);
+    final isSlicing = CombatUtils.isSlicingMove(moveName);
+    final isBiting = CombatUtils.isBitingMove(moveName);
+    final isPulse = CombatUtils.isPulseMove(moveName);
+    final isRecoil = CombatUtils.isRecoilMove(moveName);
 
     // Dynamic Base Power logic
     if (moveName == 'facade' && state.attacker.status != 'none') {

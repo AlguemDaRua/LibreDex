@@ -269,6 +269,38 @@ class CombatUtils {
   static bool isUnseenFistProtectionHit(String moveName, String? ability) =>
       _normalizeName(ability ?? '') == 'unseen fist' && isContactMove(moveName);
 
+  /// DB-accurate move-property helpers — mirror Move.isPunching/isSlicing/etc.
+  /// Used by ModifierPipeline so it doesn't rely on `name.contains('punch')` hacks.
+  static bool isPunchingMove(String moveName) => const {
+    'bullet punch', 'comet punch', 'drain punch', 'dynamic punch', 'fire punch',
+    'focus punch', 'hammer arm', 'ice punch', 'jet punch', 'mach punch',
+    'mega punch', 'power up punch', 'shadow punch', 'sky uppercut',
+    'thunder punch', 'double iron bash',
+  }.contains(_normalizeName(moveName));
+
+  static bool isSlicingMove(String moveName) => const {
+    'aerial ace', 'air cutter', 'air slash', 'behemoth blade', 'bitter blade',
+    'ceaseless edge', 'cross poison', 'cut', 'false swipe', 'fury cutter',
+    'kowtow cleave', 'leaf blade', 'night slash', 'psycho cut', 'razor leaf',
+    'razor shell', 'sacred sword', 'slash', 'stone axe', 'x scissor',
+    'psyblade',
+  }.contains(_normalizeName(moveName));
+
+  static bool isBitingMove(String moveName) => const {
+    'bite', 'crunch', 'fire fang', 'hyper fang', 'ice fang', 'jaw lock',
+    'poison fang', 'psychic fangs', 'thunder fang',
+  }.contains(_normalizeName(moveName));
+
+  static bool isPulseMove(String moveName) => const {
+    'aura sphere', 'dark pulse', 'dragon pulse', 'heal pulse', 'origin pulse',
+    'terrain pulse', 'water pulse',
+  }.contains(_normalizeName(moveName));
+
+  static bool isRecoilMove(String moveName) => const {
+    'brave bird', 'double edge', 'flare blitz', 'head smash', 'take down',
+    'volt tackle', 'wave crash', 'wood hammer', 'submission',
+  }.contains(_normalizeName(moveName));
+
   /// Whether a move is guaranteed to land as a critical hit in Gen IX.
   /// This is not a user toggle: Flower Trick and the listed high-crit moves
   /// must still be critical when the checkbox is off.
