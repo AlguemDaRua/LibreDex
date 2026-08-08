@@ -28,11 +28,19 @@ pokemon = ids(load('pokemon.json'), 'pokemon')
 moves = ids(load('moves.json'), 'moves')
 abilities = ids(load('abilities.json'), 'abilities')
 items = ids(load('items.json'), 'items')
+forms = load('forms_extra.json')
+# Overlay forms are valid Pokémon IDs used by the learnset export.
+if isinstance(forms, dict):
+    for row in forms.get('pokemon', []):
+        if row.get('id') is not None:
+            pokemon.setdefault(row['id'], row)
+
 for label, data in [('pokemon', pokemon), ('moves', moves), ('abilities', abilities), ('items', items)]:
     if not data: warnings.append(f'{label}: no rows found')
     for key, row in data.items():
         for field in ('id', 'name'):
-            if field not in row or row[field] in (None, ''): errors.append(f'{label} {key}: missing {field}')
+            if field not in row or row[field] in (None, ''):
+                errors.append(f'{label} {key}: missing {field}')
 
 for raw in rows(load('pokemon_moves.json')):
     row = {'pokemonId': raw[0], 'moveId': raw[1]} if isinstance(raw, list) else raw
@@ -42,11 +50,6 @@ for row in rows(load('pokemon_abilities.json')):
     if row.get('pokemonId') not in pokemon: errors.append(f"pokemon_abilities: missing pokemon {row.get('pokemonId')}")
     if row.get('abilityId') not in abilities: errors.append(f"pokemon_abilities: missing ability {row.get('abilityId')}")
 
-forms = load('forms_extra.json')
-# The learnset export legitimately references overlay form IDs.
-if isinstance(forms, dict):
-    for row in forms.get('pokemon', []):
-        if row.get('id') is not None: pokemon.setdefault(row['id'], row)
 if isinstance(forms, dict):
     for row in forms.get('pokemon', []):
         if not row.get('name'): errors.append('forms_extra: form missing name')
