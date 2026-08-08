@@ -18,6 +18,7 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
   String _category = 'All';
+  String _sort = 'Name (A–Z)';
 
   @override
   void dispose() {
@@ -56,7 +57,7 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
                 item.category.toLowerCase().contains(q) ||
                 item.subcategory.toLowerCase().contains(q) ||
                 item.tags.any((tag) => tag.toLowerCase().contains(q));
-          }).toList();
+          })..sort((a, b) => _sort == 'Name (Z–A)' ? b.name.compareTo(a.name) : a.name.compareTo(b.name));
 
           return Column(
             children: [
@@ -79,6 +80,25 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
                           ),
                   ),
                 ),
+              ),
+              Row(
+                children: [
+                  const SizedBox(width: 12),
+                  PopupMenuButton<String>(
+                    initialValue: _sort,
+                    icon: const Icon(Icons.sort_rounded),
+                    tooltip: 'Sort items',
+                    onSelected: (value) => setState(() => _sort = value),
+                    itemBuilder: (_) => const [
+                      PopupMenuItem(value: 'Name (A–Z)', child: Text('Name (A–Z)')),
+                      PopupMenuItem(value: 'Name (Z–A)', child: Text('Name (Z–A)')),
+                    ],
+                  ),
+                  const Text('Categories', style: TextStyle(fontWeight: FontWeight.w700)),
+                  const Spacer(),
+                  Text('${filtered.length} results', style: const TextStyle(color: Colors.grey)),
+                  const SizedBox(width: 16),
+                ],
               ),
               SizedBox(
                 height: 48,
@@ -151,7 +171,11 @@ class _ItemCard extends StatelessWidget {
                     color: accent.withValues(alpha: 0.14),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Icon(_itemIcon(item.category), color: accent),
+                  child: Image.network(
+                    item.iconUrl,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => Icon(_itemIcon(item.category), color: accent),
+                  ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -222,7 +246,11 @@ class _ItemCard extends StatelessWidget {
                       width: 56,
                       height: 56,
                       decoration: BoxDecoration(color: accent.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(18)),
-                      child: Icon(_itemIcon(item.category), color: accent, size: 30),
+                      child: Image.network(
+                        item.iconUrl,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => Icon(_itemIcon(item.category), color: accent, size: 30),
+                      ),
                     ),
                     const SizedBox(width: 14),
                     Expanded(

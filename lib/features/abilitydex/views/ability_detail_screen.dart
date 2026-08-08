@@ -26,6 +26,16 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
   List<Map<String, dynamic>> _pokemons = [];
   bool _isLoading = true;
   String? _abilityDescription;
+  final TextEditingController _pokemonSearchController = TextEditingController();
+  String _pokemonQuery = '';
+
+  @override
+  void dispose() { _pokemonSearchController.dispose(); super.dispose(); }
+
+  List<Map<String, dynamic>> get _visiblePokemons {
+    final q = _pokemonQuery.trim().toLowerCase();
+    return _pokemons.where((row) { final p = row['pokemon'] as Pokemon; return q.isEmpty || '${p.name} ${p.form} ${p.type1} ${p.type2 ?? ''}'.toLowerCase().contains(q); }).toList();
+  }
 
   @override
   void initState() {
@@ -148,20 +158,28 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
                       Icon(Icons.catching_pokemon, size: 20, color: AppTheme.pokemonRed.withValues(alpha: 0.8)),
                       const SizedBox(width: 8),
                       Text(
-                        'LEARNED BY ${_pokemons.length} POKÉMON',
+                        '${_visiblePokemons.length} OF ${_pokemons.length} POKÉMON',
                         style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey, fontSize: 12),
                       ),
                     ],
                   ),
                 ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: TextField(
+                    controller: _pokemonSearchController,
+                    onChanged: (value) => setState(() => _pokemonQuery = value),
+                    decoration: InputDecoration(hintText: 'Filter Pokémon by name, form, or type...', prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.pokemonRed), suffixIcon: _pokemonQuery.isEmpty ? null : IconButton(icon: const Icon(Icons.clear), onPressed: () { _pokemonSearchController.clear(); setState(() => _pokemonQuery = ''); })),
+                  ),
+                ),
                 Expanded(
-                  child: _pokemons.isEmpty
+                  child: _visiblePokemons.isEmpty
                       ? const Center(child: Text('No Pokémon found with this ability.'))
                       : ListView.builder(
                           padding: const EdgeInsets.only(bottom: 24),
-                          itemCount: _pokemons.length,
+                          itemCount: _visiblePokemons.length,
                           itemBuilder: (context, index) {
-                            final item = _pokemons[index];
+                            final item = _visiblePokemons[index];
                             final Pokemon p = item['pokemon'];
                             final bool isHidden = item['isHidden'] == true;
                             final typeColor = _getTypeColor(p.type1);

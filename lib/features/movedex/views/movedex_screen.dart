@@ -20,6 +20,9 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
   List<Move> _allMoves = [];
   List<Move> _filteredMoves = [];
   bool _isLoading = true;
+  String _sort = 'Name (A–Z)';
+  String _typeFilter = 'All';
+  String _classFilter = 'All';
 
   @override
   void initState() {
@@ -47,13 +50,15 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
   }
 
   void _filterMoves(String query) {
-    setState(() {
-      _searchQuery = query;
-      _filteredMoves = _allMoves.where((m) {
-        final q = query.toLowerCase();
-        return m.name.toLowerCase().contains(q) || m.type.toLowerCase().contains(q);
-      }).toList();
-    });
+    _searchQuery = query;
+    _applyMoveOptions();
+  }
+
+  void _applyMoveOptions() {
+    final q = _searchQuery.toLowerCase();
+    final values = _allMoves.where((m) => (m.name.toLowerCase().contains(q) || m.type.toLowerCase().contains(q) || (m.description ?? '').toLowerCase().contains(q)) && (_typeFilter == 'All' || m.type == _typeFilter) && (_classFilter == 'All' || m.damageClass == _classFilter)).toList();
+    values.sort((a,b) => _sort == 'Name (Z–A)' ? b.name.compareTo(a.name) : a.name.compareTo(b.name));
+    setState(() => _filteredMoves = values);
   }
 
   Color _getTypeColor(String type) {
@@ -133,6 +138,20 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
                         ),
                       ),
                     ),
+                  ),
+
+                  _DexControls(
+                    sort: _sort,
+                    filter: _typeFilter,
+                    filters: ['All', ...{for (final m in _allMoves) m.type}],
+                    onSort: (value) { setState(() => _sort = value); _applyMoveOptions(); },
+                    onFilter: (value) { setState(() => _typeFilter = value); _applyMoveOptions(); },
+                  ),
+                  _DexControls(
+                    sort: '', filter: _classFilter,
+                    filters: ['All', ...{for (final m in _allMoves) m.damageClass}],
+                    onSort: (_) {}, onFilter: (value) { setState(() => _classFilter = value); _applyMoveOptions(); },
+                    showSort: false,
                   ),
 
                   // Moves List
@@ -219,3 +238,9 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
 
 }
 
+
+class _DexControls extends StatelessWidget {
+  final String sort, filter; final List<String> filters; final ValueChanged<String> onSort, onFilter; final bool showSort;
+  const _DexControls({required this.sort, required this.filter, required this.filters, required this.onSort, required this.onFilter, this.showSort = true});
+  @override Widget build(BuildContext context) => SizedBox(height: 48, child: Row(children: [if (showSort) PopupMenuButton<String>(initialValue: sort, icon: const Icon(Icons.sort), onSelected: onSort, itemBuilder: (_) => const [PopupMenuItem(value: 'Name (A–Z)', child: Text('Name (A–Z)')), PopupMenuItem(value: 'Name (Z–A)', child: Text('Name (Z–A)'))]), Expanded(child: ListView.separated(scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 8), itemCount: filters.length, separatorBuilder: (_, __) => const SizedBox(width: 6), itemBuilder: (_, i) => ChoiceChip(label: Text(filters[i]), selected: filter == filters[i], onSelected: (_) => onFilter(filters[i]))))]));
+}

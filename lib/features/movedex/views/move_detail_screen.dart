@@ -28,6 +28,24 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
   List<Map<String, dynamic>> _pokemons = [];
   bool _isLoading = true;
   Move? _moveDetails;
+  final TextEditingController _pokemonSearchController = TextEditingController();
+  String _pokemonQuery = '';
+  String _pokemonType = 'All';
+
+  @override
+  void dispose() {
+    _pokemonSearchController.dispose();
+    super.dispose();
+  }
+
+  List<Map<String, dynamic>> get _visiblePokemons {
+    final q = _pokemonQuery.trim().toLowerCase();
+    return _pokemons.where((row) {
+      final p = row['pokemon'] as Pokemon;
+      final text = '${p.name} ${p.form} ${p.type1} ${p.type2 ?? ''}'.toLowerCase();
+      return (q.isEmpty || text.contains(q)) && (_pokemonType == 'All' || p.type1 == _pokemonType || p.type2 == _pokemonType);
+    }).toList();
+  }
 
   @override
   void initState() {
@@ -158,20 +176,44 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
                       Icon(Icons.school_outlined, size: 20, color: AppTheme.pokemonRed.withValues(alpha: 0.8)),
                       const SizedBox(width: 8),
                       Text(
-                        'LEARNED BY ${_pokemons.length} POKÉMON',
+                        '${_visiblePokemons.length} OF ${_pokemons.length} POKÉMON',
                         style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey, fontSize: 12),
                       ),
                     ],
                   ),
                 ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: TextField(
+                    controller: _pokemonSearchController,
+                    onChanged: (value) => setState(() => _pokemonQuery = value),
+                    decoration: InputDecoration(
+                      hintText: 'Filter Pokémon by name, form, or type...',
+                      prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.pokemonRed),
+                      suffixIcon: _pokemonQuery.isEmpty ? null : IconButton(icon: const Icon(Icons.clear), onPressed: () { _pokemonSearchController.clear(); setState(() => _pokemonQuery = ''); }),
+                      isDense: true,
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  height: 42,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    children: ['All', ...{for (final row in _pokemons) (row['pokemon'] as Pokemon).type1}].map((type) => Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: ChoiceChip(label: Text(type), selected: _pokemonType == type, onSelected: (_) => setState(() => _pokemonType = type)),
+                    )).toList(),
+                  ),
+                ),
                 Expanded(
-                  child: _pokemons.isEmpty
-                      ? const Center(child: Text('No Pokémon found that learn this move.'))
+                  child: _visiblePokemons.isEmpty
+                      ? const Center(child: Text('No Pokémon match this filter.'))
                       : ListView.builder(
                           padding: const EdgeInsets.only(bottom: 24),
-                          itemCount: _pokemons.length,
+                          itemCount: _visiblePokemons.length,
                           itemBuilder: (context, index) {
-                            final item = _pokemons[index];
+                            final item = _visiblePokemons[index];
                             final Pokemon p = item['pokemon'];
                             final String method = item['learnMethod'];
                             final int? level = item['levelLearned'];
