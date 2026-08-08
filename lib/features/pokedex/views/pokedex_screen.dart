@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/data/champions_catalog.dart';
 import 'package:libredex/core/data/ev_yield_data.dart';
@@ -15,6 +16,11 @@ import 'package:libredex/features/pokedex/views/pokemon_detail_screen.dart';
 import 'package:libredex/core/theme/app_spacing.dart';
 import 'package:libredex/core/widgets/app_drawer.dart';
 import 'package:libredex/core/widgets/pokemon_sprite.dart';
+import 'package:libredex/core/widgets/dex_filter_bar.dart';
+import 'package:libredex/core/widgets/active_filter_summary.dart';
+import 'package:libredex/core/widgets/result_count_label.dart';
+import 'package:libredex/core/widgets/dex_sort_menu.dart';
+import 'package:libredex/core/widgets/dex_filter_sheet.dart';
 
 class PokedexScreen extends ConsumerStatefulWidget {
   const PokedexScreen({super.key});
@@ -43,6 +49,26 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
 
   final List<String> _selectedFormats = [];
 
+  String? _selectedEggGroup;
+  int? _selectedEvolutionStage;
+  
+  bool _filterCanEvolve = false;
+  bool _filterNoEvolution = false;
+  String? _selectedEvolutionMethod;
+
+  Map<int, List<Map<String, dynamic>>> _pokemonAbilitiesMap = {};
+  Map<int, Set<int>> _pokemonMovesMap = {};
+  Map<int, Move> _movesIdMap = {};
+  Map<int, Ability> _abilitiesIdMap = {};
+  bool _isRelationsLoaded = false;
+
+  String? _filterAbilityQuery;
+  bool _filterHiddenAbilityOnly = false;
+  String? _filterMoveQuery;
+  String? _filterMoveType;
+  String? _filterMoveClass;
+  double _minMovePower = 0.0;
+
   double _minBst = 100.0;
   double _maxBst = 780.0;
   double _minHp = 0.0;
@@ -57,6 +83,53 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
     'fighting', 'poison', 'ground', 'flying', 'psychic', 'bug',
     'rock', 'ghost', 'dragon', 'dark', 'steel', 'fairy'
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRelationsData();
+  }
+
+  Future<void> _loadRelationsData() async {
+    try {
+      final db = ref.read(databaseProvider);
+      final abilitiesList = await db.select(db.abilityTable).get();
+      final movesList = await db.select(db.moveTable).get();
+      
+      final String rawAb = await rootBundle.loadString('assets/data/pokemon_abilities.json');
+      final List<dynamic> jsonAb = jsonDecode(rawAb);
+      final abMap = <int, List<Map<String, dynamic>>>{};
+      for (final item in jsonAb) {
+        final map = item as Map<String, dynamic>;
+        final pId = map['pokemonId'] as int;
+        abMap.putIfAbsent(pId, () => []).add({
+          'abilityId': map['abilityId'] as int,
+          'isHidden': map['isHidden'] as bool,
+        });
+      }
+
+      final String rawMv = await rootBundle.loadString('assets/data/pokemon_moves.json');
+      final List<dynamic> jsonMv = jsonDecode(rawMv);
+      final mvMap = <int, Set<int>>{};
+      for (final item in jsonMv) {
+        if (item is List) {
+          final pId = item[0] as int;
+          final mId = item[1] as int;
+          mvMap.putIfAbsent(pId, () => {}).add(mId);
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _abilitiesIdMap = {for (final a in abilitiesList) a.id: a};
+          _movesIdMap = {for (final m in movesList) m.id: m};
+          _pokemonAbilitiesMap = abMap;
+          _pokemonMovesMap = mvMap;
+          _isRelationsLoaded = true;
+        });
+      }
+    } catch (_) {}
+  }
 
   @override
   void dispose() {
@@ -151,6 +224,17 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
       _selectedTypes.clear();
       _selectedGenerations.clear();
       _selectedFormats.clear();
+      _selectedEggGroup = null;
+      _selectedEvolutionStage = null;
+      _filterCanEvolve = false;
+      _filterNoEvolution = false;
+      _selectedEvolutionMethod = null;
+      _filterAbilityQuery = null;
+      _filterHiddenAbilityOnly = false;
+      _filterMoveQuery = null;
+      _filterMoveType = null;
+      _filterMoveClass = null;
+      _minMovePower = 0.0;
       _showLegendary = false;
       _showMythical = false;
       _showUltraBeast = false;
@@ -176,6 +260,17 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
         _selectedTypes.isNotEmpty ||
         _selectedGenerations.isNotEmpty ||
         _selectedFormats.isNotEmpty ||
+        _selectedEggGroup != null ||
+        _selectedEvolutionStage != null ||
+        _filterCanEvolve ||
+        _filterNoEvolution ||
+        _selectedEvolutionMethod != null ||
+        _filterAbilityQuery != null ||
+        _filterHiddenAbilityOnly ||
+        _filterMoveQuery != null ||
+        _filterMoveType != null ||
+        _filterMoveClass != null ||
+        _minMovePower > 0.0 ||
         _showLegendary ||
         _showMythical ||
         _showUltraBeast ||
@@ -381,6 +476,61 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                           if (!evKeys.contains(_selectedEvYieldStat)) return false;
                         }
 
+                        if (_selectedEggGroup != null) {
+                          if (!pokemon.eggGroups.any((g) => g.toLowerCase() == _selectedEggGroup!.toLowerCase())) return false;
+                        }
+
+                        if (_selectedEvolutionStage != null) {
+                          if (pokemon.evolutionStage != _selectedEvolutionStage) return false;
+                        }
+
+                        if (_filterCanEvolve && !pokemon.canEvolve) return false;
+                        if (_filterNoEvolution && !pokemon.hasNoEvolution) return false;
+                        if (_selectedEvolutionMethod != null) {
+                          if (pokemon.evolutionMethod.toLowerCase() != _selectedEvolutionMethod!.toLowerCase()) return false;
+                        }
+
+                        // Ability Keyword / Name Filter
+                        if (_filterAbilityQuery != null && _filterAbilityQuery!.isNotEmpty) {
+                          final query = _filterAbilityQuery!.trim().toLowerCase();
+                          final abList = _pokemonAbilitiesMap[pokemon.id] ?? [];
+                          final hasMatchingAbility = abList.any((entry) {
+                            final abId = entry['abilityId'] as int;
+                            final ab = _abilitiesIdMap[abId];
+                            if (ab == null) return false;
+                            
+                            final matchesQuery = ab.name.toLowerCase().contains(query) || ab.description.toLowerCase().contains(query);
+                            final matchesHidden = !_filterHiddenAbilityOnly || (entry['isHidden'] as bool);
+                            
+                            return matchesQuery && matchesHidden;
+                          });
+                          if (!hasMatchingAbility) return false;
+                        }
+
+                        // Move Keyword / Type / Damage Class Filter
+                        if ((_filterMoveQuery != null && _filterMoveQuery!.isNotEmpty) ||
+                            _filterMoveType != null ||
+                            _filterMoveClass != null ||
+                            _minMovePower > 0.0) {
+                          final learnedMoveIds = _pokemonMovesMap[pokemon.id] ?? {};
+                          final hasMatchingMove = learnedMoveIds.any((mId) {
+                            final move = _movesIdMap[mId];
+                            if (move == null) return false;
+                            
+                            if (_filterMoveQuery != null && _filterMoveQuery!.isNotEmpty) {
+                              final query = _filterMoveQuery!.trim().toLowerCase();
+                              if (!move.name.toLowerCase().contains(query)) return false;
+                            }
+                            
+                            if (_filterMoveType != null && move.type.toLowerCase() != _filterMoveType!.toLowerCase()) return false;
+                            if (_filterMoveClass != null && move.damageClass.toLowerCase() != _filterMoveClass!.toLowerCase()) return false;
+                            if (_minMovePower > 0.0 && (move.power ?? 0) < _minMovePower) return false;
+                            
+                            return true;
+                          });
+                          if (!hasMatchingMove) return false;
+                        }
+
                         return true;
                       }).toList();
 
@@ -430,79 +580,33 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                             pinned: true,
                             delegate: _StickySearchHeaderDelegate(
                               height: 72,
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: TextField(
-                                        controller: _searchController,
-                                        onChanged: (val) {
-                                          setState(() {
-                                            _searchQuery = val;
-                                          });
-                                        },
-                                        decoration: InputDecoration(
-                                          hintText: 'Search name, type, form, or #...',
-                                          prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.pokemonRed),
-                                          suffixIcon: _searchQuery.isNotEmpty
-                                              ? IconButton(
-                                                  icon: const Icon(Icons.clear, size: 20),
-                                                  onPressed: () {
-                                                    _searchController.clear();
-                                                    setState(() {
-                                                      _searchQuery = '';
-                                                    });
-                                                  },
-                                                )
-                                              : null,
-                                          filled: true,
-                                          fillColor: isDark ? const Color(0xFF141414) : const Color(0xFFEDF2F7),
-                                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                          enabledBorder: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(16),
-                                            borderSide: BorderSide(
-                                              color: isDark ? const Color(0xFF222222) : const Color(0xFFE2E8F0),
-                                            ),
-                                          ),
-                                          focusedBorder: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(16),
-                                            borderSide: const BorderSide(color: AppTheme.pokemonRed, width: 1.5),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Container(
-                                      height: 52,
-                                      width: 52,
-                                      decoration: BoxDecoration(
-                                        color: _hasActiveFilters ? Colors.orangeAccent.withValues(alpha: 0.15) : (isDark ? const Color(0xFF141414) : const Color(0xFFEDF2F7)),
-                                        borderRadius: BorderRadius.circular(16),
-                                        border: Border.all(
-                                          color: _hasActiveFilters ? Colors.orangeAccent : (isDark ? const Color(0xFF222222) : const Color(0xFFE2E8F0)),
-                                          width: 1.2,
-                                        ),
-                                      ),
-                                      child: IconButton(
-                                        icon: Icon(
-                                          Icons.filter_list_rounded,
-                                          color: _hasActiveFilters ? Colors.orangeAccent : primaryColor,
-                                        ),
-                                        onPressed: () => _openAdvancedFilterBottomSheet(context),
-                                        tooltip: 'Advanced Filters',
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                              child: DexFilterBar(
+                                searchHint: 'Search name, type, form, or #...',
+                                initialSearchValue: _searchQuery,
+                                onSearchChanged: (val) {
+                                  setState(() {
+                                    _searchQuery = val;
+                                  });
+                                },
+                                onClearSearch: () {
+                                  setState(() {
+                                    _searchQuery = '';
+                                  });
+                                },
+                                onFilterPressed: () => _openAdvancedFilterBottomSheet(context),
+                                hasActiveFilters: _hasActiveFilters,
                               ),
                             ),
                           ),
 
                           if (_hasActiveFilters)
                             SliverToBoxAdapter(
-                              child: _buildActiveFiltersRow(context),
+                              child: _buildActiveFiltersSummary(context),
                             ),
+
+                          SliverToBoxAdapter(
+                            child: ResultCountLabel(count: filteredList.length, label: 'Pokémon found'),
+                          ),
 
                           sortedKeys.isEmpty
                               ? SliverFillRemaining(
@@ -736,11 +840,11 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
     }
   }
 
-  Widget _buildActiveFiltersRow(BuildContext context) {
-    final chips = <Widget>[];
+  Widget _buildActiveFiltersSummary(BuildContext context) {
+    final list = <ActiveFilterItem>[];
 
     for (final type in _selectedTypes) {
-      chips.add(_buildFilterChip(
+      list.add(ActiveFilterItem(
         label: 'Type: ${type.toUpperCase()}',
         color: CombatUtils.typeColors[type.toLowerCase()] ?? Colors.orangeAccent,
         onDeleted: () => setState(() {
@@ -750,62 +854,62 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
     }
 
     if (_selectedGenerations.isNotEmpty) {
-      chips.add(_buildFilterChip(
+      list.add(ActiveFilterItem(
         label: 'Gens: ${_selectedGenerations.join(', ')}',
         onDeleted: () => setState(() => _selectedGenerations.clear()),
       ));
     }
 
     if (_showLegendary) {
-      chips.add(_buildFilterChip(
+      list.add(ActiveFilterItem(
         label: 'Legendary',
         onDeleted: () => setState(() => _showLegendary = false),
       ));
     }
     if (_showMythical) {
-      chips.add(_buildFilterChip(
+      list.add(ActiveFilterItem(
         label: 'Mythical',
         onDeleted: () => setState(() => _showMythical = false),
       ));
     }
     if (_showUltraBeast) {
-      chips.add(_buildFilterChip(
+      list.add(ActiveFilterItem(
         label: 'Ultra Beast',
         onDeleted: () => setState(() => _showUltraBeast = false),
       ));
     }
     if (_showParadox) {
-      chips.add(_buildFilterChip(
+      list.add(ActiveFilterItem(
         label: 'Paradox',
         onDeleted: () => setState(() => _showParadox = false),
       ));
     }
     if (_showShinyOnly) {
-      chips.add(_buildFilterChip(
+      list.add(ActiveFilterItem(
         label: 'Has Shiny Form',
         onDeleted: () => setState(() => _showShinyOnly = false),
       ));
     }
     if (_showFavoritesOnly) {
-      chips.add(_buildFilterChip(
+      list.add(ActiveFilterItem(
         label: 'Favorites',
         onDeleted: () => setState(() => _showFavoritesOnly = false),
       ));
     }
     if (_showTeamOnly) {
-      chips.add(_buildFilterChip(
+      list.add(ActiveFilterItem(
         label: 'Team Members',
         onDeleted: () => setState(() => _showTeamOnly = false),
       ));
     }
     if (_selectedFormats.isNotEmpty) {
-      chips.add(_buildFilterChip(
+      list.add(ActiveFilterItem(
         label: 'Format: ${_selectedFormats.join(', ')}',
         onDeleted: () => setState(() => _selectedFormats.clear()),
       ));
     }
     if (_minBst > 100.0 || _maxBst < 780.0) {
-      chips.add(_buildFilterChip(
+      list.add(ActiveFilterItem(
         label: 'BST: ${_minBst.round()}–${_maxBst.round()}',
         onDeleted: () => setState(() {
           _minBst = 100.0;
@@ -814,7 +918,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
       ));
     }
     if (_minHp > 0 || _minAtk > 0 || _minDef > 0 || _minSpAtk > 0 || _minSpDef > 0 || _minSpd > 0) {
-      chips.add(_buildFilterChip(
+      list.add(ActiveFilterItem(
         label: 'Stat Thresholds',
         onDeleted: () => setState(() {
           _minHp = 0.0;
@@ -827,74 +931,15 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
       ));
     }
     if (_selectedEvYieldStat != null) {
-      chips.add(_buildFilterChip(
+      list.add(ActiveFilterItem(
         label: 'EV: ${_selectedEvYieldStat!.toUpperCase()}',
         onDeleted: () => setState(() => _selectedEvYieldStat = null),
       ));
     }
 
-    if (chips.isEmpty) return const SizedBox.shrink();
-
-    chips.add(
-      GestureDetector(
-        onTap: () {
-          HapticFeedback.lightImpact();
-          _clearAllFilters();
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.redAccent.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.clear_all_rounded, size: 14, color: Colors.redAccent),
-              SizedBox(width: 4),
-              Text('Clear All', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.redAccent)),
-            ],
-          ),
-        ),
-      ),
-    );
-
-    return Container(
-      height: 36,
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: chips.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 6),
-        itemBuilder: (context, index) => chips[index],
-      ),
-    );
-  }
-
-  Widget _buildFilterChip({required String label, Color? color, required VoidCallback onDeleted}) {
-    final chipColor = color ?? Colors.orangeAccent;
-    return Container(
-      padding: const EdgeInsets.only(left: 10, right: 4, top: 3, bottom: 3),
-      decoration: BoxDecoration(
-        color: chipColor.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: chipColor.withValues(alpha: 0.4), width: 1),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: chipColor)),
-          const SizedBox(width: 2),
-          GestureDetector(
-            onTap: () {
-              HapticFeedback.selectionClick();
-              onDeleted();
-            },
-            child: Icon(Icons.cancel_rounded, size: 16, color: chipColor.withValues(alpha: 0.7)),
-          ),
-        ],
-      ),
+    return ActiveFilterSummary(
+      items: list,
+      onClearAll: _clearAllFilters,
     );
   }
 
@@ -926,393 +971,509 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
           builder: (context, setModalState) {
             final isDark = Theme.of(context).brightness == Brightness.dark;
             final primaryColor = isDark ? Colors.white : Colors.black;
-            final screenHeight = MediaQuery.of(context).size.height;
 
-            return Dialog(
-              insetPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-              backgroundColor: isDark ? const Color(0xFF0C0C0C) : Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxHeight: screenHeight * 0.88),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 12, 4),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Text('ADVANCED FILTERS', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: primaryColor)),
-                              if (_hasActiveFilters) ...[
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.pokemonRed,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Text(
-                                    'ACTIVE',
-                                    style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900),
-                                  ),
-                                ),
-                              ],
-                            ],
+            return DexFilterSheet(
+              title: 'Advanced Filters',
+              hasActiveFilters: _hasActiveFilters,
+              onReset: () {
+                _clearAllFilters();
+                setModalState(() {});
+              },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSectionLabel('ELEMENTAL TYPES (UP TO 2)'),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Select 1 type to match primary/secondary, or 2 types for exact dual-type matching.',
+                    style: TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: _allTypes.map((type) {
+                      final bool isSel = _selectedTypes.contains(type);
+                      final Color col = _getTypeColor(type);
+                      return ChoiceChip(
+                        label: Text(
+                          type.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: isSel ? Colors.white : col,
                           ),
-                          Row(
-                            children: [
-                              TextButton(
-                                onPressed: () {
-                                  HapticFeedback.lightImpact();
-                                  _clearAllFilters();
-                                  setModalState(() {});
-                                },
-                                child: const Text('Reset All', style: TextStyle(color: Colors.orangeAccent, fontWeight: FontWeight.bold)),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.close_rounded, size: 22),
-                                onPressed: () => Navigator.pop(context),
-                                visualDensity: VisualDensity.compact,
-                              ),
-                            ],
+                        ),
+                        selected: isSel,
+                        selectedColor: col,
+                        backgroundColor: col.withValues(alpha: 0.1),
+                        onSelected: (selected) {
+                          HapticFeedback.selectionClick();
+                          setState(() {
+                            if (selected) {
+                              if (_selectedTypes.length < 2) {
+                                _selectedTypes.add(type);
+                              }
+                            } else {
+                              _selectedTypes.remove(type);
+                            }
+                          });
+                          setModalState(() {});
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 18),
+
+                  _buildSectionLabel('GENERATIONS'),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    height: 38,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: 9,
+                      itemBuilder: (context, idx) {
+                        final int gen = idx + 1;
+                        final bool isSel = _selectedGenerations.contains(gen);
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: ChoiceChip(
+                            label: Text(
+                              'GEN ${_toRoman(gen)}',
+                              style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isSel ? Colors.white : Colors.grey),
+                            ),
+                            selected: isSel,
+                            selectedColor: AppTheme.pokemonRed,
+                            backgroundColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFEDF2F7),
+                            onSelected: (selected) {
+                              HapticFeedback.selectionClick();
+                              setState(() {
+                                if (selected) {
+                                  _selectedGenerations.add(gen);
+                                } else {
+                                  _selectedGenerations.remove(gen);
+                                }
+                              });
+                              setModalState(() {});
+                            },
                           ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+
+                  _buildSectionLabel('SPECIAL CLASSIFICATIONS & COLLECTION'),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF141414) : const Color(0xFFF7FAFC),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE2E8F0)),
+                    ),
+                    child: Column(
+                      children: [
+                        _buildSwitchRow('Legendary Pokémon', _showLegendary, (val) {
+                          HapticFeedback.selectionClick();
+                          setState(() => _showLegendary = val);
+                          setModalState(() {});
+                        }),
+                        _buildSwitchRow('Mythical Pokémon', _showMythical, (val) {
+                          HapticFeedback.selectionClick();
+                          setState(() => _showMythical = val);
+                          setModalState(() {});
+                        }),
+                        _buildSwitchRow('Ultra Beasts (UB)', _showUltraBeast, (val) {
+                          HapticFeedback.selectionClick();
+                          setState(() => _showUltraBeast = val);
+                          setModalState(() {});
+                        }),
+                        _buildSwitchRow('Paradox Pokémon', _showParadox, (val) {
+                          HapticFeedback.selectionClick();
+                          setState(() => _showParadox = val);
+                          setModalState(() {});
+                        }),
+                        const Divider(height: 12),
+                        _buildSwitchRow('Has Shiny Form / Artwork', _showShinyOnly, (val) {
+                          HapticFeedback.selectionClick();
+                          setState(() => _showShinyOnly = val);
+                          setModalState(() {});
+                        }),
+                        _buildSwitchRow('Saved Favorites Only', _showFavoritesOnly, (val) {
+                          HapticFeedback.selectionClick();
+                          setState(() => _showFavoritesOnly = val);
+                          setModalState(() {});
+                        }),
+                        _buildSwitchRow('Current Team Members Only', _showTeamOnly, (val) {
+                          HapticFeedback.selectionClick();
+                          setState(() => _showTeamOnly = val);
+                          setModalState(() {});
+                        }),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+
+                  _buildSectionLabel('REGIONAL / SPECIAL FORMATS'),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: ['MEGA', 'ALOLA', 'GALAR', 'HISUI', 'PALDEA', 'CHAMPIONS', 'LEGENDS Z-A'].map((fmt) {
+                      final bool isSel = _selectedFormats.contains(fmt);
+                      return ChoiceChip(
+                        label: Text(
+                          fmt,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: isSel ? Colors.white : Colors.grey,
+                          ),
+                        ),
+                        selected: isSel,
+                        selectedColor: AppTheme.pokemonRed,
+                        backgroundColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFEDF2F7),
+                        onSelected: (selected) {
+                          setState(() {
+                            if (selected) {
+                              _selectedFormats.add(fmt);
+                            } else {
+                              _selectedFormats.remove(fmt);
+                            }
+                          });
+                          setModalState(() {});
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 18),
+
+                  _buildSectionLabel('EGG GROUPS'),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      'Monster', 'Water 1', 'Water 2', 'Water 3', 'Bug', 'Flying',
+                      'Field', 'Fairy', 'Grass', 'Human-Like', 'Mineral', 'Amorphous',
+                      'Dragon', 'Ditto', 'Undiscovered'
+                    ].map((g) {
+                      final isSel = _selectedEggGroup == g;
+                      return ChoiceChip(
+                        label: Text(g.toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isSel ? Colors.white : Colors.grey)),
+                        selected: isSel,
+                        selectedColor: AppTheme.pokemonRed,
+                        onSelected: (selected) {
+                          setState(() { _selectedEggGroup = selected ? g : null; });
+                          setModalState(() {});
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 18),
+
+                  _buildSectionLabel('EVOLUTION STAGE'),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      {'label': 'BASIC', 'val': 0},
+                      {'label': 'STAGE 1', 'val': 1},
+                      {'label': 'STAGE 2', 'val': 2},
+                    ].map((item) {
+                      final isSel = _selectedEvolutionStage == item['val'];
+                      return ChoiceChip(
+                        label: Text(item['label'] as String, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isSel ? Colors.white : Colors.grey)),
+                        selected: isSel,
+                        selectedColor: AppTheme.pokemonRed,
+                        onSelected: (selected) {
+                          setState(() { _selectedEvolutionStage = selected ? item['val'] as int : null; });
+                          setModalState(() {});
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF141414) : const Color(0xFFF7FAFC),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE2E8F0)),
+                    ),
+                    child: Column(
+                      children: [
+                        _buildSwitchRow('Can Evolve', _filterCanEvolve, (val) {
+                          setState(() => _filterCanEvolve = val);
+                          setModalState(() {});
+                        }),
+                        _buildSwitchRow('No Evolution (Single Stage)', _filterNoEvolution, (val) {
+                          setState(() => _filterNoEvolution = val);
+                          setModalState(() {});
+                        }),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text('EVOLUTION METHOD', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey)),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: ['Level', 'Item/Stone', 'Friendship', 'Trade', 'Move'].map((method) {
+                      final isSel = _selectedEvolutionMethod == method;
+                      return ChoiceChip(
+                        label: Text(method.toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isSel ? Colors.white : Colors.grey)),
+                        selected: isSel,
+                        selectedColor: AppTheme.pokemonRed,
+                        onSelected: (selected) {
+                          setState(() { _selectedEvolutionMethod = selected ? method : null; });
+                          setModalState(() {});
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 18),
+
+                  _buildSectionLabel('FILTER BY ABILITY COMPATIBILITY'),
+                  const SizedBox(height: 8),
+                  TextField(
+                    onChanged: (val) {
+                      setState(() { _filterAbilityQuery = val; });
+                    },
+                    decoration: InputDecoration(
+                      hintText: 'Ability name or keyword...',
+                      prefixIcon: const Icon(Icons.star_border_rounded, color: AppTheme.pokemonRed, size: 20),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  _buildSwitchRow('Hidden Ability Only', _filterHiddenAbilityOnly, (val) {
+                    setState(() => _filterHiddenAbilityOnly = val);
+                    setModalState(() {});
+                  }),
+                  const SizedBox(height: 18),
+
+                  _buildSectionLabel('FILTER BY MOVE LEARNSET'),
+                  const SizedBox(height: 8),
+                  TextField(
+                    onChanged: (val) {
+                      setState(() { _filterMoveQuery = val; });
+                    },
+                    decoration: InputDecoration(
+                      hintText: 'Learns move name or keyword...',
+                      prefixIcon: const Icon(Icons.flash_on_rounded, color: AppTheme.pokemonRed, size: 20),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: _allTypes.map((type) {
+                      final isSel = _filterMoveType == type;
+                      final col = _getTypeColor(type);
+                      return ChoiceChip(
+                        label: Text('LEARNS ${type.toUpperCase()}', style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: isSel ? Colors.white : col)),
+                        selected: isSel,
+                        selectedColor: col,
+                        backgroundColor: col.withValues(alpha: 0.1),
+                        onSelected: (selected) {
+                          setState(() { _filterMoveType = selected ? type : null; });
+                          setModalState(() {});
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 18),
+
+                  _buildSectionLabel('BASE STAT PRESETS (AUTO-CONFIGURE)'),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      {'label': 'FAST', 'action': () { _minSpd = 100.0; }},
+                      {'label': 'BULKY', 'action': () { _minHp = 100.0; _minDef = 90.0; _minSpDef = 90.0; }},
+                      {'label': 'PHYSICAL ATTACKER', 'action': () { _minAtk = 100.0; }},
+                      {'label': 'SPECIAL ATTACKER', 'action': () { _minSpAtk = 100.0; }},
+                      {'label': 'BALANCED', 'action': () { _minHp = 70.0; _minAtk = 70.0; _minDef = 70.0; _minSpAtk = 70.0; _minSpDef = 70.0; _minSpd = 70.0; }},
+                      {'label': 'HIGH BST', 'action': () { _minBst = 540.0; _maxBst = 780.0; }},
+                      {'label': 'LOW BST', 'action': () { _minBst = 100.0; _maxBst = 350.0; }},
+                    ].map((item) {
+                      return ChoiceChip(
+                        label: Text(item['label'] as String, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
+                        selected: false,
+                        onSelected: (_) {
+                          HapticFeedback.selectionClick();
+                          setState(() {
+                            (item['action'] as VoidCallback)();
+                          });
+                          setModalState(() {});
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 18),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildSectionLabel('BASE STAT TOTAL (BST) RANGE'),
+                      Text(
+                        '${_minBst.round()} - ${_maxBst.round()}',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.pokemonRed),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  RangeSlider(
+                    values: RangeValues(_minBst, _maxBst),
+                    min: 100.0,
+                    max: 780.0,
+                    divisions: 68,
+                    activeColor: AppTheme.pokemonRed,
+                    inactiveColor: isDark ? const Color(0xFF262626) : const Color(0xFFE2E8F0),
+                    labels: RangeLabels('${_minBst.round()}', '${_maxBst.round()}'),
+                    onChanged: (RangeValues values) {
+                      setState(() {
+                        _minBst = values.start;
+                        _maxBst = values.end;
+                      });
+                      setModalState(() {});
+                    },
+                  ),
+                  const SizedBox(height: 18),
+
+                  _buildSectionLabel('MINIMUM BASE STAT THRESHOLDS'),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF141414) : const Color(0xFFF7FAFC),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE2E8F0)),
+                    ),
+                    child: Column(
+                      children: [
+                        _buildStatSliderRow('HP', _minHp, (val) {
+                          setState(() => _minHp = val);
+                          setModalState(() {});
+                        }),
+                        _buildStatSliderRow('Attack', _minAtk, (val) {
+                          setState(() => _minAtk = val);
+                          setModalState(() {});
+                        }),
+                        _buildSwitchRow('Makes Contact (Contact moves preset)', false, (val) {}),
+                        _buildStatSliderRow('Defense', _minDef, (val) {
+                          setState(() => _minDef = val);
+                          setModalState(() {});
+                        }),
+                        _buildStatSliderRow('Sp. Atk', _minSpAtk, (val) {
+                          setState(() => _minSpAtk = val);
+                          setModalState(() {});
+                        }),
+                        _buildStatSliderRow('Sp. Def', _minSpDef, (val) {
+                          setState(() => _minSpDef = val);
+                          setModalState(() {});
+                        }),
+                        _buildStatSliderRow('Speed', _minSpd, (val) {
+                          setState(() => _minSpd = val);
+                          setModalState(() {});
+                        }),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+
+                  _buildSectionLabel('EV YIELD STAT FILTER'),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      {'label': 'ANY EV', 'key': null},
+                      {'label': 'HP EV', 'key': 'hp'},
+                      {'label': 'ATK EV', 'key': 'atk'},
+                      {'label': 'DEF EV', 'key': 'def'},
+                      {'label': 'SPA EV', 'key': 'spatk'},
+                      {'label': 'SPD EV', 'key': 'spdef'},
+                      {'label': 'SPE EV', 'key': 'spd'},
+                    ].map((item) {
+                      final String? key = item['key'];
+                      final String label = item['label'] as String;
+                      final bool isSel = _selectedEvYieldStat == key;
+                      return ChoiceChip(
+                        label: Text(
+                          label,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: isSel ? Colors.white : Colors.grey,
+                          ),
+                        ),
+                        selected: isSel,
+                        selectedColor: AppTheme.pokemonRed,
+                        backgroundColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFEDF2F7),
+                        onSelected: (selected) {
+                          setState(() {
+                            _selectedEvYieldStat = selected ? key : null;
+                          });
+                          setModalState(() {});
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 18),
+
+                  _buildSectionLabel('SORTING'),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF141414) : const Color(0xFFF7FAFC),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE2E8F0)),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _sortOption,
+                        dropdownColor: isDark ? const Color(0xFF121212) : Colors.white,
+                        isExpanded: true,
+                        style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 13),
+                        items: const [
+                          DropdownMenuItem(value: 'id_asc', child: Text('ID (ASCENDING)')),
+                          DropdownMenuItem(value: 'id_desc', child: Text('ID (DESCENDING)')),
+                          DropdownMenuItem(value: 'name_asc', child: Text('ALPHABETICAL (A - Z)')),
+                          DropdownMenuItem(value: 'name_desc', child: Text('ALPHABETICAL (Z - A)')),
+                          DropdownMenuItem(value: 'bst_desc', child: Text('BST TOTAL (HIGHEST FIRST)')),
+                          DropdownMenuItem(value: 'bst_asc', child: Text('BST TOTAL (LOWEST FIRST)')),
+                          DropdownMenuItem(value: 'hp_desc', child: Text('HIGHEST HP')),
+                          DropdownMenuItem(value: 'atk_desc', child: Text('HIGHEST ATTACK')),
+                          DropdownMenuItem(value: 'def_desc', child: Text('HIGHEST DEFENSE')),
+                          DropdownMenuItem(value: 'spatk_desc', child: Text('HIGHEST SP. ATK')),
+                          DropdownMenuItem(value: 'spdef_desc', child: Text('HIGHEST SP. DEF')),
+                          DropdownMenuItem(value: 'spd_desc', child: Text('HIGHEST SPEED')),
                         ],
+                        onChanged: (val) {
+                          if (val != null) {
+                            setState(() {
+                              _sortOption = val;
+                            });
+                            setModalState(() {});
+                          }
+                        },
                       ),
                     ),
-                    Flexible(
-                      child: ListView(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                        children: [
-
-                            _buildSectionLabel('ELEMENTAL TYPES (UP TO 2)'),
-                            const SizedBox(height: 4),
-                            const Text(
-                              'Select 1 type to match primary/secondary, or 2 types for exact dual-type matching.',
-                              style: TextStyle(fontSize: 11, color: Colors.grey),
-                            ),
-                            const SizedBox(height: 8),
-                            Wrap(
-                              spacing: 6,
-                              runSpacing: 6,
-                              children: _allTypes.map((type) {
-                                final bool isSel = _selectedTypes.contains(type);
-                                final Color col = _getTypeColor(type);
-                                return ChoiceChip(
-                                  label: Text(
-                                    type.toUpperCase(),
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                      color: isSel ? Colors.white : col,
-                                    ),
-                                  ),
-                                  selected: isSel,
-                                  selectedColor: col,
-                                  backgroundColor: col.withValues(alpha: 0.1),
-                                  onSelected: (selected) {
-                                    HapticFeedback.selectionClick();
-                                    setState(() {
-                                      if (selected) {
-                                        if (_selectedTypes.length < 2) {
-                                          _selectedTypes.add(type);
-                                        }
-                                      } else {
-                                        _selectedTypes.remove(type);
-                                      }
-                                    });
-                                    setModalState(() {});
-                                  },
-                                );
-                              }).toList(),
-                            ),
-                            const SizedBox(height: 18),
-
-                            _buildSectionLabel('GENERATIONS'),
-                            const SizedBox(height: 8),
-                            SizedBox(
-                              height: 38,
-                              child: ListView.builder(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: 9,
-                                itemBuilder: (context, idx) {
-                                  final int gen = idx + 1;
-                                  final bool isSel = _selectedGenerations.contains(gen);
-                                  return Padding(
-                                    padding: const EdgeInsets.only(right: 6),
-                                    child: ChoiceChip(
-                                      label: Text(
-                                        'GEN ${_toRoman(gen)}',
-                                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isSel ? Colors.white : Colors.grey),
-                                      ),
-                                      selected: isSel,
-                                      selectedColor: AppTheme.pokemonRed,
-                                      backgroundColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFEDF2F7),
-                                      onSelected: (selected) {
-                                        HapticFeedback.selectionClick();
-                                        setState(() {
-                                          if (selected) {
-                                            _selectedGenerations.add(gen);
-                                          } else {
-                                            _selectedGenerations.remove(gen);
-                                          }
-                                        });
-                                        setModalState(() {});
-                                      },
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                            const SizedBox(height: 18),
-
-                            _buildSectionLabel('SPECIAL CLASSIFICATIONS & COLLECTION'),
-                            const SizedBox(height: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF141414) : const Color(0xFFF7FAFC),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE2E8F0)),
-                              ),
-                              child: Column(
-                                children: [
-                                  _buildSwitchRow('Legendary Pokémon', _showLegendary, (val) {
-                                    HapticFeedback.selectionClick();
-                                    setState(() => _showLegendary = val);
-                                    setModalState(() {});
-                                  }),
-                                  _buildSwitchRow('Mythical Pokémon', _showMythical, (val) {
-                                    HapticFeedback.selectionClick();
-                                    setState(() => _showMythical = val);
-                                    setModalState(() {});
-                                  }),
-                                  _buildSwitchRow('Ultra Beasts (UB)', _showUltraBeast, (val) {
-                                    HapticFeedback.selectionClick();
-                                    setState(() => _showUltraBeast = val);
-                                    setModalState(() {});
-                                  }),
-                                  _buildSwitchRow('Paradox Pokémon', _showParadox, (val) {
-                                    HapticFeedback.selectionClick();
-                                    setState(() => _showParadox = val);
-                                    setModalState(() {});
-                                  }),
-                                  const Divider(height: 12),
-                                  _buildSwitchRow('Has Shiny Form / Artwork', _showShinyOnly, (val) {
-                                    HapticFeedback.selectionClick();
-                                    setState(() => _showShinyOnly = val);
-                                    setModalState(() {});
-                                  }),
-                                  _buildSwitchRow('Saved Favorites Only', _showFavoritesOnly, (val) {
-                                    HapticFeedback.selectionClick();
-                                    setState(() => _showFavoritesOnly = val);
-                                    setModalState(() {});
-                                  }),
-                                  _buildSwitchRow('Current Team Members Only', _showTeamOnly, (val) {
-                                    HapticFeedback.selectionClick();
-                                    setState(() => _showTeamOnly = val);
-                                    setModalState(() {});
-                                  }),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 18),
-
-                            // 3.5 Formats / Regional Forms
-                            _buildSectionLabel('REGIONAL / SPECIAL FORMATS'),
-                            const SizedBox(height: 8),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: ['MEGA', 'ALOLA', 'GALAR', 'HISUI', 'PALDEA', 'CHAMPIONS', 'LEGENDS Z-A'].map((fmt) {
-                                final bool isSel = _selectedFormats.contains(fmt);
-                                return ChoiceChip(
-                                  label: Text(
-                                    fmt,
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                      color: isSel ? Colors.white : Colors.grey,
-                                    ),
-                                  ),
-                                  selected: isSel,
-                                  selectedColor: AppTheme.pokemonRed,
-                                  backgroundColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFEDF2F7),
-                                  onSelected: (selected) {
-                                    setState(() {
-                                      if (selected) {
-                                        _selectedFormats.add(fmt);
-                                      } else {
-                                        _selectedFormats.remove(fmt);
-                                      }
-                                    });
-                                    setModalState(() {});
-                                  },
-                                );
-                              }).toList(),
-                            ),
-                            const SizedBox(height: 18),
-
-                            // 4. Base Stat Total (BST) Range Slider
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                _buildSectionLabel('BASE STAT TOTAL (BST) RANGE'),
-                                Text(
-                                  '${_minBst.round()} - ${_maxBst.round()}',
-                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.pokemonRed),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            RangeSlider(
-                              values: RangeValues(_minBst, _maxBst),
-                              min: 100.0,
-                              max: 780.0,
-                              divisions: 68,
-                              activeColor: AppTheme.pokemonRed,
-                              inactiveColor: isDark ? const Color(0xFF262626) : const Color(0xFFE2E8F0),
-                              labels: RangeLabels('${_minBst.round()}', '${_maxBst.round()}'),
-                              onChanged: (RangeValues values) {
-                                setState(() {
-                                  _minBst = values.start;
-                                  _maxBst = values.end;
-                                });
-                                setModalState(() {});
-                              },
-                            ),
-                            const SizedBox(height: 18),
-
-                            // 5. Individual Base Stat Filters
-                            _buildSectionLabel('MINIMUM BASE STAT THRESHOLDS'),
-                            const SizedBox(height: 8),
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF141414) : const Color(0xFFF7FAFC),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE2E8F0)),
-                              ),
-                              child: Column(
-                                children: [
-                                  _buildStatSliderRow('HP', _minHp, (val) {
-                                    setState(() => _minHp = val);
-                                    setModalState(() {});
-                                  }),
-                                  _buildStatSliderRow('Attack', _minAtk, (val) {
-                                    setState(() => _minAtk = val);
-                                    setModalState(() {});
-                                  }),
-                                  _buildStatSliderRow('Defense', _minDef, (val) {
-                                    setState(() => _minDef = val);
-                                    setModalState(() {});
-                                  }),
-                                  _buildStatSliderRow('Sp. Atk', _minSpAtk, (val) {
-                                    setState(() => _minSpAtk = val);
-                                    setModalState(() {});
-                                  }),
-                                  _buildStatSliderRow('Sp. Def', _minSpDef, (val) {
-                                    setState(() => _minSpDef = val);
-                                    setModalState(() {});
-                                  }),
-                                  _buildStatSliderRow('Speed', _minSpd, (val) {
-                                    setState(() => _minSpd = val);
-                                    setModalState(() {});
-                                  }),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 18),
-
-                            // 5.5 EV Yield Stat Filter
-                            _buildSectionLabel('EV YIELD STAT FILTER'),
-                            const SizedBox(height: 8),
-                            Wrap(
-                              spacing: 6,
-                              runSpacing: 6,
-                              children: [
-                                {'label': 'ANY EV', 'key': null},
-                                {'label': 'HP EV', 'key': 'hp'},
-                                {'label': 'ATK EV', 'key': 'atk'},
-                                {'label': 'DEF EV', 'key': 'def'},
-                                {'label': 'SPA EV', 'key': 'spatk'},
-                                {'label': 'SPD EV', 'key': 'spdef'},
-                                {'label': 'SPE EV', 'key': 'spd'},
-                              ].map((item) {
-                                final String? key = item['key'];
-                                final String label = item['label'] as String;
-                                final bool isSel = _selectedEvYieldStat == key;
-                                return ChoiceChip(
-                                  label: Text(
-                                    label,
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                      color: isSel ? Colors.white : Colors.grey,
-                                    ),
-                                  ),
-                                  selected: isSel,
-                                  selectedColor: AppTheme.pokemonRed,
-                                  backgroundColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFEDF2F7),
-                                  onSelected: (selected) {
-                                    setState(() {
-                                      _selectedEvYieldStat = selected ? key : null;
-                                    });
-                                    setModalState(() {});
-                                  },
-                                );
-                              }).toList(),
-                            ),
-                            const SizedBox(height: 18),
-
-                            // 6. Sorting options
-                            _buildSectionLabel('SORTING'),
-                            const SizedBox(height: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14),
-                              decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF141414) : const Color(0xFFF7FAFC),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE2E8F0)),
-                              ),
-                              child: DropdownButtonHideUnderline(
-                                child: DropdownButton<String>(
-                                  value: _sortOption,
-                                  dropdownColor: isDark ? const Color(0xFF121212) : Colors.white,
-                                  isExpanded: true,
-                                  style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 13),
-                                  items: const [
-                                    DropdownMenuItem(value: 'id_asc', child: Text('ID (ASCENDING)')),
-                                    DropdownMenuItem(value: 'id_desc', child: Text('ID (DESCENDING)')),
-                                    DropdownMenuItem(value: 'name_asc', child: Text('ALPHABETICAL (A - Z)')),
-                                    DropdownMenuItem(value: 'name_desc', child: Text('ALPHABETICAL (Z - A)')),
-                                    DropdownMenuItem(value: 'bst_desc', child: Text('BST TOTAL (HIGHEST FIRST)')),
-                                    DropdownMenuItem(value: 'bst_asc', child: Text('BST TOTAL (LOWEST FIRST)')),
-                                    DropdownMenuItem(value: 'hp_desc', child: Text('HIGHEST HP')),
-                                    DropdownMenuItem(value: 'atk_desc', child: Text('HIGHEST ATTACK')),
-                                    DropdownMenuItem(value: 'def_desc', child: Text('HIGHEST DEFENSE')),
-                                    DropdownMenuItem(value: 'spatk_desc', child: Text('HIGHEST SP. ATK')),
-                                    DropdownMenuItem(value: 'spdef_desc', child: Text('HIGHEST SP. DEF')),
-                                    DropdownMenuItem(value: 'spd_desc', child: Text('HIGHEST SPEED')),
-                                  ],
-                                  onChanged: (val) {
-                                    if (val != null) {
-                                      setState(() {
-                                        _sortOption = val;
-                                      });
-                                      setModalState(() {});
-                                    }
-                                  },
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 32),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 32),
+                ],
               ),
             );
           },

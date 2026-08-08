@@ -3,6 +3,7 @@ import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/features/calculator/utils/combat_utils.dart';
 import 'package:libredex/features/calculator/viewmodels/damage_calculator_viewmodel.dart';
+import 'package:libredex/core/widgets/debounced_search_field.dart';
 
 /// Searchable modal dialog for picking a damaging move in the damage calculator.
 class MovePickerDialog extends StatefulWidget {
@@ -79,17 +80,10 @@ class _MovePickerDialogState extends State<MovePickerDialog> {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: TextField(
-                autofocus: true,
+              child: DebouncedSearchField(
+                hintText: 'Search moves by name, type, or category...',
+                initialValue: _query,
                 onChanged: (v) => setState(() => _query = v),
-                decoration: InputDecoration(
-                  hintText: 'Search moves by name, type, or category...',
-                  prefixIcon: const Icon(Icons.search, color: AppTheme.pokemonRed),
-                  filled: true,
-                  fillColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF3F4F6),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                ),
               ),
             ),
             Flexible(

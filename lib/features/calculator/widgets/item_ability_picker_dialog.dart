@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/features/calculator/utils/held_items_data.dart';
 import 'package:libredex/features/calculator/viewmodels/damage_calculator_viewmodel.dart';
+import 'package:libredex/core/widgets/debounced_search_field.dart';
 
 /// Searchable modal dialog for picking held items in the damage calculator.
 class ItemPickerDialog extends StatefulWidget {
@@ -77,17 +78,10 @@ class _ItemPickerDialogState extends State<ItemPickerDialog> {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: TextField(
-                autofocus: true,
+              child: DebouncedSearchField(
+                hintText: 'Search held items (Choice, Berry, Vest, Boots...)...',
+                initialValue: _query,
                 onChanged: (v) => setState(() => _query = v),
-                decoration: InputDecoration(
-                  hintText: 'Search held items (Choice, Berry, Vest, Boots...)...',
-                  prefixIcon: const Icon(Icons.search, color: AppTheme.pokemonRed),
-                  filled: true,
-                  fillColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF3F4F6),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                ),
               ),
             ),
             Flexible(

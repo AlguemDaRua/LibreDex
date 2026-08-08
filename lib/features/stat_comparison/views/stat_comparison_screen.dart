@@ -20,6 +20,7 @@ import 'package:libredex/features/stat_comparison/models/comparison_entry.dart';
 import 'package:libredex/features/stat_comparison/viewmodels/stat_comparison_viewmodel.dart';
 import 'package:libredex/features/stat_comparison/views/comparison_table.dart';
 import 'package:libredex/features/stat_comparison/views/pokemon_build_editor.dart';
+import 'package:libredex/core/widgets/debounced_search_field.dart';
 
 class StatComparisonScreen extends ConsumerWidget {
   const StatComparisonScreen({super.key});
@@ -452,10 +453,10 @@ class _PokemonPickerDialogState extends State<_PokemonPickerDialog> {
           ),
           Padding(
             padding: const EdgeInsets.all(16),
-            child: TextField(
-              autofocus: true,
+            child: DebouncedSearchField(
+              hintText: 'Search by name, type, or #',
+              initialValue: _query,
               onChanged: (v) => setState(() => _query = v),
-              decoration: const InputDecoration(hintText: 'Search by name, type, or #', prefixIcon: Icon(Icons.search_rounded)),
             ),
           ),
           Flexible(child: ListView.builder(
