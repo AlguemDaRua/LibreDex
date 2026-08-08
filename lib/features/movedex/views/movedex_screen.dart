@@ -23,6 +23,7 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
   String _sort = 'Name (A–Z)';
   String _typeFilter = 'All';
   String _classFilter = 'All';
+  static const _sortOptions = ['Name (A–Z)', 'Name (Z–A)', 'Power (high–low)', 'Accuracy (high–low)', 'PP (high–low)'];
 
   @override
   void initState() {
@@ -57,7 +58,15 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
   void _applyMoveOptions() {
     final q = _searchQuery.toLowerCase();
     final values = _allMoves.where((m) => (m.name.toLowerCase().contains(q) || m.type.toLowerCase().contains(q) || (m.description ?? '').toLowerCase().contains(q)) && (_typeFilter == 'All' || m.type == _typeFilter) && (_classFilter == 'All' || m.damageClass == _classFilter)).toList();
-    values.sort((a,b) => _sort == 'Name (Z–A)' ? b.name.compareTo(a.name) : a.name.compareTo(b.name));
+    values.sort((a, b) {
+      switch (_sort) {
+        case 'Name (Z–A)': return b.name.compareTo(a.name);
+        case 'Power (high–low)': return (b.power ?? -1).compareTo(a.power ?? -1);
+        case 'Accuracy (high–low)': return (b.accuracy ?? -1).compareTo(a.accuracy ?? -1);
+        case 'PP (high–low)': return b.pp.compareTo(a.pp);
+        default: return a.name.compareTo(b.name);
+      }
+    });
     setState(() => _filteredMoves = values);
   }
 
@@ -144,6 +153,7 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
                     sort: _sort,
                     filter: _typeFilter,
                     filters: ['All', ...{for (final m in _allMoves) m.type}],
+                    sortOptions: _sortOptions,
                     onSort: (value) { setState(() => _sort = value); _applyMoveOptions(); },
                     onFilter: (value) { setState(() => _typeFilter = value); _applyMoveOptions(); },
                   ),
@@ -241,6 +251,7 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
 
 class _DexControls extends StatelessWidget {
   final String sort, filter; final List<String> filters; final ValueChanged<String> onSort, onFilter; final bool showSort;
-  const _DexControls({required this.sort, required this.filter, required this.filters, required this.onSort, required this.onFilter, this.showSort = true});
-  @override Widget build(BuildContext context) => SizedBox(height: 48, child: Row(children: [if (showSort) PopupMenuButton<String>(initialValue: sort, icon: const Icon(Icons.sort), onSelected: onSort, itemBuilder: (_) => const [PopupMenuItem(value: 'Name (A–Z)', child: Text('Name (A–Z)')), PopupMenuItem(value: 'Name (Z–A)', child: Text('Name (Z–A)'))]), Expanded(child: ListView.separated(scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 8), itemCount: filters.length, separatorBuilder: (_, __) => const SizedBox(width: 6), itemBuilder: (_, i) => ChoiceChip(label: Text(filters[i]), selected: filter == filters[i], onSelected: (_) => onFilter(filters[i]))))]));
+  final List<String> sortOptions;
+  const _DexControls({required this.sort, required this.filter, required this.filters, required this.onSort, required this.onFilter, this.showSort = true, this.sortOptions = const ['Name (A–Z)', 'Name (Z–A)']});
+  @override Widget build(BuildContext context) => SizedBox(height: 48, child: Row(children: [if (showSort) PopupMenuButton<String>(initialValue: sort, icon: const Icon(Icons.sort), onSelected: onSort, itemBuilder: (_) => sortOptions.map((option) => PopupMenuItem(value: option, child: Text(option))).toList()), Expanded(child: ListView.separated(scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 8), itemCount: filters.length, separatorBuilder: (_, __) => const SizedBox(width: 6), itemBuilder: (_, i) => ChoiceChip(label: Text(filters[i]), selected: filter == filters[i], onSelected: (_) => onFilter(filters[i]))))]));
 }
