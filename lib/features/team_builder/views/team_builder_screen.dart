@@ -16,6 +16,7 @@ import 'package:libredex/features/pokedex/views/pokemon_detail_screen.dart';
 
 import 'package:libredex/features/team_builder/utils/showdown_parser.dart';
 import 'package:libredex/features/team_builder/widgets/team_defense_matrix.dart';
+import 'package:libredex/features/team_comparison/views/team_comparison_screen.dart';
 
 class TeamBuilderScreen extends ConsumerWidget {
   const TeamBuilderScreen({super.key});
@@ -505,7 +506,7 @@ class _TeamAnalysis extends StatelessWidget {
             title: 'Pokémon Champions setup',
             icon: Icons.emoji_events_rounded,
             child: Text(
-              'Readout assumes Champions battles: Lv. 50 only, IVs always perfect, and 66 Stat Points (max 32 per stat) instead of EVs. Tap the calculator icon on any member to tune its spread in the Champions ruleset.',
+              'Readout assumes Champions: Lv. 50, perfect IVs, 66 Stat Points (max 32 per stat). Use Stat Comparison to tune spreads.',
               style: TextStyle(height: 1.45),
             ),
           ),
@@ -591,7 +592,44 @@ class _TeamAnalysis extends StatelessWidget {
             ],
           ),
         ),
+        const SizedBox(height: 16),
+        _SectionHeader(icon: Icons.compare_arrows_rounded, title: 'Team Comparison', subtitle: 'Compare two teams side-by-side — Pokédex info only'),
+        const SizedBox(height: 10),
+        _TeamCompareButton(team: team, format: format),
       ],
+    );
+  }
+}
+
+class _TeamCompareButton extends ConsumerWidget {
+  final List<Pokemon> team;
+  final TeamFormat format;
+  const _TeamCompareButton({required this.team, required this.format});
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF101010) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('Team vs Team — type & stat overview. No turns, no rolls, just Pokédex math.', style: TextStyle(fontSize: 11, color: Colors.grey, height: 1.4)),
+        const SizedBox(height: 10),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            icon: const Icon(Icons.compare_rounded, size: 18),
+            label: const Text('Compare Teams', style: TextStyle(fontWeight: FontWeight.w900)),
+            style: FilledButton.styleFrom(backgroundColor: AppTheme.pokemonRed, padding: const EdgeInsets.symmetric(vertical: 14)),
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => TeamComparisonScreen(myTeam: team, format: format)));
+            },
+          ),
+        ),
+      ]),
     );
   }
 }
