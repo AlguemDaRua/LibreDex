@@ -6,6 +6,12 @@ import 'package:libredex/core/widgets/app_drawer.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
 import 'package:libredex/core/theme/app_spacing.dart';
 import 'package:libredex/features/abilitydex/views/ability_detail_screen.dart';
+import 'package:libredex/core/widgets/dex_filter_bar.dart';
+import 'package:libredex/core/widgets/dex_sort_menu.dart';
+import 'package:libredex/core/widgets/dex_filter_sheet.dart';
+import 'package:libredex/core/widgets/active_filter_summary.dart';
+import 'package:libredex/core/widgets/result_count_label.dart';
+import 'package:libredex/core/utils/ability_properties.dart';
 
 class AbilitydexScreen extends ConsumerStatefulWidget {
   const AbilitydexScreen({super.key});
@@ -20,8 +26,21 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
   List<Ability> _allAbilities = [];
   List<Ability> _filteredAbilities = [];
   bool _isLoading = true;
-  String _sort = 'Name (A–Z)';
-  String _effectFilter = 'All';
+
+  // Sorting & Filters
+  String _sortOption = 'name_asc';
+  int? _selectedGeneration;
+  String? _selectedEffectTag;
+  
+  bool _filterChampions = false;
+  bool _filterLegendsZA = false;
+  bool _filterHidden = false;
+
+  static const List<String> _effectTags = [
+    'Weather', 'Terrain', 'Stats', 'Status', 'Damage', 'Immunity', 'Type',
+    'Speed', 'Items', 'Switching', 'Hazards', 'Healing', 'Critical Hits',
+    'Accuracy', 'Priority'
+  ];
 
   @override
   void initState() {
@@ -36,35 +55,269 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
   }
 
   Future<void> _loadAbilities() async {
-    final db = ref.read(databaseProvider);
-    final abilities = await db.select(db.abilityTable).get();
-    abilities.sort((a, b) => a.name.compareTo(b.name));
-    if (mounted) {
-      setState(() {
-        _allAbilities = abilities;
-        _filteredAbilities = abilities;
-        _isLoading = false;
-      });
+    try {
+      final db = ref.read(databaseProvider);
+      final abilities = await db.select(db.abilityTable).get();
+      if (mounted) {
+        setState(() {
+          _allAbilities = abilities;
+          _isLoading = false;
+          _applyFilters();
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
-  List<Ability> _sortAbilities(Iterable<Ability> values) {
-    final result = values.toList();
-    result.sort((a, b) => _sort == 'Name (Z–A)' ? b.name.compareTo(a.name) : a.name.compareTo(b.name));
-    return result;
+  void _clearAllFilters() {
+    setState(() {
+      _selectedGeneration = null;
+      _selectedEffectTag = null;
+      _filterChampions = false;
+      _filterLegendsZA = false;
+      _filterHidden = false;
+      _sortOption = 'name_asc';
+    });
+    _applyFilters();
   }
 
-  void _applyAbilityOptions() {
-    final q = _searchQuery;
-    final base = _allAbilities.where((a) { final has = a.description.trim().isNotEmpty && !a.description.toLowerCase().contains('no effect text'); return (_effectFilter == 'All' || (_effectFilter == 'With effects' && has) || (_effectFilter == 'No effect' && !has)) && (a.name.toLowerCase().contains(q.toLowerCase()) || a.description.toLowerCase().contains(q.toLowerCase())); });
-    setState(() => _filteredAbilities = _sortAbilities(base));
+  bool get _hasActiveFilters {
+    return _selectedGeneration != null ||
+        _selectedEffectTag != null ||
+        _filterChampions ||
+        _filterLegendsZA ||
+        _filterHidden ||
+        _sortOption != 'name_asc';
   }
 
-  void _filterAbilities(String query) {
-    _searchQuery = query;
-    _applyAbilityOptions();
+  void _applyFilters() {
+    final query = _searchQuery.trim().toLowerCase();
+    var list = _allAbilities.where((a) {
+      if (query.isNotEmpty) {
+        final matchesQuery = a.name.toLowerCase().contains(query) ||
+            a.description.toLowerCase().contains(query);
+        if (!matchesQuery) return false;
+      }
+
+      if (_selectedGeneration != null && a.generation != _selectedGeneration) return false;
+
+      if (_filterChampions && !a.isChampionsAbility) return false;
+      if (_filterLegendsZA && !a.isLegendsZAAbility) return false;
+      if (_filterHidden && !a.isHiddenAbility) return false;
+
+      if (_selectedEffectTag != null) {
+        final tags = a.effectTags.map((t) => t.toLowerCase()).toList();
+        if (!tags.contains(_selectedEffectTag!.toLowerCase())) return false;
+      }
+
+      return true;
+    }).toList();
+
+    // Sort
+    list.sort((a, b) {
+      switch (_sortOption) {
+        case 'name_desc':
+          return b.name.compareTo(a.name);
+        case 'gen_desc':
+          return b.generation.compareTo(a.generation);
+        case 'gen_asc':
+          return a.generation.compareTo(b.generation);
+        case 'champions_first':
+          if (a.isChampionsAbility && !b.isChampionsAbility) return -1;
+          if (!a.isChampionsAbility && b.isChampionsAbility) return 1;
+          return a.name.compareTo(b.name);
+        case 'legends_first':
+          if (a.isLegendsZAAbility && !b.isLegendsZAAbility) return -1;
+          if (!a.isLegendsZAAbility && b.isLegendsZAAbility) return 1;
+          return a.name.compareTo(b.name);
+        case 'name_asc':
+        default:
+          return a.name.compareTo(b.name);
+      }
+    });
+
+    setState(() {
+      _filteredAbilities = list;
+    });
   }
 
+  List<ActiveFilterItem> _buildActiveFilterItems() {
+    final list = <ActiveFilterItem>[];
+
+    if (_selectedGeneration != null) {
+      list.add(ActiveFilterItem(
+        label: 'Gen: $_selectedGeneration',
+        onDeleted: () => setState(() { _selectedGeneration = null; _applyFilters(); }),
+      ));
+    }
+    if (_selectedEffectTag != null) {
+      list.add(ActiveFilterItem(
+        label: 'Affects: $_selectedEffectTag',
+        onDeleted: () => setState(() { _selectedEffectTag = null; _applyFilters(); }),
+      ));
+    }
+    if (_filterChampions) {
+      list.add(ActiveFilterItem(
+        label: 'Champions',
+        onDeleted: () => setState(() { _filterChampions = false; _applyFilters(); }),
+      ));
+    }
+    if (_filterLegendsZA) {
+      list.add(ActiveFilterItem(
+        label: 'Legends Z-A',
+        onDeleted: () => setState(() { _filterLegendsZA = false; _applyFilters(); }),
+      ));
+    }
+    if (_filterHidden) {
+      list.add(ActiveFilterItem(
+        label: 'Hidden Abilities',
+        onDeleted: () => setState(() { _filterHidden = false; _applyFilters(); }),
+      ));
+    }
+
+    return list;
+  }
+
+  void _openFilterSheet() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            final primaryColor = isDark ? Colors.white : Colors.black;
+
+            return DexFilterSheet(
+              title: 'Ability Filters',
+              hasActiveFilters: _hasActiveFilters,
+              onReset: () {
+                _clearAllFilters();
+                setModalState(() {});
+              },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Generation
+                  const Text('GENERATION', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    children: List.generate(7, (idx) => idx + 3).map((gen) {
+                      final isSel = _selectedGeneration == gen;
+                      return ChoiceChip(
+                        label: Text('GEN $gen', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isSel ? Colors.white : Colors.grey)),
+                        selected: isSel,
+                        selectedColor: AppTheme.pokemonRed,
+                        onSelected: (selected) {
+                          setState(() { _selectedGeneration = selected ? gen : null; });
+                          _applyFilters();
+                          setModalState(() {});
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Effects tags
+                  const Text('ABILITIES AFFECTING', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: _effectTags.map((tag) {
+                      final isSel = _selectedEffectTag == tag;
+                      return ChoiceChip(
+                        label: Text(tag.toUpperCase(), style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
+                        selected: isSel,
+                        selectedColor: AppTheme.pokemonRed,
+                        onSelected: (selected) {
+                          setState(() { _selectedEffectTag = selected ? tag : null; });
+                          _applyFilters();
+                          setModalState(() {});
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Custom filters
+                  const Text('SPECIAL RULES', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF141414) : const Color(0xFFF7FAFC),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE2E8F0)),
+                    ),
+                    child: Column(
+                      children: [
+                        _buildSwitchRow('Pokémon Champions', _filterChampions, (val) {
+                          setState(() => _filterChampions = val);
+                          _applyFilters();
+                          setModalState(() {});
+                        }),
+                        _buildSwitchRow('Legends: Z-A', _filterLegendsZA, (val) {
+                          setState(() => _filterLegendsZA = val);
+                          _applyFilters();
+                          setModalState(() {});
+                        }),
+                        _buildSwitchRow('Hidden Ability', _filterHidden, (val) {
+                          setState(() => _filterHidden = val);
+                          _applyFilters();
+                          setModalState(() {});
+                        }),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Sorting
+                  DexSortMenu<String>(
+                    currentValue: _sortOption,
+                    items: const [
+                      DropdownMenuItem(value: 'name_asc', child: Text('NAME (A - Z)')),
+                      DropdownMenuItem(value: 'name_desc', child: Text('NAME (Z - A)')),
+                      DropdownMenuItem(value: 'gen_desc', child: Text('GENERATION (LATEST FIRST)')),
+                      DropdownMenuItem(value: 'gen_asc', child: Text('GENERATION (EARLIEST FIRST)')),
+                      DropdownMenuItem(value: 'champions_first', child: Text('CHAMPIONS FIRST')),
+                      DropdownMenuItem(value: 'legends_first', child: Text('LEGENDS: Z-A FIRST')),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() { _sortOption = val; });
+                        _applyFilters();
+                        setModalState(() {});
+                      }
+                    },
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildSwitchRow(String label, bool value, ValueChanged<bool> onChanged) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+        Switch(
+          value: value,
+          activeThumbColor: AppTheme.pokemonRed,
+          onChanged: onChanged,
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -85,51 +338,31 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
         child: _isLoading
             ? const Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(AppTheme.pokemonRed)))
             : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Search Bar
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    child: TextField(
-                      controller: _searchController,
-                      onChanged: _filterAbilities,
-                      decoration: InputDecoration(
-                        hintText: 'Search abilities by name...',
-                        prefixIcon: const Icon(Icons.search, color: AppTheme.pokemonRed),
-                        suffixIcon: _searchQuery.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear, size: 20),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  _filterAbilities('');
-                                },
-                              )
-                            : null,
-                        filled: true,
-                        fillColor: isDark ? const Color(0xFF161616) : const Color(0xFFEDF2F7),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(20),
-                          borderSide: BorderSide(
-                            color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE2E8F0),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(20),
-                          borderSide: const BorderSide(color: AppTheme.pokemonRed, width: 1.5),
-                        ),
-                      ),
+                  DexFilterBar(
+                    searchHint: 'Search abilities by name or desc...',
+                    initialSearchValue: _searchQuery,
+                    onSearchChanged: (val) {
+                      setState(() { _searchQuery = val; });
+                      _applyFilters();
+                    },
+                    onClearSearch: () {
+                      setState(() { _searchQuery = ''; });
+                      _applyFilters();
+                    },
+                    onFilterPressed: _openFilterSheet,
+                    hasActiveFilters: _hasActiveFilters,
+                  ),
+
+                  if (_hasActiveFilters)
+                    ActiveFilterSummary(
+                      items: _buildActiveFilterItems(),
+                      onClearAll: _clearAllFilters,
                     ),
-                  ),
 
-                  _DexControls(
-                    sort: _sort,
-                    filter: _effectFilter,
-                    filters: const ['All', 'With effects', 'No effect'],
-                    onSort: (value) { setState(() => _sort = value); _applyAbilityOptions(); },
-                    onFilter: (value) { setState(() => _effectFilter = value); _applyAbilityOptions(); },
-                  ),
+                  ResultCountLabel(count: _filteredAbilities.length, label: 'abilities found'),
 
-                  // Abilities List
                   Expanded(
                     child: _filteredAbilities.isEmpty
                         ? const Center(child: Text('No abilities found.', style: TextStyle(color: Colors.grey)))
@@ -144,9 +377,29 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
                               final ab = _filteredAbilities[index];
                               return ListTile(
                                 contentPadding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                                title: Text(
-                                  ab.name,
-                                  style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 15),
+                                title: Row(
+                                  children: [
+                                    Text(
+                                      ab.name,
+                                      style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 15),
+                                    ),
+                                    if (ab.isChampionsAbility) ...[
+                                      const SizedBox(width: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                        decoration: BoxDecoration(color: Colors.orangeAccent, borderRadius: BorderRadius.circular(4)),
+                                        child: const Text('CHAMP', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                                      ),
+                                    ],
+                                    if (ab.isLegendsZAAbility) ...[
+                                      const SizedBox(width: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                        decoration: BoxDecoration(color: Colors.purpleAccent, borderRadius: BorderRadius.circular(4)),
+                                        child: const Text('LZA', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                                      ),
+                                    ],
+                                  ],
                                 ),
                                 subtitle: Padding(
                                   padding: const EdgeInsets.only(top: 4.0),
@@ -180,10 +433,4 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
       ),
     );
   }
-}
-
-class _DexControls extends StatelessWidget {
-  final String sort, filter; final List<String> filters; final ValueChanged<String> onSort, onFilter; final bool showSort;
-  const _DexControls({required this.sort, required this.filter, required this.filters, required this.onSort, required this.onFilter, this.showSort = true});
-  @override Widget build(BuildContext context) => SizedBox(height: 48, child: Row(children: [if (showSort) PopupMenuButton<String>(initialValue: sort, icon: const Icon(Icons.sort), onSelected: onSort, itemBuilder: (_) => const [PopupMenuItem(value: 'Name (A–Z)', child: Text('Name (A–Z)')), PopupMenuItem(value: 'Name (Z–A)', child: Text('Name (Z–A)'))]), Expanded(child: ListView.separated(scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 8), itemCount: filters.length, separatorBuilder: (_, __) => const SizedBox(width: 6), itemBuilder: (_, i) => ChoiceChip(label: Text(filters[i]), selected: filter == filters[i], onSelected: (_) => onFilter(filters[i]))))]));
 }

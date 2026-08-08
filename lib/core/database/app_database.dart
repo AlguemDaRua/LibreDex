@@ -28,6 +28,13 @@ class PokemonTable extends Table {
   TextColumn get spriteUrl => text()();
   TextColumn get shinySpriteUrl => text()();
   IntColumn get nationalDexNumber => integer().withDefault(Constant(0))();
+  IntColumn get generation => integer().withDefault(Constant(1))();
+  IntColumn get evolutionStage => integer().withDefault(Constant(0))();
+  TextColumn get eggGroups => text().nullable()();
+  TextColumn get formSource => text().nullable()();
+  TextColumn get dlcSource => text().nullable()();
+  BoolColumn get isChampions => boolean().withDefault(Constant(false))();
+  BoolColumn get isLegendsZA => boolean().withDefault(Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -44,6 +51,33 @@ class MoveTable extends Table {
   IntColumn get pp => integer()();
   TextColumn get damageClass => text()(); // physical, special, status
   TextColumn get description => text().nullable()();
+  IntColumn get priority => integer().withDefault(Constant(0))();
+  BoolColumn get isContact => boolean().withDefault(Constant(false))();
+  BoolColumn get isHealing => boolean().withDefault(Constant(false))();
+  BoolColumn get isSound => boolean().withDefault(Constant(false))();
+  BoolColumn get isPunching => boolean().withDefault(Constant(false))();
+  BoolColumn get isBiting => boolean().withDefault(Constant(false))();
+  BoolColumn get isPowder => boolean().withDefault(Constant(false))();
+  BoolColumn get isPulse => boolean().withDefault(Constant(false))();
+  BoolColumn get isBallistic => boolean().withDefault(Constant(false))();
+  BoolColumn get isSlicing => boolean().withDefault(Constant(false))();
+  BoolColumn get isWind => boolean().withDefault(Constant(false))();
+  BoolColumn get isDance => boolean().withDefault(Constant(false))();
+  BoolColumn get isBite => boolean().withDefault(Constant(false))();
+  BoolColumn get isMultiHit => boolean().withDefault(Constant(false))();
+  BoolColumn get isProtective => boolean().withDefault(Constant(false))();
+  BoolColumn get isSwitching => boolean().withDefault(Constant(false))();
+  BoolColumn get isRecharge => boolean().withDefault(Constant(false))();
+  BoolColumn get isRecoil => boolean().withDefault(Constant(false))();
+  BoolColumn get isDraining => boolean().withDefault(Constant(false))();
+  BoolColumn get isStatusMove => boolean().withDefault(Constant(false))();
+  BoolColumn get isDamagingMove => boolean().withDefault(Constant(false))();
+  BoolColumn get isSignatureMove => boolean().withDefault(Constant(false))();
+  BoolColumn get isDLCMove => boolean().withDefault(Constant(false))();
+  BoolColumn get isChampionsMove => boolean().withDefault(Constant(false))();
+  BoolColumn get isLegendsZAMove => boolean().withDefault(Constant(false))();
+  IntColumn get generation => integer().withDefault(Constant(1))();
+  TextColumn get introducedIn => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -55,6 +89,15 @@ class AbilityTable extends Table {
   IntColumn get id => integer()();
   TextColumn get name => text()();
   TextColumn get description => text()();
+  IntColumn get generation => integer().withDefault(Constant(1))();
+  BoolColumn get isHiddenAbility => boolean().withDefault(Constant(false))();
+  BoolColumn get isChampionsAbility => boolean().withDefault(Constant(false))();
+  BoolColumn get isLegendsZAAbility => boolean().withDefault(Constant(false))();
+  TextColumn get introducedIn => text().nullable()();
+  TextColumn get sourceGames => text().nullable()();
+  TextColumn get effectTags => text().nullable()();
+  TextColumn get battleEffectTags => text().nullable()();
+  TextColumn get pokemonTypes => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -112,7 +155,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration {
@@ -138,6 +181,42 @@ class AppDatabase extends _$AppDatabase {
         await customStatement(
           'CREATE INDEX IF NOT EXISTS idx_ability_name ON ability_table (name)',
         );
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_pokemon_form ON pokemon_table (form)',
+        );
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_pokemon_type1 ON pokemon_table (type1)',
+        );
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_pokemon_type2 ON pokemon_table (type2)',
+        );
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_pokemon_generation ON pokemon_table (generation)',
+        );
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_pokemon_nationalDexNumber ON pokemon_table (national_dex_number)',
+        );
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_move_type ON move_table (type)',
+        );
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_move_damageClass ON move_table (damage_class)',
+        );
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_move_power ON move_table (power)',
+        );
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_move_priority ON move_table (priority)',
+        );
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_pokemon_moves_pokemon_id ON pokemon_moves_table (pokemon_id)',
+        );
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_pokemon_moves_learn_method ON pokemon_moves_table (learn_method)',
+        );
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_pokemon_abilities_pokemon_id ON pokemon_abilities_table (pokemon_id)',
+        );
       },
       onUpgrade: (m, from, to) async {
         if (from < 2) {
@@ -145,6 +224,56 @@ class AppDatabase extends _$AppDatabase {
         }
         if (from < 3) {
           await m.addColumn(pokemonTable, pokemonTable.nationalDexNumber);
+        }
+        if (from < 4) {
+          // pokemonTable columns
+          await m.addColumn(pokemonTable, pokemonTable.generation);
+          await m.addColumn(pokemonTable, pokemonTable.evolutionStage);
+          await m.addColumn(pokemonTable, pokemonTable.eggGroups);
+          await m.addColumn(pokemonTable, pokemonTable.formSource);
+          await m.addColumn(pokemonTable, pokemonTable.dlcSource);
+          await m.addColumn(pokemonTable, pokemonTable.isChampions);
+          await m.addColumn(pokemonTable, pokemonTable.isLegendsZA);
+
+          // moveTable columns
+          await m.addColumn(moveTable, moveTable.priority);
+          await m.addColumn(moveTable, moveTable.isContact);
+          await m.addColumn(moveTable, moveTable.isHealing);
+          await m.addColumn(moveTable, moveTable.isSound);
+          await m.addColumn(moveTable, moveTable.isPunching);
+          await m.addColumn(moveTable, moveTable.isBiting);
+          await m.addColumn(moveTable, moveTable.isPowder);
+          await m.addColumn(moveTable, moveTable.isPulse);
+          await m.addColumn(moveTable, moveTable.isBallistic);
+          await m.addColumn(moveTable, moveTable.isSlicing);
+          await m.addColumn(moveTable, moveTable.isWind);
+          await m.addColumn(moveTable, moveTable.isDance);
+          await m.addColumn(moveTable, moveTable.isBite);
+          await m.addColumn(moveTable, moveTable.isMultiHit);
+          await m.addColumn(moveTable, moveTable.isProtective);
+          await m.addColumn(moveTable, moveTable.isSwitching);
+          await m.addColumn(moveTable, moveTable.isRecharge);
+          await m.addColumn(moveTable, moveTable.isRecoil);
+          await m.addColumn(moveTable, moveTable.isDraining);
+          await m.addColumn(moveTable, moveTable.isStatusMove);
+          await m.addColumn(moveTable, moveTable.isDamagingMove);
+          await m.addColumn(moveTable, moveTable.isSignatureMove);
+          await m.addColumn(moveTable, moveTable.isDLCMove);
+          await m.addColumn(moveTable, moveTable.isChampionsMove);
+          await m.addColumn(moveTable, moveTable.isLegendsZAMove);
+          await m.addColumn(moveTable, moveTable.generation);
+          await m.addColumn(moveTable, moveTable.introducedIn);
+
+          // abilityTable columns
+          await m.addColumn(abilityTable, abilityTable.generation);
+          await m.addColumn(abilityTable, abilityTable.isHiddenAbility);
+          await m.addColumn(abilityTable, abilityTable.isChampionsAbility);
+          await m.addColumn(abilityTable, abilityTable.isLegendsZAAbility);
+          await m.addColumn(abilityTable, abilityTable.introducedIn);
+          await m.addColumn(abilityTable, abilityTable.sourceGames);
+          await m.addColumn(abilityTable, abilityTable.effectTags);
+          await m.addColumn(abilityTable, abilityTable.battleEffectTags);
+          await m.addColumn(abilityTable, abilityTable.pokemonTypes);
         }
       },
     );

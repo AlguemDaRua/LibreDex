@@ -5,6 +5,7 @@ import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/widgets/pokemon_sprite.dart';
 import 'package:libredex/features/calculator/viewmodels/damage_calculator_viewmodel.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
+import 'package:libredex/core/widgets/debounced_search_field.dart';
 
 /// Searchable modal dialog for selecting an attacker or defender Pokémon.
 class PokemonPickerDialog extends ConsumerWidget {
@@ -81,20 +82,10 @@ class PokemonPickerDialog extends ConsumerWidget {
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: TextField(
-                    autofocus: true,
+                  child: DebouncedSearchField(
+                    hintText: 'Search Pokémon by name, ID or type...',
+                    initialValue: query,
                     onChanged: (v) => setState(() => query = v),
-                    decoration: InputDecoration(
-                      hintText: 'Search Pokémon by name, ID or type...',
-                      prefixIcon: const Icon(Icons.search, color: AppTheme.pokemonRed),
-                      filled: true,
-                      fillColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF3F4F6),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
                   ),
                 ),
                 Flexible(

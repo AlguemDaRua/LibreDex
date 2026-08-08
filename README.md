@@ -40,6 +40,16 @@ On a typical Android install, the database is under `/data/user/0/com.alguemdaru
 
 Use **Settings → Clear browsing artwork cache** for temporary images, **Delete downloaded artwork** for the durable library, or **Delete everything** to erase LibreDex data before closing, uninstalling or restarting the app.
 
+## Features & Enhancements
+
+LibreDex includes full-fledged, multi-game features covering:
+- **Shared Filter & Sort Framework**: Universal debouncing, search, sorting menus, active filter summaries, and result counters.
+- **Advanced Pokédex Filtering**: Query Pokémon by generation, stage, form source (Alola, Galar, Hisui, Paldea, Champions, Legends: Z-A), and complex dual-type predicates.
+- **Expanded MoveDex (27 Fields)**: Detailed property search for priority, contact, sound-based, punching, slicing, wind, dance, multi-hit, and battle property configurations.
+- **AbilityDex Metadata**: Filter standard and hidden abilities affecting Weather, Terrain, Healing, Stats, Status, Damage, and more.
+- **Offline ItemDex Caching**: Durable artwork, fallbacks, category fallback icons, and manual bulk downloader with real-time download progress.
+- **NatureDex Alignments**: Supports both Pokémon Champions Stat Point alignments and Legends: Z-A Effort level rules with responsive mobile/tablet displays.
+
 ## Run from source
 
 ### Requirements
