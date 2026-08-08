@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert';
-import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/data/champions_catalog.dart';
 import 'package:libredex/core/data/ev_yield_data.dart';
@@ -23,6 +22,9 @@ import 'package:libredex/core/widgets/dex_filter_sheet.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
 import 'package:libredex/core/utils/pokemon_properties.dart';
 import 'package:libredex/core/utils/type_utils.dart';
+import 'package:libredex/features/pokedex/viewmodels/randomizer_settings_provider.dart';
+import 'package:libredex/features/pokedex/widgets/random_roll_overlay.dart';
+import 'package:libredex/features/pokedex/widgets/randomizer_settings_sheet.dart';
 
 class PokedexScreen extends ConsumerStatefulWidget {
   const PokedexScreen({super.key});
@@ -280,6 +282,168 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
     return false;
   }
 
+  void _rollRandomPokemon(List<Pokemon> allList, List<Pokemon> activeFilteredList) {
+    final settings = ref.read(randomizerSettingsProvider);
+    List<Pokemon> pool;
+    switch (settings.poolMode) {
+      case RandomPoolMode.all:
+        pool = allList;
+        break;
+      case RandomPoolMode.activeFilters:
+        pool = activeFilteredList;
+        break;
+      case RandomPoolMode.custom:
+        pool = allList.where(settings.matchesCustomCriteria).toList();
+        break;
+    }
+
+    if (pool.isEmpty) {
+      HapticFeedback.warningNotification();
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('No Pokémon match your custom random criteria.'),
+          action: SnackBarAction(
+            label: 'Customize',
+            textColor: Colors.amberAccent,
+            onPressed: () {
+              RandomizerSettingsSheet.show(
+                context,
+                onRollPressed: () => _rollRandomPokemon(allList, activeFilteredList),
+              );
+            },
+          ),
+        ),
+      );
+      return;
+    }
+
+    HapticFeedback.mediumImpact();
+    RandomRollOverlay.show(
+      context,
+      candidatePool: pool,
+      onViewDetails: (selectedPokemon) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PokemonDetailScreen(forms: [selectedPokemon]),
+          ),
+        );
+      },
+    );
+  }
+
+  List<Pokemon> _getFilteredList(
+    List<Pokemon> pokemonList,
+    Set<int> favoriteDexNumbers,
+    Set<int> teamPokemonIds,
+    ChampionsCatalog? championsCatalog,
+    AsyncValue<Map<int, EvYieldFacts>> evYieldDataset,
+  ) {
+    return pokemonList.where((pokemon) {
+      final int dexNum = pokemon.nationalDexNumber > 0 ? pokemon.nationalDexNumber : pokemon.id;
+      if (_showFavoritesOnly && !favoriteDexNumbers.contains(dexNum)) {
+        return false;
+      }
+      if (_showTeamOnly && !teamPokemonIds.contains(pokemon.id)) {
+        return false;
+      }
+
+      final query = _searchQuery.trim().toLowerCase();
+      if (!_matchesSearch(pokemon, dexNum, query, championsCatalog)) return false;
+
+      if (_selectedTypes.isNotEmpty) {
+        if (_selectedTypes.length == 1) {
+          final type = _selectedTypes.first.toLowerCase();
+          final matches = pokemon.type1.toLowerCase() == type ||
+              (pokemon.type2?.toLowerCase() == type);
+          if (!matches) return false;
+        } else {
+          final t1 = _selectedTypes[0].toLowerCase();
+          final t2 = _selectedTypes[1].toLowerCase();
+          final pt1 = pokemon.type1.toLowerCase();
+          final pt2 = pokemon.type2?.toLowerCase();
+          final matches = (pt1 == t1 && pt2 == t2) || (pt1 == t2 && pt2 == t1);
+          if (!matches) return false;
+        }
+      }
+
+      if (_selectedGenerations.isNotEmpty) {
+        if (!_selectedGenerations.contains(_getGeneration(dexNum))) {
+          return false;
+        }
+      }
+
+      final hasCategoryFilter = _showLegendary || _showMythical || _showUltraBeast || _showParadox;
+      if (hasCategoryFilter) {
+        bool matchesCategory = false;
+        if (_showLegendary && _isLegendary(pokemon)) matchesCategory = true;
+        if (_showMythical && _isMythical(pokemon)) matchesCategory = true;
+        if (_showUltraBeast && _isUltraBeast(pokemon)) matchesCategory = true;
+        if (_showParadox && _isParadox(pokemon)) matchesCategory = true;
+        if (!matchesCategory) return false;
+      }
+
+      if (_showShinyOnly && pokemon.shinySpriteUrl.isEmpty) {
+        return false;
+      }
+
+      if (_selectedFormats.isNotEmpty) {
+        if (!_selectedFormats.any((fmt) => _matchesFormat(pokemon, fmt, championsCatalog))) {
+          return false;
+        }
+      }
+
+      final bst = _getBst(pokemon);
+      if (bst < _minBst || bst > _maxBst) return false;
+
+      if (pokemon.baseHp < _minHp) return false;
+      if (pokemon.baseAtk < _minAtk) return false;
+      if (pokemon.baseDef < _minDef) return false;
+      if (pokemon.baseSpAtk < _minSpAtk) return false;
+      if (pokemon.baseSpDef < _minSpDef) return false;
+      if (pokemon.baseSpd < _minSpd) return false;
+
+      if (_selectedEvYieldStat != null) {
+        final realEv = evYieldDataset.hasValue ? evYieldDataset.requireValue[pokemon.id] : null;
+        final evKeys = realEv?.statKeys ?? PokemonDataHelpers.getEvYieldStatKeys(pokemon);
+        if (!evKeys.contains(_selectedEvYieldStat)) return false;
+      }
+
+      if (_selectedEggGroup != null) {
+        if (!pokemon.eggGroupsList.any((g) => g.toLowerCase() == _selectedEggGroup!.toLowerCase())) return false;
+      }
+
+      if (_selectedEvolutionStage != null) {
+        if (pokemon.evolutionStage != _selectedEvolutionStage) return false;
+      }
+
+      if (_filterCanEvolve && !pokemon.canEvolve) return false;
+      if (_filterNoEvolution && !pokemon.hasNoEvolution) return false;
+      if (_selectedEvolutionMethod != null) {
+        if (pokemon.evolutionMethod.toLowerCase() != _selectedEvolutionMethod!.toLowerCase()) return false;
+      }
+
+      if (_filterAbilityQuery != null && _filterAbilityQuery!.isNotEmpty) {
+        final query = _filterAbilityQuery!.trim().toLowerCase();
+        final abList = _pokemonAbilitiesMap[pokemon.id] ?? [];
+        final hasMatchingAbility = abList.any((entry) {
+          final abId = entry['abilityId'] as int;
+          final ab = _abilitiesIdMap[abId];
+          if (ab == null) return false;
+          
+          final matchesQuery = ab.name.toLowerCase().contains(query) || ab.description.toLowerCase().contains(query);
+          final matchesHidden = !_filterHiddenAbilityOnly || (entry['isHidden'] as bool);
+          
+          return matchesQuery && matchesHidden;
+        });
+        if (!hasMatchingAbility) return false;
+      }
+
+      return true;
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final listAsync = ref.watch(pokedexProvider);
@@ -303,21 +467,73 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
         elevation: 0,
         actions: [
           listAsync.when(
-            data: (list) => list.isNotEmpty
-                ? IconButton(
-                    icon: Icon(Icons.casino_outlined, color: primaryColor),
+            data: (list) {
+              if (list.isEmpty) return const SizedBox.shrink();
+              final randomSettings = ref.watch(randomizerSettingsProvider);
+              final isCustomized = randomSettings.isCustomActive;
+              final tooltipText = switch (randomSettings.poolMode) {
+                RandomPoolMode.all => 'Random Pokémon (Hold to customize)',
+                RandomPoolMode.activeFilters => 'Random Pokémon: Active Filters (Hold to customize)',
+                RandomPoolMode.custom => 'Random Pokémon: Custom Rules (Hold to customize)',
+              };
+
+              return Stack(
+                alignment: Alignment.center,
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      Icons.casino_outlined,
+                      color: isCustomized ? Colors.amberAccent : primaryColor,
+                    ),
                     onPressed: () {
-                      final randomPokemon = list[Random().nextInt(list.length)];
-                      Navigator.push(
+                      final filteredList = _getFilteredList(
+                        list,
+                        favoriteDexNumbers,
+                        teamPokemonIds,
+                        championsCatalog,
+                        evYieldDataset,
+                      );
+                      if (randomSettings.instantRollOnTap) {
+                        _rollRandomPokemon(list, filteredList);
+                      } else {
+                        RandomizerSettingsSheet.show(
+                          context,
+                          onRollPressed: () => _rollRandomPokemon(list, filteredList),
+                        );
+                      }
+                    },
+                    onLongPress: () {
+                      HapticFeedback.heavyImpact();
+                      final filteredList = _getFilteredList(
+                        list,
+                        favoriteDexNumbers,
+                        teamPokemonIds,
+                        championsCatalog,
+                        evYieldDataset,
+                      );
+                      RandomizerSettingsSheet.show(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => PokemonDetailScreen(forms: [randomPokemon]),
-                        ),
+                        onRollPressed: () => _rollRandomPokemon(list, filteredList),
                       );
                     },
-                    tooltip: 'Random Pokémon',
-                  )
-                : const SizedBox.shrink(),
+                    tooltip: tooltipText,
+                  ),
+                  if (isCustomized)
+                    Positioned(
+                      right: 8,
+                      top: 10,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Colors.amberAccent,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
             error: (err, stack) => const SizedBox.shrink(),
             loading: () => const SizedBox.shrink(),
           ),
@@ -375,109 +591,13 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                         return _buildEmptyState();
                       }
 
-                      final filteredList = pokemonList.where((pokemon) {
-                        final int dexNum = pokemon.nationalDexNumber > 0 ? pokemon.nationalDexNumber : pokemon.id;
-                        if (_showFavoritesOnly && !favoriteDexNumbers.contains(dexNum)) {
-                          return false;
-                        }
-                        if (_showTeamOnly && !teamPokemonIds.contains(pokemon.id)) {
-                          return false;
-                        }
-
-                        final query = _searchQuery.trim().toLowerCase();
-                        if (!_matchesSearch(pokemon, dexNum, query, championsCatalog)) return false;
-
-                        if (_selectedTypes.isNotEmpty) {
-                          if (_selectedTypes.length == 1) {
-                            final type = _selectedTypes.first.toLowerCase();
-                            final matches = pokemon.type1.toLowerCase() == type ||
-                                (pokemon.type2?.toLowerCase() == type);
-                            if (!matches) return false;
-                          } else {
-                            final t1 = _selectedTypes[0].toLowerCase();
-                            final t2 = _selectedTypes[1].toLowerCase();
-                            final pt1 = pokemon.type1.toLowerCase();
-                            final pt2 = pokemon.type2?.toLowerCase();
-                            final matches = (pt1 == t1 && pt2 == t2) || (pt1 == t2 && pt2 == t1);
-                            if (!matches) return false;
-                          }
-                        }
-
-                        if (_selectedGenerations.isNotEmpty) {
-                          if (!_selectedGenerations.contains(_getGeneration(dexNum))) {
-                            return false;
-                          }
-                        }
-
-                        final hasCategoryFilter = _showLegendary || _showMythical || _showUltraBeast || _showParadox;
-                        if (hasCategoryFilter) {
-                          bool matchesCategory = false;
-                          if (_showLegendary && _isLegendary(pokemon)) matchesCategory = true;
-                          if (_showMythical && _isMythical(pokemon)) matchesCategory = true;
-                          if (_showUltraBeast && _isUltraBeast(pokemon)) matchesCategory = true;
-                          if (_showParadox && _isParadox(pokemon)) matchesCategory = true;
-                          if (!matchesCategory) return false;
-                        }
-
-                        if (_showShinyOnly && pokemon.shinySpriteUrl.isEmpty) {
-                          return false;
-                        }
-
-                        if (_selectedFormats.isNotEmpty) {
-                          if (!_selectedFormats.any((fmt) => _matchesFormat(pokemon, fmt, championsCatalog))) {
-                            return false;
-                          }
-                        }
-
-                        final bst = _getBst(pokemon);
-                        if (bst < _minBst || bst > _maxBst) return false;
-
-                        if (pokemon.baseHp < _minHp) return false;
-                        if (pokemon.baseAtk < _minAtk) return false;
-                        if (pokemon.baseDef < _minDef) return false;
-                        if (pokemon.baseSpAtk < _minSpAtk) return false;
-                        if (pokemon.baseSpDef < _minSpDef) return false;
-                        if (pokemon.baseSpd < _minSpd) return false;
-
-                        if (_selectedEvYieldStat != null) {
-                          final realEv = evYieldDataset.hasValue ? evYieldDataset.requireValue[pokemon.id] : null;
-                          final evKeys = realEv?.statKeys ?? PokemonDataHelpers.getEvYieldStatKeys(pokemon);
-                          if (!evKeys.contains(_selectedEvYieldStat)) return false;
-                        }
-
-                        if (_selectedEggGroup != null) {
-                          if (!pokemon.eggGroupsList.any((g) => g.toLowerCase() == _selectedEggGroup!.toLowerCase())) return false;
-                        }
-
-                        if (_selectedEvolutionStage != null) {
-                          if (pokemon.evolutionStage != _selectedEvolutionStage) return false;
-                        }
-
-                        if (_filterCanEvolve && !pokemon.canEvolve) return false;
-                        if (_filterNoEvolution && !pokemon.hasNoEvolution) return false;
-                        if (_selectedEvolutionMethod != null) {
-                          if (pokemon.evolutionMethod.toLowerCase() != _selectedEvolutionMethod!.toLowerCase()) return false;
-                        }
-
-                        // Ability Keyword / Name Filter
-                        if (_filterAbilityQuery != null && _filterAbilityQuery!.isNotEmpty) {
-                          final query = _filterAbilityQuery!.trim().toLowerCase();
-                          final abList = _pokemonAbilitiesMap[pokemon.id] ?? [];
-                          final hasMatchingAbility = abList.any((entry) {
-                            final abId = entry['abilityId'] as int;
-                            final ab = _abilitiesIdMap[abId];
-                            if (ab == null) return false;
-                            
-                            final matchesQuery = ab.name.toLowerCase().contains(query) || ab.description.toLowerCase().contains(query);
-                            final matchesHidden = !_filterHiddenAbilityOnly || (entry['isHidden'] as bool);
-                            
-                            return matchesQuery && matchesHidden;
-                          });
-                          if (!hasMatchingAbility) return false;
-                        }
-
-                        return true;
-                      }).toList();
+                      final filteredList = _getFilteredList(
+                        pokemonList,
+                        favoriteDexNumbers,
+                        teamPokemonIds,
+                        championsCatalog,
+                        evYieldDataset,
+                      );
 
                       final Map<int, List<Pokemon>> groupedMap = {};
                       for (final p in filteredList) {
