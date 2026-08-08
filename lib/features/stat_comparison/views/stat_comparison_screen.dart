@@ -130,7 +130,7 @@ class _Body extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(8, 4, 8, AppSpacing.bottomScrollPadding),
             child: Card(
               elevation: 0,
-              color: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+              color: isDark ? const Color(0xFF121212) : Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(18),
                 side: BorderSide(color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE2E8F0)),
@@ -327,7 +327,7 @@ class _PokemonCard extends StatelessWidget {
         width: 175,
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF101010) : Colors.white,
+          color: isDark ? const Color(0xFF121212) : Colors.white,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0)),
         ),
@@ -436,7 +436,7 @@ class _PokemonPickerDialogState extends State<_PokemonPickerDialog> {
 
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
-      backgroundColor: isDark ? const Color(0xFF0C0C0C) : Colors.white,
+      backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: ConstrainedBox(
         constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),

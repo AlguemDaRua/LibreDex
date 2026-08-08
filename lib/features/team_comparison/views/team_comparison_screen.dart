@@ -89,7 +89,7 @@ class _TeamComparisonScreenState extends ConsumerState<TeamComparisonScreen> {
               sliver: SliverToBoxAdapter(
                 child: Container(
                   padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(color: isDark ? const Color(0xFF101010) : Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0))),
+                  decoration: BoxDecoration(color: isDark ? const Color(0xFF121212) : Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0))),
                   child: const Text('Add foe Pokémon to see head-to-head type matchups. No damage calc — use Calculator for 1vs1.', style: TextStyle(fontSize: 12, color: Colors.grey, height: 1.4)),
                 ),
               ),
@@ -195,7 +195,7 @@ class _TeamStats extends StatelessWidget {
     final seTypes = offensiveHits.values.where((v) => v > 0).length;
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: isDark ? const Color(0xFF101010) : Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0))),
+      decoration: BoxDecoration(color: isDark ? const Color(0xFF121212) : Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0))),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text('$label — ${team.length}/6', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
         const SizedBox(height: 8),
@@ -353,7 +353,7 @@ class _HeadToHead extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: isDark ? const Color(0xFF101010) : Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0))),
+      decoration: BoxDecoration(color: isDark ? const Color(0xFF121212) : Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0))),
       child: Column(children: [
         Row(children: [
           Expanded(child: _MiniStat(label: 'You weak to foe', value: '$myWeakToFoe/6', sub: 'mons')),

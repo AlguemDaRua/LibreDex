@@ -30,7 +30,7 @@ class FeatureHubSheet extends ConsumerWidget {
       ),
       child: Container(
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF101010) : Colors.white,
+          color: isDark ? const Color(0xFF121212) : Colors.white,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           boxShadow: [
             BoxShadow(

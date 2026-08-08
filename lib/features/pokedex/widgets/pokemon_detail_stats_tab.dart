@@ -36,7 +36,7 @@ class PokemonDetailStatsTab extends ConsumerWidget {
 
             return Dialog(
               insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-              backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+              backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.75),

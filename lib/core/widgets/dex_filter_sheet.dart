@@ -26,7 +26,7 @@ class DexFilterSheet extends StatelessWidget {
       explicitChildNodes: true,
       child: Dialog(
         insetPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-        backgroundColor: isDark ? const Color(0xFF0C0C0C) : Colors.white,
+        backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         child: ConstrainedBox(
           constraints: BoxConstraints(maxHeight: screenHeight * 0.88),

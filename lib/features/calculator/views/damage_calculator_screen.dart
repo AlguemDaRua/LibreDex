@@ -712,7 +712,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
           // Result Sandbox Display
           Card(
             elevation: 0,
-            color: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+            color: isDark ? const Color(0xFF121212) : Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
               side: BorderSide(color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE2E8F0), width: 1.2),
@@ -1228,7 +1228,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+                color: isDark ? const Color(0xFF121212) : Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: state.selectedMoveName != null ? AppTheme.pokemonRed.withValues(alpha: 0.5) : (isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE2E8F0)), width: 1.2),
               ),
@@ -1404,7 +1404,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
           // Legacy Quick Reference Range Card
           Card(
             elevation: 0,
-            color: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+            color: isDark ? const Color(0xFF121212) : Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
               side: BorderSide(color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE2E8F0), width: 1.2),
@@ -1536,7 +1536,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+              color: isDark ? const Color(0xFF121212) : Colors.white,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE2E8F0)),
             ),
@@ -1555,7 +1555,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
                           value: state.weather,
-                          dropdownColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+                          dropdownColor: isDark ? const Color(0xFF121212) : Colors.white,
                           isExpanded: true,
                           style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 12),
                           items: const [
@@ -1583,7 +1583,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
                           value: state.terrain,
-                          dropdownColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+                          dropdownColor: isDark ? const Color(0xFF121212) : Colors.white,
                           isExpanded: true,
                           style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 12),
                           items: const [
@@ -1643,7 +1643,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+        color: isDark ? const Color(0xFF121212) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE2E8F0), width: 1.2),
       ),
@@ -1887,7 +1887,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
 
           return Dialog(
             insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
-            backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+            backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
             child: ConstrainedBox(
               constraints: BoxConstraints(maxHeight: screenHeight * 0.85),

@@ -64,7 +64,7 @@ class _ShinySliderState extends State<ShinySlider> {
         width: double.infinity,
         height: 240.0,
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF3F4F6),
+          color: isDark ? const Color(0xFF121212) : const Color(0xFFF3F4F6),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
             color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB),
@@ -136,7 +136,7 @@ class _ShinySliderState extends State<ShinySlider> {
             width: width,
             height: height,
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF3F4F6),
+              color: isDark ? const Color(0xFF121212) : const Color(0xFFF3F4F6),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
                 color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB),

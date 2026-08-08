@@ -549,7 +549,7 @@ class _ItemCard extends StatelessWidget {
           child: Ink(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF101010) : Colors.white,
+              color: isDark ? const Color(0xFF121212) : Colors.white,
               borderRadius: BorderRadius.circular(22),
               border: Border.all(color: accent.withValues(alpha: isDark ? 0.35 : 0.20)),
             ),
@@ -628,7 +628,7 @@ class _ItemCard extends StatelessWidget {
       builder: (context) {
         return Dialog(
           insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          backgroundColor: isDark ? const Color(0xFF0C0C0C) : Colors.white,
+          backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 480),

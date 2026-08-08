@@ -45,7 +45,7 @@ class SettingsScreen extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+                color: isDark ? const Color(0xFF121212) : Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
               ),
@@ -106,7 +106,7 @@ class SettingsScreen extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+                color: isDark ? const Color(0xFF121212) : Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
               ),
@@ -224,7 +224,7 @@ class SettingsScreen extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+                color: isDark ? const Color(0xFF121212) : Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
               ),
@@ -288,7 +288,7 @@ class SettingsScreen extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+                color: isDark ? const Color(0xFF121212) : Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
               ),
@@ -334,7 +334,7 @@ class SettingsScreen extends ConsumerWidget {
   ) {
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+        color: isDark ? const Color(0xFF121212) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB),
@@ -379,7 +379,7 @@ class SettingsScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+        color: isDark ? const Color(0xFF121212) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB),
@@ -435,7 +435,7 @@ class SettingsScreen extends ConsumerWidget {
     required VoidCallback onTap,
   }) {
     return Material(
-      color: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+      color: isDark ? const Color(0xFF121212) : Colors.white,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -515,7 +515,7 @@ class SettingsScreen extends ConsumerWidget {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+        backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -542,7 +542,7 @@ class SettingsScreen extends ConsumerWidget {
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+          backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: const Text('Rebuild local database?', style: TextStyle(fontWeight: FontWeight.bold)),
           content: const Text(
@@ -580,7 +580,7 @@ class SettingsScreen extends ConsumerWidget {
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+          backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: const Text('Clear browsing cache?', style: TextStyle(fontWeight: FontWeight.bold)),
           content: const Text(
@@ -624,7 +624,7 @@ class SettingsScreen extends ConsumerWidget {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+        backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
           'Delete downloaded artwork?',
@@ -680,7 +680,7 @@ class SettingsScreen extends ConsumerWidget {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+        backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
           'Delete everything?',
@@ -738,7 +738,7 @@ class SettingsScreen extends ConsumerWidget {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+        backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
           'LibreDex data deleted',
@@ -788,7 +788,7 @@ class SettingsScreen extends ConsumerWidget {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+        backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Row(
           children: [

@@ -345,7 +345,7 @@ class _TeamSlotCard extends ConsumerWidget {
         onTap: onAdd,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF101010) : Colors.white,
+            color: isDark ? const Color(0xFF121212) : Colors.white,
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0)),
           ),
@@ -379,7 +379,7 @@ class _TeamSlotCard extends ConsumerWidget {
           borderRadius: BorderRadius.circular(24),
           gradient: LinearGradient(
             colors: isDark
-                ? [Color.alphaBlend(typeColor.withValues(alpha: 0.22), const Color(0xFF090909)), const Color(0xFF101010)]
+                ? [Color.alphaBlend(typeColor.withValues(alpha: 0.22), const Color(0xFF090909)), const Color(0xFF121212)]
                 : [typeColor.withValues(alpha: 0.18), Colors.white],
           ),
           border: Border.all(color: typeColor.withValues(alpha: 0.28)),
@@ -611,7 +611,7 @@ class _TeamCompareButton extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF101010) : Colors.white,
+        color: isDark ? const Color(0xFF121212) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0)),
       ),
@@ -672,7 +672,7 @@ class _PokemonPickerSheetState extends ConsumerState<_PokemonPickerSheet> {
     final screenHeight = MediaQuery.of(context).size.height;
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
-      backgroundColor: isDark ? const Color(0xFF0C0C0C) : Colors.white,
+      backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: ConstrainedBox(
         constraints: BoxConstraints(maxHeight: screenHeight * 0.8),
@@ -814,7 +814,7 @@ class _AnalysisCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF101010) : Colors.white,
+        color: isDark ? const Color(0xFF121212) : Colors.white,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0)),
       ),

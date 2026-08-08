@@ -389,7 +389,7 @@ class _NaturedexScreenState extends State<NaturedexScreen> {
                           return Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF101010) : Colors.white,
+                              color: isDark ? const Color(0xFF121212) : Colors.white,
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
                                 color: isNeutral
@@ -460,7 +460,7 @@ class _NaturedexScreenState extends State<NaturedexScreen> {
       width: 260,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+        color: isDark ? const Color(0xFF121212) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
       ),

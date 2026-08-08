@@ -124,7 +124,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   NavigationRail(
                     selectedIndex: barIndex,
                     onDestinationSelected: _onRailTapped,
-                    backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+                    backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
                     indicatorColor: AppTheme.pokemonRed.withValues(alpha: 0.18),
                     selectedIconTheme: const IconThemeData(color: AppTheme.pokemonRed),
                     unselectedIconTheme: IconThemeData(
@@ -165,11 +165,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       children: [
                         const _DownloadBanner(),
                         Expanded(
-                          child: IndexedStack(
-                            index: currentIndex,
-                            children: List.generate(
-                              AppSection.values.length,
-                              (i) => _visitedIndices.contains(i) ? _buildSection(i) : const SizedBox.shrink(),
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 180),
+                            switchInCurve: Curves.easeOut,
+                            switchOutCurve: Curves.easeIn,
+                            child: IndexedStack(
+                              key: ValueKey<int>(currentIndex),
+                              index: currentIndex,
+                              children: List.generate(
+                                AppSection.values.length,
+                                (i) => _visitedIndices.contains(i) ? _buildSection(i) : const SizedBox.shrink(),
+                              ),
                             ),
                           ),
                         ),
@@ -187,11 +193,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               children: [
                 const _DownloadBanner(),
                 Expanded(
-                  child: IndexedStack(
-                    index: currentIndex,
-                    children: List.generate(
-                      AppSection.values.length,
-                      (i) => _visitedIndices.contains(i) ? _buildSection(i) : const SizedBox.shrink(),
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 180),
+                    switchInCurve: Curves.easeOut,
+                    switchOutCurve: Curves.easeIn,
+                    child: IndexedStack(
+                      key: ValueKey<int>(currentIndex),
+                      index: currentIndex,
+                      children: List.generate(
+                        AppSection.values.length,
+                        (i) => _visitedIndices.contains(i) ? _buildSection(i) : const SizedBox.shrink(),
+                      ),
                     ),
                   ),
                 ),
@@ -200,7 +212,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             bottomNavigationBar: NavigationBar(
               selectedIndex: barIndex,
               onDestinationSelected: _onBarTapped,
-              backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+              backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
               indicatorColor: AppTheme.pokemonRed.withValues(alpha: 0.18),
               elevation: 8,
               height: 64,
@@ -254,7 +266,7 @@ class _DownloadBanner extends ConsumerWidget {
     final hasFailed = sync.status == DownloadStatus.failed;
 
     return Material(
-      color: isDark ? const Color(0xFF101010) : Colors.white,
+      color: isDark ? const Color(0xFF121212) : Colors.white,
       child: SafeArea(
         bottom: false,
         child: Padding(

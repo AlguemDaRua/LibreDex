@@ -294,7 +294,7 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
                                 return Card(
                                   margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                                   elevation: 0,
-                                  color: isDark ? const Color(0xFF0C0C0C) : Colors.white,
+                                  color: isDark ? const Color(0xFF121212) : Colors.white,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16),
                                     side: BorderSide(
