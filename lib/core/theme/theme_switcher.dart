@@ -34,14 +34,16 @@ Future<void> switchThemeWithWavy({
 }
 
 /// Cycle System → Dark → Light → System with animation.
-Future<void> cycleThemeWithWavy(BuildContext context, WidgetRef ref) async {
+Future<void> cycleThemeWithWavy(
+  BuildContext context,
+  WidgetRef ref, {
+  Offset? origin,
+}) async {
   final current = ref.read(themeModeProvider);
   final next = switch (current) {
     ThemeMode.system => ThemeMode.dark,
     ThemeMode.dark => ThemeMode.light,
     ThemeMode.light => ThemeMode.system,
-    _ => ThemeMode.system,
   };
-  // Use the button's center as origin
-  await switchThemeWithWavy(context: context, ref: ref, mode: next);
+  await switchThemeWithWavy(context: context, ref: ref, mode: next, origin: origin);
 }

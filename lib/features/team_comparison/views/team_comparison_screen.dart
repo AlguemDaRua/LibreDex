@@ -4,8 +4,6 @@ import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/theme/app_spacing.dart';
 import 'package:libredex/core/utils/type_utils.dart';
-import 'package:libredex/core/widgets/analysis_card.dart';
-import 'package:libredex/core/widgets/type_pill.dart';
 import 'package:libredex/core/widgets/stat_tile.dart';
 import 'package:libredex/core/widgets/section_header.dart';
 import 'package:libredex/core/widgets/pokemon_sprite.dart';
@@ -166,7 +164,9 @@ class _TeamStats extends StatelessWidget {
     final offensiveHits = <String, int>{for (final t in pokemonTypes) t: 0};
     for (final p in team) {
       final eff = TypeEfficiencyCalculator.getCombinedEffectiveness(p.type1, p.type2);
-      for (final t in pokemonTypes) if ((eff[t] ?? 1.0) > 1) weakCounts[t] = (weakCounts[t] ?? 0) + 1;
+      for (final t in pokemonTypes) {
+        if ((eff[t] ?? 1.0) > 1) weakCounts[t] = (weakCounts[t] ?? 0) + 1;
+      }
       for (final atk in [p.type1, if (p.type2 != null) p.type2!]) {
         for (final def in (CombatUtils.effectivenessMap[atk.toLowerCase()]?['double'] ?? const [])) {
           offensiveHits[def.toLowerCase()] = (offensiveHits[def.toLowerCase()] ?? 0) + 1;
@@ -280,23 +280,6 @@ class _HeadToHead extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     // Count how many Pokémon on each side are weak to the other's STABs
-    int myWeakToFoe = 0;
-    int foeWeakToMe = 0;
-    for (final me in myTeam) {
-      bool weak = false;
-      for (final foe in foeTeam) {
-        for (final atk in [foe.type1, if (foe.type2 != null) foe.type2!]) {
-          final eff = TypeEfficiencyCalculator.getCombinedEffectiveness(me.type1, me.type2)[atk.toLowerCase()] ?? 1.0;
-          // Actually we want foe's attack vs my defense: need attacker type = foe's type
-          // So check if foe's STAB is SE vs me
-          final map = CombatUtils.effectivenessMap[atk.toLowerCase()];
-          if (map != null && (map['double'] ?? const []).contains(me.type1.toLowerCase()) || (me.type2 != null && (map['double'] ?? const []).contains(me.type2!.toLowerCase()))) {
-            // Simplified: if any foe STAB double-contains my type, count
-          }
-        }
-      }
-    }
-    // Accurate head-to-head: count Pokémon weak to any opposing STAB
     int countWeak(List<Pokemon> defenders, List<Pokemon> attackers) {
       int c = 0;
       final atkTypes = attackers.expand((p) => [p.type1, if (p.type2 != null) p.type2!]).map((t) => t.toLowerCase()).toSet();
@@ -313,17 +296,17 @@ class _HeadToHead extends StatelessWidget {
       return c;
     }
 
-    myWeakToFoe = countWeak(myTeam, foeTeam);
-    foeWeakToMe = countWeak(foeTeam, myTeam);
+    final myWeakToFoe = countWeak(myTeam, foeTeam);
+    final foeWeakToMe = countWeak(foeTeam, myTeam);
 
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(color: isDark ? const Color(0xFF121212) : Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0))),
       child: Column(children: [
         Row(children: [
-          Expanded(child: MiniStat(label: 'You weak to foe', value: '$myWeakToFoe/6', sub: 'mons')),
+          Expanded(child: MiniStat(label: 'You weak to foe', value: '$myWeakToFoe/6')),
           const SizedBox(width: 8),
-          Expanded(child: MiniStat(label: 'Foe weak to you', value: '$foeWeakToMe/6', sub: 'mons')),
+          Expanded(child: MiniStat(label: 'Foe weak to you', value: '$foeWeakToMe/6')),
         ]),
         const SizedBox(height: 8),
         const Text('_counts how many Pokémon are weak (2×) to any opposing STAB — type chart only, no rolls.', style: TextStyle(fontSize: 11, color: Colors.grey, height: 1.4)),

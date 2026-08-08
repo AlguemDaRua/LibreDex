@@ -291,71 +291,75 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
           ),
         ),
       ),
-      body: Column(
-        children: [
-          if (widget.forms.length > 1)
-            Container(
-              height: 48,
-              color: isDark ? Colors.black : const Color(0xFFF9FAFB),
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                itemCount: widget.forms.length,
-                itemBuilder: (context, index) {
-                  final p = widget.forms[index];
-                  final isSelected = index == _selectedFormIndex;
-                  String label = p.form;
-                  if (label == 'normal') label = 'Normal';
-                  return GestureDetector(
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      setState(() {
-                        _selectedFormIndex = index;
-                        _resetStatsForActiveForm();
-                        _checkArtworkDownloaded();
-                      });
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.only(right: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: isSelected ? AppTheme.pokemonRed : (isDark ? const Color(0xFF1A1A1A) : const Color(0xFFE5E5E5)),
-                        borderRadius: BorderRadius.circular(20),
-                        border: isSelected ? null : Border.all(color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFD1D5DB)),
-                      ),
-                      child: Center(
-                        child: Text(
-                          label,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: isSelected ? Colors.white : Colors.grey,
+      body: SafeArea(
+        top: false,
+        bottom: true,
+        child: Column(
+          children: [
+            if (widget.forms.length > 1)
+              Container(
+                height: 48,
+                color: isDark ? Colors.black : const Color(0xFFF9FAFB),
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  itemCount: widget.forms.length,
+                  itemBuilder: (context, index) {
+                    final p = widget.forms[index];
+                    final isSelected = index == _selectedFormIndex;
+                    String label = p.form;
+                    if (label == 'normal') label = 'Normal';
+                    return GestureDetector(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setState(() {
+                          _selectedFormIndex = index;
+                          _resetStatsForActiveForm();
+                          _checkArtworkDownloaded();
+                        });
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.only(right: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: isSelected ? AppTheme.pokemonRed : (isDark ? const Color(0xFF1A1A1A) : const Color(0xFFE5E5E5)),
+                          borderRadius: BorderRadius.circular(20),
+                          border: isSelected ? null : Border.all(color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFD1D5DB)),
+                        ),
+                        child: Center(
+                          child: Text(
+                            label,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: isSelected ? Colors.white : Colors.grey,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
+              ),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  PokemonDetailGeneralTab(
+                    activePokemon: _activePokemon,
+                    forms: widget.forms,
+                  ),
+                  PokemonDetailStatsTab(
+                    activePokemon: _activePokemon,
+                  ),
+                  PokemonDetailMovesTab(
+                    activePokemon: _activePokemon,
+                  ),
+                ],
               ),
             ),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                PokemonDetailGeneralTab(
-                  activePokemon: _activePokemon,
-                  forms: widget.forms,
-                ),
-                PokemonDetailStatsTab(
-                  activePokemon: _activePokemon,
-                ),
-                PokemonDetailMovesTab(
-                  activePokemon: _activePokemon,
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

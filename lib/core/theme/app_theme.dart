@@ -36,6 +36,7 @@ class AppTheme {
         foregroundColor: isDark ? Colors.white : const Color(0xFF111827),
         elevation: 0,
         centerTitle: true,
+        toolbarHeight: 64.0,
         titleTextStyle: TextStyle(
           color: isDark ? Colors.white : const Color(0xFF111827),
           fontSize: 20,

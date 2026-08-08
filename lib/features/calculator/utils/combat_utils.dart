@@ -1,28 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:libredex/core/utils/type_utils.dart';
 
 class CombatUtils {
   static final Map<String, Color> typeColors = {
-    'normal': const Color(0xFFA8A77A),
-    'fire': const Color(0xFFEE8130),
-    'water': const Color(0xFF6390F0),
-    'electric': const Color(0xFFF7D02C),
-    'grass': const Color(0xFF7AC74C),
-    'ice': const Color(0xFF96D9D6),
-    'fighting': const Color(0xFFC22E28),
-    'poison': const Color(0xFFA33EA1),
-    'ground': const Color(0xFFE2BF65),
-    'flying': const Color(0xFFA98FEE),
-    'psychic': const Color(0xFFF95587),
-    'bug': const Color(0xFFA6B91A),
-    'rock': const Color(0xFFB6A136),
-    'ghost': const Color(0xFF735797),
-    'dragon': const Color(0xFF6F35FC),
-    'dark': const Color(0xFF705746),
-    'steel': const Color(0xFFB7B7CE),
-    'fairy': const Color(0xFFD685AD),
+    for (final t in pokemonTypes) t: pokemonTypeColor(t),
   };
 
-  static final List<String> allTypes = typeColors.keys.toList();
+  static final List<String> allTypes = pokemonTypes;
 
   static final Map<String, Map<String, List<String>>> effectivenessMap = {
     'normal': {
@@ -236,7 +220,7 @@ class CombatUtils {
     // expanded — most common contact moves
     'tackle', 'quick attack', 'mach punch', 'bullet punch', 'shadow punch',
     'shadow sneak', 'ice punch', 'fire punch', 'thunder punch', 'power up punch',
-    'drain punch', 'hammer arm', 'superpower', 'double slap', 'comet punch',
+    'hammer arm', 'superpower', 'double slap', 'comet punch',
     'flame charge', 'aqua tail', 'dragon claw', 'outrage', 'play rough',
     'spirit break', 'throat chop', 'cross chop', 'brick break', 'low kick',
     'high horsepower', 'headbutt', 'zen headbutt', 'iron head', 'iron tail',
@@ -245,7 +229,7 @@ class CombatUtils {
     'double kick', 'triple kick', 'arm thrust', 'bullet seed', 'pin missile',
     'rock blast', 'scale shot', 'population bomb', 'tail slap', 'crabhammer',
     'wood hammer', 'brave bird', 'flare blitz', 'volt tackle', 'head smash',
-    'double edge', 'take down', 'submission', 'fury cutter', 'aqua jet',
+    'double edge', 'take down', 'submission', 'fury cutter',
     'sucker punch', 'shadow claw', 'dragon hammer', 'power whip', 'horn leech',
     'bite', 'crunch', 'psychic fangs', 'fishious rend', 'bolt beak',
   }.contains(_normalizeName(moveName));

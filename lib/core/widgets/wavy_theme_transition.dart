@@ -62,7 +62,7 @@ class _WavyThemeTransitionState extends State<WavyThemeTransition>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1050),
+      duration: const Duration(milliseconds: 1150),
     )..addStatusListener((status) {
         if (status == AnimationStatus.completed) _releaseFrame();
       });
@@ -86,8 +86,6 @@ class _WavyThemeTransitionState extends State<WavyThemeTransition>
       try {
         frame = await _captureCurrentFrame();
       } catch (_) {
-        // Some platform surfaces cannot be rasterized. Theme selection should
-        // still work even when the decorative transition cannot be captured.
         await Future<void>.sync(applyTheme);
         return;
       }
@@ -109,8 +107,6 @@ class _WavyThemeTransitionState extends State<WavyThemeTransition>
         _origin = renderBox?.globalToLocal(origin) ?? origin;
       });
 
-      // ThemeModeNotifier updates its Riverpod state before its first await.
-      // Do not hold the animation for a small preferences write.
       unawaited(Future<void>.sync(applyTheme));
       _controller.forward(from: 0);
     } finally {
@@ -123,8 +119,6 @@ class _WavyThemeTransitionState extends State<WavyThemeTransition>
     if (renderObject is! RenderRepaintBoundary) return null;
 
     final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
-    // A full 3x or 4x screenshot is needlessly expensive for a one-second
-    // cover layer. Two physical pixels per logical pixel keeps text crisp.
     final pixelRatio = math.min(devicePixelRatio, 2.0).toDouble();
     return renderObject.toImage(pixelRatio: pixelRatio);
   }
@@ -163,12 +157,15 @@ class _WavyThemeTransitionState extends State<WavyThemeTransition>
                   return const SizedBox.shrink();
                 }
 
+                // Dramatic curve: fast explosive burst expanding into smooth fluid fill
+                final curvedValue = Curves.fastOutSlowIn.transform(_controller.value);
+
                 return RepaintBoundary(
                   child: CustomPaint(
                     painter: _WavyThemeRevealPainter(
                       frame: frame,
                       origin: _origin,
-                      progress: Curves.easeInOutCubic.transform(_controller.value),
+                      progress: curvedValue,
                     ),
                   ),
                 );
@@ -205,8 +202,6 @@ class _WavyThemeRevealPainter extends CustomPainter {
     );
     final reveal = _buildRevealPath(size);
 
-    // The saved layer makes BlendMode.clear cut through only the captured
-    // frame, leaving the newly themed widgets visible below the hole.
     canvas.saveLayer(bounds, Paint());
     canvas.drawImageRect(frame, source, bounds, Paint()..filterQuality = FilterQuality.medium);
 
@@ -214,42 +209,53 @@ class _WavyThemeRevealPainter extends CustomPainter {
     canvas.drawPath(reveal, clearPaint);
     _drawTrailingWisps(canvas, size, clearPaint);
 
-    // A restrained rim helps the moving edge read as a fluid contamination
-    // rather than a perfect circular wipe.
-    final edgeOpacity = (1 - progress).clamp(0.0, 1.0).toDouble();
+    final edgeOpacity = (1 - progress * 0.95).clamp(0.0, 1.0).toDouble();
     if (edgeOpacity > 0) {
+      // 1. Dramatic outer Poké-Red pulse ring
       canvas.drawPath(
         reveal,
         Paint()
-          ..color = Colors.white.withValues(alpha: 0.16 * edgeOpacity)
+          ..color = const Color(0xFFE3350D).withValues(alpha: 0.45 * edgeOpacity)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 2.2,
+          ..strokeWidth = 14.0
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
       );
+
+      // 2. Secondary energetic cyan/amber accent ring
       canvas.drawPath(
         reveal,
         Paint()
-          ..color = const Color(0xFFE3350D).withValues(alpha: 0.24 * edgeOpacity)
+          ..color = const Color(0xFF30A7D7).withValues(alpha: 0.35 * edgeOpacity)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 6.5,
+          ..strokeWidth = 6.0,
+      );
+
+      // 3. Inner crisp white core rim
+      canvas.drawPath(
+        reveal,
+        Paint()
+          ..color = Colors.white.withValues(alpha: 0.70 * edgeOpacity)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.5,
       );
     }
     canvas.restore();
   }
 
   Path _buildRevealPath(Size size) {
-    const samples = 180;
+    const samples = 220;
     final coverRadius = _coverRadius(size);
     final baseRadius = math.max(1.0, coverRadius * progress).toDouble();
     final waveAmplitude =
-        math.min(size.shortestSide * 0.045, baseRadius * 0.30).toDouble();
+        math.min(size.shortestSide * 0.08, baseRadius * 0.40).toDouble();
     final path = Path();
 
     for (var index = 0; index <= samples; index++) {
       final angle = math.pi * 2 * index / samples;
       final ripple =
-          math.sin(angle * 5 - progress * math.pi * 3.2) * 0.65 +
-          math.sin(angle * 9 + progress * math.pi * 2.1) * 0.25 +
-          math.cos(angle * 14 - progress * math.pi * 1.5) * 0.10;
+          math.sin(angle * 6 - progress * math.pi * 4.2) * 0.70 +
+          math.sin(angle * 11 + progress * math.pi * 2.8) * 0.30 +
+          math.cos(angle * 18 - progress * math.pi * 1.8) * 0.15;
       final radius = math.max(0.0, baseRadius + ripple * waveAmplitude).toDouble();
       final point = origin + Offset(math.cos(angle), math.sin(angle)) * radius;
       if (index == 0) {
@@ -263,23 +269,23 @@ class _WavyThemeRevealPainter extends CustomPainter {
   }
 
   void _drawTrailingWisps(Canvas canvas, Size size, Paint clearPaint) {
-    if (progress < 0.06 || progress > 0.93) return;
+    if (progress < 0.04 || progress > 0.95) return;
 
     final coverRadius = _coverRadius(size);
     final baseRadius = coverRadius * progress;
     final life = math.sin(progress * math.pi).clamp(0.0, 1.0).toDouble();
     final maxWispRadius =
-        math.min(size.shortestSide * 0.032, 19.0).toDouble() * life;
+        math.min(size.shortestSide * 0.045, 26.0).toDouble() * life;
 
-    for (var index = 0; index < 7; index++) {
-      final angle = -0.8 + index * (math.pi * 2 / 7) + progress * 0.35;
+    for (var index = 0; index < 12; index++) {
+      final angle = -0.8 + index * (math.pi * 2 / 12) + progress * 0.60;
       final double drift =
-          (index.isEven ? 1.0 : -1.0) * (7.0 + index * 1.8);
+          (index.isEven ? 1.2 : -1.2) * (9.0 + index * 2.2);
       final double distance = baseRadius + drift + maxWispRadius;
       final center =
           origin + Offset(math.cos(angle), math.sin(angle)) * distance;
       final double radius =
-          maxWispRadius * (0.45 + (index % 3) * 0.16);
+          maxWispRadius * (0.50 + (index % 4) * 0.18);
       canvas.drawCircle(center, radius, clearPaint);
     }
   }
@@ -295,7 +301,7 @@ class _WavyThemeRevealPainter extends CustomPainter {
         .map((corner) => (corner - origin).distance)
         .reduce(math.max)
         .toDouble();
-    return furthestCorner + size.shortestSide * 0.10;
+    return furthestCorner + size.shortestSide * 0.12;
   }
 
   @override

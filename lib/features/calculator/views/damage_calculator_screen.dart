@@ -735,9 +735,9 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _hpBenchmark('100 HP Target', rawMinDamage, rawMaxDamage, 100),
-                      _hpBenchmark('200 HP Target', rawMinDamage, rawMaxDamage, 200),
-                      _hpBenchmark('300 HP Target', rawMinDamage, rawMaxDamage, 300),
+                      _hpBenchmark('100 HP Target', rawMinDamage.toDouble(), rawMaxDamage.toDouble(), 100),
+                      _hpBenchmark('200 HP Target', rawMinDamage.toDouble(), rawMaxDamage.toDouble(), 200),
+                      _hpBenchmark('300 HP Target', rawMinDamage.toDouble(), rawMaxDamage.toDouble(), 300),
                     ],
                   ),
                   const SizedBox(height: 12),

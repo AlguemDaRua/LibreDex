@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:libredex/core/navigation/app_sections.dart';
 import 'package:libredex/core/navigation/navigation_provider.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/theme/theme_provider.dart';
@@ -98,20 +97,39 @@ class FeatureHubSheet extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  // Theme Quick Switcher — now plays the wavy reveal (origin = button center)
-                  IconButton(
-                    icon: Icon(
-                      currentTheme == ThemeMode.dark
-                          ? Icons.dark_mode_rounded
-                          : currentTheme == ThemeMode.light
-                              ? Icons.light_mode_rounded
-                              : Icons.brightness_auto_rounded,
-                      size: 20,
-                      color: AppTheme.pokemonRed,
-                    ),
-                    tooltip: 'Toggle Theme',
-                    onPressed: () async {
-                      await cycleThemeWithWavy(context, ref);
+                  // Theme Quick Switcher — reveals outward from exact button touch origin
+                  Builder(
+                    builder: (btnContext) {
+                      Offset? lastTapPos;
+                      return GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTapDown: (details) {
+                          lastTapPos = details.globalPosition;
+                        },
+                        child: IconButton(
+                          icon: Icon(
+                            currentTheme == ThemeMode.dark
+                                ? Icons.dark_mode_rounded
+                                : currentTheme == ThemeMode.light
+                                    ? Icons.light_mode_rounded
+                                    : Icons.brightness_auto_rounded,
+                            size: 20,
+                            color: AppTheme.pokemonRed,
+                          ),
+                          tooltip: 'Toggle Theme',
+                          onPressed: () async {
+                            final box = btnContext.findRenderObject() as RenderBox?;
+                            final buttonCenter = box != null && box.hasSize
+                                ? box.localToGlobal(box.size.center(Offset.zero))
+                                : null;
+                            await cycleThemeWithWavy(
+                              btnContext,
+                              ref,
+                              origin: lastTapPos ?? buttonCenter,
+                            );
+                          },
+                        ),
+                      );
                     },
                   ),
                 ],

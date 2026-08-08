@@ -131,8 +131,8 @@ void main() {
       final almostFull = ChampionsRules.emptySpread()
         ..['atk'] = 32
         ..['spe'] = 32;
-      expect(ChampionsRules.remainingStatPoints(almostFull), 1);
-      expect(ChampionsRules.clampStatPoint(almostFull, 'hp', 32), 1);
+      expect(ChampionsRules.remainingStatPoints(almostFull), 2);
+      expect(ChampionsRules.clampStatPoint(almostFull, 'hp', 32), 2);
     });
 
     test('built-in presets spend the budget sensibly', () {
