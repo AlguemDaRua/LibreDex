@@ -4,6 +4,10 @@ import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/theme/app_spacing.dart';
 import 'package:libredex/core/utils/type_utils.dart';
+import 'package:libredex/core/widgets/analysis_card.dart';
+import 'package:libredex/core/widgets/type_pill.dart';
+import 'package:libredex/core/widgets/stat_tile.dart';
+import 'package:libredex/core/widgets/section_header.dart';
 import 'package:libredex/core/widgets/pokemon_sprite.dart';
 import 'package:libredex/features/calculator/utils/combat_utils.dart';
 import 'package:libredex/features/pokedex/models/type_efficiency_calculator.dart';
@@ -50,7 +54,7 @@ class _TeamComparisonScreenState extends ConsumerState<TeamComparisonScreen> {
           // ── MY TEAM ──
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
-            sliver: SliverToBoxAdapter(child: _SectionHeader(icon: Icons.shield_rounded, title: 'Your Team', subtitle: '${myTeam.length}/6 — ${widget.format.label}')),
+            sliver: SliverToBoxAdapter(child: SectionHeader(icon: Icons.shield_rounded, title: 'Your Team', subtitle: '${myTeam.length}/6 — ${widget.format.label}')),
           ),
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 8, AppSpacing.pagePadding, 0),
@@ -63,7 +67,7 @@ class _TeamComparisonScreenState extends ConsumerState<TeamComparisonScreen> {
           // ── FOE TEAM ──
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 20, AppSpacing.pagePadding, 0),
-            sliver: SliverToBoxAdapter(child: _SectionHeader(icon: Icons.groups_2_outlined, title: 'Foe Team', subtitle: foeTeam.isEmpty ? 'Tap to add foe Pokémon — info only' : '${foeTeam.length}/6 foe')),
+            sliver: SliverToBoxAdapter(child: SectionHeader(icon: Icons.groups_2_outlined, title: 'Foe Team', subtitle: foeTeam.isEmpty ? 'Tap to add foe Pokémon — info only' : '${foeTeam.length}/6 foe')),
           ),
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 8, AppSpacing.pagePadding, 0),
@@ -77,7 +81,7 @@ class _TeamComparisonScreenState extends ConsumerState<TeamComparisonScreen> {
             // ── HEAD-TO-HEAD ──
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 20, AppSpacing.pagePadding, 0),
-              sliver: SliverToBoxAdapter(child: _SectionHeader(icon: Icons.compare_arrows_rounded, title: 'Head-to-Head (info)', subtitle: 'Which STABs hit which side — type chart only')),
+              sliver: SliverToBoxAdapter(child: SectionHeader(icon: Icons.compare_arrows_rounded, title: 'Head-to-Head (info)', subtitle: 'Which STABs hit which side — type chart only')),
             ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 8, AppSpacing.pagePadding, AppSpacing.bottomScrollPadding),
@@ -116,28 +120,6 @@ class _InfoBanner extends StatelessWidget {
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  const _SectionHeader({required this.icon, required this.title, required this.subtitle});
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [
-        Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: AppTheme.pokemonRed.withValues(alpha: 0.12), shape: BoxShape.circle), child: Icon(icon, size: 16, color: AppTheme.pokemonRed)),
-        const SizedBox(width: 10),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: -0.2)),
-          Text(subtitle, style: TextStyle(fontSize: 11, color: isDark ? Colors.grey[400] : Colors.grey[600], height: 1.3)),
-        ])),
-      ]),
-      const SizedBox(height: 8),
-      Divider(height: 1, color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE2E8F0)),
-    ]);
-  }
-}
 
 class _TeamRow extends StatelessWidget {
   final List<Pokemon> team;
@@ -200,36 +182,19 @@ class _TeamStats extends StatelessWidget {
         Text('$label — ${team.length}/6', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
         const SizedBox(height: 8),
         Row(children: [
-          Expanded(child: _MiniStat(label: 'Avg BST', value: '$avgBst')),
+          Expanded(child: MiniStat(label: 'Avg BST', value: '$avgBst')),
           const SizedBox(width: 8),
-          Expanded(child: _MiniStat(label: 'Avg Spe', value: '$avgSpe')),
+          Expanded(child: MiniStat(label: 'Avg Spe', value: '$avgSpe')),
           const SizedBox(width: 8),
-          Expanded(child: _MiniStat(label: 'Weak ≥2', value: '$weakGe2')),
+          Expanded(child: MiniStat(label: 'Weak ≥2', value: '$weakGe2')),
           const SizedBox(width: 8),
-          Expanded(child: _MiniStat(label: 'SE hits', value: '$seTypes/18')),
+          Expanded(child: MiniStat(label: 'SE hits', value: '$seTypes/18')),
         ]),
       ]),
     );
   }
 }
 
-class _MiniStat extends StatelessWidget {
-  final String label;
-  final String value;
-  const _MiniStat({required this.label, required this.value});
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      decoration: BoxDecoration(color: isDark ? const Color(0xFF141414) : const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(10), border: Border.all(color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0))),
-      child: Column(children: [
-        Text(label, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Colors.grey)),
-        Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: AppTheme.pokemonRed)),
-      ]),
-    );
-  }
-}
 
 class _FoeGrid extends ConsumerWidget {
   final List<Pokemon?> foe;
@@ -356,9 +321,9 @@ class _HeadToHead extends StatelessWidget {
       decoration: BoxDecoration(color: isDark ? const Color(0xFF121212) : Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0))),
       child: Column(children: [
         Row(children: [
-          Expanded(child: _MiniStat(label: 'You weak to foe', value: '$myWeakToFoe/6', sub: 'mons')),
+          Expanded(child: MiniStat(label: 'You weak to foe', value: '$myWeakToFoe/6', sub: 'mons')),
           const SizedBox(width: 8),
-          Expanded(child: _MiniStat(label: 'Foe weak to you', value: '$foeWeakToMe/6', sub: 'mons')),
+          Expanded(child: MiniStat(label: 'Foe weak to you', value: '$foeWeakToMe/6', sub: 'mons')),
         ]),
         const SizedBox(height: 8),
         const Text('_counts how many Pokémon are weak (2×) to any opposing STAB — type chart only, no rolls.', style: TextStyle(fontSize: 11, color: Colors.grey, height: 1.4)),
