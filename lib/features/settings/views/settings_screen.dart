@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/app_restart.dart';
+import 'package:libredex/core/data/battle_data_manifest.dart';
 import 'package:libredex/core/network/network_preferences.dart';
 import 'package:libredex/core/storage/app_data_resetter.dart';
 import 'package:libredex/core/storage/offline_artwork_store.dart';
@@ -174,6 +175,10 @@ class SettingsScreen extends ConsumerWidget {
                   _buildInfoRow('App Name', 'LibreDex', isDark, primaryColor),
                   Divider(height: 1, color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
                   _buildInfoRow('Version', '1.0.0', isDark, primaryColor),
+                  Divider(height: 1, color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
+                  _buildInfoRow('Data release', BattleDataManifest.releaseDate, isDark, primaryColor),
+                  Divider(height: 1, color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
+                  _buildInfoRow('Ruleset', BattleDataManifest.championsRulesetVersion, isDark, primaryColor),
                   Divider(height: 1, color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
                   _buildInfoRow('Cost & ads', 'Free — no ads or purchases', isDark, primaryColor),
                   Divider(height: 1, color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),

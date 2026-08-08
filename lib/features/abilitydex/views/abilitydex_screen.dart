@@ -20,6 +20,8 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
   List<Ability> _allAbilities = [];
   List<Ability> _filteredAbilities = [];
   bool _isLoading = true;
+  String _sort = 'Name (A–Z)';
+  String _effectFilter = 'All';
 
   @override
   void initState() {
@@ -46,13 +48,21 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
     }
   }
 
+  List<Ability> _sortAbilities(Iterable<Ability> values) {
+    final result = values.toList();
+    result.sort((a, b) => _sort == 'Name (Z–A)' ? b.name.compareTo(a.name) : a.name.compareTo(b.name));
+    return result;
+  }
+
+  void _applyAbilityOptions() {
+    final q = _searchQuery;
+    final base = _allAbilities.where((a) { final has = a.description.trim().isNotEmpty && !a.description.toLowerCase().contains('no effect text'); return (_effectFilter == 'All' || (_effectFilter == 'With effects' && has) || (_effectFilter == 'No effect' && !has)) && (a.name.toLowerCase().contains(q.toLowerCase()) || a.description.toLowerCase().contains(q.toLowerCase())); });
+    setState(() => _filteredAbilities = _sortAbilities(base));
+  }
+
   void _filterAbilities(String query) {
-    setState(() {
-      _searchQuery = query;
-      _filteredAbilities = _allAbilities.where((a) {
-        return a.name.toLowerCase().contains(query.toLowerCase());
-      }).toList();
-    });
+    _searchQuery = query;
+    _applyAbilityOptions();
   }
 
 
@@ -111,6 +121,14 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
                     ),
                   ),
 
+                  _DexControls(
+                    sort: _sort,
+                    filter: _effectFilter,
+                    filters: const ['All', 'With effects', 'No effect'],
+                    onSort: (value) { setState(() => _sort = value); _applyAbilityOptions(); },
+                    onFilter: (value) { setState(() => _effectFilter = value); _applyAbilityOptions(); },
+                  ),
+
                   // Abilities List
                   Expanded(
                     child: _filteredAbilities.isEmpty
@@ -162,4 +180,10 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
       ),
     );
   }
+}
+
+class _DexControls extends StatelessWidget {
+  final String sort, filter; final List<String> filters; final ValueChanged<String> onSort, onFilter; final bool showSort;
+  const _DexControls({required this.sort, required this.filter, required this.filters, required this.onSort, required this.onFilter, this.showSort = true});
+  @override Widget build(BuildContext context) => SizedBox(height: 48, child: Row(children: [if (showSort) PopupMenuButton<String>(initialValue: sort, icon: const Icon(Icons.sort), onSelected: onSort, itemBuilder: (_) => const [PopupMenuItem(value: 'Name (A–Z)', child: Text('Name (A–Z)')), PopupMenuItem(value: 'Name (Z–A)', child: Text('Name (Z–A)'))]), Expanded(child: ListView.separated(scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 8), itemCount: filters.length, separatorBuilder: (_, __) => const SizedBox(width: 6), itemBuilder: (_, i) => ChoiceChip(label: Text(filters[i]), selected: filter == filters[i], onSelected: (_) => onFilter(filters[i]))))]));
 }

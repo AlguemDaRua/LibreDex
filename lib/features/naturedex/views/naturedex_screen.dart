@@ -3,8 +3,14 @@ import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/theme/app_spacing.dart';
 import 'package:libredex/core/widgets/app_drawer.dart';
 
-class NaturedexScreen extends StatelessWidget {
+class NaturedexScreen extends StatefulWidget {
   const NaturedexScreen({super.key});
+  @override State<NaturedexScreen> createState() => _NaturedexScreenState();
+}
+
+class _NaturedexScreenState extends State<NaturedexScreen> {
+  String _query = '';
+  String _filter = 'All';
 
   static const List<Map<String, String>> natures = [
     {'name': 'Adamant', 'increased': 'Attack ▲', 'decreased': 'Sp. Atk ▼'},
@@ -38,6 +44,11 @@ class NaturedexScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? Colors.white : Colors.black;
+    final visibleNatures = natures.where((nature) {
+      final matchesText = nature.values.join(" ").toLowerCase().contains(_query.toLowerCase());
+      final neutral = nature['increased'] == '—';
+      return matchesText && (_filter == 'All' || (_filter == 'Neutral' && neutral) || (_filter == 'Stat changing' && !neutral));
+    }).toList();
 
     return Scaffold(
       backgroundColor: isDark ? Colors.black : const Color(0xFFF9FAFB),
@@ -82,7 +93,13 @@ class NaturedexScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
+              TextField(
+                onChanged: (value) => setState(() => _query = value),
+                decoration: const InputDecoration(hintText: 'Search natures or stats...', prefixIcon: Icon(Icons.search_rounded, color: AppTheme.pokemonRed)),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(height: 42, child: ListView(scrollDirection: Axis.horizontal, children: ['All', 'Neutral', 'Stat changing'].map((value) => Padding(padding: const EdgeInsets.only(right: 8), child: ChoiceChip(label: Text(value), selected: _filter == value, onSelected: (_) => setState(() => _filter = value)))).toList())),
 
               // nature grid header
               Padding(
@@ -119,13 +136,13 @@ class NaturedexScreen extends StatelessWidget {
               Expanded(
                 child: ListView.separated(
                   padding: const EdgeInsets.only(top: 8, bottom: AppSpacing.bottomScrollPadding),
-                  itemCount: natures.length,
+                  itemCount: visibleNatures.length,
                   separatorBuilder: (context, index) => Divider(
                     color: isDark ? const Color(0xFF161616) : const Color(0xFFE5E7EB),
                     height: 1,
                   ),
                   itemBuilder: (context, index) {
-                    final nature = natures[index];
+                    final nature = visibleNatures[index];
                     final inc = nature['increased']!;
                     final dec = nature['decreased']!;
 

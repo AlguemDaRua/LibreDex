@@ -7,6 +7,9 @@ class ItemDexEntry {
   final String description;
   final List<String> tags;
 
+  /// Official PokéAPI item artwork, keyed by the stable item id.
+  String get iconUrl => 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '-').replaceAll(RegExp(r'^-|-$'), '')}.png';
+
   const ItemDexEntry({
     required this.id,
     required this.name,

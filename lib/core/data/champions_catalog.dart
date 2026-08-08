@@ -63,7 +63,7 @@ class ChampionsFormInfo {
       (json['pokedexIdentifier'] as String? ?? '').replaceAll('-', ' '),
       if (flags.contains('mega')) 'mega',
       if (flags.contains('champions')) 'pokemon champions champions',
-      if (flags.contains('legendsZA') || flags.contains('legendsza'))
+      if (flags.contains('legendsza') || flags.contains('legendsza'))
         'legends z-a legends za z-a za',
       ...abilityNames,
     ];
