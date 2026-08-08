@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:libredex/core/navigation/app_sections.dart';
 import 'package:libredex/core/navigation/navigation_provider.dart';
-import 'package:libredex/core/navigation/navigation_style_provider.dart';
 import 'package:libredex/core/navigation/section_back_stack.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/widgets/artwork_download_dialog.dart';
@@ -20,8 +20,16 @@ import 'package:libredex/features/team_builder/views/team_builder_screen.dart';
 import 'package:libredex/features/typechart/views/typechart_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Hosts the main sections of the app and keeps the artwork-download banner
-/// pinned above whichever section is active.
+/// Single adaptive shell for the whole app.
+///
+/// - Phones  (<700dp): Material 3 [NavigationBar] (bottom)
+/// - Tablets (≥700dp): Material 3 [NavigationRail] (side)
+/// - Overflow: one [FeatureHubSheet] — the *only* place that lists all 10 sections.
+///   No hamburger drawer + bottom bar duplication.
+///
+/// Inner screens (Pokédex, Moves, …) no longer provide their own `drawer:` —
+/// they are just content inside the IndexedStack. That is what removed the
+/// redundancy you felt.
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -31,7 +39,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   var _hasPromptedThisSession = false;
-
   final Set<int> _visitedIndices = {0};
   final SectionBackStack _backStack = SectionBackStack();
 
@@ -44,88 +51,57 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Future<void> _maybePromptForArtwork() async {
     if (_hasPromptedThisSession) return;
     _hasPromptedThisSession = true;
-
-    final preferences = await SharedPreferences.getInstance();
-    if (preferences.getBool(kArtworkDownloadPromptDisabledKey) ?? false) {
-      return;
-    }
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool(kArtworkDownloadPromptDisabledKey) ?? false) return;
     if (!mounted) return;
-
     await showFirstLaunchArtworkDownloadDialog(context);
   }
 
   Widget _buildSection(int index) {
-    switch (index) {
-      case 0:
+    switch (AppSection.fromIndex(index)) {
+      case AppSection.pokedex:
         return const PokedexScreen();
-      case 1:
+      case AppSection.teamBuilder:
         return const TeamBuilderScreen();
-      case 2:
+      case AppSection.statCompare:
         return const StatComparisonScreen();
-      case 3:
+      case AppSection.movedex:
         return const MovedexScreen();
-      case 4:
+      case AppSection.abilitydex:
         return const AbilitydexScreen();
-      case 5:
+      case AppSection.itemdex:
         return const ItemDexScreen();
-      case 6:
+      case AppSection.naturedex:
         return const NaturedexScreen();
-      case 7:
+      case AppSection.typeChart:
         return const TypeChartScreen();
-      case 8:
+      case AppSection.calculator:
         return const DamageCalculatorScreen();
-      case 9:
+      case AppSection.settings:
         return const SettingsScreen();
-      default:
-        return const PokedexScreen();
     }
   }
 
-  int _getBottomNavIndex(int menuIndex) {
-    switch (menuIndex) {
-      case 0:
-        return 0; // Pokédex
-      case 1:
-        return 1; // Teams
-      case 3:
-        return 2; // Moves
-      case 8:
-        return 3; // Calc
-      default:
-        return 4; // Hub / More
+  void _onBarTapped(int barIndex) {
+    final section = PrimaryNav.sectionForBarIndex(barIndex);
+    if (section == null) {
+      FeatureHubSheet.show(context);
+      return;
     }
+    ref.read(currentMenuIndexProvider.notifier).setIndex(section.index);
   }
 
-  void _onBottomNavTapped(int navIndex) {
-    switch (navIndex) {
-      case 0:
-        ref.read(currentMenuIndexProvider.notifier).setIndex(0);
-        break;
-      case 1:
-        ref.read(currentMenuIndexProvider.notifier).setIndex(1);
-        break;
-      case 2:
-        ref.read(currentMenuIndexProvider.notifier).setIndex(3);
-        break;
-      case 3:
-        ref.read(currentMenuIndexProvider.notifier).setIndex(8);
-        break;
-      case 4:
-        FeatureHubSheet.show(context);
-        break;
-    }
-  }
+  void _onRailTapped(int barIndex) => _onBarTapped(barIndex);
 
   @override
   Widget build(BuildContext context) {
     final currentIndex = ref.watch(currentMenuIndexProvider);
-    final navStyle = ref.watch(navigationStyleProvider);
     _visitedIndices.add(currentIndex);
     _backStack.record(currentIndex);
 
+    final currentSection = AppSection.fromIndex(currentIndex);
+    final barIndex = PrimaryNav.barIndexFor(currentSection);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bottomNavIndex = _getBottomNavIndex(currentIndex);
-    final showBottomNav = navStyle == 'both' || navStyle == 'bottomBar';
 
     return PopScope(
       canPop: false,
@@ -138,70 +114,133 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ref.read(currentMenuIndexProvider.notifier).setIndex(target);
         }
       },
-      child: Scaffold(
-        body: Column(
-          children: [
-            const _DownloadBanner(),
-            Expanded(
-              child: IndexedStack(
-                index: currentIndex,
-                children: List.generate(
-                  10,
-                  (index) => _visitedIndices.contains(index)
-                      ? _buildSection(index)
-                      : const SizedBox.shrink(),
-                ),
-              ),
-            ),
-          ],
-        ),
-        bottomNavigationBar: showBottomNav
-            ? NavigationBar(
-                selectedIndex: bottomNavIndex,
-                onDestinationSelected: _onBottomNavTapped,
-                backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
-                indicatorColor: AppTheme.pokemonRed.withValues(alpha: 0.18),
-                elevation: 8,
-                height: 64,
-                labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-                destinations: const [
-                  NavigationDestination(
-                    icon: Icon(Icons.catching_pokemon_outlined),
-                    selectedIcon: Icon(Icons.catching_pokemon, color: AppTheme.pokemonRed),
-                    label: 'Pokédex',
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth >= 700;
+          if (isWide) {
+            return Scaffold(
+              body: Row(
+                children: [
+                  NavigationRail(
+                    selectedIndex: barIndex,
+                    onDestinationSelected: _onRailTapped,
+                    backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+                    indicatorColor: AppTheme.pokemonRed.withValues(alpha: 0.18),
+                    selectedIconTheme: const IconThemeData(color: AppTheme.pokemonRed),
+                    unselectedIconTheme: IconThemeData(
+                      color: isDark ? Colors.grey[500] : Colors.grey[600],
+                    ),
+                    labelType: NavigationRailLabelType.all,
+                    destinations: const [
+                      NavigationRailDestination(
+                        icon: Icon(Icons.catching_pokemon_outlined),
+                        selectedIcon: Icon(Icons.catching_pokemon, color: AppTheme.pokemonRed),
+                        label: Text('Pokédex'),
+                      ),
+                      NavigationRailDestination(
+                        icon: Icon(Icons.groups_outlined),
+                        selectedIcon: Icon(Icons.groups_rounded, color: AppTheme.pokemonRed),
+                        label: Text('Teams'),
+                      ),
+                      NavigationRailDestination(
+                        icon: Icon(Icons.flash_on_outlined),
+                        selectedIcon: Icon(Icons.flash_on_rounded, color: AppTheme.pokemonRed),
+                        label: Text('Moves'),
+                      ),
+                      NavigationRailDestination(
+                        icon: Icon(Icons.calculate_outlined),
+                        selectedIcon: Icon(Icons.calculate_rounded, color: AppTheme.pokemonRed),
+                        label: Text('Calc'),
+                      ),
+                      NavigationRailDestination(
+                        icon: Icon(Icons.apps_outlined),
+                        selectedIcon: Icon(Icons.apps_rounded, color: AppTheme.pokemonRed),
+                        label: Text('More'),
+                      ),
+                    ],
                   ),
-                  NavigationDestination(
-                    icon: Icon(Icons.groups_outlined),
-                    selectedIcon: Icon(Icons.groups_rounded, color: AppTheme.pokemonRed),
-                    label: 'Teams',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.flash_on_outlined),
-                    selectedIcon: Icon(Icons.flash_on_rounded, color: AppTheme.pokemonRed),
-                    label: 'Moves',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.calculate_outlined),
-                    selectedIcon: Icon(Icons.calculate_rounded, color: AppTheme.pokemonRed),
-                    label: 'Calc',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.apps_outlined),
-                    selectedIcon: Icon(Icons.apps_rounded, color: AppTheme.pokemonRed),
-                    label: 'Hub',
+                  const VerticalDivider(thickness: 1, width: 1),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        const _DownloadBanner(),
+                        Expanded(
+                          child: IndexedStack(
+                            index: currentIndex,
+                            children: List.generate(
+                              AppSection.values.length,
+                              (i) => _visitedIndices.contains(i) ? _buildSection(i) : const SizedBox.shrink(),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
-              )
-            : null,
+              ),
+            );
+          }
+
+          // Phone: bottom NavigationBar (single primary nav — no hamburger)
+          return Scaffold(
+            body: Column(
+              children: [
+                const _DownloadBanner(),
+                Expanded(
+                  child: IndexedStack(
+                    index: currentIndex,
+                    children: List.generate(
+                      AppSection.values.length,
+                      (i) => _visitedIndices.contains(i) ? _buildSection(i) : const SizedBox.shrink(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            bottomNavigationBar: NavigationBar(
+              selectedIndex: barIndex,
+              onDestinationSelected: _onBarTapped,
+              backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+              indicatorColor: AppTheme.pokemonRed.withValues(alpha: 0.18),
+              elevation: 8,
+              height: 64,
+              labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.catching_pokemon_outlined),
+                  selectedIcon: Icon(Icons.catching_pokemon, color: AppTheme.pokemonRed),
+                  label: 'Pokédex',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.groups_outlined),
+                  selectedIcon: Icon(Icons.groups_rounded, color: AppTheme.pokemonRed),
+                  label: 'Teams',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.flash_on_outlined),
+                  selectedIcon: Icon(Icons.flash_on_rounded, color: AppTheme.pokemonRed),
+                  label: 'Moves',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.calculate_outlined),
+                  selectedIcon: Icon(Icons.calculate_rounded, color: AppTheme.pokemonRed),
+                  label: 'Calc',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.apps_outlined),
+                  selectedIcon: Icon(Icons.apps_rounded, color: AppTheme.pokemonRed),
+                  label: 'More',
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
 }
 
 /// Compact, always-visible progress strip shown while artwork downloads.
-///
-/// It sits above the active screen rather than covering it, so the app stays
-/// fully usable while data is being fetched in the background.
 class _DownloadBanner extends ConsumerWidget {
   const _DownloadBanner();
 
@@ -253,17 +292,9 @@ class _DownloadBanner extends ConsumerWidget {
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                     ),
                   if (sync.status == DownloadStatus.running)
-                    _BannerAction(
-                      icon: Icons.pause_rounded,
-                      tooltip: 'Pause',
-                      onPressed: controller.pause,
-                    ),
+                    _BannerAction(icon: Icons.pause_rounded, tooltip: 'Pause', onPressed: controller.pause),
                   if (sync.status == DownloadStatus.paused)
-                    _BannerAction(
-                      icon: Icons.play_arrow_rounded,
-                      tooltip: 'Resume',
-                      onPressed: controller.resume,
-                    ),
+                    _BannerAction(icon: Icons.play_arrow_rounded, tooltip: 'Resume', onPressed: controller.resume),
                   _BannerAction(
                     icon: Icons.close_rounded,
                     tooltip: hasFailed ? 'Dismiss' : 'Cancel download',
@@ -285,14 +316,8 @@ class _DownloadBanner extends ConsumerWidget {
                 const SizedBox(height: 6),
               ],
               Text(
-                hasFailed
-                    ? (sync.errorMessage ?? 'Download interrupted.')
-                    : '${(sync.progress * 100).toStringAsFixed(0)}% · ${sync.currentLabel}',
-                style: TextStyle(
-                  fontSize: 11,
-                  height: 1.3,
-                  color: isDark ? Colors.grey[400] : Colors.grey[600],
-                ),
+                hasFailed ? (sync.errorMessage ?? 'Download interrupted.') : '${(sync.progress * 100).toStringAsFixed(0)}% · ${sync.currentLabel}',
+                style: TextStyle(fontSize: 11, height: 1.3, color: isDark ? Colors.grey[400] : Colors.grey[600]),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -308,13 +333,7 @@ class _BannerAction extends StatelessWidget {
   final IconData icon;
   final String tooltip;
   final VoidCallback onPressed;
-
-  const _BannerAction({
-    required this.icon,
-    required this.tooltip,
-    required this.onPressed,
-  });
-
+  const _BannerAction({required this.icon, required this.tooltip, required this.onPressed});
   @override
   Widget build(BuildContext context) {
     return IconButton(

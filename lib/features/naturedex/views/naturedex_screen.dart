@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:libredex/core/theme/app_theme.dart';
-import 'package:libredex/core/widgets/app_drawer.dart';
 import 'package:libredex/core/widgets/dex_filter_bar.dart';
 import 'package:libredex/core/widgets/dex_sort_menu.dart';
 import 'package:libredex/core/widgets/dex_filter_sheet.dart';
@@ -241,7 +240,6 @@ class _NaturedexScreenState extends State<NaturedexScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      drawer: const AppDrawer(currentRoute: 'natures'),
       body: SafeArea(
         bottom: true,
         child: Padding(

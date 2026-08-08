@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:libredex/core/navigation/app_sections.dart';
 import 'package:libredex/core/navigation/navigation_provider.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/theme/theme_provider.dart';
+import 'package:libredex/core/theme/theme_switcher.dart';
 
 /// Modal bottom sheet displaying all 10 tools & settings in an organized hub.
 class FeatureHubSheet extends ConsumerWidget {
@@ -96,7 +98,7 @@ class FeatureHubSheet extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  // Theme Quick Switcher
+                  // Theme Quick Switcher — now plays the wavy reveal (origin = button center)
                   IconButton(
                     icon: Icon(
                       currentTheme == ThemeMode.dark
@@ -108,13 +110,8 @@ class FeatureHubSheet extends ConsumerWidget {
                       color: AppTheme.pokemonRed,
                     ),
                     tooltip: 'Toggle Theme',
-                    onPressed: () {
-                      final nextMode = currentTheme == ThemeMode.dark
-                          ? ThemeMode.light
-                          : currentTheme == ThemeMode.light
-                              ? ThemeMode.system
-                              : ThemeMode.dark;
-                      ref.read(themeModeProvider.notifier).setThemeMode(nextMode);
+                    onPressed: () async {
+                      await cycleThemeWithWavy(context, ref);
                     },
                   ),
                 ],

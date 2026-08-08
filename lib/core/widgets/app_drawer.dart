@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/navigation/navigation_provider.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/theme/theme_provider.dart';
+import 'package:libredex/core/theme/theme_switcher.dart';
 import 'package:libredex/features/pokedex/viewmodels/favorites_provider.dart';
 import 'package:libredex/features/pokedex/viewmodels/team_builder_provider.dart';
 
@@ -460,8 +461,10 @@ class _ThemeChoiceButton extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return InkWell(
-      onTap: () {
-        ref.read(themeModeProvider.notifier).setThemeMode(mode);
+      onTap: () async {
+        final box = context.findRenderObject() as RenderBox?;
+        final origin = box != null ? box.localToGlobal(box.size.center(Offset.zero)) : null;
+        await switchThemeWithWavy(context: context, ref: ref, mode: mode, origin: origin);
       },
       borderRadius: BorderRadius.circular(10),
       child: AnimatedContainer(

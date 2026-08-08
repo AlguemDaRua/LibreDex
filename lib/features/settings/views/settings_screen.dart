@@ -10,12 +10,9 @@ import 'package:libredex/core/storage/offline_artwork_store.dart';
 import 'package:libredex/core/theme/app_spacing.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/widgets/artwork_download_dialog.dart';
-import 'package:libredex/core/widgets/app_drawer.dart';
 import 'package:libredex/features/pokedex/repositories/deep_sync_repository.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
 import 'package:libredex/features/pokedex/repositories/sync_repository.dart';
-
-import 'package:libredex/core/navigation/navigation_style_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -27,7 +24,6 @@ class SettingsScreen extends ConsumerWidget {
     final artworkSummary = ref.watch(offlineArtworkSummaryProvider);
     final artworkDownload = ref.watch(deepSyncControllerProvider);
     final useLiveEvolutionData = ref.watch(liveEvolutionDataProvider);
-    final navStyle = ref.watch(navigationStyleProvider);
 
     return Scaffold(
       backgroundColor: isDark ? Colors.black : const Color(0xFFF9FAFB),
@@ -37,7 +33,6 @@ class SettingsScreen extends ConsumerWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      drawer: const AppDrawer(currentRoute: 'settings'),
       body: SafeArea(
         bottom: true,
         child: ListView(
@@ -62,53 +57,40 @@ class SettingsScreen extends ConsumerWidget {
                       const Icon(Icons.explore_rounded, color: AppTheme.pokemonRed, size: 22),
                       const SizedBox(width: 12),
                       Text(
-                        'Navigation Interface Style',
+                        'Adaptive Navigation',
                         style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 15),
                       ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppTheme.pokemonRed.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text('AUTO', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: AppTheme.pokemonRed)),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 10),
                   Text(
-                    'Choose how you navigate across LibreDex tools and databases:',
-                    style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 12),
+                    'LibreDex now uses a single adaptive bar: bottom navigation on phones and a side rail on tablets. Tap More to see all 10 tools in one hub. No duplicate hamburger + bottom bar.',
+                    style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 12, height: 1.45),
                   ),
-                  const SizedBox(height: 12),
-                  SegmentedButton<String>(
-                    segments: const [
-                      ButtonSegment(
-                        value: 'both',
-                        label: Text('Both', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                        icon: Icon(Icons.grid_view_rounded, size: 16),
-                      ),
-                      ButtonSegment(
-                        value: 'bottomBar',
-                        label: Text('Bottom Nav', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                        icon: Icon(Icons.space_dashboard_rounded, size: 16),
-                      ),
-                      ButtonSegment(
-                        value: 'drawer',
-                        label: Text('Drawer Only', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                        icon: Icon(Icons.menu_rounded, size: 16),
-                      ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Icon(Icons.phone_iphone_rounded, size: 14, color: Colors.grey[500]),
+                      const SizedBox(width: 6),
+                      Text('Phone: bottom bar (Pokédex · Teams · Moves · Calc · More)', style: TextStyle(fontSize: 11, color: Colors.grey[500])),
                     ],
-                    selected: {navStyle},
-                    onSelectionChanged: (selected) {
-                      ref.read(navigationStyleProvider.notifier).setStyle(selected.first);
-                    },
-                    style: ButtonStyle(
-                      backgroundColor: WidgetStateProperty.resolveWith((states) {
-                        if (states.contains(WidgetState.selected)) {
-                          return AppTheme.pokemonRed.withValues(alpha: 0.15);
-                        }
-                        return Colors.transparent;
-                      }),
-                      foregroundColor: WidgetStateProperty.resolveWith((states) {
-                        if (states.contains(WidgetState.selected)) {
-                          return AppTheme.pokemonRed;
-                        }
-                        return isDark ? Colors.white70 : Colors.black87;
-                      }),
-                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.tablet_rounded, size: 14, color: Colors.grey[500]),
+                      const SizedBox(width: 6),
+                      Text('Tablet: side rail · same 5 items', style: TextStyle(fontSize: 11, color: Colors.grey[500])),
+                    ],
                   ),
                 ],
               ),

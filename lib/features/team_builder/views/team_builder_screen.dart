@@ -5,7 +5,6 @@ import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/core/navigation/navigation_provider.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/utils/type_utils.dart';
-import 'package:libredex/core/widgets/app_drawer.dart';
 import 'package:libredex/core/widgets/app_state_widgets.dart';
 import 'package:libredex/features/calculator/models/battle_ruleset.dart';
 import 'package:libredex/features/calculator/viewmodels/damage_calculator_viewmodel.dart';
@@ -149,7 +148,6 @@ class TeamBuilderScreen extends ConsumerWidget {
             ),
         ],
       ),
-      drawer: const AppDrawer(currentRoute: 'team'),
       body: pokemonAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => AppEmptyState(

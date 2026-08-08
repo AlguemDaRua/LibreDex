@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:libredex/core/theme/app_spacing.dart';
-import 'package:libredex/core/widgets/app_drawer.dart';
 
 class TypeChartScreen extends StatefulWidget {
   const TypeChartScreen({super.key});
@@ -361,7 +360,6 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      drawer: const AppDrawer(currentRoute: 'type_chart'),
       body: SafeArea(
         bottom: true,
         child: Column(

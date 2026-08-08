@@ -10,7 +10,6 @@ import 'package:libredex/features/pokedex/models/stat_calculator.dart';
 import 'package:libredex/features/pokedex/viewmodels/pokedex_viewmodel.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
 import 'package:libredex/core/data/species_data.dart';
-import 'package:libredex/core/widgets/app_drawer.dart';
 import 'package:libredex/features/calculator/utils/combat_utils.dart';
 import 'package:libredex/features/calculator/utils/damage_math.dart';
 import 'package:libredex/core/theme/app_spacing.dart';
@@ -179,7 +178,6 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
           ],
         ),
       ),
-      drawer: const AppDrawer(currentRoute: 'calculator'),
       body: Column(
         children: [
           _buildRulesetBar(isDark, state, vm),

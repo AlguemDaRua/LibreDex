@@ -15,7 +15,6 @@ import 'package:libredex/features/pokedex/viewmodels/pokedex_viewmodel.dart';
 import 'package:libredex/features/pokedex/viewmodels/team_builder_provider.dart';
 import 'package:libredex/features/pokedex/views/pokemon_detail_screen.dart';
 import 'package:libredex/core/theme/app_spacing.dart';
-import 'package:libredex/core/widgets/app_drawer.dart';
 import 'package:libredex/core/widgets/pokemon_sprite.dart';
 import 'package:libredex/core/widgets/dex_filter_bar.dart';
 import 'package:libredex/core/widgets/active_filter_summary.dart';
@@ -384,7 +383,6 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
           ),
         ],
       ),
-      drawer: const AppDrawer(currentRoute: 'pokedex'),
       body: SafeArea(
         bottom: true,
         child: syncState.isLoading
