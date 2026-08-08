@@ -2,15 +2,11 @@ import 'package:libredex/core/widgets/pokemon_sprite.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/database/app_database.dart';
-import 'package:libredex/core/navigation/navigation_provider.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/utils/type_utils.dart';
 import 'package:libredex/core/widgets/app_state_widgets.dart';
-import 'package:libredex/features/calculator/models/battle_ruleset.dart';
-import 'package:libredex/features/calculator/viewmodels/damage_calculator_viewmodel.dart';
 import 'package:libredex/features/calculator/utils/combat_utils.dart';
 import 'package:libredex/features/pokedex/models/type_efficiency_calculator.dart';
-import 'package:libredex/features/stat_comparison/viewmodels/stat_comparison_viewmodel.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
 import 'package:libredex/features/pokedex/viewmodels/favorites_provider.dart';
 import 'package:libredex/features/pokedex/viewmodels/pokedex_viewmodel.dart';
@@ -20,9 +16,6 @@ import 'package:libredex/features/pokedex/views/pokemon_detail_screen.dart';
 
 import 'package:libredex/features/team_builder/utils/showdown_parser.dart';
 import 'package:libredex/features/team_builder/widgets/team_defense_matrix.dart';
-
-/// Section index of the Damage Calculator inside HomeScreen's IndexedStack.
-const int _damageCalculatorSectionIndex = 8;
 
 class TeamBuilderScreen extends ConsumerWidget {
   const TeamBuilderScreen({super.key});
@@ -395,37 +388,11 @@ class _TeamSlotCard extends ConsumerWidget {
             Positioned(
               top: 4,
               right: 4,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    tooltip: format == TeamFormat.champions
-                        ? 'Open in Damage Calculator (Champions)'
-                        : 'Open in Damage Calculator',
-                    icon: const Icon(Icons.calculate_outlined, size: 18),
-                    visualDensity: VisualDensity.compact,
-                    onPressed: () {
-                      // Park a one-shot intent; the calculator applies it on
-                      // its first frame, so a Champions team always lands in
-                      // the Champions ruleset.
-                      ref.read(calculatorLaunchIntentProvider.notifier).request(
-                            CalculatorLaunchIntent(
-                              attackerPokemonId: p.id,
-                              ruleset: format == TeamFormat.champions ? BattleRuleset.champions : null,
-                            ),
-                          );
-                      ref
-                          .read(currentMenuIndexProvider.notifier)
-                          .setIndex(_damageCalculatorSectionIndex);
-                    },
-                  ),
-                  IconButton(
-                    tooltip: 'Remove from team',
-                    icon: const Icon(Icons.close_rounded, size: 18),
-                    visualDensity: VisualDensity.compact,
-                    onPressed: () => ref.read(teamBuilderProvider.notifier).setSlot(index, null),
-                  ),
-                ],
+              child: IconButton(
+                tooltip: 'Remove from team',
+                icon: const Icon(Icons.close_rounded, size: 18),
+                visualDensity: VisualDensity.compact,
+                onPressed: () => ref.read(teamBuilderProvider.notifier).setSlot(index, null),
               ),
             ),
             Padding(
@@ -624,11 +591,6 @@ class _TeamAnalysis extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 16),
-        // ── SECTION: Team vs Team (info comparison, not a game) ──
-        _SectionHeader(icon: Icons.compare_arrows_rounded, title: 'Team vs Team', subtitle: 'Compare type matchups — not a battle simulation'),
-        const SizedBox(height: 10),
-        _TeamVsTeamActions(team: team),
       ],
     );
   }
@@ -797,200 +759,6 @@ class _StatTile extends StatelessWidget {
         Text(sub, style: TextStyle(fontSize: 10, color: isDark ? Colors.grey[400] : Colors.grey[600]), maxLines: 1, overflow: TextOverflow.ellipsis),
       ]),
     );
-  }
-}
-
-class _TeamVsTeamActions extends ConsumerWidget {
-  final List<Pokemon> team;
-  const _TeamVsTeamActions({required this.team});
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF101010) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Informational comparisons — no battle is simulated. LibreDex is a Pokédex companion.', style: TextStyle(fontSize: 11, color: Colors.grey, height: 1.4)),
-              const SizedBox(height: 10),
-              Row(children: [
-                Expanded(
-                  child: FilledButton.icon(
-                    icon: const Icon(Icons.compare_arrows_rounded, size: 16),
-                    label: const Text('Stat Comparison', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900)),
-                    style: FilledButton.styleFrom(backgroundColor: AppTheme.pokemonRed, padding: const EdgeInsets.symmetric(vertical: 12)),
-                    onPressed: () {
-                      ref.read(statComparisonProvider.notifier).loadFromTeam(team);
-                      ref.read(currentMenuIndexProvider.notifier).setIndex(2);
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    icon: const Icon(Icons.groups_2_outlined, size: 16),
-                    label: const Text('Team vs Team', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900)),
-                    style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12)),
-                    onPressed: () => _showTeamVsTeamSheet(context, ref, team),
-                  ),
-                ),
-              ]),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _showTeamVsTeamSheet(BuildContext context, WidgetRef ref, List<Pokemon> myTeam) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.62,
-        minChildSize: 0.4,
-        maxChildSize: 0.92,
-        expand: false,
-        builder: (context, controller) => Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF101010) : Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: ListView(
-            controller: controller,
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-            children: [
-              Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)))),
-              const SizedBox(height: 12),
-              const Text('Team vs Team — type matchup info', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
-              const SizedBox(height: 6),
-              const Text('Picks a foe team and shows which STABs hit which side super-effectively (type chart only). No turns, no damage rolls — just Pokédex math.', style: TextStyle(fontSize: 12, color: Colors.grey, height: 1.4)),
-              const SizedBox(height: 12),
-              _FoeTeamPicker(myTeam: myTeam),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _FoeTeamPicker extends ConsumerStatefulWidget {
-  final List<Pokemon> myTeam;
-  const _FoeTeamPicker({required this.myTeam});
-  @override
-  ConsumerState<_FoeTeamPicker> createState() => _FoeTeamPickerState();
-}
-
-class _FoeTeamPickerState extends ConsumerState<_FoeTeamPicker> {
-  final List<Pokemon?> foe = List<Pokemon?>.filled(6, null, growable: false);
-  @override
-  Widget build(BuildContext context) {
-    final pokedex = ref.watch(pokedexProvider);
-    return pokedex.when(
-      loading: () => const SizedBox(height: 80, child: Center(child: CircularProgressIndicator())),
-      error: (e, _) => Text('Could not load Pokédex: $e'),
-      data: (all) {
-        String foeStabHitsMe() {
-          if (foe.whereType<Pokemon>().isEmpty) return '—';
-          int seCount = 0;
-          for (final t in pokemonTypes) {
-            bool hitsMe = false;
-            for (final me in widget.myTeam) {
-              final eff = TypeEfficiencyCalculator.getCombinedEffectiveness(me.type1, me.type2)[t] ?? 1.0;
-              if (eff > 1) { hitsMe = true; break; }
-            }
-            final foeHas = foe.whereType<Pokemon>().any((f) => f.type1.toLowerCase() == t || f.type2?.toLowerCase() == t);
-            if (hitsMe && foeHas) seCount++;
-          }
-          return '$seCount types';
-        }
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Foe team (tap to add)', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: Colors.grey)),
-            const SizedBox(height: 8),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: 6,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, childAspectRatio: 1.6, crossAxisSpacing: 8, mainAxisSpacing: 8),
-              itemBuilder: (ctx, i) {
-                final p = foe[i];
-                if (p == null) {
-                  return InkWell(
-                    onTap: () async {
-                      final picked = await _pickPokemon(all);
-                      if (picked != null) setState(() => foe[i] = picked);
-                    },
-                    borderRadius: BorderRadius.circular(14),
-                    child: Container(
-                      decoration: BoxDecoration(border: Border.all(color: const Color(0xFFE2E8F0)), borderRadius: BorderRadius.circular(14)),
-                      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [const Icon(Icons.add_rounded, color: Colors.grey), Text('Slot ${i + 1}', style: const TextStyle(fontSize: 11, color: Colors.grey))]),
-                    ),
-                  );
-                }
-                final c = pokemonTypeColor(p.type1);
-                return InkWell(
-                  onTap: () => setState(() => foe[i] = null),
-                  borderRadius: BorderRadius.circular(14),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(color: c.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(14), border: Border.all(color: c.withValues(alpha: 0.28))),
-                    child: Column(children: [Expanded(child: PokemonSprite(imageUrl: p.spriteUrl, fallbackUrl: PokemonSprite.homeArtworkUrl(p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id), errorIconSize: 24)), Text(p.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900))]),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: Colors.orange.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.orange.withValues(alpha: 0.25))),
-              child: Row(children: [const Icon(Icons.info_outline_rounded, size: 16, color: Colors.orange), const SizedBox(width: 8), Expanded(child: Text('Info only: foe STABs that hit you SE: ${foeStabHitsMe()} • No damage calc here — use Calculator for 1vs1.', style: const TextStyle(fontSize: 11, height: 1.4)))]),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<Pokemon?> _pickPokemon(List<Pokemon> all) async {
-    Pokemon? result;
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) {
-        String q = '';
-        return StatefulBuilder(builder: (ctx, setS) {
-          final filtered = all.where((p) => p.name.toLowerCase().contains(q.toLowerCase())).take(40).toList();
-          return AlertDialog(
-            title: const Text('Pick foe Pokémon'),
-            content: SizedBox(
-              width: double.maxFinite,
-              height: 360,
-              child: Column(children: [
-                TextField(decoration: const InputDecoration(hintText: 'Search'), onChanged: (v) => setS(() => q = v)),
-                Expanded(child: ListView.builder(itemCount: filtered.length, itemBuilder: (_, i) {
-                  final p = filtered[i];
-                  return ListTile(title: Text(p.name), subtitle: Text(p.type1 + (p.type2 == null ? '' : '/${p.type2}')), onTap: () { result = p; Navigator.pop(ctx); });
-                })),
-              ]),
-            ),
-            actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close'))],
-          );
-        });
-      },
-    );
-    return result;
   }
 }
 
