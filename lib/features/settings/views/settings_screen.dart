@@ -15,6 +15,8 @@ import 'package:libredex/features/pokedex/repositories/deep_sync_repository.dart
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
 import 'package:libredex/features/pokedex/repositories/sync_repository.dart';
 
+import 'package:libredex/core/navigation/navigation_style_provider.dart';
+
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -25,6 +27,7 @@ class SettingsScreen extends ConsumerWidget {
     final artworkSummary = ref.watch(offlineArtworkSummaryProvider);
     final artworkDownload = ref.watch(deepSyncControllerProvider);
     final useLiveEvolutionData = ref.watch(liveEvolutionDataProvider);
+    final navStyle = ref.watch(navigationStyleProvider);
 
     return Scaffold(
       backgroundColor: isDark ? Colors.black : const Color(0xFFF9FAFB),
@@ -40,6 +43,79 @@ class SettingsScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.only(left: 20, right: 20, top: AppSpacing.topContentGap, bottom: AppSpacing.bottomScrollPadding),
           children: [
+            // ─── Section: Navigation & Layout ────────────────────────────────────
+            _buildSectionHeader('NAVIGATION & LAYOUT', isDark),
+            const SizedBox(height: 12),
+
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.explore_rounded, color: AppTheme.pokemonRed, size: 22),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Navigation Interface Style',
+                        style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 15),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Choose how you navigate across LibreDex tools and databases:',
+                    style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 12),
+                  ),
+                  const SizedBox(height: 12),
+                  SegmentedButton<String>(
+                    segments: const [
+                      ButtonSegment(
+                        value: 'both',
+                        label: Text('Both', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                        icon: Icon(Icons.grid_view_rounded, size: 16),
+                      ),
+                      ButtonSegment(
+                        value: 'bottomBar',
+                        label: Text('Bottom Nav', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                        icon: Icon(Icons.space_dashboard_rounded, size: 16),
+                      ),
+                      ButtonSegment(
+                        value: 'drawer',
+                        label: Text('Drawer Only', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                        icon: Icon(Icons.menu_rounded, size: 16),
+                      ),
+                    ],
+                    selected: {navStyle},
+                    onSelectionChanged: (selected) {
+                      ref.read(navigationStyleProvider.notifier).setStyle(selected.first);
+                    },
+                    style: ButtonStyle(
+                      backgroundColor: WidgetStateProperty.resolveWith((states) {
+                        if (states.contains(WidgetState.selected)) {
+                          return AppTheme.pokemonRed.withValues(alpha: 0.15);
+                        }
+                        return Colors.transparent;
+                      }),
+                      foregroundColor: WidgetStateProperty.resolveWith((states) {
+                        if (states.contains(WidgetState.selected)) {
+                          return AppTheme.pokemonRed;
+                        }
+                        return isDark ? Colors.white70 : Colors.black87;
+                      }),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
             // ─── Section: Data & storage ─────────────────────────────────────────
             _buildSectionHeader('DATA & STORAGE', isDark),
             const SizedBox(height: 12),

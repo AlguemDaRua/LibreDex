@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/navigation/navigation_provider.dart';
+import 'package:libredex/core/navigation/navigation_style_provider.dart';
 import 'package:libredex/core/navigation/section_back_stack.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/widgets/artwork_download_dialog.dart';
@@ -118,11 +119,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final currentIndex = ref.watch(currentMenuIndexProvider);
+    final navStyle = ref.watch(navigationStyleProvider);
     _visitedIndices.add(currentIndex);
     _backStack.record(currentIndex);
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bottomNavIndex = _getBottomNavIndex(currentIndex);
+    final showBottomNav = navStyle == 'both' || navStyle == 'bottomBar';
 
     return PopScope(
       canPop: false,
@@ -152,42 +155,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ],
         ),
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: bottomNavIndex,
-          onDestinationSelected: _onBottomNavTapped,
-          backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
-          indicatorColor: AppTheme.pokemonRed.withValues(alpha: 0.18),
-          elevation: 8,
-          height: 64,
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.catching_pokemon_outlined),
-              selectedIcon: Icon(Icons.catching_pokemon, color: AppTheme.pokemonRed),
-              label: 'Pokédex',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.groups_outlined),
-              selectedIcon: Icon(Icons.groups_rounded, color: AppTheme.pokemonRed),
-              label: 'Teams',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.flash_on_outlined),
-              selectedIcon: Icon(Icons.flash_on_rounded, color: AppTheme.pokemonRed),
-              label: 'Moves',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.calculate_outlined),
-              selectedIcon: Icon(Icons.calculate_rounded, color: AppTheme.pokemonRed),
-              label: 'Calc',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.apps_outlined),
-              selectedIcon: Icon(Icons.apps_rounded, color: AppTheme.pokemonRed),
-              label: 'Hub',
-            ),
-          ],
-        ),
+        bottomNavigationBar: showBottomNav
+            ? NavigationBar(
+                selectedIndex: bottomNavIndex,
+                onDestinationSelected: _onBottomNavTapped,
+                backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+                indicatorColor: AppTheme.pokemonRed.withValues(alpha: 0.18),
+                elevation: 8,
+                height: 64,
+                labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+                destinations: const [
+                  NavigationDestination(
+                    icon: Icon(Icons.catching_pokemon_outlined),
+                    selectedIcon: Icon(Icons.catching_pokemon, color: AppTheme.pokemonRed),
+                    label: 'Pokédex',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.groups_outlined),
+                    selectedIcon: Icon(Icons.groups_rounded, color: AppTheme.pokemonRed),
+                    label: 'Teams',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.flash_on_outlined),
+                    selectedIcon: Icon(Icons.flash_on_rounded, color: AppTheme.pokemonRed),
+                    label: 'Moves',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.calculate_outlined),
+                    selectedIcon: Icon(Icons.calculate_rounded, color: AppTheme.pokemonRed),
+                    label: 'Calc',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.apps_outlined),
+                    selectedIcon: Icon(Icons.apps_rounded, color: AppTheme.pokemonRed),
+                    label: 'Hub',
+                  ),
+                ],
+              )
+            : null,
       ),
     );
   }

@@ -369,7 +369,7 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
             // Single Unified Interactive Header Card (Handles both Selection and Preview!)
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              height: 130,
+              constraints: const BoxConstraints(minHeight: 130),
               width: double.infinity,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -391,166 +391,168 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(20),
-                child: Stack(
-                  children: [
-                    // Background Shield Icon
-                    Positioned(
-                      right: -15,
-                      top: -15,
-                      child: Icon(
-                        Icons.shield_outlined,
-                        size: 150,
-                        color: Colors.white.withValues(alpha: 0.04),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Stack(
+                    children: [
+                      // Background Shield Icon
+                      Positioned(
+                        right: -15,
+                        top: -15,
+                        child: Icon(
+                          Icons.shield_outlined,
+                          size: 150,
+                          color: Colors.white.withValues(alpha: 0.04),
+                        ),
                       ),
-                    ),
-                    
-                    // Top-Left Badge: Primary Type (Clickable Interactive Picker)
-                    Positioned(
-                      left: 16,
-                      top: 16,
-                      child: GestureDetector(
-                        onTap: () => _showTypePicker(context, true),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
+
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          // Primary Type Selector
+                          GestureDetector(
+                            onTap: () => _showTypePicker(context, true),
+                            child: Column(
                               mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  'PRIMARY TYPE',
-                                  style: TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w900,
-                                    color: isDark ? Colors.grey[400] : Colors.grey[700],
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Icon(Icons.arrow_drop_down_rounded, size: 16, color: primaryThemeColor),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                              decoration: BoxDecoration(
-                                color: primaryThemeColor,
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: primaryThemeColor.withValues(alpha: 0.5),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    _primaryType.toUpperCase(),
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w900,
-                                      color: Colors.white,
-                                      letterSpacing: 1.5,
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      'PRIMARY TYPE',
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w900,
+                                        color: isDark ? Colors.grey[400] : Colors.grey[700],
+                                        letterSpacing: 0.5,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  const Icon(Icons.touch_app_rounded, size: 14, color: Colors.white70),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    
-                    // Center Slash separator
-                    if (_secondaryType != 'none')
-                      const Center(
-                        child: Text(
-                          '/',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white24,
-                            fontStyle: FontStyle.italic,
-                          ),
-                        ),
-                      ),
-                    
-                    // Bottom-Right Badge: Secondary Type (Clickable Interactive Picker)
-                    Positioned(
-                      right: 16,
-                      bottom: 16,
-                      child: GestureDetector(
-                        onTap: () => _showTypePicker(context, false),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  _secondaryType == 'none' ? 'PURE ELEMENT (TAP TO ADD)' : 'SECONDARY TYPE',
-                                  style: TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w900,
-                                    color: isDark ? Colors.grey[400] : Colors.grey[700],
-                                    letterSpacing: 0.5,
-                                  ),
+                                    const SizedBox(width: 4),
+                                    Icon(Icons.arrow_drop_down_rounded, size: 16, color: primaryThemeColor),
+                                  ],
                                 ),
-                                const SizedBox(width: 4),
-                                Icon(Icons.arrow_drop_down_rounded, size: 16, color: secondaryThemeColor),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                              decoration: BoxDecoration(
-                                color: _secondaryType == 'none' ? Colors.transparent : secondaryThemeColor,
-                                borderRadius: BorderRadius.circular(12),
-                                border: _secondaryType == 'none' 
-                                    ? Border.all(color: isDark ? Colors.white38 : Colors.black38, width: 1.5)
-                                    : null,
-                                boxShadow: _secondaryType == 'none'
-                                    ? []
-                                    : [
-                                        BoxShadow(
-                                          color: secondaryThemeColor.withValues(alpha: 0.5),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 3),
+                                const SizedBox(height: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: primaryThemeColor,
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: primaryThemeColor.withValues(alpha: 0.5),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 3),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        _primaryType.toUpperCase(),
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w900,
+                                          color: Colors.white,
+                                          letterSpacing: 1.5,
                                         ),
-                                      ],
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    _secondaryType == 'none' ? '+ ADD TYPE' : _secondaryType.toUpperCase(),
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w900,
-                                      color: _secondaryType == 'none' 
-                                          ? (isDark ? Colors.white70 : Colors.black87) 
-                                          : Colors.white,
-                                      letterSpacing: 1.5,
-                                    ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      const Icon(Icons.touch_app_rounded, size: 14, color: Colors.white70),
+                                    ],
                                   ),
-                                  const SizedBox(width: 6),
-                                  Icon(
-                                    _secondaryType == 'none' ? Icons.add_circle_outline_rounded : Icons.touch_app_rounded,
-                                    size: 14,
-                                    color: _secondaryType == 'none' ? (isDark ? Colors.white70 : Colors.black87) : Colors.white70,
-                                  ),
-                                ],
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          if (_secondaryType != 'none')
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 8),
+                              child: Text(
+                                '/',
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white38,
+                                  fontStyle: FontStyle.italic,
+                                ),
                               ),
                             ),
-                          ],
-                        ),
+
+                          // Secondary Type Selector
+                          GestureDetector(
+                            onTap: () => _showTypePicker(context, false),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      _secondaryType == 'none' ? 'PURE (ADD SECOND)' : 'SECONDARY TYPE',
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w900,
+                                        color: isDark ? Colors.grey[400] : Colors.grey[700],
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Icon(Icons.arrow_drop_down_rounded, size: 16, color: secondaryThemeColor),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: _secondaryType == 'none' ? Colors.transparent : secondaryThemeColor,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: _secondaryType == 'none'
+                                        ? Border.all(color: isDark ? Colors.white38 : Colors.black38, width: 1.5)
+                                        : null,
+                                    boxShadow: _secondaryType == 'none'
+                                        ? []
+                                        : [
+                                            BoxShadow(
+                                              color: secondaryThemeColor.withValues(alpha: 0.5),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 3),
+                                            ),
+                                          ],
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        _secondaryType == 'none' ? '+ ADD TYPE' : _secondaryType.toUpperCase(),
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w900,
+                                          color: _secondaryType == 'none'
+                                              ? (isDark ? Colors.white70 : Colors.black87)
+                                              : Colors.white,
+                                          letterSpacing: 1.2,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Icon(
+                                        _secondaryType == 'none' ? Icons.add_circle_outline_rounded : Icons.touch_app_rounded,
+                                        size: 14,
+                                        color: _secondaryType == 'none' ? (isDark ? Colors.white70 : Colors.black87) : Colors.white70,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

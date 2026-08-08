@@ -509,8 +509,12 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
 
                       final List<int> sortedKeys = groupedMap.keys.toList();
                       sortedKeys.sort((a, b) {
-                        final pA = groupedMap[a]!.first;
-                        final pB = groupedMap[b]!.first;
+                        final listA = groupedMap[a];
+                        final listB = groupedMap[b];
+                        if (listA == null || listA.isEmpty) return 1;
+                        if (listB == null || listB.isEmpty) return -1;
+                        final pA = listA.first;
+                        final pB = listB.first;
                         switch (_sortOption) {
                           case 'id_desc':
                             return b.compareTo(a);
@@ -577,6 +581,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
 
                           sortedKeys.isEmpty
                               ? SliverFillRemaining(
+                                  hasScrollBody: false,
                                   child: AppEmptyState(
                                     icon: Icons.search_off_rounded,
                                     title: 'No Pokémon found',
@@ -600,7 +605,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                                     ),
                                     delegate: SliverChildBuilderDelegate(
                                       (context, index) {
-                                        final group = groupedMap[sortedKeys[index]]!;
+                                        final group = groupedMap[sortedKeys[index]] ?? [];
                                         return _buildPokemonCard(group, isDark, favoriteDexNumbers);
                                       },
                                       childCount: sortedKeys.length,

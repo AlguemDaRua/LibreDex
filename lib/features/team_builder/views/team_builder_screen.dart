@@ -35,7 +35,12 @@ class TeamBuilderScreen extends ConsumerWidget {
           children: [
             Icon(Icons.import_export_rounded, color: AppTheme.pokemonRed),
             SizedBox(width: 8),
-            Text('Export Showdown Team'),
+            Expanded(
+              child: Text(
+                'Export Showdown Team',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
         content: SelectableText(
@@ -61,7 +66,12 @@ class TeamBuilderScreen extends ConsumerWidget {
           children: [
             Icon(Icons.paste_rounded, color: AppTheme.pokemonRed),
             SizedBox(width: 8),
-            Text('Import Showdown Paste'),
+            Expanded(
+              child: Text(
+                'Import Showdown Paste',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
         content: TextField(
