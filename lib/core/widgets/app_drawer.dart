@@ -7,9 +7,9 @@ import 'package:libredex/core/theme/theme_switcher.dart';
 import 'package:libredex/features/pokedex/viewmodels/favorites_provider.dart';
 import 'package:libredex/features/pokedex/viewmodels/team_builder_provider.dart';
 
-/// Workspace & Quick Tools Drawer.
-/// Serves as a non-redundant productivity hub with active team slots,
-/// favorite counts, quick settings, and direct tool shortcuts.
+/// LEGACY workspace drawer — kept for deep-links but no longer used as primary nav.
+/// HomeScreen now owns the single adaptive bar/rail; inner screens are drawer-free.
+@Deprecated('HomeScreen owns navigation — use FeatureHubSheet or AppSection')
 class AppDrawer extends ConsumerWidget {
   final String currentRoute;
 

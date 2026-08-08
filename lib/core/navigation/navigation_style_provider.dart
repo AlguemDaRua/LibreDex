@@ -1,8 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+// LEGACY — kept only so existing installs that saved 'both'/'drawer' don't crash.
+// New installs use the adaptive bar/rail (see HomeScreen + AppSection) and never read this.
 const String _kNavStyleKey = 'user_navigation_style';
 
+@Deprecated('Replaced by adaptive AppSection + HomeScreen rail/bar — do not use in new code')
 final navigationStyleProvider = NotifierProvider<NavigationStyleNotifier, String>(
   NavigationStyleNotifier.new,
 );

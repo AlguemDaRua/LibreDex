@@ -56,7 +56,7 @@ class ComparisonEntry {
 
   // ── Champions Build ─────────────────────────────────────────────────────
 
-  /// Stat Points per stat (Champions only, 0–32 each, 65 total).
+  /// Stat Points per stat (Champions only, 0–32 each, 66 total).
   final Map<String, int> sps;
 
   // ── Shared Build ────────────────────────────────────────────────────────
