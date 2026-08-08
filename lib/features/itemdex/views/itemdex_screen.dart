@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/widgets/app_drawer.dart';
 import 'package:libredex/core/widgets/app_state_widgets.dart';
@@ -171,10 +172,11 @@ class _ItemCard extends StatelessWidget {
                     color: accent.withValues(alpha: 0.14),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Image.network(
-                    item.iconUrl,
+                  child: CachedNetworkImage(
+                    imageUrl: item.iconUrl,
                     fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => Icon(_itemIcon(item.category), color: accent),
+                    placeholder: (_, __) => Icon(Icons.inventory_2_outlined, color: accent.withValues(alpha: 0.35)),
+                    errorWidget: (_, __, ___) => Icon(_itemIcon(item.category), color: accent),
                   ),
                 ),
                 const SizedBox(width: 14),
@@ -246,10 +248,11 @@ class _ItemCard extends StatelessWidget {
                       width: 56,
                       height: 56,
                       decoration: BoxDecoration(color: accent.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(18)),
-                      child: Image.network(
-                        item.iconUrl,
+                      child: CachedNetworkImage(
+                        imageUrl: item.iconUrl,
                         fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => Icon(_itemIcon(item.category), color: accent, size: 30),
+                        placeholder: (_, __) => Icon(Icons.inventory_2_outlined, color: accent.withValues(alpha: 0.35), size: 30),
+                        errorWidget: (_, __, ___) => Icon(_itemIcon(item.category), color: accent, size: 30),
                       ),
                     ),
                     const SizedBox(width: 14),
