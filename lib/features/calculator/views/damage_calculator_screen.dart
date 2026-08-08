@@ -68,7 +68,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
   late TabController _tabController;
   List<Move> _dbDamagingMoves = [];
 
-  Move _simpleSelectedMove = const Move(id: 0, name: 'Custom Move', type: 'fire', pp: 15, damageClass: 'physical', power: 90);
+  Move _simpleSelectedMove = const Move(id: 0, name: 'Custom Move', type: 'fire', pp: 15, damageClass: 'physical', power: 90, priority: 0, isContact: false, isHealing: false, isSound: false, isPunching: false, isBiting: false, isPowder: false, isPulse: false, isBallistic: false, isSlicing: false, isWind: false, isDance: false, isBite: false, isMultiHit: false, isProtective: false, isSwitching: false, isRecharge: false, isRecoil: false, isDraining: false, isStatusMove: false, isDamagingMove: true, isSignatureMove: false, isDLCMove: false, isChampionsMove: false, isLegendsZAMove: false, generation: 1);
 
   @override
   void initState() {

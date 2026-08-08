@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:libredex/core/theme/app_theme.dart';
-import 'package:libredex/core/theme/app_spacing.dart';
 import 'package:libredex/core/widgets/app_drawer.dart';
 import 'package:libredex/core/widgets/dex_filter_bar.dart';
 import 'package:libredex/core/widgets/dex_sort_menu.dart';
@@ -102,8 +101,6 @@ class _NaturedexScreenState extends State<NaturedexScreen> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            final isDark = Theme.of(context).brightness == Brightness.dark;
-
             return DexFilterSheet(
               title: 'Nature Filters',
               hasActiveFilters: _hasActiveFilters,
@@ -327,7 +324,7 @@ class _NaturedexScreenState extends State<NaturedexScreen> {
                           Expanded(
                             child: ListView.separated(
                               itemCount: visibleNatures.length,
-                              separatorBuilder: (_, __) => Divider(height: 1, color: isDark ? const Color(0xFF222222) : const Color(0xFFE2E8F0)),
+                              separatorBuilder: (context, index) => Divider(height: 1, color: isDark ? const Color(0xFF222222) : const Color(0xFFE2E8F0)),
                               itemBuilder: (context, index) {
                                 final nature = visibleNatures[index];
                                 final inc = nature['increased']!;
@@ -363,7 +360,7 @@ class _NaturedexScreenState extends State<NaturedexScreen> {
                                       Expanded(
                                         flex: 3,
                                         child: Text(
-                                          isNeutral ? 'Neutral Alignment' : '${inc} Focused',
+                                          isNeutral ? 'Neutral Alignment' : '$inc Focused',
                                           style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 12),
                                         ),
                                       ),

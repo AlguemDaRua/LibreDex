@@ -23,6 +23,10 @@ void main() {
       isMythical: false,
       isParadox: false,
       isUltraBeast: false,
+      generation: 1,
+      evolutionStage: 1,
+      isChampions: false,
+      isLegendsZA: false,
     );
 
     const p2 = Pokemon(
@@ -44,6 +48,10 @@ void main() {
       isMythical: false,
       isParadox: false,
       isUltraBeast: false,
+      generation: 1,
+      evolutionStage: 1,
+      isChampions: false,
+      isLegendsZA: false,
     );
 
     test('exportTeam formats species names and forms accurately', () {

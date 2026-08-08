@@ -108,6 +108,13 @@ class SyncRepository {
       spriteUrl: (p['spriteUrl'] as String?) ?? '',
       shinySpriteUrl: (p['shinySpriteUrl'] as String?) ?? '',
       nationalDexNumber: (p['nationalDexNumber'] as int?) ?? p['id'] as int,
+      generation: (p['generation'] as int?) ?? 1,
+      evolutionStage: (p['evolutionStage'] as int?) ?? 0,
+      eggGroups: p['eggGroups'] as String?,
+      formSource: p['formSource'] as String?,
+      dlcSource: p['dlcSource'] as String?,
+      isChampions: (p['isChampions'] as bool?) ?? false,
+      isLegendsZA: (p['isLegendsZA'] as bool?) ?? false,
     );
   }
 
@@ -165,6 +172,7 @@ class SyncRepository {
       );
 
     final moves = (await _loadJsonList('assets/data/moves.json'))
+        .cast<Map<String, dynamic>>()
         .map((m) => Move(
               id: m['id'] as int,
               name: m['name'] as String,
@@ -174,14 +182,51 @@ class SyncRepository {
               pp: m['pp'] as int,
               damageClass: m['damageClass'] as String,
               description: m['description'] as String?,
+              priority: (m['priority'] as int?) ?? 0,
+              isContact: (m['isContact'] as bool?) ?? false,
+              isHealing: (m['isHealing'] as bool?) ?? false,
+              isSound: (m['isSound'] as bool?) ?? false,
+              isPunching: (m['isPunching'] as bool?) ?? false,
+              isBiting: (m['isBiting'] as bool?) ?? false,
+              isPowder: (m['isPowder'] as bool?) ?? false,
+              isPulse: (m['isPulse'] as bool?) ?? false,
+              isBallistic: (m['isBallistic'] as bool?) ?? false,
+              isSlicing: (m['isSlicing'] as bool?) ?? false,
+              isWind: (m['isWind'] as bool?) ?? false,
+              isDance: (m['isDance'] as bool?) ?? false,
+              isBite: (m['isBite'] as bool?) ?? false,
+              isMultiHit: (m['isMultiHit'] as bool?) ?? false,
+              isProtective: (m['isProtective'] as bool?) ?? false,
+              isSwitching: (m['isSwitching'] as bool?) ?? false,
+              isRecharge: (m['isRecharge'] as bool?) ?? false,
+              isRecoil: (m['isRecoil'] as bool?) ?? false,
+              isDraining: (m['isDraining'] as bool?) ?? false,
+              isStatusMove: (m['isStatusMove'] as bool?) ?? (m['damageClass'] == 'status'),
+              isDamagingMove: (m['isDamagingMove'] as bool?) ?? (m['damageClass'] != 'status'),
+              isSignatureMove: (m['isSignatureMove'] as bool?) ?? false,
+              isDLCMove: (m['isDLCMove'] as bool?) ?? false,
+              isChampionsMove: (m['isChampionsMove'] as bool?) ?? false,
+              isLegendsZAMove: (m['isLegendsZAMove'] as bool?) ?? false,
+              generation: (m['generation'] as int?) ?? 1,
+              introducedIn: m['introducedIn'] as String?,
             ))
         .toList();
 
     final abilities = (await _loadJsonList('assets/data/abilities.json'))
+        .cast<Map<String, dynamic>>()
         .map((a) => Ability(
               id: a['id'] as int,
               name: a['name'] as String,
               description: a['description'] as String,
+              generation: (a['generation'] as int?) ?? 1,
+              isHiddenAbility: (a['isHiddenAbility'] as bool?) ?? false,
+              isChampionsAbility: (a['isChampionsAbility'] as bool?) ?? false,
+              isLegendsZAAbility: (a['isLegendsZAAbility'] as bool?) ?? false,
+              introducedIn: a['introducedIn'] as String?,
+              sourceGames: a['sourceGames'] as String?,
+              effectTags: a['effectTags'] as String?,
+              battleEffectTags: a['battleEffectTags'] as String?,
+              pokemonTypes: a['pokemonTypes'] as String?,
             ))
         .toList()
       // Champions-only abilities (Mega Sol, Dragonize, ...) ship with the
@@ -192,6 +237,10 @@ class SyncRepository {
             id: a['id'] as int,
             name: a['name'] as String,
             description: a['description'] as String,
+            generation: (a['generation'] as int?) ?? 9,
+            isHiddenAbility: (a['isHiddenAbility'] as bool?) ?? false,
+            isChampionsAbility: (a['isChampionsAbility'] as bool?) ?? true,
+            isLegendsZAAbility: (a['isLegendsZAAbility'] as bool?) ?? false,
           ),
         ),
       );

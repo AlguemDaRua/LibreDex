@@ -208,6 +208,93 @@ class $PokemonTableTable extends PokemonTable
     requiredDuringInsert: false,
     defaultValue: Constant(0),
   );
+  static const VerificationMeta _generationMeta = const VerificationMeta(
+    'generation',
+  );
+  @override
+  late final GeneratedColumn<int> generation = GeneratedColumn<int>(
+    'generation',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: Constant(1),
+  );
+  static const VerificationMeta _evolutionStageMeta = const VerificationMeta(
+    'evolutionStage',
+  );
+  @override
+  late final GeneratedColumn<int> evolutionStage = GeneratedColumn<int>(
+    'evolution_stage',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: Constant(0),
+  );
+  static const VerificationMeta _eggGroupsMeta = const VerificationMeta(
+    'eggGroups',
+  );
+  @override
+  late final GeneratedColumn<String> eggGroups = GeneratedColumn<String>(
+    'egg_groups',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _formSourceMeta = const VerificationMeta(
+    'formSource',
+  );
+  @override
+  late final GeneratedColumn<String> formSource = GeneratedColumn<String>(
+    'form_source',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _dlcSourceMeta = const VerificationMeta(
+    'dlcSource',
+  );
+  @override
+  late final GeneratedColumn<String> dlcSource = GeneratedColumn<String>(
+    'dlc_source',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isChampionsMeta = const VerificationMeta(
+    'isChampions',
+  );
+  @override
+  late final GeneratedColumn<bool> isChampions = GeneratedColumn<bool>(
+    'is_champions',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_champions" IN (0, 1))',
+    ),
+    defaultValue: Constant(false),
+  );
+  static const VerificationMeta _isLegendsZAMeta = const VerificationMeta(
+    'isLegendsZA',
+  );
+  @override
+  late final GeneratedColumn<bool> isLegendsZA = GeneratedColumn<bool>(
+    'is_legends_z_a',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_legends_z_a" IN (0, 1))',
+    ),
+    defaultValue: Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -228,6 +315,13 @@ class $PokemonTableTable extends PokemonTable
     spriteUrl,
     shinySpriteUrl,
     nationalDexNumber,
+    generation,
+    evolutionStage,
+    eggGroups,
+    formSource,
+    dlcSource,
+    isChampions,
+    isLegendsZA,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -388,6 +482,57 @@ class $PokemonTableTable extends PokemonTable
         ),
       );
     }
+    if (data.containsKey('generation')) {
+      context.handle(
+        _generationMeta,
+        generation.isAcceptableOrUnknown(data['generation']!, _generationMeta),
+      );
+    }
+    if (data.containsKey('evolution_stage')) {
+      context.handle(
+        _evolutionStageMeta,
+        evolutionStage.isAcceptableOrUnknown(
+          data['evolution_stage']!,
+          _evolutionStageMeta,
+        ),
+      );
+    }
+    if (data.containsKey('egg_groups')) {
+      context.handle(
+        _eggGroupsMeta,
+        eggGroups.isAcceptableOrUnknown(data['egg_groups']!, _eggGroupsMeta),
+      );
+    }
+    if (data.containsKey('form_source')) {
+      context.handle(
+        _formSourceMeta,
+        formSource.isAcceptableOrUnknown(data['form_source']!, _formSourceMeta),
+      );
+    }
+    if (data.containsKey('dlc_source')) {
+      context.handle(
+        _dlcSourceMeta,
+        dlcSource.isAcceptableOrUnknown(data['dlc_source']!, _dlcSourceMeta),
+      );
+    }
+    if (data.containsKey('is_champions')) {
+      context.handle(
+        _isChampionsMeta,
+        isChampions.isAcceptableOrUnknown(
+          data['is_champions']!,
+          _isChampionsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_legends_z_a')) {
+      context.handle(
+        _isLegendsZAMeta,
+        isLegendsZA.isAcceptableOrUnknown(
+          data['is_legends_z_a']!,
+          _isLegendsZAMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -469,6 +614,34 @@ class $PokemonTableTable extends PokemonTable
         DriftSqlType.int,
         data['${effectivePrefix}national_dex_number'],
       )!,
+      generation: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}generation'],
+      )!,
+      evolutionStage: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}evolution_stage'],
+      )!,
+      eggGroups: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}egg_groups'],
+      ),
+      formSource: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}form_source'],
+      ),
+      dlcSource: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}dlc_source'],
+      ),
+      isChampions: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_champions'],
+      )!,
+      isLegendsZA: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_legends_z_a'],
+      )!,
     );
   }
 
@@ -497,6 +670,13 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
   final String spriteUrl;
   final String shinySpriteUrl;
   final int nationalDexNumber;
+  final int generation;
+  final int evolutionStage;
+  final String? eggGroups;
+  final String? formSource;
+  final String? dlcSource;
+  final bool isChampions;
+  final bool isLegendsZA;
   const Pokemon({
     required this.id,
     required this.name,
@@ -516,6 +696,13 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
     required this.spriteUrl,
     required this.shinySpriteUrl,
     required this.nationalDexNumber,
+    required this.generation,
+    required this.evolutionStage,
+    this.eggGroups,
+    this.formSource,
+    this.dlcSource,
+    required this.isChampions,
+    required this.isLegendsZA,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -540,6 +727,19 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
     map['sprite_url'] = Variable<String>(spriteUrl);
     map['shiny_sprite_url'] = Variable<String>(shinySpriteUrl);
     map['national_dex_number'] = Variable<int>(nationalDexNumber);
+    map['generation'] = Variable<int>(generation);
+    map['evolution_stage'] = Variable<int>(evolutionStage);
+    if (!nullToAbsent || eggGroups != null) {
+      map['egg_groups'] = Variable<String>(eggGroups);
+    }
+    if (!nullToAbsent || formSource != null) {
+      map['form_source'] = Variable<String>(formSource);
+    }
+    if (!nullToAbsent || dlcSource != null) {
+      map['dlc_source'] = Variable<String>(dlcSource);
+    }
+    map['is_champions'] = Variable<bool>(isChampions);
+    map['is_legends_z_a'] = Variable<bool>(isLegendsZA);
     return map;
   }
 
@@ -565,6 +765,19 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
       spriteUrl: Value(spriteUrl),
       shinySpriteUrl: Value(shinySpriteUrl),
       nationalDexNumber: Value(nationalDexNumber),
+      generation: Value(generation),
+      evolutionStage: Value(evolutionStage),
+      eggGroups: eggGroups == null && nullToAbsent
+          ? const Value.absent()
+          : Value(eggGroups),
+      formSource: formSource == null && nullToAbsent
+          ? const Value.absent()
+          : Value(formSource),
+      dlcSource: dlcSource == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dlcSource),
+      isChampions: Value(isChampions),
+      isLegendsZA: Value(isLegendsZA),
     );
   }
 
@@ -592,6 +805,13 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
       spriteUrl: serializer.fromJson<String>(json['spriteUrl']),
       shinySpriteUrl: serializer.fromJson<String>(json['shinySpriteUrl']),
       nationalDexNumber: serializer.fromJson<int>(json['nationalDexNumber']),
+      generation: serializer.fromJson<int>(json['generation']),
+      evolutionStage: serializer.fromJson<int>(json['evolutionStage']),
+      eggGroups: serializer.fromJson<String?>(json['eggGroups']),
+      formSource: serializer.fromJson<String?>(json['formSource']),
+      dlcSource: serializer.fromJson<String?>(json['dlcSource']),
+      isChampions: serializer.fromJson<bool>(json['isChampions']),
+      isLegendsZA: serializer.fromJson<bool>(json['isLegendsZA']),
     );
   }
   @override
@@ -616,6 +836,13 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
       'spriteUrl': serializer.toJson<String>(spriteUrl),
       'shinySpriteUrl': serializer.toJson<String>(shinySpriteUrl),
       'nationalDexNumber': serializer.toJson<int>(nationalDexNumber),
+      'generation': serializer.toJson<int>(generation),
+      'evolutionStage': serializer.toJson<int>(evolutionStage),
+      'eggGroups': serializer.toJson<String?>(eggGroups),
+      'formSource': serializer.toJson<String?>(formSource),
+      'dlcSource': serializer.toJson<String?>(dlcSource),
+      'isChampions': serializer.toJson<bool>(isChampions),
+      'isLegendsZA': serializer.toJson<bool>(isLegendsZA),
     };
   }
 
@@ -638,6 +865,13 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
     String? spriteUrl,
     String? shinySpriteUrl,
     int? nationalDexNumber,
+    int? generation,
+    int? evolutionStage,
+    Value<String?> eggGroups = const Value.absent(),
+    Value<String?> formSource = const Value.absent(),
+    Value<String?> dlcSource = const Value.absent(),
+    bool? isChampions,
+    bool? isLegendsZA,
   }) => Pokemon(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -657,6 +891,13 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
     spriteUrl: spriteUrl ?? this.spriteUrl,
     shinySpriteUrl: shinySpriteUrl ?? this.shinySpriteUrl,
     nationalDexNumber: nationalDexNumber ?? this.nationalDexNumber,
+    generation: generation ?? this.generation,
+    evolutionStage: evolutionStage ?? this.evolutionStage,
+    eggGroups: eggGroups.present ? eggGroups.value : this.eggGroups,
+    formSource: formSource.present ? formSource.value : this.formSource,
+    dlcSource: dlcSource.present ? dlcSource.value : this.dlcSource,
+    isChampions: isChampions ?? this.isChampions,
+    isLegendsZA: isLegendsZA ?? this.isLegendsZA,
   );
   Pokemon copyWithCompanion(PokemonTableCompanion data) {
     return Pokemon(
@@ -688,6 +929,23 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
       nationalDexNumber: data.nationalDexNumber.present
           ? data.nationalDexNumber.value
           : this.nationalDexNumber,
+      generation: data.generation.present
+          ? data.generation.value
+          : this.generation,
+      evolutionStage: data.evolutionStage.present
+          ? data.evolutionStage.value
+          : this.evolutionStage,
+      eggGroups: data.eggGroups.present ? data.eggGroups.value : this.eggGroups,
+      formSource: data.formSource.present
+          ? data.formSource.value
+          : this.formSource,
+      dlcSource: data.dlcSource.present ? data.dlcSource.value : this.dlcSource,
+      isChampions: data.isChampions.present
+          ? data.isChampions.value
+          : this.isChampions,
+      isLegendsZA: data.isLegendsZA.present
+          ? data.isLegendsZA.value
+          : this.isLegendsZA,
     );
   }
 
@@ -711,13 +969,20 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
           ..write('isUltraBeast: $isUltraBeast, ')
           ..write('spriteUrl: $spriteUrl, ')
           ..write('shinySpriteUrl: $shinySpriteUrl, ')
-          ..write('nationalDexNumber: $nationalDexNumber')
+          ..write('nationalDexNumber: $nationalDexNumber, ')
+          ..write('generation: $generation, ')
+          ..write('evolutionStage: $evolutionStage, ')
+          ..write('eggGroups: $eggGroups, ')
+          ..write('formSource: $formSource, ')
+          ..write('dlcSource: $dlcSource, ')
+          ..write('isChampions: $isChampions, ')
+          ..write('isLegendsZA: $isLegendsZA')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     name,
     form,
@@ -736,7 +1001,14 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
     spriteUrl,
     shinySpriteUrl,
     nationalDexNumber,
-  );
+    generation,
+    evolutionStage,
+    eggGroups,
+    formSource,
+    dlcSource,
+    isChampions,
+    isLegendsZA,
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -758,7 +1030,14 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
           other.isUltraBeast == this.isUltraBeast &&
           other.spriteUrl == this.spriteUrl &&
           other.shinySpriteUrl == this.shinySpriteUrl &&
-          other.nationalDexNumber == this.nationalDexNumber);
+          other.nationalDexNumber == this.nationalDexNumber &&
+          other.generation == this.generation &&
+          other.evolutionStage == this.evolutionStage &&
+          other.eggGroups == this.eggGroups &&
+          other.formSource == this.formSource &&
+          other.dlcSource == this.dlcSource &&
+          other.isChampions == this.isChampions &&
+          other.isLegendsZA == this.isLegendsZA);
 }
 
 class PokemonTableCompanion extends UpdateCompanion<Pokemon> {
@@ -780,6 +1059,13 @@ class PokemonTableCompanion extends UpdateCompanion<Pokemon> {
   final Value<String> spriteUrl;
   final Value<String> shinySpriteUrl;
   final Value<int> nationalDexNumber;
+  final Value<int> generation;
+  final Value<int> evolutionStage;
+  final Value<String?> eggGroups;
+  final Value<String?> formSource;
+  final Value<String?> dlcSource;
+  final Value<bool> isChampions;
+  final Value<bool> isLegendsZA;
   const PokemonTableCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -799,6 +1085,13 @@ class PokemonTableCompanion extends UpdateCompanion<Pokemon> {
     this.spriteUrl = const Value.absent(),
     this.shinySpriteUrl = const Value.absent(),
     this.nationalDexNumber = const Value.absent(),
+    this.generation = const Value.absent(),
+    this.evolutionStage = const Value.absent(),
+    this.eggGroups = const Value.absent(),
+    this.formSource = const Value.absent(),
+    this.dlcSource = const Value.absent(),
+    this.isChampions = const Value.absent(),
+    this.isLegendsZA = const Value.absent(),
   });
   PokemonTableCompanion.insert({
     this.id = const Value.absent(),
@@ -819,6 +1112,13 @@ class PokemonTableCompanion extends UpdateCompanion<Pokemon> {
     required String spriteUrl,
     required String shinySpriteUrl,
     this.nationalDexNumber = const Value.absent(),
+    this.generation = const Value.absent(),
+    this.evolutionStage = const Value.absent(),
+    this.eggGroups = const Value.absent(),
+    this.formSource = const Value.absent(),
+    this.dlcSource = const Value.absent(),
+    this.isChampions = const Value.absent(),
+    this.isLegendsZA = const Value.absent(),
   }) : name = Value(name),
        form = Value(form),
        type1 = Value(type1),
@@ -853,6 +1153,13 @@ class PokemonTableCompanion extends UpdateCompanion<Pokemon> {
     Expression<String>? spriteUrl,
     Expression<String>? shinySpriteUrl,
     Expression<int>? nationalDexNumber,
+    Expression<int>? generation,
+    Expression<int>? evolutionStage,
+    Expression<String>? eggGroups,
+    Expression<String>? formSource,
+    Expression<String>? dlcSource,
+    Expression<bool>? isChampions,
+    Expression<bool>? isLegendsZA,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -873,6 +1180,13 @@ class PokemonTableCompanion extends UpdateCompanion<Pokemon> {
       if (spriteUrl != null) 'sprite_url': spriteUrl,
       if (shinySpriteUrl != null) 'shiny_sprite_url': shinySpriteUrl,
       if (nationalDexNumber != null) 'national_dex_number': nationalDexNumber,
+      if (generation != null) 'generation': generation,
+      if (evolutionStage != null) 'evolution_stage': evolutionStage,
+      if (eggGroups != null) 'egg_groups': eggGroups,
+      if (formSource != null) 'form_source': formSource,
+      if (dlcSource != null) 'dlc_source': dlcSource,
+      if (isChampions != null) 'is_champions': isChampions,
+      if (isLegendsZA != null) 'is_legends_z_a': isLegendsZA,
     });
   }
 
@@ -895,6 +1209,13 @@ class PokemonTableCompanion extends UpdateCompanion<Pokemon> {
     Value<String>? spriteUrl,
     Value<String>? shinySpriteUrl,
     Value<int>? nationalDexNumber,
+    Value<int>? generation,
+    Value<int>? evolutionStage,
+    Value<String?>? eggGroups,
+    Value<String?>? formSource,
+    Value<String?>? dlcSource,
+    Value<bool>? isChampions,
+    Value<bool>? isLegendsZA,
   }) {
     return PokemonTableCompanion(
       id: id ?? this.id,
@@ -915,6 +1236,13 @@ class PokemonTableCompanion extends UpdateCompanion<Pokemon> {
       spriteUrl: spriteUrl ?? this.spriteUrl,
       shinySpriteUrl: shinySpriteUrl ?? this.shinySpriteUrl,
       nationalDexNumber: nationalDexNumber ?? this.nationalDexNumber,
+      generation: generation ?? this.generation,
+      evolutionStage: evolutionStage ?? this.evolutionStage,
+      eggGroups: eggGroups ?? this.eggGroups,
+      formSource: formSource ?? this.formSource,
+      dlcSource: dlcSource ?? this.dlcSource,
+      isChampions: isChampions ?? this.isChampions,
+      isLegendsZA: isLegendsZA ?? this.isLegendsZA,
     );
   }
 
@@ -975,6 +1303,27 @@ class PokemonTableCompanion extends UpdateCompanion<Pokemon> {
     if (nationalDexNumber.present) {
       map['national_dex_number'] = Variable<int>(nationalDexNumber.value);
     }
+    if (generation.present) {
+      map['generation'] = Variable<int>(generation.value);
+    }
+    if (evolutionStage.present) {
+      map['evolution_stage'] = Variable<int>(evolutionStage.value);
+    }
+    if (eggGroups.present) {
+      map['egg_groups'] = Variable<String>(eggGroups.value);
+    }
+    if (formSource.present) {
+      map['form_source'] = Variable<String>(formSource.value);
+    }
+    if (dlcSource.present) {
+      map['dlc_source'] = Variable<String>(dlcSource.value);
+    }
+    if (isChampions.present) {
+      map['is_champions'] = Variable<bool>(isChampions.value);
+    }
+    if (isLegendsZA.present) {
+      map['is_legends_z_a'] = Variable<bool>(isLegendsZA.value);
+    }
     return map;
   }
 
@@ -998,7 +1347,14 @@ class PokemonTableCompanion extends UpdateCompanion<Pokemon> {
           ..write('isUltraBeast: $isUltraBeast, ')
           ..write('spriteUrl: $spriteUrl, ')
           ..write('shinySpriteUrl: $shinySpriteUrl, ')
-          ..write('nationalDexNumber: $nationalDexNumber')
+          ..write('nationalDexNumber: $nationalDexNumber, ')
+          ..write('generation: $generation, ')
+          ..write('evolutionStage: $evolutionStage, ')
+          ..write('eggGroups: $eggGroups, ')
+          ..write('formSource: $formSource, ')
+          ..write('dlcSource: $dlcSource, ')
+          ..write('isChampions: $isChampions, ')
+          ..write('isLegendsZA: $isLegendsZA')
           ..write(')'))
         .toString();
   }
@@ -1087,6 +1443,397 @@ class $MoveTableTable extends MoveTable with TableInfo<$MoveTableTable, Move> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _priorityMeta = const VerificationMeta(
+    'priority',
+  );
+  @override
+  late final GeneratedColumn<int> priority = GeneratedColumn<int>(
+    'priority',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: Constant(0),
+  );
+  static const VerificationMeta _isContactMeta = const VerificationMeta(
+    'isContact',
+  );
+  @override
+  late final GeneratedColumn<bool> isContact = GeneratedColumn<bool>(
+    'is_contact',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_contact" IN (0, 1))',
+    ),
+    defaultValue: Constant(false),
+  );
+  static const VerificationMeta _isHealingMeta = const VerificationMeta(
+    'isHealing',
+  );
+  @override
+  late final GeneratedColumn<bool> isHealing = GeneratedColumn<bool>(
+    'is_healing',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_healing" IN (0, 1))',
+    ),
+    defaultValue: Constant(false),
+  );
+  static const VerificationMeta _isSoundMeta = const VerificationMeta(
+    'isSound',
+  );
+  @override
+  late final GeneratedColumn<bool> isSound = GeneratedColumn<bool>(
+    'is_sound',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_sound" IN (0, 1))',
+    ),
+    defaultValue: Constant(false),
+  );
+  static const VerificationMeta _isPunchingMeta = const VerificationMeta(
+    'isPunching',
+  );
+  @override
+  late final GeneratedColumn<bool> isPunching = GeneratedColumn<bool>(
+    'is_punching',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_punching" IN (0, 1))',
+    ),
+    defaultValue: Constant(false),
+  );
+  static const VerificationMeta _isBitingMeta = const VerificationMeta(
+    'isBiting',
+  );
+  @override
+  late final GeneratedColumn<bool> isBiting = GeneratedColumn<bool>(
+    'is_biting',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_biting" IN (0, 1))',
+    ),
+    defaultValue: Constant(false),
+  );
+  static const VerificationMeta _isPowderMeta = const VerificationMeta(
+    'isPowder',
+  );
+  @override
+  late final GeneratedColumn<bool> isPowder = GeneratedColumn<bool>(
+    'is_powder',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_powder" IN (0, 1))',
+    ),
+    defaultValue: Constant(false),
+  );
+  static const VerificationMeta _isPulseMeta = const VerificationMeta(
+    'isPulse',
+  );
+  @override
+  late final GeneratedColumn<bool> isPulse = GeneratedColumn<bool>(
+    'is_pulse',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_pulse" IN (0, 1))',
+    ),
+    defaultValue: Constant(false),
+  );
+  static const VerificationMeta _isBallisticMeta = const VerificationMeta(
+    'isBallistic',
+  );
+  @override
+  late final GeneratedColumn<bool> isBallistic = GeneratedColumn<bool>(
+    'is_ballistic',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_ballistic" IN (0, 1))',
+    ),
+    defaultValue: Constant(false),
+  );
+  static const VerificationMeta _isSlicingMeta = const VerificationMeta(
+    'isSlicing',
+  );
+  @override
+  late final GeneratedColumn<bool> isSlicing = GeneratedColumn<bool>(
+    'is_slicing',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_slicing" IN (0, 1))',
+    ),
+    defaultValue: Constant(false),
+  );
+  static const VerificationMeta _isWindMeta = const VerificationMeta('isWind');
+  @override
+  late final GeneratedColumn<bool> isWind = GeneratedColumn<bool>(
+    'is_wind',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_wind" IN (0, 1))',
+    ),
+    defaultValue: Constant(false),
+  );
+  static const VerificationMeta _isDanceMeta = const VerificationMeta(
+    'isDance',
+  );
+  @override
+  late final GeneratedColumn<bool> isDance = GeneratedColumn<bool>(
+    'is_dance',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_dance" IN (0, 1))',
+    ),
+    defaultValue: Constant(false),
+  );
+  static const VerificationMeta _isBiteMeta = const VerificationMeta('isBite');
+  @override
+  late final GeneratedColumn<bool> isBite = GeneratedColumn<bool>(
+    'is_bite',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_bite" IN (0, 1))',
+    ),
+    defaultValue: Constant(false),
+  );
+  static const VerificationMeta _isMultiHitMeta = const VerificationMeta(
+    'isMultiHit',
+  );
+  @override
+  late final GeneratedColumn<bool> isMultiHit = GeneratedColumn<bool>(
+    'is_multi_hit',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_multi_hit" IN (0, 1))',
+    ),
+    defaultValue: Constant(false),
+  );
+  static const VerificationMeta _isProtectiveMeta = const VerificationMeta(
+    'isProtective',
+  );
+  @override
+  late final GeneratedColumn<bool> isProtective = GeneratedColumn<bool>(
+    'is_protective',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_protective" IN (0, 1))',
+    ),
+    defaultValue: Constant(false),
+  );
+  static const VerificationMeta _isSwitchingMeta = const VerificationMeta(
+    'isSwitching',
+  );
+  @override
+  late final GeneratedColumn<bool> isSwitching = GeneratedColumn<bool>(
+    'is_switching',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_switching" IN (0, 1))',
+    ),
+    defaultValue: Constant(false),
+  );
+  static const VerificationMeta _isRechargeMeta = const VerificationMeta(
+    'isRecharge',
+  );
+  @override
+  late final GeneratedColumn<bool> isRecharge = GeneratedColumn<bool>(
+    'is_recharge',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_recharge" IN (0, 1))',
+    ),
+    defaultValue: Constant(false),
+  );
+  static const VerificationMeta _isRecoilMeta = const VerificationMeta(
+    'isRecoil',
+  );
+  @override
+  late final GeneratedColumn<bool> isRecoil = GeneratedColumn<bool>(
+    'is_recoil',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_recoil" IN (0, 1))',
+    ),
+    defaultValue: Constant(false),
+  );
+  static const VerificationMeta _isDrainingMeta = const VerificationMeta(
+    'isDraining',
+  );
+  @override
+  late final GeneratedColumn<bool> isDraining = GeneratedColumn<bool>(
+    'is_draining',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_draining" IN (0, 1))',
+    ),
+    defaultValue: Constant(false),
+  );
+  static const VerificationMeta _isStatusMoveMeta = const VerificationMeta(
+    'isStatusMove',
+  );
+  @override
+  late final GeneratedColumn<bool> isStatusMove = GeneratedColumn<bool>(
+    'is_status_move',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_status_move" IN (0, 1))',
+    ),
+    defaultValue: Constant(false),
+  );
+  static const VerificationMeta _isDamagingMoveMeta = const VerificationMeta(
+    'isDamagingMove',
+  );
+  @override
+  late final GeneratedColumn<bool> isDamagingMove = GeneratedColumn<bool>(
+    'is_damaging_move',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_damaging_move" IN (0, 1))',
+    ),
+    defaultValue: Constant(false),
+  );
+  static const VerificationMeta _isSignatureMoveMeta = const VerificationMeta(
+    'isSignatureMove',
+  );
+  @override
+  late final GeneratedColumn<bool> isSignatureMove = GeneratedColumn<bool>(
+    'is_signature_move',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_signature_move" IN (0, 1))',
+    ),
+    defaultValue: Constant(false),
+  );
+  static const VerificationMeta _isDLCMoveMeta = const VerificationMeta(
+    'isDLCMove',
+  );
+  @override
+  late final GeneratedColumn<bool> isDLCMove = GeneratedColumn<bool>(
+    'is_d_l_c_move',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_d_l_c_move" IN (0, 1))',
+    ),
+    defaultValue: Constant(false),
+  );
+  static const VerificationMeta _isChampionsMoveMeta = const VerificationMeta(
+    'isChampionsMove',
+  );
+  @override
+  late final GeneratedColumn<bool> isChampionsMove = GeneratedColumn<bool>(
+    'is_champions_move',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_champions_move" IN (0, 1))',
+    ),
+    defaultValue: Constant(false),
+  );
+  static const VerificationMeta _isLegendsZAMoveMeta = const VerificationMeta(
+    'isLegendsZAMove',
+  );
+  @override
+  late final GeneratedColumn<bool> isLegendsZAMove = GeneratedColumn<bool>(
+    'is_legends_z_a_move',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_legends_z_a_move" IN (0, 1))',
+    ),
+    defaultValue: Constant(false),
+  );
+  static const VerificationMeta _generationMeta = const VerificationMeta(
+    'generation',
+  );
+  @override
+  late final GeneratedColumn<int> generation = GeneratedColumn<int>(
+    'generation',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: Constant(1),
+  );
+  static const VerificationMeta _introducedInMeta = const VerificationMeta(
+    'introducedIn',
+  );
+  @override
+  late final GeneratedColumn<String> introducedIn = GeneratedColumn<String>(
+    'introduced_in',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1097,6 +1844,33 @@ class $MoveTableTable extends MoveTable with TableInfo<$MoveTableTable, Move> {
     pp,
     damageClass,
     description,
+    priority,
+    isContact,
+    isHealing,
+    isSound,
+    isPunching,
+    isBiting,
+    isPowder,
+    isPulse,
+    isBallistic,
+    isSlicing,
+    isWind,
+    isDance,
+    isBite,
+    isMultiHit,
+    isProtective,
+    isSwitching,
+    isRecharge,
+    isRecoil,
+    isDraining,
+    isStatusMove,
+    isDamagingMove,
+    isSignatureMove,
+    isDLCMove,
+    isChampionsMove,
+    isLegendsZAMove,
+    generation,
+    introducedIn,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1166,6 +1940,198 @@ class $MoveTableTable extends MoveTable with TableInfo<$MoveTableTable, Move> {
         ),
       );
     }
+    if (data.containsKey('priority')) {
+      context.handle(
+        _priorityMeta,
+        priority.isAcceptableOrUnknown(data['priority']!, _priorityMeta),
+      );
+    }
+    if (data.containsKey('is_contact')) {
+      context.handle(
+        _isContactMeta,
+        isContact.isAcceptableOrUnknown(data['is_contact']!, _isContactMeta),
+      );
+    }
+    if (data.containsKey('is_healing')) {
+      context.handle(
+        _isHealingMeta,
+        isHealing.isAcceptableOrUnknown(data['is_healing']!, _isHealingMeta),
+      );
+    }
+    if (data.containsKey('is_sound')) {
+      context.handle(
+        _isSoundMeta,
+        isSound.isAcceptableOrUnknown(data['is_sound']!, _isSoundMeta),
+      );
+    }
+    if (data.containsKey('is_punching')) {
+      context.handle(
+        _isPunchingMeta,
+        isPunching.isAcceptableOrUnknown(data['is_punching']!, _isPunchingMeta),
+      );
+    }
+    if (data.containsKey('is_biting')) {
+      context.handle(
+        _isBitingMeta,
+        isBiting.isAcceptableOrUnknown(data['is_biting']!, _isBitingMeta),
+      );
+    }
+    if (data.containsKey('is_powder')) {
+      context.handle(
+        _isPowderMeta,
+        isPowder.isAcceptableOrUnknown(data['is_powder']!, _isPowderMeta),
+      );
+    }
+    if (data.containsKey('is_pulse')) {
+      context.handle(
+        _isPulseMeta,
+        isPulse.isAcceptableOrUnknown(data['is_pulse']!, _isPulseMeta),
+      );
+    }
+    if (data.containsKey('is_ballistic')) {
+      context.handle(
+        _isBallisticMeta,
+        isBallistic.isAcceptableOrUnknown(
+          data['is_ballistic']!,
+          _isBallisticMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_slicing')) {
+      context.handle(
+        _isSlicingMeta,
+        isSlicing.isAcceptableOrUnknown(data['is_slicing']!, _isSlicingMeta),
+      );
+    }
+    if (data.containsKey('is_wind')) {
+      context.handle(
+        _isWindMeta,
+        isWind.isAcceptableOrUnknown(data['is_wind']!, _isWindMeta),
+      );
+    }
+    if (data.containsKey('is_dance')) {
+      context.handle(
+        _isDanceMeta,
+        isDance.isAcceptableOrUnknown(data['is_dance']!, _isDanceMeta),
+      );
+    }
+    if (data.containsKey('is_bite')) {
+      context.handle(
+        _isBiteMeta,
+        isBite.isAcceptableOrUnknown(data['is_bite']!, _isBiteMeta),
+      );
+    }
+    if (data.containsKey('is_multi_hit')) {
+      context.handle(
+        _isMultiHitMeta,
+        isMultiHit.isAcceptableOrUnknown(
+          data['is_multi_hit']!,
+          _isMultiHitMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_protective')) {
+      context.handle(
+        _isProtectiveMeta,
+        isProtective.isAcceptableOrUnknown(
+          data['is_protective']!,
+          _isProtectiveMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_switching')) {
+      context.handle(
+        _isSwitchingMeta,
+        isSwitching.isAcceptableOrUnknown(
+          data['is_switching']!,
+          _isSwitchingMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_recharge')) {
+      context.handle(
+        _isRechargeMeta,
+        isRecharge.isAcceptableOrUnknown(data['is_recharge']!, _isRechargeMeta),
+      );
+    }
+    if (data.containsKey('is_recoil')) {
+      context.handle(
+        _isRecoilMeta,
+        isRecoil.isAcceptableOrUnknown(data['is_recoil']!, _isRecoilMeta),
+      );
+    }
+    if (data.containsKey('is_draining')) {
+      context.handle(
+        _isDrainingMeta,
+        isDraining.isAcceptableOrUnknown(data['is_draining']!, _isDrainingMeta),
+      );
+    }
+    if (data.containsKey('is_status_move')) {
+      context.handle(
+        _isStatusMoveMeta,
+        isStatusMove.isAcceptableOrUnknown(
+          data['is_status_move']!,
+          _isStatusMoveMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_damaging_move')) {
+      context.handle(
+        _isDamagingMoveMeta,
+        isDamagingMove.isAcceptableOrUnknown(
+          data['is_damaging_move']!,
+          _isDamagingMoveMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_signature_move')) {
+      context.handle(
+        _isSignatureMoveMeta,
+        isSignatureMove.isAcceptableOrUnknown(
+          data['is_signature_move']!,
+          _isSignatureMoveMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_d_l_c_move')) {
+      context.handle(
+        _isDLCMoveMeta,
+        isDLCMove.isAcceptableOrUnknown(data['is_d_l_c_move']!, _isDLCMoveMeta),
+      );
+    }
+    if (data.containsKey('is_champions_move')) {
+      context.handle(
+        _isChampionsMoveMeta,
+        isChampionsMove.isAcceptableOrUnknown(
+          data['is_champions_move']!,
+          _isChampionsMoveMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_legends_z_a_move')) {
+      context.handle(
+        _isLegendsZAMoveMeta,
+        isLegendsZAMove.isAcceptableOrUnknown(
+          data['is_legends_z_a_move']!,
+          _isLegendsZAMoveMeta,
+        ),
+      );
+    }
+    if (data.containsKey('generation')) {
+      context.handle(
+        _generationMeta,
+        generation.isAcceptableOrUnknown(data['generation']!, _generationMeta),
+      );
+    }
+    if (data.containsKey('introduced_in')) {
+      context.handle(
+        _introducedInMeta,
+        introducedIn.isAcceptableOrUnknown(
+          data['introduced_in']!,
+          _introducedInMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1207,6 +2173,114 @@ class $MoveTableTable extends MoveTable with TableInfo<$MoveTableTable, Move> {
         DriftSqlType.string,
         data['${effectivePrefix}description'],
       ),
+      priority: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}priority'],
+      )!,
+      isContact: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_contact'],
+      )!,
+      isHealing: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_healing'],
+      )!,
+      isSound: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_sound'],
+      )!,
+      isPunching: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_punching'],
+      )!,
+      isBiting: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_biting'],
+      )!,
+      isPowder: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_powder'],
+      )!,
+      isPulse: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_pulse'],
+      )!,
+      isBallistic: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_ballistic'],
+      )!,
+      isSlicing: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_slicing'],
+      )!,
+      isWind: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_wind'],
+      )!,
+      isDance: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_dance'],
+      )!,
+      isBite: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_bite'],
+      )!,
+      isMultiHit: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_multi_hit'],
+      )!,
+      isProtective: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_protective'],
+      )!,
+      isSwitching: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_switching'],
+      )!,
+      isRecharge: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_recharge'],
+      )!,
+      isRecoil: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_recoil'],
+      )!,
+      isDraining: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_draining'],
+      )!,
+      isStatusMove: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_status_move'],
+      )!,
+      isDamagingMove: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_damaging_move'],
+      )!,
+      isSignatureMove: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_signature_move'],
+      )!,
+      isDLCMove: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_d_l_c_move'],
+      )!,
+      isChampionsMove: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_champions_move'],
+      )!,
+      isLegendsZAMove: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_legends_z_a_move'],
+      )!,
+      generation: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}generation'],
+      )!,
+      introducedIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}introduced_in'],
+      ),
     );
   }
 
@@ -1225,6 +2299,33 @@ class Move extends DataClass implements Insertable<Move> {
   final int pp;
   final String damageClass;
   final String? description;
+  final int priority;
+  final bool isContact;
+  final bool isHealing;
+  final bool isSound;
+  final bool isPunching;
+  final bool isBiting;
+  final bool isPowder;
+  final bool isPulse;
+  final bool isBallistic;
+  final bool isSlicing;
+  final bool isWind;
+  final bool isDance;
+  final bool isBite;
+  final bool isMultiHit;
+  final bool isProtective;
+  final bool isSwitching;
+  final bool isRecharge;
+  final bool isRecoil;
+  final bool isDraining;
+  final bool isStatusMove;
+  final bool isDamagingMove;
+  final bool isSignatureMove;
+  final bool isDLCMove;
+  final bool isChampionsMove;
+  final bool isLegendsZAMove;
+  final int generation;
+  final String? introducedIn;
   const Move({
     required this.id,
     required this.name,
@@ -1234,6 +2335,33 @@ class Move extends DataClass implements Insertable<Move> {
     required this.pp,
     required this.damageClass,
     this.description,
+    required this.priority,
+    required this.isContact,
+    required this.isHealing,
+    required this.isSound,
+    required this.isPunching,
+    required this.isBiting,
+    required this.isPowder,
+    required this.isPulse,
+    required this.isBallistic,
+    required this.isSlicing,
+    required this.isWind,
+    required this.isDance,
+    required this.isBite,
+    required this.isMultiHit,
+    required this.isProtective,
+    required this.isSwitching,
+    required this.isRecharge,
+    required this.isRecoil,
+    required this.isDraining,
+    required this.isStatusMove,
+    required this.isDamagingMove,
+    required this.isSignatureMove,
+    required this.isDLCMove,
+    required this.isChampionsMove,
+    required this.isLegendsZAMove,
+    required this.generation,
+    this.introducedIn,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1251,6 +2379,35 @@ class Move extends DataClass implements Insertable<Move> {
     map['damage_class'] = Variable<String>(damageClass);
     if (!nullToAbsent || description != null) {
       map['description'] = Variable<String>(description);
+    }
+    map['priority'] = Variable<int>(priority);
+    map['is_contact'] = Variable<bool>(isContact);
+    map['is_healing'] = Variable<bool>(isHealing);
+    map['is_sound'] = Variable<bool>(isSound);
+    map['is_punching'] = Variable<bool>(isPunching);
+    map['is_biting'] = Variable<bool>(isBiting);
+    map['is_powder'] = Variable<bool>(isPowder);
+    map['is_pulse'] = Variable<bool>(isPulse);
+    map['is_ballistic'] = Variable<bool>(isBallistic);
+    map['is_slicing'] = Variable<bool>(isSlicing);
+    map['is_wind'] = Variable<bool>(isWind);
+    map['is_dance'] = Variable<bool>(isDance);
+    map['is_bite'] = Variable<bool>(isBite);
+    map['is_multi_hit'] = Variable<bool>(isMultiHit);
+    map['is_protective'] = Variable<bool>(isProtective);
+    map['is_switching'] = Variable<bool>(isSwitching);
+    map['is_recharge'] = Variable<bool>(isRecharge);
+    map['is_recoil'] = Variable<bool>(isRecoil);
+    map['is_draining'] = Variable<bool>(isDraining);
+    map['is_status_move'] = Variable<bool>(isStatusMove);
+    map['is_damaging_move'] = Variable<bool>(isDamagingMove);
+    map['is_signature_move'] = Variable<bool>(isSignatureMove);
+    map['is_d_l_c_move'] = Variable<bool>(isDLCMove);
+    map['is_champions_move'] = Variable<bool>(isChampionsMove);
+    map['is_legends_z_a_move'] = Variable<bool>(isLegendsZAMove);
+    map['generation'] = Variable<int>(generation);
+    if (!nullToAbsent || introducedIn != null) {
+      map['introduced_in'] = Variable<String>(introducedIn);
     }
     return map;
   }
@@ -1271,6 +2428,35 @@ class Move extends DataClass implements Insertable<Move> {
       description: description == null && nullToAbsent
           ? const Value.absent()
           : Value(description),
+      priority: Value(priority),
+      isContact: Value(isContact),
+      isHealing: Value(isHealing),
+      isSound: Value(isSound),
+      isPunching: Value(isPunching),
+      isBiting: Value(isBiting),
+      isPowder: Value(isPowder),
+      isPulse: Value(isPulse),
+      isBallistic: Value(isBallistic),
+      isSlicing: Value(isSlicing),
+      isWind: Value(isWind),
+      isDance: Value(isDance),
+      isBite: Value(isBite),
+      isMultiHit: Value(isMultiHit),
+      isProtective: Value(isProtective),
+      isSwitching: Value(isSwitching),
+      isRecharge: Value(isRecharge),
+      isRecoil: Value(isRecoil),
+      isDraining: Value(isDraining),
+      isStatusMove: Value(isStatusMove),
+      isDamagingMove: Value(isDamagingMove),
+      isSignatureMove: Value(isSignatureMove),
+      isDLCMove: Value(isDLCMove),
+      isChampionsMove: Value(isChampionsMove),
+      isLegendsZAMove: Value(isLegendsZAMove),
+      generation: Value(generation),
+      introducedIn: introducedIn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(introducedIn),
     );
   }
 
@@ -1288,6 +2474,33 @@ class Move extends DataClass implements Insertable<Move> {
       pp: serializer.fromJson<int>(json['pp']),
       damageClass: serializer.fromJson<String>(json['damageClass']),
       description: serializer.fromJson<String?>(json['description']),
+      priority: serializer.fromJson<int>(json['priority']),
+      isContact: serializer.fromJson<bool>(json['isContact']),
+      isHealing: serializer.fromJson<bool>(json['isHealing']),
+      isSound: serializer.fromJson<bool>(json['isSound']),
+      isPunching: serializer.fromJson<bool>(json['isPunching']),
+      isBiting: serializer.fromJson<bool>(json['isBiting']),
+      isPowder: serializer.fromJson<bool>(json['isPowder']),
+      isPulse: serializer.fromJson<bool>(json['isPulse']),
+      isBallistic: serializer.fromJson<bool>(json['isBallistic']),
+      isSlicing: serializer.fromJson<bool>(json['isSlicing']),
+      isWind: serializer.fromJson<bool>(json['isWind']),
+      isDance: serializer.fromJson<bool>(json['isDance']),
+      isBite: serializer.fromJson<bool>(json['isBite']),
+      isMultiHit: serializer.fromJson<bool>(json['isMultiHit']),
+      isProtective: serializer.fromJson<bool>(json['isProtective']),
+      isSwitching: serializer.fromJson<bool>(json['isSwitching']),
+      isRecharge: serializer.fromJson<bool>(json['isRecharge']),
+      isRecoil: serializer.fromJson<bool>(json['isRecoil']),
+      isDraining: serializer.fromJson<bool>(json['isDraining']),
+      isStatusMove: serializer.fromJson<bool>(json['isStatusMove']),
+      isDamagingMove: serializer.fromJson<bool>(json['isDamagingMove']),
+      isSignatureMove: serializer.fromJson<bool>(json['isSignatureMove']),
+      isDLCMove: serializer.fromJson<bool>(json['isDLCMove']),
+      isChampionsMove: serializer.fromJson<bool>(json['isChampionsMove']),
+      isLegendsZAMove: serializer.fromJson<bool>(json['isLegendsZAMove']),
+      generation: serializer.fromJson<int>(json['generation']),
+      introducedIn: serializer.fromJson<String?>(json['introducedIn']),
     );
   }
   @override
@@ -1302,6 +2515,33 @@ class Move extends DataClass implements Insertable<Move> {
       'pp': serializer.toJson<int>(pp),
       'damageClass': serializer.toJson<String>(damageClass),
       'description': serializer.toJson<String?>(description),
+      'priority': serializer.toJson<int>(priority),
+      'isContact': serializer.toJson<bool>(isContact),
+      'isHealing': serializer.toJson<bool>(isHealing),
+      'isSound': serializer.toJson<bool>(isSound),
+      'isPunching': serializer.toJson<bool>(isPunching),
+      'isBiting': serializer.toJson<bool>(isBiting),
+      'isPowder': serializer.toJson<bool>(isPowder),
+      'isPulse': serializer.toJson<bool>(isPulse),
+      'isBallistic': serializer.toJson<bool>(isBallistic),
+      'isSlicing': serializer.toJson<bool>(isSlicing),
+      'isWind': serializer.toJson<bool>(isWind),
+      'isDance': serializer.toJson<bool>(isDance),
+      'isBite': serializer.toJson<bool>(isBite),
+      'isMultiHit': serializer.toJson<bool>(isMultiHit),
+      'isProtective': serializer.toJson<bool>(isProtective),
+      'isSwitching': serializer.toJson<bool>(isSwitching),
+      'isRecharge': serializer.toJson<bool>(isRecharge),
+      'isRecoil': serializer.toJson<bool>(isRecoil),
+      'isDraining': serializer.toJson<bool>(isDraining),
+      'isStatusMove': serializer.toJson<bool>(isStatusMove),
+      'isDamagingMove': serializer.toJson<bool>(isDamagingMove),
+      'isSignatureMove': serializer.toJson<bool>(isSignatureMove),
+      'isDLCMove': serializer.toJson<bool>(isDLCMove),
+      'isChampionsMove': serializer.toJson<bool>(isChampionsMove),
+      'isLegendsZAMove': serializer.toJson<bool>(isLegendsZAMove),
+      'generation': serializer.toJson<int>(generation),
+      'introducedIn': serializer.toJson<String?>(introducedIn),
     };
   }
 
@@ -1314,6 +2554,33 @@ class Move extends DataClass implements Insertable<Move> {
     int? pp,
     String? damageClass,
     Value<String?> description = const Value.absent(),
+    int? priority,
+    bool? isContact,
+    bool? isHealing,
+    bool? isSound,
+    bool? isPunching,
+    bool? isBiting,
+    bool? isPowder,
+    bool? isPulse,
+    bool? isBallistic,
+    bool? isSlicing,
+    bool? isWind,
+    bool? isDance,
+    bool? isBite,
+    bool? isMultiHit,
+    bool? isProtective,
+    bool? isSwitching,
+    bool? isRecharge,
+    bool? isRecoil,
+    bool? isDraining,
+    bool? isStatusMove,
+    bool? isDamagingMove,
+    bool? isSignatureMove,
+    bool? isDLCMove,
+    bool? isChampionsMove,
+    bool? isLegendsZAMove,
+    int? generation,
+    Value<String?> introducedIn = const Value.absent(),
   }) => Move(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -1323,6 +2590,33 @@ class Move extends DataClass implements Insertable<Move> {
     pp: pp ?? this.pp,
     damageClass: damageClass ?? this.damageClass,
     description: description.present ? description.value : this.description,
+    priority: priority ?? this.priority,
+    isContact: isContact ?? this.isContact,
+    isHealing: isHealing ?? this.isHealing,
+    isSound: isSound ?? this.isSound,
+    isPunching: isPunching ?? this.isPunching,
+    isBiting: isBiting ?? this.isBiting,
+    isPowder: isPowder ?? this.isPowder,
+    isPulse: isPulse ?? this.isPulse,
+    isBallistic: isBallistic ?? this.isBallistic,
+    isSlicing: isSlicing ?? this.isSlicing,
+    isWind: isWind ?? this.isWind,
+    isDance: isDance ?? this.isDance,
+    isBite: isBite ?? this.isBite,
+    isMultiHit: isMultiHit ?? this.isMultiHit,
+    isProtective: isProtective ?? this.isProtective,
+    isSwitching: isSwitching ?? this.isSwitching,
+    isRecharge: isRecharge ?? this.isRecharge,
+    isRecoil: isRecoil ?? this.isRecoil,
+    isDraining: isDraining ?? this.isDraining,
+    isStatusMove: isStatusMove ?? this.isStatusMove,
+    isDamagingMove: isDamagingMove ?? this.isDamagingMove,
+    isSignatureMove: isSignatureMove ?? this.isSignatureMove,
+    isDLCMove: isDLCMove ?? this.isDLCMove,
+    isChampionsMove: isChampionsMove ?? this.isChampionsMove,
+    isLegendsZAMove: isLegendsZAMove ?? this.isLegendsZAMove,
+    generation: generation ?? this.generation,
+    introducedIn: introducedIn.present ? introducedIn.value : this.introducedIn,
   );
   Move copyWithCompanion(MoveTableCompanion data) {
     return Move(
@@ -1338,6 +2632,61 @@ class Move extends DataClass implements Insertable<Move> {
       description: data.description.present
           ? data.description.value
           : this.description,
+      priority: data.priority.present ? data.priority.value : this.priority,
+      isContact: data.isContact.present ? data.isContact.value : this.isContact,
+      isHealing: data.isHealing.present ? data.isHealing.value : this.isHealing,
+      isSound: data.isSound.present ? data.isSound.value : this.isSound,
+      isPunching: data.isPunching.present
+          ? data.isPunching.value
+          : this.isPunching,
+      isBiting: data.isBiting.present ? data.isBiting.value : this.isBiting,
+      isPowder: data.isPowder.present ? data.isPowder.value : this.isPowder,
+      isPulse: data.isPulse.present ? data.isPulse.value : this.isPulse,
+      isBallistic: data.isBallistic.present
+          ? data.isBallistic.value
+          : this.isBallistic,
+      isSlicing: data.isSlicing.present ? data.isSlicing.value : this.isSlicing,
+      isWind: data.isWind.present ? data.isWind.value : this.isWind,
+      isDance: data.isDance.present ? data.isDance.value : this.isDance,
+      isBite: data.isBite.present ? data.isBite.value : this.isBite,
+      isMultiHit: data.isMultiHit.present
+          ? data.isMultiHit.value
+          : this.isMultiHit,
+      isProtective: data.isProtective.present
+          ? data.isProtective.value
+          : this.isProtective,
+      isSwitching: data.isSwitching.present
+          ? data.isSwitching.value
+          : this.isSwitching,
+      isRecharge: data.isRecharge.present
+          ? data.isRecharge.value
+          : this.isRecharge,
+      isRecoil: data.isRecoil.present ? data.isRecoil.value : this.isRecoil,
+      isDraining: data.isDraining.present
+          ? data.isDraining.value
+          : this.isDraining,
+      isStatusMove: data.isStatusMove.present
+          ? data.isStatusMove.value
+          : this.isStatusMove,
+      isDamagingMove: data.isDamagingMove.present
+          ? data.isDamagingMove.value
+          : this.isDamagingMove,
+      isSignatureMove: data.isSignatureMove.present
+          ? data.isSignatureMove.value
+          : this.isSignatureMove,
+      isDLCMove: data.isDLCMove.present ? data.isDLCMove.value : this.isDLCMove,
+      isChampionsMove: data.isChampionsMove.present
+          ? data.isChampionsMove.value
+          : this.isChampionsMove,
+      isLegendsZAMove: data.isLegendsZAMove.present
+          ? data.isLegendsZAMove.value
+          : this.isLegendsZAMove,
+      generation: data.generation.present
+          ? data.generation.value
+          : this.generation,
+      introducedIn: data.introducedIn.present
+          ? data.introducedIn.value
+          : this.introducedIn,
     );
   }
 
@@ -1351,13 +2700,40 @@ class Move extends DataClass implements Insertable<Move> {
           ..write('accuracy: $accuracy, ')
           ..write('pp: $pp, ')
           ..write('damageClass: $damageClass, ')
-          ..write('description: $description')
+          ..write('description: $description, ')
+          ..write('priority: $priority, ')
+          ..write('isContact: $isContact, ')
+          ..write('isHealing: $isHealing, ')
+          ..write('isSound: $isSound, ')
+          ..write('isPunching: $isPunching, ')
+          ..write('isBiting: $isBiting, ')
+          ..write('isPowder: $isPowder, ')
+          ..write('isPulse: $isPulse, ')
+          ..write('isBallistic: $isBallistic, ')
+          ..write('isSlicing: $isSlicing, ')
+          ..write('isWind: $isWind, ')
+          ..write('isDance: $isDance, ')
+          ..write('isBite: $isBite, ')
+          ..write('isMultiHit: $isMultiHit, ')
+          ..write('isProtective: $isProtective, ')
+          ..write('isSwitching: $isSwitching, ')
+          ..write('isRecharge: $isRecharge, ')
+          ..write('isRecoil: $isRecoil, ')
+          ..write('isDraining: $isDraining, ')
+          ..write('isStatusMove: $isStatusMove, ')
+          ..write('isDamagingMove: $isDamagingMove, ')
+          ..write('isSignatureMove: $isSignatureMove, ')
+          ..write('isDLCMove: $isDLCMove, ')
+          ..write('isChampionsMove: $isChampionsMove, ')
+          ..write('isLegendsZAMove: $isLegendsZAMove, ')
+          ..write('generation: $generation, ')
+          ..write('introducedIn: $introducedIn')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     name,
     type,
@@ -1366,7 +2742,34 @@ class Move extends DataClass implements Insertable<Move> {
     pp,
     damageClass,
     description,
-  );
+    priority,
+    isContact,
+    isHealing,
+    isSound,
+    isPunching,
+    isBiting,
+    isPowder,
+    isPulse,
+    isBallistic,
+    isSlicing,
+    isWind,
+    isDance,
+    isBite,
+    isMultiHit,
+    isProtective,
+    isSwitching,
+    isRecharge,
+    isRecoil,
+    isDraining,
+    isStatusMove,
+    isDamagingMove,
+    isSignatureMove,
+    isDLCMove,
+    isChampionsMove,
+    isLegendsZAMove,
+    generation,
+    introducedIn,
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1378,7 +2781,34 @@ class Move extends DataClass implements Insertable<Move> {
           other.accuracy == this.accuracy &&
           other.pp == this.pp &&
           other.damageClass == this.damageClass &&
-          other.description == this.description);
+          other.description == this.description &&
+          other.priority == this.priority &&
+          other.isContact == this.isContact &&
+          other.isHealing == this.isHealing &&
+          other.isSound == this.isSound &&
+          other.isPunching == this.isPunching &&
+          other.isBiting == this.isBiting &&
+          other.isPowder == this.isPowder &&
+          other.isPulse == this.isPulse &&
+          other.isBallistic == this.isBallistic &&
+          other.isSlicing == this.isSlicing &&
+          other.isWind == this.isWind &&
+          other.isDance == this.isDance &&
+          other.isBite == this.isBite &&
+          other.isMultiHit == this.isMultiHit &&
+          other.isProtective == this.isProtective &&
+          other.isSwitching == this.isSwitching &&
+          other.isRecharge == this.isRecharge &&
+          other.isRecoil == this.isRecoil &&
+          other.isDraining == this.isDraining &&
+          other.isStatusMove == this.isStatusMove &&
+          other.isDamagingMove == this.isDamagingMove &&
+          other.isSignatureMove == this.isSignatureMove &&
+          other.isDLCMove == this.isDLCMove &&
+          other.isChampionsMove == this.isChampionsMove &&
+          other.isLegendsZAMove == this.isLegendsZAMove &&
+          other.generation == this.generation &&
+          other.introducedIn == this.introducedIn);
 }
 
 class MoveTableCompanion extends UpdateCompanion<Move> {
@@ -1390,6 +2820,33 @@ class MoveTableCompanion extends UpdateCompanion<Move> {
   final Value<int> pp;
   final Value<String> damageClass;
   final Value<String?> description;
+  final Value<int> priority;
+  final Value<bool> isContact;
+  final Value<bool> isHealing;
+  final Value<bool> isSound;
+  final Value<bool> isPunching;
+  final Value<bool> isBiting;
+  final Value<bool> isPowder;
+  final Value<bool> isPulse;
+  final Value<bool> isBallistic;
+  final Value<bool> isSlicing;
+  final Value<bool> isWind;
+  final Value<bool> isDance;
+  final Value<bool> isBite;
+  final Value<bool> isMultiHit;
+  final Value<bool> isProtective;
+  final Value<bool> isSwitching;
+  final Value<bool> isRecharge;
+  final Value<bool> isRecoil;
+  final Value<bool> isDraining;
+  final Value<bool> isStatusMove;
+  final Value<bool> isDamagingMove;
+  final Value<bool> isSignatureMove;
+  final Value<bool> isDLCMove;
+  final Value<bool> isChampionsMove;
+  final Value<bool> isLegendsZAMove;
+  final Value<int> generation;
+  final Value<String?> introducedIn;
   const MoveTableCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -1399,6 +2856,33 @@ class MoveTableCompanion extends UpdateCompanion<Move> {
     this.pp = const Value.absent(),
     this.damageClass = const Value.absent(),
     this.description = const Value.absent(),
+    this.priority = const Value.absent(),
+    this.isContact = const Value.absent(),
+    this.isHealing = const Value.absent(),
+    this.isSound = const Value.absent(),
+    this.isPunching = const Value.absent(),
+    this.isBiting = const Value.absent(),
+    this.isPowder = const Value.absent(),
+    this.isPulse = const Value.absent(),
+    this.isBallistic = const Value.absent(),
+    this.isSlicing = const Value.absent(),
+    this.isWind = const Value.absent(),
+    this.isDance = const Value.absent(),
+    this.isBite = const Value.absent(),
+    this.isMultiHit = const Value.absent(),
+    this.isProtective = const Value.absent(),
+    this.isSwitching = const Value.absent(),
+    this.isRecharge = const Value.absent(),
+    this.isRecoil = const Value.absent(),
+    this.isDraining = const Value.absent(),
+    this.isStatusMove = const Value.absent(),
+    this.isDamagingMove = const Value.absent(),
+    this.isSignatureMove = const Value.absent(),
+    this.isDLCMove = const Value.absent(),
+    this.isChampionsMove = const Value.absent(),
+    this.isLegendsZAMove = const Value.absent(),
+    this.generation = const Value.absent(),
+    this.introducedIn = const Value.absent(),
   });
   MoveTableCompanion.insert({
     this.id = const Value.absent(),
@@ -1409,6 +2893,33 @@ class MoveTableCompanion extends UpdateCompanion<Move> {
     required int pp,
     required String damageClass,
     this.description = const Value.absent(),
+    this.priority = const Value.absent(),
+    this.isContact = const Value.absent(),
+    this.isHealing = const Value.absent(),
+    this.isSound = const Value.absent(),
+    this.isPunching = const Value.absent(),
+    this.isBiting = const Value.absent(),
+    this.isPowder = const Value.absent(),
+    this.isPulse = const Value.absent(),
+    this.isBallistic = const Value.absent(),
+    this.isSlicing = const Value.absent(),
+    this.isWind = const Value.absent(),
+    this.isDance = const Value.absent(),
+    this.isBite = const Value.absent(),
+    this.isMultiHit = const Value.absent(),
+    this.isProtective = const Value.absent(),
+    this.isSwitching = const Value.absent(),
+    this.isRecharge = const Value.absent(),
+    this.isRecoil = const Value.absent(),
+    this.isDraining = const Value.absent(),
+    this.isStatusMove = const Value.absent(),
+    this.isDamagingMove = const Value.absent(),
+    this.isSignatureMove = const Value.absent(),
+    this.isDLCMove = const Value.absent(),
+    this.isChampionsMove = const Value.absent(),
+    this.isLegendsZAMove = const Value.absent(),
+    this.generation = const Value.absent(),
+    this.introducedIn = const Value.absent(),
   }) : name = Value(name),
        type = Value(type),
        pp = Value(pp),
@@ -1422,6 +2933,33 @@ class MoveTableCompanion extends UpdateCompanion<Move> {
     Expression<int>? pp,
     Expression<String>? damageClass,
     Expression<String>? description,
+    Expression<int>? priority,
+    Expression<bool>? isContact,
+    Expression<bool>? isHealing,
+    Expression<bool>? isSound,
+    Expression<bool>? isPunching,
+    Expression<bool>? isBiting,
+    Expression<bool>? isPowder,
+    Expression<bool>? isPulse,
+    Expression<bool>? isBallistic,
+    Expression<bool>? isSlicing,
+    Expression<bool>? isWind,
+    Expression<bool>? isDance,
+    Expression<bool>? isBite,
+    Expression<bool>? isMultiHit,
+    Expression<bool>? isProtective,
+    Expression<bool>? isSwitching,
+    Expression<bool>? isRecharge,
+    Expression<bool>? isRecoil,
+    Expression<bool>? isDraining,
+    Expression<bool>? isStatusMove,
+    Expression<bool>? isDamagingMove,
+    Expression<bool>? isSignatureMove,
+    Expression<bool>? isDLCMove,
+    Expression<bool>? isChampionsMove,
+    Expression<bool>? isLegendsZAMove,
+    Expression<int>? generation,
+    Expression<String>? introducedIn,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1432,6 +2970,33 @@ class MoveTableCompanion extends UpdateCompanion<Move> {
       if (pp != null) 'pp': pp,
       if (damageClass != null) 'damage_class': damageClass,
       if (description != null) 'description': description,
+      if (priority != null) 'priority': priority,
+      if (isContact != null) 'is_contact': isContact,
+      if (isHealing != null) 'is_healing': isHealing,
+      if (isSound != null) 'is_sound': isSound,
+      if (isPunching != null) 'is_punching': isPunching,
+      if (isBiting != null) 'is_biting': isBiting,
+      if (isPowder != null) 'is_powder': isPowder,
+      if (isPulse != null) 'is_pulse': isPulse,
+      if (isBallistic != null) 'is_ballistic': isBallistic,
+      if (isSlicing != null) 'is_slicing': isSlicing,
+      if (isWind != null) 'is_wind': isWind,
+      if (isDance != null) 'is_dance': isDance,
+      if (isBite != null) 'is_bite': isBite,
+      if (isMultiHit != null) 'is_multi_hit': isMultiHit,
+      if (isProtective != null) 'is_protective': isProtective,
+      if (isSwitching != null) 'is_switching': isSwitching,
+      if (isRecharge != null) 'is_recharge': isRecharge,
+      if (isRecoil != null) 'is_recoil': isRecoil,
+      if (isDraining != null) 'is_draining': isDraining,
+      if (isStatusMove != null) 'is_status_move': isStatusMove,
+      if (isDamagingMove != null) 'is_damaging_move': isDamagingMove,
+      if (isSignatureMove != null) 'is_signature_move': isSignatureMove,
+      if (isDLCMove != null) 'is_d_l_c_move': isDLCMove,
+      if (isChampionsMove != null) 'is_champions_move': isChampionsMove,
+      if (isLegendsZAMove != null) 'is_legends_z_a_move': isLegendsZAMove,
+      if (generation != null) 'generation': generation,
+      if (introducedIn != null) 'introduced_in': introducedIn,
     });
   }
 
@@ -1444,6 +3009,33 @@ class MoveTableCompanion extends UpdateCompanion<Move> {
     Value<int>? pp,
     Value<String>? damageClass,
     Value<String?>? description,
+    Value<int>? priority,
+    Value<bool>? isContact,
+    Value<bool>? isHealing,
+    Value<bool>? isSound,
+    Value<bool>? isPunching,
+    Value<bool>? isBiting,
+    Value<bool>? isPowder,
+    Value<bool>? isPulse,
+    Value<bool>? isBallistic,
+    Value<bool>? isSlicing,
+    Value<bool>? isWind,
+    Value<bool>? isDance,
+    Value<bool>? isBite,
+    Value<bool>? isMultiHit,
+    Value<bool>? isProtective,
+    Value<bool>? isSwitching,
+    Value<bool>? isRecharge,
+    Value<bool>? isRecoil,
+    Value<bool>? isDraining,
+    Value<bool>? isStatusMove,
+    Value<bool>? isDamagingMove,
+    Value<bool>? isSignatureMove,
+    Value<bool>? isDLCMove,
+    Value<bool>? isChampionsMove,
+    Value<bool>? isLegendsZAMove,
+    Value<int>? generation,
+    Value<String?>? introducedIn,
   }) {
     return MoveTableCompanion(
       id: id ?? this.id,
@@ -1454,6 +3046,33 @@ class MoveTableCompanion extends UpdateCompanion<Move> {
       pp: pp ?? this.pp,
       damageClass: damageClass ?? this.damageClass,
       description: description ?? this.description,
+      priority: priority ?? this.priority,
+      isContact: isContact ?? this.isContact,
+      isHealing: isHealing ?? this.isHealing,
+      isSound: isSound ?? this.isSound,
+      isPunching: isPunching ?? this.isPunching,
+      isBiting: isBiting ?? this.isBiting,
+      isPowder: isPowder ?? this.isPowder,
+      isPulse: isPulse ?? this.isPulse,
+      isBallistic: isBallistic ?? this.isBallistic,
+      isSlicing: isSlicing ?? this.isSlicing,
+      isWind: isWind ?? this.isWind,
+      isDance: isDance ?? this.isDance,
+      isBite: isBite ?? this.isBite,
+      isMultiHit: isMultiHit ?? this.isMultiHit,
+      isProtective: isProtective ?? this.isProtective,
+      isSwitching: isSwitching ?? this.isSwitching,
+      isRecharge: isRecharge ?? this.isRecharge,
+      isRecoil: isRecoil ?? this.isRecoil,
+      isDraining: isDraining ?? this.isDraining,
+      isStatusMove: isStatusMove ?? this.isStatusMove,
+      isDamagingMove: isDamagingMove ?? this.isDamagingMove,
+      isSignatureMove: isSignatureMove ?? this.isSignatureMove,
+      isDLCMove: isDLCMove ?? this.isDLCMove,
+      isChampionsMove: isChampionsMove ?? this.isChampionsMove,
+      isLegendsZAMove: isLegendsZAMove ?? this.isLegendsZAMove,
+      generation: generation ?? this.generation,
+      introducedIn: introducedIn ?? this.introducedIn,
     );
   }
 
@@ -1484,6 +3103,87 @@ class MoveTableCompanion extends UpdateCompanion<Move> {
     if (description.present) {
       map['description'] = Variable<String>(description.value);
     }
+    if (priority.present) {
+      map['priority'] = Variable<int>(priority.value);
+    }
+    if (isContact.present) {
+      map['is_contact'] = Variable<bool>(isContact.value);
+    }
+    if (isHealing.present) {
+      map['is_healing'] = Variable<bool>(isHealing.value);
+    }
+    if (isSound.present) {
+      map['is_sound'] = Variable<bool>(isSound.value);
+    }
+    if (isPunching.present) {
+      map['is_punching'] = Variable<bool>(isPunching.value);
+    }
+    if (isBiting.present) {
+      map['is_biting'] = Variable<bool>(isBiting.value);
+    }
+    if (isPowder.present) {
+      map['is_powder'] = Variable<bool>(isPowder.value);
+    }
+    if (isPulse.present) {
+      map['is_pulse'] = Variable<bool>(isPulse.value);
+    }
+    if (isBallistic.present) {
+      map['is_ballistic'] = Variable<bool>(isBallistic.value);
+    }
+    if (isSlicing.present) {
+      map['is_slicing'] = Variable<bool>(isSlicing.value);
+    }
+    if (isWind.present) {
+      map['is_wind'] = Variable<bool>(isWind.value);
+    }
+    if (isDance.present) {
+      map['is_dance'] = Variable<bool>(isDance.value);
+    }
+    if (isBite.present) {
+      map['is_bite'] = Variable<bool>(isBite.value);
+    }
+    if (isMultiHit.present) {
+      map['is_multi_hit'] = Variable<bool>(isMultiHit.value);
+    }
+    if (isProtective.present) {
+      map['is_protective'] = Variable<bool>(isProtective.value);
+    }
+    if (isSwitching.present) {
+      map['is_switching'] = Variable<bool>(isSwitching.value);
+    }
+    if (isRecharge.present) {
+      map['is_recharge'] = Variable<bool>(isRecharge.value);
+    }
+    if (isRecoil.present) {
+      map['is_recoil'] = Variable<bool>(isRecoil.value);
+    }
+    if (isDraining.present) {
+      map['is_draining'] = Variable<bool>(isDraining.value);
+    }
+    if (isStatusMove.present) {
+      map['is_status_move'] = Variable<bool>(isStatusMove.value);
+    }
+    if (isDamagingMove.present) {
+      map['is_damaging_move'] = Variable<bool>(isDamagingMove.value);
+    }
+    if (isSignatureMove.present) {
+      map['is_signature_move'] = Variable<bool>(isSignatureMove.value);
+    }
+    if (isDLCMove.present) {
+      map['is_d_l_c_move'] = Variable<bool>(isDLCMove.value);
+    }
+    if (isChampionsMove.present) {
+      map['is_champions_move'] = Variable<bool>(isChampionsMove.value);
+    }
+    if (isLegendsZAMove.present) {
+      map['is_legends_z_a_move'] = Variable<bool>(isLegendsZAMove.value);
+    }
+    if (generation.present) {
+      map['generation'] = Variable<int>(generation.value);
+    }
+    if (introducedIn.present) {
+      map['introduced_in'] = Variable<String>(introducedIn.value);
+    }
     return map;
   }
 
@@ -1497,7 +3197,34 @@ class MoveTableCompanion extends UpdateCompanion<Move> {
           ..write('accuracy: $accuracy, ')
           ..write('pp: $pp, ')
           ..write('damageClass: $damageClass, ')
-          ..write('description: $description')
+          ..write('description: $description, ')
+          ..write('priority: $priority, ')
+          ..write('isContact: $isContact, ')
+          ..write('isHealing: $isHealing, ')
+          ..write('isSound: $isSound, ')
+          ..write('isPunching: $isPunching, ')
+          ..write('isBiting: $isBiting, ')
+          ..write('isPowder: $isPowder, ')
+          ..write('isPulse: $isPulse, ')
+          ..write('isBallistic: $isBallistic, ')
+          ..write('isSlicing: $isSlicing, ')
+          ..write('isWind: $isWind, ')
+          ..write('isDance: $isDance, ')
+          ..write('isBite: $isBite, ')
+          ..write('isMultiHit: $isMultiHit, ')
+          ..write('isProtective: $isProtective, ')
+          ..write('isSwitching: $isSwitching, ')
+          ..write('isRecharge: $isRecharge, ')
+          ..write('isRecoil: $isRecoil, ')
+          ..write('isDraining: $isDraining, ')
+          ..write('isStatusMove: $isStatusMove, ')
+          ..write('isDamagingMove: $isDamagingMove, ')
+          ..write('isSignatureMove: $isSignatureMove, ')
+          ..write('isDLCMove: $isDLCMove, ')
+          ..write('isChampionsMove: $isChampionsMove, ')
+          ..write('isLegendsZAMove: $isLegendsZAMove, ')
+          ..write('generation: $generation, ')
+          ..write('introducedIn: $introducedIn')
           ..write(')'))
         .toString();
   }
@@ -1538,8 +3265,131 @@ class $AbilityTableTable extends AbilityTable
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _generationMeta = const VerificationMeta(
+    'generation',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, name, description];
+  late final GeneratedColumn<int> generation = GeneratedColumn<int>(
+    'generation',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: Constant(1),
+  );
+  static const VerificationMeta _isHiddenAbilityMeta = const VerificationMeta(
+    'isHiddenAbility',
+  );
+  @override
+  late final GeneratedColumn<bool> isHiddenAbility = GeneratedColumn<bool>(
+    'is_hidden_ability',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_hidden_ability" IN (0, 1))',
+    ),
+    defaultValue: Constant(false),
+  );
+  static const VerificationMeta _isChampionsAbilityMeta =
+      const VerificationMeta('isChampionsAbility');
+  @override
+  late final GeneratedColumn<bool> isChampionsAbility = GeneratedColumn<bool>(
+    'is_champions_ability',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_champions_ability" IN (0, 1))',
+    ),
+    defaultValue: Constant(false),
+  );
+  static const VerificationMeta _isLegendsZAAbilityMeta =
+      const VerificationMeta('isLegendsZAAbility');
+  @override
+  late final GeneratedColumn<bool> isLegendsZAAbility = GeneratedColumn<bool>(
+    'is_legends_z_a_ability',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_legends_z_a_ability" IN (0, 1))',
+    ),
+    defaultValue: Constant(false),
+  );
+  static const VerificationMeta _introducedInMeta = const VerificationMeta(
+    'introducedIn',
+  );
+  @override
+  late final GeneratedColumn<String> introducedIn = GeneratedColumn<String>(
+    'introduced_in',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sourceGamesMeta = const VerificationMeta(
+    'sourceGames',
+  );
+  @override
+  late final GeneratedColumn<String> sourceGames = GeneratedColumn<String>(
+    'source_games',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _effectTagsMeta = const VerificationMeta(
+    'effectTags',
+  );
+  @override
+  late final GeneratedColumn<String> effectTags = GeneratedColumn<String>(
+    'effect_tags',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _battleEffectTagsMeta = const VerificationMeta(
+    'battleEffectTags',
+  );
+  @override
+  late final GeneratedColumn<String> battleEffectTags = GeneratedColumn<String>(
+    'battle_effect_tags',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _pokemonTypesMeta = const VerificationMeta(
+    'pokemonTypes',
+  );
+  @override
+  late final GeneratedColumn<String> pokemonTypes = GeneratedColumn<String>(
+    'pokemon_types',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    description,
+    generation,
+    isHiddenAbility,
+    isChampionsAbility,
+    isLegendsZAAbility,
+    introducedIn,
+    sourceGames,
+    effectTags,
+    battleEffectTags,
+    pokemonTypes,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1574,6 +3424,81 @@ class $AbilityTableTable extends AbilityTable
     } else if (isInserting) {
       context.missing(_descriptionMeta);
     }
+    if (data.containsKey('generation')) {
+      context.handle(
+        _generationMeta,
+        generation.isAcceptableOrUnknown(data['generation']!, _generationMeta),
+      );
+    }
+    if (data.containsKey('is_hidden_ability')) {
+      context.handle(
+        _isHiddenAbilityMeta,
+        isHiddenAbility.isAcceptableOrUnknown(
+          data['is_hidden_ability']!,
+          _isHiddenAbilityMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_champions_ability')) {
+      context.handle(
+        _isChampionsAbilityMeta,
+        isChampionsAbility.isAcceptableOrUnknown(
+          data['is_champions_ability']!,
+          _isChampionsAbilityMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_legends_z_a_ability')) {
+      context.handle(
+        _isLegendsZAAbilityMeta,
+        isLegendsZAAbility.isAcceptableOrUnknown(
+          data['is_legends_z_a_ability']!,
+          _isLegendsZAAbilityMeta,
+        ),
+      );
+    }
+    if (data.containsKey('introduced_in')) {
+      context.handle(
+        _introducedInMeta,
+        introducedIn.isAcceptableOrUnknown(
+          data['introduced_in']!,
+          _introducedInMeta,
+        ),
+      );
+    }
+    if (data.containsKey('source_games')) {
+      context.handle(
+        _sourceGamesMeta,
+        sourceGames.isAcceptableOrUnknown(
+          data['source_games']!,
+          _sourceGamesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('effect_tags')) {
+      context.handle(
+        _effectTagsMeta,
+        effectTags.isAcceptableOrUnknown(data['effect_tags']!, _effectTagsMeta),
+      );
+    }
+    if (data.containsKey('battle_effect_tags')) {
+      context.handle(
+        _battleEffectTagsMeta,
+        battleEffectTags.isAcceptableOrUnknown(
+          data['battle_effect_tags']!,
+          _battleEffectTagsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('pokemon_types')) {
+      context.handle(
+        _pokemonTypesMeta,
+        pokemonTypes.isAcceptableOrUnknown(
+          data['pokemon_types']!,
+          _pokemonTypesMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1595,6 +3520,42 @@ class $AbilityTableTable extends AbilityTable
         DriftSqlType.string,
         data['${effectivePrefix}description'],
       )!,
+      generation: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}generation'],
+      )!,
+      isHiddenAbility: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_hidden_ability'],
+      )!,
+      isChampionsAbility: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_champions_ability'],
+      )!,
+      isLegendsZAAbility: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_legends_z_a_ability'],
+      )!,
+      introducedIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}introduced_in'],
+      ),
+      sourceGames: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_games'],
+      ),
+      effectTags: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}effect_tags'],
+      ),
+      battleEffectTags: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}battle_effect_tags'],
+      ),
+      pokemonTypes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pokemon_types'],
+      ),
     );
   }
 
@@ -1608,10 +3569,28 @@ class Ability extends DataClass implements Insertable<Ability> {
   final int id;
   final String name;
   final String description;
+  final int generation;
+  final bool isHiddenAbility;
+  final bool isChampionsAbility;
+  final bool isLegendsZAAbility;
+  final String? introducedIn;
+  final String? sourceGames;
+  final String? effectTags;
+  final String? battleEffectTags;
+  final String? pokemonTypes;
   const Ability({
     required this.id,
     required this.name,
     required this.description,
+    required this.generation,
+    required this.isHiddenAbility,
+    required this.isChampionsAbility,
+    required this.isLegendsZAAbility,
+    this.introducedIn,
+    this.sourceGames,
+    this.effectTags,
+    this.battleEffectTags,
+    this.pokemonTypes,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1619,6 +3598,25 @@ class Ability extends DataClass implements Insertable<Ability> {
     map['id'] = Variable<int>(id);
     map['name'] = Variable<String>(name);
     map['description'] = Variable<String>(description);
+    map['generation'] = Variable<int>(generation);
+    map['is_hidden_ability'] = Variable<bool>(isHiddenAbility);
+    map['is_champions_ability'] = Variable<bool>(isChampionsAbility);
+    map['is_legends_z_a_ability'] = Variable<bool>(isLegendsZAAbility);
+    if (!nullToAbsent || introducedIn != null) {
+      map['introduced_in'] = Variable<String>(introducedIn);
+    }
+    if (!nullToAbsent || sourceGames != null) {
+      map['source_games'] = Variable<String>(sourceGames);
+    }
+    if (!nullToAbsent || effectTags != null) {
+      map['effect_tags'] = Variable<String>(effectTags);
+    }
+    if (!nullToAbsent || battleEffectTags != null) {
+      map['battle_effect_tags'] = Variable<String>(battleEffectTags);
+    }
+    if (!nullToAbsent || pokemonTypes != null) {
+      map['pokemon_types'] = Variable<String>(pokemonTypes);
+    }
     return map;
   }
 
@@ -1627,6 +3625,25 @@ class Ability extends DataClass implements Insertable<Ability> {
       id: Value(id),
       name: Value(name),
       description: Value(description),
+      generation: Value(generation),
+      isHiddenAbility: Value(isHiddenAbility),
+      isChampionsAbility: Value(isChampionsAbility),
+      isLegendsZAAbility: Value(isLegendsZAAbility),
+      introducedIn: introducedIn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(introducedIn),
+      sourceGames: sourceGames == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceGames),
+      effectTags: effectTags == null && nullToAbsent
+          ? const Value.absent()
+          : Value(effectTags),
+      battleEffectTags: battleEffectTags == null && nullToAbsent
+          ? const Value.absent()
+          : Value(battleEffectTags),
+      pokemonTypes: pokemonTypes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pokemonTypes),
     );
   }
 
@@ -1639,6 +3656,15 @@ class Ability extends DataClass implements Insertable<Ability> {
       id: serializer.fromJson<int>(json['id']),
       name: serializer.fromJson<String>(json['name']),
       description: serializer.fromJson<String>(json['description']),
+      generation: serializer.fromJson<int>(json['generation']),
+      isHiddenAbility: serializer.fromJson<bool>(json['isHiddenAbility']),
+      isChampionsAbility: serializer.fromJson<bool>(json['isChampionsAbility']),
+      isLegendsZAAbility: serializer.fromJson<bool>(json['isLegendsZAAbility']),
+      introducedIn: serializer.fromJson<String?>(json['introducedIn']),
+      sourceGames: serializer.fromJson<String?>(json['sourceGames']),
+      effectTags: serializer.fromJson<String?>(json['effectTags']),
+      battleEffectTags: serializer.fromJson<String?>(json['battleEffectTags']),
+      pokemonTypes: serializer.fromJson<String?>(json['pokemonTypes']),
     );
   }
   @override
@@ -1648,13 +3674,46 @@ class Ability extends DataClass implements Insertable<Ability> {
       'id': serializer.toJson<int>(id),
       'name': serializer.toJson<String>(name),
       'description': serializer.toJson<String>(description),
+      'generation': serializer.toJson<int>(generation),
+      'isHiddenAbility': serializer.toJson<bool>(isHiddenAbility),
+      'isChampionsAbility': serializer.toJson<bool>(isChampionsAbility),
+      'isLegendsZAAbility': serializer.toJson<bool>(isLegendsZAAbility),
+      'introducedIn': serializer.toJson<String?>(introducedIn),
+      'sourceGames': serializer.toJson<String?>(sourceGames),
+      'effectTags': serializer.toJson<String?>(effectTags),
+      'battleEffectTags': serializer.toJson<String?>(battleEffectTags),
+      'pokemonTypes': serializer.toJson<String?>(pokemonTypes),
     };
   }
 
-  Ability copyWith({int? id, String? name, String? description}) => Ability(
+  Ability copyWith({
+    int? id,
+    String? name,
+    String? description,
+    int? generation,
+    bool? isHiddenAbility,
+    bool? isChampionsAbility,
+    bool? isLegendsZAAbility,
+    Value<String?> introducedIn = const Value.absent(),
+    Value<String?> sourceGames = const Value.absent(),
+    Value<String?> effectTags = const Value.absent(),
+    Value<String?> battleEffectTags = const Value.absent(),
+    Value<String?> pokemonTypes = const Value.absent(),
+  }) => Ability(
     id: id ?? this.id,
     name: name ?? this.name,
     description: description ?? this.description,
+    generation: generation ?? this.generation,
+    isHiddenAbility: isHiddenAbility ?? this.isHiddenAbility,
+    isChampionsAbility: isChampionsAbility ?? this.isChampionsAbility,
+    isLegendsZAAbility: isLegendsZAAbility ?? this.isLegendsZAAbility,
+    introducedIn: introducedIn.present ? introducedIn.value : this.introducedIn,
+    sourceGames: sourceGames.present ? sourceGames.value : this.sourceGames,
+    effectTags: effectTags.present ? effectTags.value : this.effectTags,
+    battleEffectTags: battleEffectTags.present
+        ? battleEffectTags.value
+        : this.battleEffectTags,
+    pokemonTypes: pokemonTypes.present ? pokemonTypes.value : this.pokemonTypes,
   );
   Ability copyWithCompanion(AbilityTableCompanion data) {
     return Ability(
@@ -1663,6 +3722,33 @@ class Ability extends DataClass implements Insertable<Ability> {
       description: data.description.present
           ? data.description.value
           : this.description,
+      generation: data.generation.present
+          ? data.generation.value
+          : this.generation,
+      isHiddenAbility: data.isHiddenAbility.present
+          ? data.isHiddenAbility.value
+          : this.isHiddenAbility,
+      isChampionsAbility: data.isChampionsAbility.present
+          ? data.isChampionsAbility.value
+          : this.isChampionsAbility,
+      isLegendsZAAbility: data.isLegendsZAAbility.present
+          ? data.isLegendsZAAbility.value
+          : this.isLegendsZAAbility,
+      introducedIn: data.introducedIn.present
+          ? data.introducedIn.value
+          : this.introducedIn,
+      sourceGames: data.sourceGames.present
+          ? data.sourceGames.value
+          : this.sourceGames,
+      effectTags: data.effectTags.present
+          ? data.effectTags.value
+          : this.effectTags,
+      battleEffectTags: data.battleEffectTags.present
+          ? data.battleEffectTags.value
+          : this.battleEffectTags,
+      pokemonTypes: data.pokemonTypes.present
+          ? data.pokemonTypes.value
+          : this.pokemonTypes,
     );
   }
 
@@ -1671,46 +3757,124 @@ class Ability extends DataClass implements Insertable<Ability> {
     return (StringBuffer('Ability(')
           ..write('id: $id, ')
           ..write('name: $name, ')
-          ..write('description: $description')
+          ..write('description: $description, ')
+          ..write('generation: $generation, ')
+          ..write('isHiddenAbility: $isHiddenAbility, ')
+          ..write('isChampionsAbility: $isChampionsAbility, ')
+          ..write('isLegendsZAAbility: $isLegendsZAAbility, ')
+          ..write('introducedIn: $introducedIn, ')
+          ..write('sourceGames: $sourceGames, ')
+          ..write('effectTags: $effectTags, ')
+          ..write('battleEffectTags: $battleEffectTags, ')
+          ..write('pokemonTypes: $pokemonTypes')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, description);
+  int get hashCode => Object.hash(
+    id,
+    name,
+    description,
+    generation,
+    isHiddenAbility,
+    isChampionsAbility,
+    isLegendsZAAbility,
+    introducedIn,
+    sourceGames,
+    effectTags,
+    battleEffectTags,
+    pokemonTypes,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is Ability &&
           other.id == this.id &&
           other.name == this.name &&
-          other.description == this.description);
+          other.description == this.description &&
+          other.generation == this.generation &&
+          other.isHiddenAbility == this.isHiddenAbility &&
+          other.isChampionsAbility == this.isChampionsAbility &&
+          other.isLegendsZAAbility == this.isLegendsZAAbility &&
+          other.introducedIn == this.introducedIn &&
+          other.sourceGames == this.sourceGames &&
+          other.effectTags == this.effectTags &&
+          other.battleEffectTags == this.battleEffectTags &&
+          other.pokemonTypes == this.pokemonTypes);
 }
 
 class AbilityTableCompanion extends UpdateCompanion<Ability> {
   final Value<int> id;
   final Value<String> name;
   final Value<String> description;
+  final Value<int> generation;
+  final Value<bool> isHiddenAbility;
+  final Value<bool> isChampionsAbility;
+  final Value<bool> isLegendsZAAbility;
+  final Value<String?> introducedIn;
+  final Value<String?> sourceGames;
+  final Value<String?> effectTags;
+  final Value<String?> battleEffectTags;
+  final Value<String?> pokemonTypes;
   const AbilityTableCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.description = const Value.absent(),
+    this.generation = const Value.absent(),
+    this.isHiddenAbility = const Value.absent(),
+    this.isChampionsAbility = const Value.absent(),
+    this.isLegendsZAAbility = const Value.absent(),
+    this.introducedIn = const Value.absent(),
+    this.sourceGames = const Value.absent(),
+    this.effectTags = const Value.absent(),
+    this.battleEffectTags = const Value.absent(),
+    this.pokemonTypes = const Value.absent(),
   });
   AbilityTableCompanion.insert({
     this.id = const Value.absent(),
     required String name,
     required String description,
+    this.generation = const Value.absent(),
+    this.isHiddenAbility = const Value.absent(),
+    this.isChampionsAbility = const Value.absent(),
+    this.isLegendsZAAbility = const Value.absent(),
+    this.introducedIn = const Value.absent(),
+    this.sourceGames = const Value.absent(),
+    this.effectTags = const Value.absent(),
+    this.battleEffectTags = const Value.absent(),
+    this.pokemonTypes = const Value.absent(),
   }) : name = Value(name),
        description = Value(description);
   static Insertable<Ability> custom({
     Expression<int>? id,
     Expression<String>? name,
     Expression<String>? description,
+    Expression<int>? generation,
+    Expression<bool>? isHiddenAbility,
+    Expression<bool>? isChampionsAbility,
+    Expression<bool>? isLegendsZAAbility,
+    Expression<String>? introducedIn,
+    Expression<String>? sourceGames,
+    Expression<String>? effectTags,
+    Expression<String>? battleEffectTags,
+    Expression<String>? pokemonTypes,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (name != null) 'name': name,
       if (description != null) 'description': description,
+      if (generation != null) 'generation': generation,
+      if (isHiddenAbility != null) 'is_hidden_ability': isHiddenAbility,
+      if (isChampionsAbility != null)
+        'is_champions_ability': isChampionsAbility,
+      if (isLegendsZAAbility != null)
+        'is_legends_z_a_ability': isLegendsZAAbility,
+      if (introducedIn != null) 'introduced_in': introducedIn,
+      if (sourceGames != null) 'source_games': sourceGames,
+      if (effectTags != null) 'effect_tags': effectTags,
+      if (battleEffectTags != null) 'battle_effect_tags': battleEffectTags,
+      if (pokemonTypes != null) 'pokemon_types': pokemonTypes,
     });
   }
 
@@ -1718,11 +3882,29 @@ class AbilityTableCompanion extends UpdateCompanion<Ability> {
     Value<int>? id,
     Value<String>? name,
     Value<String>? description,
+    Value<int>? generation,
+    Value<bool>? isHiddenAbility,
+    Value<bool>? isChampionsAbility,
+    Value<bool>? isLegendsZAAbility,
+    Value<String?>? introducedIn,
+    Value<String?>? sourceGames,
+    Value<String?>? effectTags,
+    Value<String?>? battleEffectTags,
+    Value<String?>? pokemonTypes,
   }) {
     return AbilityTableCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
       description: description ?? this.description,
+      generation: generation ?? this.generation,
+      isHiddenAbility: isHiddenAbility ?? this.isHiddenAbility,
+      isChampionsAbility: isChampionsAbility ?? this.isChampionsAbility,
+      isLegendsZAAbility: isLegendsZAAbility ?? this.isLegendsZAAbility,
+      introducedIn: introducedIn ?? this.introducedIn,
+      sourceGames: sourceGames ?? this.sourceGames,
+      effectTags: effectTags ?? this.effectTags,
+      battleEffectTags: battleEffectTags ?? this.battleEffectTags,
+      pokemonTypes: pokemonTypes ?? this.pokemonTypes,
     );
   }
 
@@ -1738,6 +3920,33 @@ class AbilityTableCompanion extends UpdateCompanion<Ability> {
     if (description.present) {
       map['description'] = Variable<String>(description.value);
     }
+    if (generation.present) {
+      map['generation'] = Variable<int>(generation.value);
+    }
+    if (isHiddenAbility.present) {
+      map['is_hidden_ability'] = Variable<bool>(isHiddenAbility.value);
+    }
+    if (isChampionsAbility.present) {
+      map['is_champions_ability'] = Variable<bool>(isChampionsAbility.value);
+    }
+    if (isLegendsZAAbility.present) {
+      map['is_legends_z_a_ability'] = Variable<bool>(isLegendsZAAbility.value);
+    }
+    if (introducedIn.present) {
+      map['introduced_in'] = Variable<String>(introducedIn.value);
+    }
+    if (sourceGames.present) {
+      map['source_games'] = Variable<String>(sourceGames.value);
+    }
+    if (effectTags.present) {
+      map['effect_tags'] = Variable<String>(effectTags.value);
+    }
+    if (battleEffectTags.present) {
+      map['battle_effect_tags'] = Variable<String>(battleEffectTags.value);
+    }
+    if (pokemonTypes.present) {
+      map['pokemon_types'] = Variable<String>(pokemonTypes.value);
+    }
     return map;
   }
 
@@ -1746,7 +3955,16 @@ class AbilityTableCompanion extends UpdateCompanion<Ability> {
     return (StringBuffer('AbilityTableCompanion(')
           ..write('id: $id, ')
           ..write('name: $name, ')
-          ..write('description: $description')
+          ..write('description: $description, ')
+          ..write('generation: $generation, ')
+          ..write('isHiddenAbility: $isHiddenAbility, ')
+          ..write('isChampionsAbility: $isChampionsAbility, ')
+          ..write('isLegendsZAAbility: $isLegendsZAAbility, ')
+          ..write('introducedIn: $introducedIn, ')
+          ..write('sourceGames: $sourceGames, ')
+          ..write('effectTags: $effectTags, ')
+          ..write('battleEffectTags: $battleEffectTags, ')
+          ..write('pokemonTypes: $pokemonTypes')
           ..write(')'))
         .toString();
   }
@@ -2436,6 +4654,13 @@ typedef $$PokemonTableTableCreateCompanionBuilder =
       required String spriteUrl,
       required String shinySpriteUrl,
       Value<int> nationalDexNumber,
+      Value<int> generation,
+      Value<int> evolutionStage,
+      Value<String?> eggGroups,
+      Value<String?> formSource,
+      Value<String?> dlcSource,
+      Value<bool> isChampions,
+      Value<bool> isLegendsZA,
     });
 typedef $$PokemonTableTableUpdateCompanionBuilder =
     PokemonTableCompanion Function({
@@ -2457,6 +4682,13 @@ typedef $$PokemonTableTableUpdateCompanionBuilder =
       Value<String> spriteUrl,
       Value<String> shinySpriteUrl,
       Value<int> nationalDexNumber,
+      Value<int> generation,
+      Value<int> evolutionStage,
+      Value<String?> eggGroups,
+      Value<String?> formSource,
+      Value<String?> dlcSource,
+      Value<bool> isChampions,
+      Value<bool> isLegendsZA,
     });
 
 final class $$PokemonTableTableReferences
@@ -2612,6 +4844,41 @@ class $$PokemonTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<int> get generation => $composableBuilder(
+    column: $table.generation,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get evolutionStage => $composableBuilder(
+    column: $table.evolutionStage,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get eggGroups => $composableBuilder(
+    column: $table.eggGroups,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get formSource => $composableBuilder(
+    column: $table.formSource,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get dlcSource => $composableBuilder(
+    column: $table.dlcSource,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isChampions => $composableBuilder(
+    column: $table.isChampions,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isLegendsZA => $composableBuilder(
+    column: $table.isLegendsZA,
+    builder: (column) => ColumnFilters(column),
+  );
+
   Expression<bool> pokemonMovesTableRefs(
     Expression<bool> Function($$PokemonMovesTableTableFilterComposer f) f,
   ) {
@@ -2762,6 +5029,41 @@ class $$PokemonTableTableOrderingComposer
     column: $table.nationalDexNumber,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get generation => $composableBuilder(
+    column: $table.generation,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get evolutionStage => $composableBuilder(
+    column: $table.evolutionStage,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get eggGroups => $composableBuilder(
+    column: $table.eggGroups,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get formSource => $composableBuilder(
+    column: $table.formSource,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get dlcSource => $composableBuilder(
+    column: $table.dlcSource,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isChampions => $composableBuilder(
+    column: $table.isChampions,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isLegendsZA => $composableBuilder(
+    column: $table.isLegendsZA,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$PokemonTableTableAnnotationComposer
@@ -2834,6 +5136,37 @@ class $$PokemonTableTableAnnotationComposer
 
   GeneratedColumn<int> get nationalDexNumber => $composableBuilder(
     column: $table.nationalDexNumber,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get generation => $composableBuilder(
+    column: $table.generation,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get evolutionStage => $composableBuilder(
+    column: $table.evolutionStage,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get eggGroups =>
+      $composableBuilder(column: $table.eggGroups, builder: (column) => column);
+
+  GeneratedColumn<String> get formSource => $composableBuilder(
+    column: $table.formSource,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get dlcSource =>
+      $composableBuilder(column: $table.dlcSource, builder: (column) => column);
+
+  GeneratedColumn<bool> get isChampions => $composableBuilder(
+    column: $table.isChampions,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isLegendsZA => $composableBuilder(
+    column: $table.isLegendsZA,
     builder: (column) => column,
   );
 
@@ -2939,6 +5272,13 @@ class $$PokemonTableTableTableManager
                 Value<String> spriteUrl = const Value.absent(),
                 Value<String> shinySpriteUrl = const Value.absent(),
                 Value<int> nationalDexNumber = const Value.absent(),
+                Value<int> generation = const Value.absent(),
+                Value<int> evolutionStage = const Value.absent(),
+                Value<String?> eggGroups = const Value.absent(),
+                Value<String?> formSource = const Value.absent(),
+                Value<String?> dlcSource = const Value.absent(),
+                Value<bool> isChampions = const Value.absent(),
+                Value<bool> isLegendsZA = const Value.absent(),
               }) => PokemonTableCompanion(
                 id: id,
                 name: name,
@@ -2958,6 +5298,13 @@ class $$PokemonTableTableTableManager
                 spriteUrl: spriteUrl,
                 shinySpriteUrl: shinySpriteUrl,
                 nationalDexNumber: nationalDexNumber,
+                generation: generation,
+                evolutionStage: evolutionStage,
+                eggGroups: eggGroups,
+                formSource: formSource,
+                dlcSource: dlcSource,
+                isChampions: isChampions,
+                isLegendsZA: isLegendsZA,
               ),
           createCompanionCallback:
               ({
@@ -2979,6 +5326,13 @@ class $$PokemonTableTableTableManager
                 required String spriteUrl,
                 required String shinySpriteUrl,
                 Value<int> nationalDexNumber = const Value.absent(),
+                Value<int> generation = const Value.absent(),
+                Value<int> evolutionStage = const Value.absent(),
+                Value<String?> eggGroups = const Value.absent(),
+                Value<String?> formSource = const Value.absent(),
+                Value<String?> dlcSource = const Value.absent(),
+                Value<bool> isChampions = const Value.absent(),
+                Value<bool> isLegendsZA = const Value.absent(),
               }) => PokemonTableCompanion.insert(
                 id: id,
                 name: name,
@@ -2998,6 +5352,13 @@ class $$PokemonTableTableTableManager
                 spriteUrl: spriteUrl,
                 shinySpriteUrl: shinySpriteUrl,
                 nationalDexNumber: nationalDexNumber,
+                generation: generation,
+                evolutionStage: evolutionStage,
+                eggGroups: eggGroups,
+                formSource: formSource,
+                dlcSource: dlcSource,
+                isChampions: isChampions,
+                isLegendsZA: isLegendsZA,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -3098,6 +5459,33 @@ typedef $$MoveTableTableCreateCompanionBuilder =
       required int pp,
       required String damageClass,
       Value<String?> description,
+      Value<int> priority,
+      Value<bool> isContact,
+      Value<bool> isHealing,
+      Value<bool> isSound,
+      Value<bool> isPunching,
+      Value<bool> isBiting,
+      Value<bool> isPowder,
+      Value<bool> isPulse,
+      Value<bool> isBallistic,
+      Value<bool> isSlicing,
+      Value<bool> isWind,
+      Value<bool> isDance,
+      Value<bool> isBite,
+      Value<bool> isMultiHit,
+      Value<bool> isProtective,
+      Value<bool> isSwitching,
+      Value<bool> isRecharge,
+      Value<bool> isRecoil,
+      Value<bool> isDraining,
+      Value<bool> isStatusMove,
+      Value<bool> isDamagingMove,
+      Value<bool> isSignatureMove,
+      Value<bool> isDLCMove,
+      Value<bool> isChampionsMove,
+      Value<bool> isLegendsZAMove,
+      Value<int> generation,
+      Value<String?> introducedIn,
     });
 typedef $$MoveTableTableUpdateCompanionBuilder =
     MoveTableCompanion Function({
@@ -3109,6 +5497,33 @@ typedef $$MoveTableTableUpdateCompanionBuilder =
       Value<int> pp,
       Value<String> damageClass,
       Value<String?> description,
+      Value<int> priority,
+      Value<bool> isContact,
+      Value<bool> isHealing,
+      Value<bool> isSound,
+      Value<bool> isPunching,
+      Value<bool> isBiting,
+      Value<bool> isPowder,
+      Value<bool> isPulse,
+      Value<bool> isBallistic,
+      Value<bool> isSlicing,
+      Value<bool> isWind,
+      Value<bool> isDance,
+      Value<bool> isBite,
+      Value<bool> isMultiHit,
+      Value<bool> isProtective,
+      Value<bool> isSwitching,
+      Value<bool> isRecharge,
+      Value<bool> isRecoil,
+      Value<bool> isDraining,
+      Value<bool> isStatusMove,
+      Value<bool> isDamagingMove,
+      Value<bool> isSignatureMove,
+      Value<bool> isDLCMove,
+      Value<bool> isChampionsMove,
+      Value<bool> isLegendsZAMove,
+      Value<int> generation,
+      Value<String?> introducedIn,
     });
 
 final class $$MoveTableTableReferences
@@ -3189,6 +5604,141 @@ class $$MoveTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<int> get priority => $composableBuilder(
+    column: $table.priority,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isContact => $composableBuilder(
+    column: $table.isContact,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isHealing => $composableBuilder(
+    column: $table.isHealing,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isSound => $composableBuilder(
+    column: $table.isSound,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isPunching => $composableBuilder(
+    column: $table.isPunching,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isBiting => $composableBuilder(
+    column: $table.isBiting,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isPowder => $composableBuilder(
+    column: $table.isPowder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isPulse => $composableBuilder(
+    column: $table.isPulse,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isBallistic => $composableBuilder(
+    column: $table.isBallistic,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isSlicing => $composableBuilder(
+    column: $table.isSlicing,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isWind => $composableBuilder(
+    column: $table.isWind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDance => $composableBuilder(
+    column: $table.isDance,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isBite => $composableBuilder(
+    column: $table.isBite,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isMultiHit => $composableBuilder(
+    column: $table.isMultiHit,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isProtective => $composableBuilder(
+    column: $table.isProtective,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isSwitching => $composableBuilder(
+    column: $table.isSwitching,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isRecharge => $composableBuilder(
+    column: $table.isRecharge,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isRecoil => $composableBuilder(
+    column: $table.isRecoil,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDraining => $composableBuilder(
+    column: $table.isDraining,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isStatusMove => $composableBuilder(
+    column: $table.isStatusMove,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDamagingMove => $composableBuilder(
+    column: $table.isDamagingMove,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isSignatureMove => $composableBuilder(
+    column: $table.isSignatureMove,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDLCMove => $composableBuilder(
+    column: $table.isDLCMove,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isChampionsMove => $composableBuilder(
+    column: $table.isChampionsMove,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isLegendsZAMove => $composableBuilder(
+    column: $table.isLegendsZAMove,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get generation => $composableBuilder(
+    column: $table.generation,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get introducedIn => $composableBuilder(
+    column: $table.introducedIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
   Expression<bool> pokemonMovesTableRefs(
     Expression<bool> Function($$PokemonMovesTableTableFilterComposer f) f,
   ) {
@@ -3263,6 +5813,141 @@ class $$MoveTableTableOrderingComposer
     column: $table.description,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get priority => $composableBuilder(
+    column: $table.priority,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isContact => $composableBuilder(
+    column: $table.isContact,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isHealing => $composableBuilder(
+    column: $table.isHealing,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isSound => $composableBuilder(
+    column: $table.isSound,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isPunching => $composableBuilder(
+    column: $table.isPunching,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isBiting => $composableBuilder(
+    column: $table.isBiting,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isPowder => $composableBuilder(
+    column: $table.isPowder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isPulse => $composableBuilder(
+    column: $table.isPulse,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isBallistic => $composableBuilder(
+    column: $table.isBallistic,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isSlicing => $composableBuilder(
+    column: $table.isSlicing,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isWind => $composableBuilder(
+    column: $table.isWind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDance => $composableBuilder(
+    column: $table.isDance,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isBite => $composableBuilder(
+    column: $table.isBite,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isMultiHit => $composableBuilder(
+    column: $table.isMultiHit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isProtective => $composableBuilder(
+    column: $table.isProtective,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isSwitching => $composableBuilder(
+    column: $table.isSwitching,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isRecharge => $composableBuilder(
+    column: $table.isRecharge,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isRecoil => $composableBuilder(
+    column: $table.isRecoil,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDraining => $composableBuilder(
+    column: $table.isDraining,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isStatusMove => $composableBuilder(
+    column: $table.isStatusMove,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDamagingMove => $composableBuilder(
+    column: $table.isDamagingMove,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isSignatureMove => $composableBuilder(
+    column: $table.isSignatureMove,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDLCMove => $composableBuilder(
+    column: $table.isDLCMove,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isChampionsMove => $composableBuilder(
+    column: $table.isChampionsMove,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isLegendsZAMove => $composableBuilder(
+    column: $table.isLegendsZAMove,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get generation => $composableBuilder(
+    column: $table.generation,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get introducedIn => $composableBuilder(
+    column: $table.introducedIn,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$MoveTableTableAnnotationComposer
@@ -3299,6 +5984,115 @@ class $$MoveTableTableAnnotationComposer
 
   GeneratedColumn<String> get description => $composableBuilder(
     column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get priority =>
+      $composableBuilder(column: $table.priority, builder: (column) => column);
+
+  GeneratedColumn<bool> get isContact =>
+      $composableBuilder(column: $table.isContact, builder: (column) => column);
+
+  GeneratedColumn<bool> get isHealing =>
+      $composableBuilder(column: $table.isHealing, builder: (column) => column);
+
+  GeneratedColumn<bool> get isSound =>
+      $composableBuilder(column: $table.isSound, builder: (column) => column);
+
+  GeneratedColumn<bool> get isPunching => $composableBuilder(
+    column: $table.isPunching,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isBiting =>
+      $composableBuilder(column: $table.isBiting, builder: (column) => column);
+
+  GeneratedColumn<bool> get isPowder =>
+      $composableBuilder(column: $table.isPowder, builder: (column) => column);
+
+  GeneratedColumn<bool> get isPulse =>
+      $composableBuilder(column: $table.isPulse, builder: (column) => column);
+
+  GeneratedColumn<bool> get isBallistic => $composableBuilder(
+    column: $table.isBallistic,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isSlicing =>
+      $composableBuilder(column: $table.isSlicing, builder: (column) => column);
+
+  GeneratedColumn<bool> get isWind =>
+      $composableBuilder(column: $table.isWind, builder: (column) => column);
+
+  GeneratedColumn<bool> get isDance =>
+      $composableBuilder(column: $table.isDance, builder: (column) => column);
+
+  GeneratedColumn<bool> get isBite =>
+      $composableBuilder(column: $table.isBite, builder: (column) => column);
+
+  GeneratedColumn<bool> get isMultiHit => $composableBuilder(
+    column: $table.isMultiHit,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isProtective => $composableBuilder(
+    column: $table.isProtective,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isSwitching => $composableBuilder(
+    column: $table.isSwitching,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isRecharge => $composableBuilder(
+    column: $table.isRecharge,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isRecoil =>
+      $composableBuilder(column: $table.isRecoil, builder: (column) => column);
+
+  GeneratedColumn<bool> get isDraining => $composableBuilder(
+    column: $table.isDraining,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isStatusMove => $composableBuilder(
+    column: $table.isStatusMove,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isDamagingMove => $composableBuilder(
+    column: $table.isDamagingMove,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isSignatureMove => $composableBuilder(
+    column: $table.isSignatureMove,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isDLCMove =>
+      $composableBuilder(column: $table.isDLCMove, builder: (column) => column);
+
+  GeneratedColumn<bool> get isChampionsMove => $composableBuilder(
+    column: $table.isChampionsMove,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isLegendsZAMove => $composableBuilder(
+    column: $table.isLegendsZAMove,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get generation => $composableBuilder(
+    column: $table.generation,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get introducedIn => $composableBuilder(
+    column: $table.introducedIn,
     builder: (column) => column,
   );
 
@@ -3365,6 +6159,33 @@ class $$MoveTableTableTableManager
                 Value<int> pp = const Value.absent(),
                 Value<String> damageClass = const Value.absent(),
                 Value<String?> description = const Value.absent(),
+                Value<int> priority = const Value.absent(),
+                Value<bool> isContact = const Value.absent(),
+                Value<bool> isHealing = const Value.absent(),
+                Value<bool> isSound = const Value.absent(),
+                Value<bool> isPunching = const Value.absent(),
+                Value<bool> isBiting = const Value.absent(),
+                Value<bool> isPowder = const Value.absent(),
+                Value<bool> isPulse = const Value.absent(),
+                Value<bool> isBallistic = const Value.absent(),
+                Value<bool> isSlicing = const Value.absent(),
+                Value<bool> isWind = const Value.absent(),
+                Value<bool> isDance = const Value.absent(),
+                Value<bool> isBite = const Value.absent(),
+                Value<bool> isMultiHit = const Value.absent(),
+                Value<bool> isProtective = const Value.absent(),
+                Value<bool> isSwitching = const Value.absent(),
+                Value<bool> isRecharge = const Value.absent(),
+                Value<bool> isRecoil = const Value.absent(),
+                Value<bool> isDraining = const Value.absent(),
+                Value<bool> isStatusMove = const Value.absent(),
+                Value<bool> isDamagingMove = const Value.absent(),
+                Value<bool> isSignatureMove = const Value.absent(),
+                Value<bool> isDLCMove = const Value.absent(),
+                Value<bool> isChampionsMove = const Value.absent(),
+                Value<bool> isLegendsZAMove = const Value.absent(),
+                Value<int> generation = const Value.absent(),
+                Value<String?> introducedIn = const Value.absent(),
               }) => MoveTableCompanion(
                 id: id,
                 name: name,
@@ -3374,6 +6195,33 @@ class $$MoveTableTableTableManager
                 pp: pp,
                 damageClass: damageClass,
                 description: description,
+                priority: priority,
+                isContact: isContact,
+                isHealing: isHealing,
+                isSound: isSound,
+                isPunching: isPunching,
+                isBiting: isBiting,
+                isPowder: isPowder,
+                isPulse: isPulse,
+                isBallistic: isBallistic,
+                isSlicing: isSlicing,
+                isWind: isWind,
+                isDance: isDance,
+                isBite: isBite,
+                isMultiHit: isMultiHit,
+                isProtective: isProtective,
+                isSwitching: isSwitching,
+                isRecharge: isRecharge,
+                isRecoil: isRecoil,
+                isDraining: isDraining,
+                isStatusMove: isStatusMove,
+                isDamagingMove: isDamagingMove,
+                isSignatureMove: isSignatureMove,
+                isDLCMove: isDLCMove,
+                isChampionsMove: isChampionsMove,
+                isLegendsZAMove: isLegendsZAMove,
+                generation: generation,
+                introducedIn: introducedIn,
               ),
           createCompanionCallback:
               ({
@@ -3385,6 +6233,33 @@ class $$MoveTableTableTableManager
                 required int pp,
                 required String damageClass,
                 Value<String?> description = const Value.absent(),
+                Value<int> priority = const Value.absent(),
+                Value<bool> isContact = const Value.absent(),
+                Value<bool> isHealing = const Value.absent(),
+                Value<bool> isSound = const Value.absent(),
+                Value<bool> isPunching = const Value.absent(),
+                Value<bool> isBiting = const Value.absent(),
+                Value<bool> isPowder = const Value.absent(),
+                Value<bool> isPulse = const Value.absent(),
+                Value<bool> isBallistic = const Value.absent(),
+                Value<bool> isSlicing = const Value.absent(),
+                Value<bool> isWind = const Value.absent(),
+                Value<bool> isDance = const Value.absent(),
+                Value<bool> isBite = const Value.absent(),
+                Value<bool> isMultiHit = const Value.absent(),
+                Value<bool> isProtective = const Value.absent(),
+                Value<bool> isSwitching = const Value.absent(),
+                Value<bool> isRecharge = const Value.absent(),
+                Value<bool> isRecoil = const Value.absent(),
+                Value<bool> isDraining = const Value.absent(),
+                Value<bool> isStatusMove = const Value.absent(),
+                Value<bool> isDamagingMove = const Value.absent(),
+                Value<bool> isSignatureMove = const Value.absent(),
+                Value<bool> isDLCMove = const Value.absent(),
+                Value<bool> isChampionsMove = const Value.absent(),
+                Value<bool> isLegendsZAMove = const Value.absent(),
+                Value<int> generation = const Value.absent(),
+                Value<String?> introducedIn = const Value.absent(),
               }) => MoveTableCompanion.insert(
                 id: id,
                 name: name,
@@ -3394,6 +6269,33 @@ class $$MoveTableTableTableManager
                 pp: pp,
                 damageClass: damageClass,
                 description: description,
+                priority: priority,
+                isContact: isContact,
+                isHealing: isHealing,
+                isSound: isSound,
+                isPunching: isPunching,
+                isBiting: isBiting,
+                isPowder: isPowder,
+                isPulse: isPulse,
+                isBallistic: isBallistic,
+                isSlicing: isSlicing,
+                isWind: isWind,
+                isDance: isDance,
+                isBite: isBite,
+                isMultiHit: isMultiHit,
+                isProtective: isProtective,
+                isSwitching: isSwitching,
+                isRecharge: isRecharge,
+                isRecoil: isRecoil,
+                isDraining: isDraining,
+                isStatusMove: isStatusMove,
+                isDamagingMove: isDamagingMove,
+                isSignatureMove: isSignatureMove,
+                isDLCMove: isDLCMove,
+                isChampionsMove: isChampionsMove,
+                isLegendsZAMove: isLegendsZAMove,
+                generation: generation,
+                introducedIn: introducedIn,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -3458,12 +6360,30 @@ typedef $$AbilityTableTableCreateCompanionBuilder =
       Value<int> id,
       required String name,
       required String description,
+      Value<int> generation,
+      Value<bool> isHiddenAbility,
+      Value<bool> isChampionsAbility,
+      Value<bool> isLegendsZAAbility,
+      Value<String?> introducedIn,
+      Value<String?> sourceGames,
+      Value<String?> effectTags,
+      Value<String?> battleEffectTags,
+      Value<String?> pokemonTypes,
     });
 typedef $$AbilityTableTableUpdateCompanionBuilder =
     AbilityTableCompanion Function({
       Value<int> id,
       Value<String> name,
       Value<String> description,
+      Value<int> generation,
+      Value<bool> isHiddenAbility,
+      Value<bool> isChampionsAbility,
+      Value<bool> isLegendsZAAbility,
+      Value<String?> introducedIn,
+      Value<String?> sourceGames,
+      Value<String?> effectTags,
+      Value<String?> battleEffectTags,
+      Value<String?> pokemonTypes,
     });
 
 final class $$AbilityTableTableReferences
@@ -3520,6 +6440,51 @@ class $$AbilityTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<int> get generation => $composableBuilder(
+    column: $table.generation,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isHiddenAbility => $composableBuilder(
+    column: $table.isHiddenAbility,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isChampionsAbility => $composableBuilder(
+    column: $table.isChampionsAbility,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isLegendsZAAbility => $composableBuilder(
+    column: $table.isLegendsZAAbility,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get introducedIn => $composableBuilder(
+    column: $table.introducedIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceGames => $composableBuilder(
+    column: $table.sourceGames,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get effectTags => $composableBuilder(
+    column: $table.effectTags,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get battleEffectTags => $composableBuilder(
+    column: $table.battleEffectTags,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get pokemonTypes => $composableBuilder(
+    column: $table.pokemonTypes,
+    builder: (column) => ColumnFilters(column),
+  );
+
   Expression<bool> pokemonAbilitiesTableRefs(
     Expression<bool> Function($$PokemonAbilitiesTableTableFilterComposer f) f,
   ) {
@@ -3570,6 +6535,51 @@ class $$AbilityTableTableOrderingComposer
     column: $table.description,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get generation => $composableBuilder(
+    column: $table.generation,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isHiddenAbility => $composableBuilder(
+    column: $table.isHiddenAbility,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isChampionsAbility => $composableBuilder(
+    column: $table.isChampionsAbility,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isLegendsZAAbility => $composableBuilder(
+    column: $table.isLegendsZAAbility,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get introducedIn => $composableBuilder(
+    column: $table.introducedIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceGames => $composableBuilder(
+    column: $table.sourceGames,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get effectTags => $composableBuilder(
+    column: $table.effectTags,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get battleEffectTags => $composableBuilder(
+    column: $table.battleEffectTags,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get pokemonTypes => $composableBuilder(
+    column: $table.pokemonTypes,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$AbilityTableTableAnnotationComposer
@@ -3589,6 +6599,51 @@ class $$AbilityTableTableAnnotationComposer
 
   GeneratedColumn<String> get description => $composableBuilder(
     column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get generation => $composableBuilder(
+    column: $table.generation,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isHiddenAbility => $composableBuilder(
+    column: $table.isHiddenAbility,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isChampionsAbility => $composableBuilder(
+    column: $table.isChampionsAbility,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isLegendsZAAbility => $composableBuilder(
+    column: $table.isLegendsZAAbility,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get introducedIn => $composableBuilder(
+    column: $table.introducedIn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceGames => $composableBuilder(
+    column: $table.sourceGames,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get effectTags => $composableBuilder(
+    column: $table.effectTags,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get battleEffectTags => $composableBuilder(
+    column: $table.battleEffectTags,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get pokemonTypes => $composableBuilder(
+    column: $table.pokemonTypes,
     builder: (column) => column,
   );
 
@@ -3650,20 +6705,56 @@ class $$AbilityTableTableTableManager
                 Value<int> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<String> description = const Value.absent(),
+                Value<int> generation = const Value.absent(),
+                Value<bool> isHiddenAbility = const Value.absent(),
+                Value<bool> isChampionsAbility = const Value.absent(),
+                Value<bool> isLegendsZAAbility = const Value.absent(),
+                Value<String?> introducedIn = const Value.absent(),
+                Value<String?> sourceGames = const Value.absent(),
+                Value<String?> effectTags = const Value.absent(),
+                Value<String?> battleEffectTags = const Value.absent(),
+                Value<String?> pokemonTypes = const Value.absent(),
               }) => AbilityTableCompanion(
                 id: id,
                 name: name,
                 description: description,
+                generation: generation,
+                isHiddenAbility: isHiddenAbility,
+                isChampionsAbility: isChampionsAbility,
+                isLegendsZAAbility: isLegendsZAAbility,
+                introducedIn: introducedIn,
+                sourceGames: sourceGames,
+                effectTags: effectTags,
+                battleEffectTags: battleEffectTags,
+                pokemonTypes: pokemonTypes,
               ),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
                 required String name,
                 required String description,
+                Value<int> generation = const Value.absent(),
+                Value<bool> isHiddenAbility = const Value.absent(),
+                Value<bool> isChampionsAbility = const Value.absent(),
+                Value<bool> isLegendsZAAbility = const Value.absent(),
+                Value<String?> introducedIn = const Value.absent(),
+                Value<String?> sourceGames = const Value.absent(),
+                Value<String?> effectTags = const Value.absent(),
+                Value<String?> battleEffectTags = const Value.absent(),
+                Value<String?> pokemonTypes = const Value.absent(),
               }) => AbilityTableCompanion.insert(
                 id: id,
                 name: name,
                 description: description,
+                generation: generation,
+                isHiddenAbility: isHiddenAbility,
+                isChampionsAbility: isChampionsAbility,
+                isLegendsZAAbility: isLegendsZAAbility,
+                introducedIn: introducedIn,
+                sourceGames: sourceGames,
+                effectTags: effectTags,
+                battleEffectTags: battleEffectTags,
+                pokemonTypes: pokemonTypes,
               ),
           withReferenceMapper: (p0) => p0
               .map(

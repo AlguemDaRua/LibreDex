@@ -25,6 +25,10 @@ void main() {
     spriteUrl: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png',
     shinySpriteUrl: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/1.png',
     nationalDexNumber: 1,
+    generation: 1,
+    evolutionStage: 1,
+    isChampions: false,
+    isLegendsZA: false,
   );
 
   testWidgets('PokemonDetailScreen renders basic tabs and header without crashing', (tester) async {

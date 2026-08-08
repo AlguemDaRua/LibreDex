@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/core/theme/app_theme.dart';
@@ -12,7 +11,6 @@ import 'package:libredex/core/widgets/dex_sort_menu.dart';
 import 'package:libredex/core/widgets/dex_filter_sheet.dart';
 import 'package:libredex/core/widgets/active_filter_summary.dart';
 import 'package:libredex/core/widgets/result_count_label.dart';
-import 'package:libredex/core/utils/move_properties.dart';
 
 class MovedexScreen extends ConsumerStatefulWidget {
   const MovedexScreen({super.key});
@@ -404,7 +402,6 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
         return StatefulBuilder(
           builder: (context, setModalState) {
             final isDark = Theme.of(context).brightness == Brightness.dark;
-            final primaryColor = isDark ? Colors.white : Colors.black;
 
             return DexFilterSheet(
               title: 'Move Filters',

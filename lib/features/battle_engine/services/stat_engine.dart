@@ -34,6 +34,10 @@ class StatEngine {
       spriteUrl: '',
       shinySpriteUrl: '',
       nationalDexNumber: state.id,
+      generation: 1,
+      evolutionStage: 0,
+      isChampions: false,
+      isLegendsZA: false,
     );
 
     return ComparisonEntry(

@@ -15,7 +15,9 @@ extension MovePropertiesExtension on Move {
         n == 'crafty shield' ||
         n == 'mat block' ||
         n == 'max guard' ||
-        n == 'shelter') return 4;
+        n == 'shelter') {
+      return 4;
+    }
     if (n == 'fake out' || n == 'first impression') return 3;
     if (n == 'extreme speed' || n == 'feint' || n == 'rage powder' || n == 'follow me' || n == 'ally switch') return 2;
     if (n == 'quick attack' ||
@@ -28,13 +30,17 @@ extension MovePropertiesExtension on Move {
         n == 'sucker punch' ||
         n == 'water shuriken' ||
         n == 'grassy glide' ||
-        n == 'accelerock') return 1;
+        n == 'accelerock') {
+      return 1;
+    }
     if (n == 'vital throw' ||
         n == 'circle throw' ||
         n == 'dragon tail' ||
         n == 'roar' ||
         n == 'whirlwind' ||
-        n == 'trick room') return -6;
+        n == 'trick room') {
+      return -6;
+    }
     return 0;
   }
 
@@ -55,7 +61,9 @@ extension MovePropertiesExtension on Move {
         n.contains('seed bomb') ||
         n.contains('spirit break') ||
         n.contains('drum beating') ||
-        n.contains('grav apple')) return false;
+        n.contains('grav apple')) {
+      return false;
+    }
     return true;
   }
 

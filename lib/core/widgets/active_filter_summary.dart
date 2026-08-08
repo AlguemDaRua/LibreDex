@@ -27,7 +27,7 @@ class ActiveFilterSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     if (items.isEmpty) return const SizedBox.shrink();
 
-    final chips = items.map((item) {
+    final List<Widget> chips = items.map<Widget>((item) {
       final chipColor = item.color ?? Colors.orangeAccent;
       return Container(
         padding: const EdgeInsets.only(left: 10, right: 4, top: 3, bottom: 3),

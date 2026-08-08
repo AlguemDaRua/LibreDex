@@ -5,6 +5,7 @@ import 'package:libredex/core/navigation/navigation_provider.dart';
 import 'package:libredex/core/navigation/section_back_stack.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/widgets/artwork_download_dialog.dart';
+import 'package:libredex/core/widgets/feature_hub_sheet.dart';
 import 'package:libredex/features/abilitydex/views/abilitydex_screen.dart';
 import 'package:libredex/features/calculator/views/damage_calculator_screen.dart';
 import 'package:libredex/features/itemdex/views/itemdex_screen.dart';
@@ -79,17 +80,51 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
+  int _getBottomNavIndex(int menuIndex) {
+    switch (menuIndex) {
+      case 0:
+        return 0; // Pokédex
+      case 1:
+        return 1; // Teams
+      case 3:
+        return 2; // Moves
+      case 8:
+        return 3; // Calc
+      default:
+        return 4; // Hub / More
+    }
+  }
+
+  void _onBottomNavTapped(int navIndex) {
+    switch (navIndex) {
+      case 0:
+        ref.read(currentMenuIndexProvider.notifier).setIndex(0);
+        break;
+      case 1:
+        ref.read(currentMenuIndexProvider.notifier).setIndex(1);
+        break;
+      case 2:
+        ref.read(currentMenuIndexProvider.notifier).setIndex(3);
+        break;
+      case 3:
+        ref.read(currentMenuIndexProvider.notifier).setIndex(8);
+        break;
+      case 4:
+        FeatureHubSheet.show(context);
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentIndex = ref.watch(currentMenuIndexProvider);
     _visitedIndices.add(currentIndex);
     _backStack.record(currentIndex);
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bottomNavIndex = _getBottomNavIndex(currentIndex);
+
     return PopScope(
-      // Section switching is handled manually: back walks the section
-      // history (Team Builder → Calculator → back lands on Team Builder
-      // again) instead of always jumping to the Pokédex. Only when the
-      // history is empty at the root does the app close.
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
@@ -100,21 +135,59 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ref.read(currentMenuIndexProvider.notifier).setIndex(target);
         }
       },
-      child: Column(
-        children: [
-          const _DownloadBanner(),
-          Expanded(
-            child: IndexedStack(
-              index: currentIndex,
-              children: List.generate(
-                10,
-                (index) => _visitedIndices.contains(index)
-                    ? _buildSection(index)
-                    : const SizedBox.shrink(),
+      child: Scaffold(
+        body: Column(
+          children: [
+            const _DownloadBanner(),
+            Expanded(
+              child: IndexedStack(
+                index: currentIndex,
+                children: List.generate(
+                  10,
+                  (index) => _visitedIndices.contains(index)
+                      ? _buildSection(index)
+                      : const SizedBox.shrink(),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: bottomNavIndex,
+          onDestinationSelected: _onBottomNavTapped,
+          backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+          indicatorColor: AppTheme.pokemonRed.withValues(alpha: 0.18),
+          elevation: 8,
+          height: 64,
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.catching_pokemon_outlined),
+              selectedIcon: Icon(Icons.catching_pokemon, color: AppTheme.pokemonRed),
+              label: 'Pokédex',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.groups_outlined),
+              selectedIcon: Icon(Icons.groups_rounded, color: AppTheme.pokemonRed),
+              label: 'Teams',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.flash_on_outlined),
+              selectedIcon: Icon(Icons.flash_on_rounded, color: AppTheme.pokemonRed),
+              label: 'Moves',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.calculate_outlined),
+              selectedIcon: Icon(Icons.calculate_rounded, color: AppTheme.pokemonRed),
+              label: 'Calc',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.apps_outlined),
+              selectedIcon: Icon(Icons.apps_rounded, color: AppTheme.pokemonRed),
+              label: 'Hub',
+            ),
+          ],
+        ),
       ),
     );
   }

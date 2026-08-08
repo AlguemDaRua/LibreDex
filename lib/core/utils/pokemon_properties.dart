@@ -1,20 +1,6 @@
 import 'package:libredex/core/database/app_database.dart';
 
 extension PokemonPropertiesExtension on Pokemon {
-  int get generation {
-    final dexNum = nationalDexNumber > 0 ? nationalDexNumber : id;
-    if (dexNum >= 1 && dexNum <= 151) return 1;
-    if (dexNum >= 152 && dexNum <= 251) return 2;
-    if (dexNum >= 252 && dexNum <= 386) return 3;
-    if (dexNum >= 387 && dexNum <= 493) return 4;
-    if (dexNum >= 494 && dexNum <= 649) return 5;
-    if (dexNum >= 650 && dexNum <= 721) return 6;
-    if (dexNum >= 722 && dexNum <= 809) return 7;
-    if (dexNum >= 810 && dexNum <= 898) return 8;
-    if (dexNum >= 899 && dexNum <= 1025) return 9;
-    return 9;
-  }
-
   String get generationLabel => 'Generation ${generation.toString()}';
 
   bool get isBaby {
@@ -23,35 +9,6 @@ extension PokemonPropertiesExtension on Pokemon {
     };
     final dexNum = nationalDexNumber > 0 ? nationalDexNumber : id;
     return babies.contains(dexNum);
-  }
-
-  int get evolutionStage {
-    final n = name.toLowerCase();
-    final f = form.toLowerCase();
-    if (n.contains('mega') || f.contains('mega') || f.contains('gigantamax')) return 3; // Special
-    if (isBaby) return 0; // Baby
-
-    const stage2 = {
-      3, 6, 9, 12, 15, 18, 26, 31, 34, 36, 38, 45, 62, 65, 68, 71, 76, 89, 94, 130, 143, 149,
-      154, 157, 160, 181, 189, 248, 254, 257, 260, 267, 272, 275, 282, 289, 295, 306, 330, 373, 376,
-      389, 392, 395, 405, 407, 430, 445, 448, 462, 464, 466, 467, 474, 475, 477, 497, 500, 503, 526,
-      534, 537, 542, 545, 553, 576, 579, 604, 609, 612, 635, 652, 655, 658, 663, 666, 671, 681, 706,
-      711, 724, 727, 730, 733, 738, 743, 784, 791, 792, 812, 815, 818, 823, 826, 858, 861, 887, 908,
-      911, 914, 923, 930, 934, 959, 998
-    };
-
-    const stage1 = {
-      2, 5, 8, 11, 14, 17, 25, 30, 33, 35, 37, 44, 61, 64, 67, 70, 75, 88, 93, 129, 142, 148,
-      153, 156, 159, 180, 188, 247, 253, 256, 259, 266, 271, 274, 281, 288, 294, 305, 329, 372, 375,
-      388, 391, 394, 404, 444, 461, 496, 499, 502, 525, 533, 536, 541, 544, 552, 575, 578, 603, 608,
-      611, 634, 651, 654, 657, 662, 665, 670, 680, 705, 710, 723, 726, 729, 732, 737, 742, 783, 790,
-      811, 814, 817, 822, 825, 857, 860, 886, 907, 910, 913, 922, 929, 933, 958, 997
-    };
-
-    final dexNum = nationalDexNumber > 0 ? nationalDexNumber : id;
-    if (stage2.contains(dexNum)) return 2; // Stage 2
-    if (stage1.contains(dexNum)) return 1; // Stage 1
-    return 0; // Basic / Single Stage
   }
 
   String get evolutionStageLabel {
@@ -118,12 +75,19 @@ extension PokemonPropertiesExtension on Pokemon {
     return 'None';
   }
 
-  List<String> get eggGroups {
+  /// Parses the comma-separated eggGroups DB field into a list.
+  /// Falls back to heuristic-based classification if the DB field is empty.
+  List<String> get eggGroupsList {
+    if (eggGroups != null && eggGroups!.isNotEmpty) {
+      return eggGroups!.split(',').map((e) => e.trim()).toList();
+    }
+
+    // Fallback heuristic
     final dexNum = nationalDexNumber > 0 ? nationalDexNumber : id;
     if (isLegendary || isMythical || isParadox || isUltraBeast) {
       return ['Undiscovered'];
     }
-    
+
     final t1 = type1.toLowerCase();
     final t2 = type2?.toLowerCase();
     final n = name.toLowerCase();
@@ -150,7 +114,7 @@ extension PokemonPropertiesExtension on Pokemon {
     if (t1 == 'dragon' || t2 == 'dragon') groups.add('Dragon');
     if (t1 == 'fairy' || t2 == 'fairy') groups.add('Fairy');
     if (t1 == 'grass' || t2 == 'grass') groups.add('Grass');
-    
+
     if (t1 == 'water' || t2 == 'water') {
       if (n.contains('fish') || n.contains('carp') || n.contains('remoraid') || n.contains('octillery')) {
         groups.add('Water 2');
@@ -178,28 +142,5 @@ extension PokemonPropertiesExtension on Pokemon {
     }
 
     return groups;
-  }
-
-  bool get isChampions => name.toLowerCase().contains('champions') || id >= 10000;
-  bool get isLegendsZA => form.toLowerCase().contains('eternal') || form.toLowerCase().contains('legends') || form.toLowerCase().contains('mega-raichu') || name.toLowerCase().contains('floette eternal') || form.toLowerCase() == 'legends-za';
-
-  String? get formSource {
-    if (isChampions) return 'champions';
-    if (isLegendsZA) return 'legends_za';
-    final f = form.toLowerCase();
-    if (f.contains('mega')) return 'mega';
-    if (f.contains('alolan')) return 'alola';
-    if (f.contains('galarian')) return 'galar';
-    if (f.contains('hisuian')) return 'hisui';
-    if (f.contains('paldean')) return 'paldea';
-    return 'mainline';
-  }
-
-  String? get dlcSource {
-    final dexNum = nationalDexNumber > 0 ? nationalDexNumber : id;
-    if (dexNum >= 1010 && dexNum <= 1017) return 'The Teal Mask';
-    if (dexNum >= 1018 && dexNum <= 1025) return 'The Indigo Disk';
-    if (isChampions) return 'Mega Dimension DLC';
-    return null;
   }
 }

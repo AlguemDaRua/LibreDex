@@ -7,8 +7,6 @@ import 'package:libredex/core/widgets/learn_method_badge.dart';
 import 'package:libredex/features/calculator/utils/combat_utils.dart';
 import 'package:libredex/features/pokedex/views/pokemon_detail_screen.dart';
 import 'package:libredex/core/widgets/pokemon_sprite.dart';
-import 'package:libredex/core/widgets/result_count_label.dart';
-import 'package:libredex/core/utils/move_properties.dart';
 import 'package:libredex/core/utils/pokemon_properties.dart';
 
 import 'package:flutter/services.dart';
@@ -40,6 +38,18 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
   String _pokemonType = 'All';
   int? _selectedGen;
   String _selectedMethod = 'All';
+
+  /// Derives available Pokémon types from the loaded learnset.
+  List<String> get _types {
+    final types = <String>{};
+    for (final row in _pokemons) {
+      final p = row['pokemon'] as Pokemon;
+      types.add(p.type1);
+      if (p.type2 != null) types.add(p.type2!);
+    }
+    final sorted = types.toList()..sort();
+    return sorted;
+  }
 
   @override
   void dispose() {
@@ -230,9 +240,9 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
                                 if (_moveDetails!.isHealing) _buildPropertyBadge('Healing', Colors.green, icon: Icons.healing),
                                 if (_moveDetails!.isSound) _buildPropertyBadge('Sound-Based', Colors.purple, icon: Icons.volume_up),
                                 if (_moveDetails!.isPunching) _buildPropertyBadge('Punching', Colors.red, icon: Icons.sports_mma),
-                                if (_moveDetails!.isBiting) _buildPropertyBadge('Biting', Colors.deepOrange, icon: Icons.comb_room),
+                                if (_moveDetails!.isBiting) _buildPropertyBadge('Biting', Colors.deepOrange, icon: Icons.pets),
                                 if (_moveDetails!.isPowder) _buildPropertyBadge('Powder', Colors.lime, icon: Icons.blur_on),
-                                if (_moveDetails!.isPulse) _buildPropertyBadge('Pulse/Aura', Colors.indigo, icon: Icons.star_border_purple_500_outlined),
+                                if (_moveDetails!.isPulse) _buildPropertyBadge('Pulse/Aura', Colors.indigo, icon: Icons.radio_button_unchecked),
                                 if (_moveDetails!.isBallistic) _buildPropertyBadge('Ballistic', Colors.blueGrey, icon: Icons.gps_fixed),
                                 if (_moveDetails!.isSlicing) _buildPropertyBadge('Slicing', Colors.teal, icon: Icons.content_cut),
                                 if (_moveDetails!.isWind) _buildPropertyBadge('Wind-Based', Colors.cyan, icon: Icons.air),
@@ -245,7 +255,7 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
                                 if (_moveDetails!.isDraining) _buildPropertyBadge('Draining', Colors.green, icon: Icons.add_circle_outline),
                                 
                                 // Source / Game rules
-                                _buildPropertyBadge(_moveDetails!.introducedIn, Colors.grey, icon: Icons.calendar_today),
+                                _buildPropertyBadge(_moveDetails!.introducedIn ?? 'Unknown', Colors.grey, icon: Icons.calendar_today),
                                 if (_moveDetails!.isChampionsMove) _buildPropertyBadge('Pokémon Champions', Colors.amber, icon: Icons.emoji_events),
                                 if (_moveDetails!.isLegendsZAMove) _buildPropertyBadge('Legends: Z-A', Colors.purple, icon: Icons.auto_awesome),
                                 if (_moveDetails!.isDLCMove) _buildPropertyBadge('DLC Content', Colors.indigoAccent, icon: Icons.extension),
@@ -296,47 +306,7 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
                       ),
                     ),
 
-                    // Relational Quick Filters (Type, Generation, Learn Method)
-                    Container(
-                      height: 38,
-                      margin: const EdgeInsets.symmetric(vertical: 4),
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        children: [
-                          // Type quick chips
-                          _buildFilterCategoryLabel('TYPE:'),
-                          ...['All', ..._types].map((type) => Padding(
-                                padding: const EdgeInsets.only(right: 6),
-                                child: ChoiceChip(
-                                  label: Text(type.toUpperCase(), style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
-                                  selected: _pokemonType == type,
-                                  onSelected: (_) => setState(() => _pokemonType = type),
-                                ),
-                              )),
-                              
-                          _buildFilterCategoryLabel('GEN:'),
-                          ...['All', '1', '2', '3', '4', '5', '6', '7', '8', '9'].map((gen) => Padding(
-                                padding: const EdgeInsets.only(right: 6),
-                                child: ChoiceChip(
-                                  label: Text(gen == 'All' ? 'ALL GENS' : 'GEN $gen', style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
-                                  selected: (gen == 'All' && _selectedGen == null) || (_selectedGen?.toString() == gen),
-                                  onSelected: (_) => setState(() => _selectedGen = gen == 'All' ? null : int.parse(gen)),
-                                ),
-                              )),
-
-                          _buildFilterCategoryLabel('METHOD:'),
-                          ...['All', 'level-up', 'machine', 'egg', 'tutor', 'evolution'].map((method) => Padding(
-                                padding: const EdgeInsets.only(right: 6),
-                                child: ChoiceChip(
-                                  label: Text(method.toUpperCase(), style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
-                                  selected: _selectedMethod == method,
-                                  onSelected: (_) => setState(() => _selectedMethod = method),
-                                ),
-                              )),
-                        ],
-                      ),
-                    ),
+                    _buildFilterChipsRow(),
 
                     Expanded(
                       child: _visiblePokemons.isEmpty
@@ -440,18 +410,6 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
     );
   }
 
-  Widget _buildFilterCategoryLabel(String label) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 6),
-        child: Text(
-          label,
-          style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Colors.grey, letterSpacing: 0.5),
-        ),
-      ),
-    );
-  }
-
   Widget _buildPropertyBadge(String text, Color color, {required IconData icon}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -494,6 +452,240 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
 
   Widget _buildLearnMethodBadge(String method, int? level) {
     return LearnMethodBadge(method: method, level: level, compact: true);
+  }
+
+  Widget _buildFilterChipsRow() {
+    final hasActiveFilter = _pokemonType != 'All' || _selectedGen != null || _selectedMethod != 'All';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _buildDropdownFilterChip(
+              label: _pokemonType == 'All' ? 'Type: All' : 'Type: ${_pokemonType.toUpperCase()}',
+              isActive: _pokemonType != 'All',
+              color: _pokemonType == 'All' ? null : _getTypeColor(_pokemonType),
+              onTap: () => _showPickerBottomSheet(
+                title: 'SELECT ELEMENTAL TYPE',
+                options: ['All', ..._types],
+                selected: _pokemonType,
+                itemLabel: (t) => t.toUpperCase(),
+                onSelect: (val) => setState(() => _pokemonType = val),
+                colorBuilder: (t) => t == 'All' ? null : _getTypeColor(t),
+              ),
+            ),
+            const SizedBox(width: 8),
+            _buildDropdownFilterChip(
+              label: _selectedGen == null ? 'Gen: All' : 'Gen $_selectedGen',
+              isActive: _selectedGen != null,
+              onTap: () => _showPickerBottomSheet(
+                title: 'SELECT GENERATION',
+                options: ['All', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
+                selected: _selectedGen?.toString() ?? 'All',
+                itemLabel: (g) => g == 'All' ? 'ALL GENS' : 'GEN $g',
+                onSelect: (val) => setState(() => _selectedGen = val == 'All' ? null : int.parse(val)),
+              ),
+            ),
+            const SizedBox(width: 8),
+            _buildDropdownFilterChip(
+              label: _selectedMethod == 'All' ? 'Method: All' : 'Method: ${_selectedMethod.toUpperCase()}',
+              isActive: _selectedMethod != 'All',
+              onTap: () => _showPickerBottomSheet(
+                title: 'SELECT LEARN METHOD',
+                options: ['All', 'level-up', 'machine', 'egg', 'tutor', 'evolution'],
+                selected: _selectedMethod,
+                itemLabel: (m) => m.toUpperCase(),
+                onSelect: (val) => setState(() => _selectedMethod = val),
+              ),
+            ),
+            if (hasActiveFilter) ...[
+              const SizedBox(width: 8),
+              InkWell(
+                onTap: () {
+                  setState(() {
+                    _pokemonType = 'All';
+                    _selectedGen = null;
+                    _selectedMethod = 'All';
+                  });
+                },
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppTheme.pokemonRed.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppTheme.pokemonRed.withValues(alpha: 0.4)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.close_rounded, size: 14, color: AppTheme.pokemonRed),
+                      SizedBox(width: 4),
+                      Text('Reset', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.pokemonRed)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDropdownFilterChip({
+    required String label,
+    required bool isActive,
+    Color? color,
+    required VoidCallback onTap,
+  }) {
+    final chipColor = color ?? (isActive ? AppTheme.pokemonRed : Colors.grey);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isActive ? chipColor.withValues(alpha: 0.15) : Colors.grey.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isActive ? chipColor : Colors.grey.withValues(alpha: 0.3),
+            width: isActive ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: isActive ? chipColor : Colors.grey.shade700,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.arrow_drop_down_rounded,
+              size: 18,
+              color: isActive ? chipColor : Colors.grey.shade600,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showPickerBottomSheet({
+    required String title,
+    required List<String> options,
+    required String selected,
+    required String Function(String) itemLabel,
+    required ValueChanged<String> onSelect,
+    Color? Function(String)? colorBuilder,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.65,
+          ),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF141414) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 20),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: options.map((opt) {
+                      final isSel = selected == opt;
+                      final customColor = colorBuilder?.call(opt);
+                      final activeColor = customColor ?? AppTheme.pokemonRed;
+
+                      return InkWell(
+                        onTap: () {
+                          onSelect(opt);
+                          Navigator.pop(context);
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: isSel
+                                ? activeColor
+                                : (customColor != null
+                                    ? customColor.withValues(alpha: 0.12)
+                                    : (isDark ? const Color(0xFF222222) : const Color(0xFFF1F5F9))),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isSel ? activeColor : (customColor ?? (isDark ? const Color(0xFF333333) : const Color(0xFFE2E8F0))),
+                              width: isSel ? 2 : 1,
+                            ),
+                          ),
+                          child: Text(
+                            itemLabel(opt),
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: isSel
+                                  ? Colors.white
+                                  : (customColor ?? (isDark ? Colors.white70 : Colors.black87)),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildErrorState() {

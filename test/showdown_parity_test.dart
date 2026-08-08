@@ -33,6 +33,7 @@ void main() {
         baseHp: 90, baseAtk: 92, baseDef: 75, baseSpAtk: 92, baseSpDef: 85, baseSpd: 60,
         isLegendary: false, isMythical: false, isParadox: false, isUltraBeast: false,
         spriteUrl: '', shinySpriteUrl: '', nationalDexNumber: 460,
+        generation: 4, evolutionStage: 2, isChampions: false, isLegendsZA: false,
       );
 
       const dragonite = Pokemon(
@@ -40,6 +41,7 @@ void main() {
         baseHp: 91, baseAtk: 134, baseDef: 95, baseSpAtk: 100, baseSpDef: 100, baseSpd: 80,
         isLegendary: false, isMythical: false, isParadox: false, isUltraBeast: false,
         spriteUrl: '', shinySpriteUrl: '', nationalDexNumber: 149,
+        generation: 1, evolutionStage: 3, isChampions: false, isLegendsZA: false,
       );
 
       final attacker = PokemonState.fromDatabase(
@@ -76,6 +78,7 @@ void main() {
         baseHp: 100, baseAtk: 160, baseDef: 97, baseSpAtk: 106, baseSpDef: 87, baseSpd: 100,
         isLegendary: false, isMythical: false, isParadox: false, isUltraBeast: false,
         spriteUrl: '', shinySpriteUrl: '', nationalDexNumber: 964,
+        generation: 9, evolutionStage: 2, isChampions: false, isLegendsZA: false,
       );
 
       const tinglu = Pokemon(
@@ -83,6 +86,7 @@ void main() {
         baseHp: 155, baseAtk: 110, baseDef: 125, baseSpAtk: 55, baseSpDef: 80, baseSpd: 45,
         isLegendary: true, isMythical: false, isParadox: false, isUltraBeast: false,
         spriteUrl: '', shinySpriteUrl: '', nationalDexNumber: 988,
+        generation: 9, evolutionStage: 1, isChampions: false, isLegendsZA: false,
       );
 
       final attacker = PokemonState.fromDatabase(
@@ -150,6 +154,7 @@ void main() {
         baseHp: 73, baseAtk: 115, baseDef: 60, baseSpAtk: 60, baseSpDef: 60, baseSpd: 90,
         isLegendary: false, isMythical: false, isParadox: false, isUltraBeast: false,
         spriteUrl: '', shinySpriteUrl: '', nationalDexNumber: 335,
+        generation: 3, evolutionStage: 1, isChampions: false, isLegendsZA: false,
       );
 
       final statusedAttacker = PokemonState.fromDatabase(
@@ -178,6 +183,7 @@ void main() {
         baseHp: 35, baseAtk: 55, baseDef: 40, baseSpAtk: 50, baseSpDef: 50, baseSpd: 90,
         isLegendary: false, isMythical: false, isParadox: false, isUltraBeast: false,
         spriteUrl: '', shinySpriteUrl: '', nationalDexNumber: 25,
+        generation: 1, evolutionStage: 1, isChampions: false, isLegendsZA: false,
       );
 
       final attacker = PokemonState.fromDatabase(pikachu, level: 50);

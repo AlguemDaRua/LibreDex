@@ -1,30 +1,25 @@
 import 'package:libredex/core/database/app_database.dart';
 
 extension AbilityPropertiesExtension on Ability {
-  int get generation {
-    if (id >= 1 && id <= 76) return 3;
-    if (id >= 77 && id <= 123) return 4;
-    if (id >= 124 && id <= 164) return 5;
-    if (id >= 165 && id <= 191) return 6;
-    if (id >= 192 && id <= 233) return 7;
-    if (id >= 234 && id <= 267) return 8;
-    if (id >= 268 && id <= 307) return 9;
-    return 9; // default/latest
-  }
+  String get generationLabel => 'Generation ${generation.toString()}';
 
-  String get introducedIn => 'Generation ${generation.toString()}';
+  String get introducedInLabel => introducedIn ?? 'Generation ${generation.toString()}';
 
-  bool get isHiddenAbility => false; // Usually context-specific, default false
-  bool get isChampionsAbility => id >= 10000;
-  bool get isLegendsZAAbility => name.toLowerCase().contains('legends') || name.toLowerCase().contains('za') || name.toLowerCase().contains('mega');
-
-  String get sourceGames {
+  String get sourceGamesLabel {
+    if (sourceGames != null && sourceGames!.isNotEmpty) return sourceGames!;
     if (isChampionsAbility) return 'Pokémon Champions';
     if (isLegendsZAAbility) return 'Pokémon Legends: Z-A';
     return 'Mainline Games';
   }
 
-  List<String> get effectTags {
+  /// Parses the comma-separated effectTags DB field into a list.
+  /// Falls back to description-based heuristic classification.
+  List<String> get effectTagsList {
+    if (effectTags != null && effectTags!.isNotEmpty) {
+      return effectTags!.split(',').map((e) => e.trim()).toList();
+    }
+
+    // Fallback heuristic from description
     final desc = description.toLowerCase();
     final tags = <String>[];
     if (desc.contains('weather') || desc.contains('rain') || desc.contains('sun') || desc.contains('sandstorm') || desc.contains('hail')) tags.add('Weather');
@@ -45,6 +40,6 @@ extension AbilityPropertiesExtension on Ability {
     return tags;
   }
 
-  List<String> get battleEffectTags => effectTags;
-  List<String> get pokemonTypes => []; // Contextual or general types using this ability
+  List<String> get battleEffectTagsList => effectTagsList;
+  List<String> get pokemonTypesList => (pokemonTypes != null && pokemonTypes!.isNotEmpty) ? pokemonTypes!.split(',').map((e) => e.trim()).toList() : [];
 }

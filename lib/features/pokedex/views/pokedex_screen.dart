@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/data/champions_catalog.dart';
 import 'package:libredex/core/data/ev_yield_data.dart';
@@ -19,8 +20,9 @@ import 'package:libredex/core/widgets/pokemon_sprite.dart';
 import 'package:libredex/core/widgets/dex_filter_bar.dart';
 import 'package:libredex/core/widgets/active_filter_summary.dart';
 import 'package:libredex/core/widgets/result_count_label.dart';
-import 'package:libredex/core/widgets/dex_sort_menu.dart';
 import 'package:libredex/core/widgets/dex_filter_sheet.dart';
+import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
+import 'package:libredex/core/utils/pokemon_properties.dart';
 
 class PokedexScreen extends ConsumerStatefulWidget {
   const PokedexScreen({super.key});
@@ -57,17 +59,9 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
   String? _selectedEvolutionMethod;
 
   Map<int, List<Map<String, dynamic>>> _pokemonAbilitiesMap = {};
-  Map<int, Set<int>> _pokemonMovesMap = {};
-  Map<int, Move> _movesIdMap = {};
   Map<int, Ability> _abilitiesIdMap = {};
-  bool _isRelationsLoaded = false;
-
   String? _filterAbilityQuery;
   bool _filterHiddenAbilityOnly = false;
-  String? _filterMoveQuery;
-  String? _filterMoveType;
-  String? _filterMoveClass;
-  double _minMovePower = 0.0;
 
   double _minBst = 100.0;
   double _maxBst = 780.0;
@@ -94,7 +88,6 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
     try {
       final db = ref.read(databaseProvider);
       final abilitiesList = await db.select(db.abilityTable).get();
-      final movesList = await db.select(db.moveTable).get();
       
       final String rawAb = await rootBundle.loadString('assets/data/pokemon_abilities.json');
       final List<dynamic> jsonAb = jsonDecode(rawAb);
@@ -108,24 +101,10 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
         });
       }
 
-      final String rawMv = await rootBundle.loadString('assets/data/pokemon_moves.json');
-      final List<dynamic> jsonMv = jsonDecode(rawMv);
-      final mvMap = <int, Set<int>>{};
-      for (final item in jsonMv) {
-        if (item is List) {
-          final pId = item[0] as int;
-          final mId = item[1] as int;
-          mvMap.putIfAbsent(pId, () => {}).add(mId);
-        }
-      }
-
       if (mounted) {
         setState(() {
           _abilitiesIdMap = {for (final a in abilitiesList) a.id: a};
-          _movesIdMap = {for (final m in movesList) m.id: m};
           _pokemonAbilitiesMap = abMap;
-          _pokemonMovesMap = mvMap;
-          _isRelationsLoaded = true;
         });
       }
     } catch (_) {}
@@ -231,10 +210,6 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
       _selectedEvolutionMethod = null;
       _filterAbilityQuery = null;
       _filterHiddenAbilityOnly = false;
-      _filterMoveQuery = null;
-      _filterMoveType = null;
-      _filterMoveClass = null;
-      _minMovePower = 0.0;
       _showLegendary = false;
       _showMythical = false;
       _showUltraBeast = false;
@@ -267,10 +242,6 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
         _selectedEvolutionMethod != null ||
         _filterAbilityQuery != null ||
         _filterHiddenAbilityOnly ||
-        _filterMoveQuery != null ||
-        _filterMoveType != null ||
-        _filterMoveClass != null ||
-        _minMovePower > 0.0 ||
         _showLegendary ||
         _showMythical ||
         _showUltraBeast ||
@@ -352,6 +323,26 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
+          listAsync.when(
+            data: (list) => list.isNotEmpty
+                ? IconButton(
+                    icon: Icon(Icons.casino_outlined, color: primaryColor),
+                    onPressed: () {
+                      final randomPokemon = list[Random().nextInt(list.length)];
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PokemonDetailScreen(forms: [randomPokemon]),
+                        ),
+                      );
+                    },
+                    tooltip: 'Random Pokémon',
+                  )
+                : const SizedBox.shrink(),
+            error: (err, stack) => const SizedBox.shrink(),
+            loading: () => const SizedBox.shrink(),
+          ),
+
           IconButton(
             icon: Icon(
               _showFavoritesOnly ? Icons.star_rounded : Icons.star_border_rounded,
@@ -477,7 +468,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                         }
 
                         if (_selectedEggGroup != null) {
-                          if (!pokemon.eggGroups.any((g) => g.toLowerCase() == _selectedEggGroup!.toLowerCase())) return false;
+                          if (!pokemon.eggGroupsList.any((g) => g.toLowerCase() == _selectedEggGroup!.toLowerCase())) return false;
                         }
 
                         if (_selectedEvolutionStage != null) {
@@ -505,30 +496,6 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                             return matchesQuery && matchesHidden;
                           });
                           if (!hasMatchingAbility) return false;
-                        }
-
-                        // Move Keyword / Type / Damage Class Filter
-                        if ((_filterMoveQuery != null && _filterMoveQuery!.isNotEmpty) ||
-                            _filterMoveType != null ||
-                            _filterMoveClass != null ||
-                            _minMovePower > 0.0) {
-                          final learnedMoveIds = _pokemonMovesMap[pokemon.id] ?? {};
-                          final hasMatchingMove = learnedMoveIds.any((mId) {
-                            final move = _movesIdMap[mId];
-                            if (move == null) return false;
-                            
-                            if (_filterMoveQuery != null && _filterMoveQuery!.isNotEmpty) {
-                              final query = _filterMoveQuery!.trim().toLowerCase();
-                              if (!move.name.toLowerCase().contains(query)) return false;
-                            }
-                            
-                            if (_filterMoveType != null && move.type.toLowerCase() != _filterMoveType!.toLowerCase()) return false;
-                            if (_filterMoveClass != null && move.damageClass.toLowerCase() != _filterMoveClass!.toLowerCase()) return false;
-                            if (_minMovePower > 0.0 && (move.power ?? 0) < _minMovePower) return false;
-                            
-                            return true;
-                          });
-                          if (!hasMatchingMove) return false;
                         }
 
                         return true;
@@ -1258,41 +1225,6 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                   }),
                   const SizedBox(height: 18),
 
-                  _buildSectionLabel('FILTER BY MOVE LEARNSET'),
-                  const SizedBox(height: 8),
-                  TextField(
-                    onChanged: (val) {
-                      setState(() { _filterMoveQuery = val; });
-                    },
-                    decoration: InputDecoration(
-                      hintText: 'Learns move name or keyword...',
-                      prefixIcon: const Icon(Icons.flash_on_rounded, color: AppTheme.pokemonRed, size: 20),
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: _allTypes.map((type) {
-                      final isSel = _filterMoveType == type;
-                      final col = _getTypeColor(type);
-                      return ChoiceChip(
-                        label: Text('LEARNS ${type.toUpperCase()}', style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: isSel ? Colors.white : col)),
-                        selected: isSel,
-                        selectedColor: col,
-                        backgroundColor: col.withValues(alpha: 0.1),
-                        onSelected: (selected) {
-                          setState(() { _filterMoveType = selected ? type : null; });
-                          setModalState(() {});
-                        },
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 18),
-
                   _buildSectionLabel('BASE STAT PRESETS (AUTO-CONFIGURE)'),
                   const SizedBox(height: 8),
                   Wrap(
@@ -1370,7 +1302,6 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                           setState(() => _minAtk = val);
                           setModalState(() {});
                         }),
-                        _buildSwitchRow('Makes Contact (Contact moves preset)', false, (val) {}),
                         _buildStatSliderRow('Defense', _minDef, (val) {
                           setState(() => _minDef = val);
                           setModalState(() {});

@@ -26,6 +26,10 @@ void main() {
       spriteUrl: '',
       shinySpriteUrl: '',
       nationalDexNumber: 25,
+      generation: 1,
+      evolutionStage: 1,
+      isChampions: false,
+      isLegendsZA: false,
     );
 
     blastoise = const Pokemon(
@@ -47,6 +51,10 @@ void main() {
       spriteUrl: '',
       shinySpriteUrl: '',
       nationalDexNumber: 9,
+      generation: 1,
+      evolutionStage: 3,
+      isChampions: false,
+      isLegendsZA: false,
     );
   });
 
@@ -179,6 +187,10 @@ void main() {
         spriteUrl: '',
         shinySpriteUrl: '',
         nationalDexNumber: 445,
+        generation: 4,
+        evolutionStage: 3,
+        isChampions: false,
+        isLegendsZA: false,
       );
 
       const weavile = Pokemon(
@@ -200,6 +212,10 @@ void main() {
         spriteUrl: '',
         shinySpriteUrl: '',
         nationalDexNumber: 461,
+        generation: 4,
+        evolutionStage: 2,
+        isChampions: false,
+        isLegendsZA: false,
       );
 
       final atkState = PokemonState.fromDatabase(weavile, level: 100);

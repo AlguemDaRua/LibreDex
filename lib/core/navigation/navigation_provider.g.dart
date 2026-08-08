@@ -41,7 +41,7 @@ final class CurrentMenuIndexProvider
   }
 }
 
-String _$currentMenuIndexHash() => r'fa3c9b59721969915e5ce22ad89b47ef98b6cb8e';
+String _$currentMenuIndexHash() => r'df9c2d27fedfe591994a75a92d3c4b1f52cf9e0c';
 
 abstract class _$CurrentMenuIndex extends $Notifier<int> {
   int build();

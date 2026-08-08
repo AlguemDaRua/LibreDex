@@ -111,7 +111,7 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
       if (_filterHidden && !a.isHiddenAbility) return false;
 
       if (_selectedEffectTag != null) {
-        final tags = a.effectTags.map((t) => t.toLowerCase()).toList();
+        final tags = a.effectTagsList.map((t) => t.toLowerCase()).toList();
         if (!tags.contains(_selectedEffectTag!.toLowerCase())) return false;
       }
 
@@ -190,7 +190,6 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
         return StatefulBuilder(
           builder: (context, setModalState) {
             final isDark = Theme.of(context).brightness == Brightness.dark;
-            final primaryColor = isDark ? Colors.white : Colors.black;
 
             return DexFilterSheet(
               title: 'Ability Filters',

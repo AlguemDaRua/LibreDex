@@ -306,6 +306,7 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
                         child: OutlinedButton.icon(
                           onPressed: () async {
                             await OfflineArtworkStore.instance.deleteAll();
+                            if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Offline item artwork cache cleared.')),
                             );
@@ -703,7 +704,7 @@ class _ItemIconWidget extends StatelessWidget {
           return Image.file(
             snapshot.data!,
             fit: BoxFit.contain,
-            errorBuilder: (_, __, ___) => _buildCachedNetworkImage(),
+            errorBuilder: (context, error, stackTrace) => _buildCachedNetworkImage(),
           );
         }
         // 2 & 3. Check cached network artwork or remote
@@ -716,7 +717,7 @@ class _ItemIconWidget extends StatelessWidget {
     return CachedNetworkImage(
       imageUrl: item.iconUrl,
       fit: BoxFit.contain,
-      placeholder: (_, __) => const Center(
+      placeholder: (context, url) => const Center(
         child: SizedBox(
           width: 16,
           height: 16,
@@ -724,7 +725,7 @@ class _ItemIconWidget extends StatelessWidget {
         ),
       ),
       // 6. Show category fallback icon if network/remote fails or is missing
-      errorWidget: (_, __, ___) => Icon(_itemIcon(item.category), color: accent),
+      errorWidget: (context, url, error) => Icon(_itemIcon(item.category), color: accent),
     );
   }
 }

@@ -217,7 +217,7 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
                                 else if (_abilityDetails!.isLegendsZAAbility)
                                   _buildBadge('LEGENDS Z-A', Colors.purpleAccent)
                                 else
-                                  _buildBadge(_abilityDetails!.introducedIn, Colors.grey),
+                                  _buildBadge(_abilityDetails!.introducedInLabel, Colors.grey),
                               ],
                             ),
                             const SizedBox(height: 8),
@@ -233,7 +233,7 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
                             Wrap(
                               spacing: 6,
                               runSpacing: 6,
-                              children: _abilityDetails!.effectTags.map((tag) => Container(
+                              children: _abilityDetails!.effectTagsList.map((tag) => Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                 decoration: BoxDecoration(
                                   color: AppTheme.pokemonRed.withValues(alpha: 0.1),
@@ -290,46 +290,7 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
                       ),
                     ),
 
-                    // Pokémon detail filters inside details (Type, Generation, Form)
-                    Container(
-                      height: 38,
-                      margin: const EdgeInsets.symmetric(vertical: 4),
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        children: [
-                          _buildCategoryLabel('TYPE:'),
-                          ...['All', ...['normal', 'fire', 'water', 'electric', 'grass', 'ice', 'fighting', 'poison', 'ground', 'flying', 'psychic', 'bug', 'rock', 'ghost', 'dragon', 'dark', 'steel', 'fairy']].map((type) => Padding(
-                                padding: const EdgeInsets.only(right: 6),
-                                child: ChoiceChip(
-                                  label: Text(type.toUpperCase(), style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
-                                  selected: _pokemonType == type,
-                                  onSelected: (_) => setState(() => _pokemonType = type),
-                                ),
-                              )),
-
-                          _buildCategoryLabel('GEN:'),
-                          ...['All', '1', '2', '3', '4', '5', '6', '7', '8', '9'].map((gen) => Padding(
-                                padding: const EdgeInsets.only(right: 6),
-                                child: ChoiceChip(
-                                  label: Text(gen == 'All' ? 'ALL GENS' : 'GEN $gen', style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
-                                  selected: (gen == 'All' && _selectedGen == null) || (_selectedGen?.toString() == gen),
-                                  onSelected: (_) => setState(() => _selectedGen = gen == 'All' ? null : int.parse(gen)),
-                                ),
-                              )),
-
-                          _buildCategoryLabel('FORM:'),
-                          ...['All', 'Standard', 'Mega', 'Regional'].map((form) => Padding(
-                                padding: const EdgeInsets.only(right: 6),
-                                child: ChoiceChip(
-                                  label: Text(form.toUpperCase(), style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
-                                  selected: _pokemonForm == form,
-                                  onSelected: (_) => setState(() => _pokemonForm = form),
-                                ),
-                              )),
-                        ],
-                      ),
-                    ),
+                    _buildFilterChipsRow(),
 
                     Expanded(
                       child: _visiblePokemons.isEmpty
@@ -449,18 +410,6 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
     );
   }
 
-  Widget _buildCategoryLabel(String label) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 6),
-        child: Text(
-          label,
-          style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Colors.grey, letterSpacing: 0.5),
-        ),
-      ),
-    );
-  }
-
   Widget _buildBadge(String text, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -473,6 +422,241 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
         text.toUpperCase(),
         style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold),
       ),
+    );
+  }
+
+  Widget _buildFilterChipsRow() {
+    final hasActiveFilter = _pokemonType != 'All' || _selectedGen != null || _pokemonForm != 'All';
+    const types = ['normal', 'fire', 'water', 'electric', 'grass', 'ice', 'fighting', 'poison', 'ground', 'flying', 'psychic', 'bug', 'rock', 'ghost', 'dragon', 'dark', 'steel', 'fairy'];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _buildDropdownFilterChip(
+              label: _pokemonType == 'All' ? 'Type: All' : 'Type: ${_pokemonType.toUpperCase()}',
+              isActive: _pokemonType != 'All',
+              color: _pokemonType == 'All' ? null : _getTypeColor(_pokemonType),
+              onTap: () => _showPickerBottomSheet(
+                title: 'SELECT ELEMENTAL TYPE',
+                options: ['All', ...types],
+                selected: _pokemonType,
+                itemLabel: (t) => t.toUpperCase(),
+                onSelect: (val) => setState(() => _pokemonType = val),
+                colorBuilder: (t) => t == 'All' ? null : _getTypeColor(t),
+              ),
+            ),
+            const SizedBox(width: 8),
+            _buildDropdownFilterChip(
+              label: _selectedGen == null ? 'Gen: All' : 'Gen $_selectedGen',
+              isActive: _selectedGen != null,
+              onTap: () => _showPickerBottomSheet(
+                title: 'SELECT GENERATION',
+                options: ['All', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
+                selected: _selectedGen?.toString() ?? 'All',
+                itemLabel: (g) => g == 'All' ? 'ALL GENS' : 'GEN $g',
+                onSelect: (val) => setState(() => _selectedGen = val == 'All' ? null : int.parse(val)),
+              ),
+            ),
+            const SizedBox(width: 8),
+            _buildDropdownFilterChip(
+              label: _pokemonForm == 'All' ? 'Form: All' : 'Form: ${_pokemonForm.toUpperCase()}',
+              isActive: _pokemonForm != 'All',
+              onTap: () => _showPickerBottomSheet(
+                title: 'SELECT FORM',
+                options: ['All', 'Standard', 'Mega', 'Regional'],
+                selected: _pokemonForm,
+                itemLabel: (f) => f.toUpperCase(),
+                onSelect: (val) => setState(() => _pokemonForm = val),
+              ),
+            ),
+            if (hasActiveFilter) ...[
+              const SizedBox(width: 8),
+              InkWell(
+                onTap: () {
+                  setState(() {
+                    _pokemonType = 'All';
+                    _selectedGen = null;
+                    _pokemonForm = 'All';
+                  });
+                },
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppTheme.pokemonRed.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppTheme.pokemonRed.withValues(alpha: 0.4)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.close_rounded, size: 14, color: AppTheme.pokemonRed),
+                      SizedBox(width: 4),
+                      Text('Reset', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.pokemonRed)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDropdownFilterChip({
+    required String label,
+    required bool isActive,
+    Color? color,
+    required VoidCallback onTap,
+  }) {
+    final chipColor = color ?? (isActive ? AppTheme.pokemonRed : Colors.grey);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isActive ? chipColor.withValues(alpha: 0.15) : Colors.grey.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isActive ? chipColor : Colors.grey.withValues(alpha: 0.3),
+            width: isActive ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: isActive ? chipColor : Colors.grey.shade700,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.arrow_drop_down_rounded,
+              size: 18,
+              color: isActive ? chipColor : Colors.grey.shade600,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showPickerBottomSheet({
+    required String title,
+    required List<String> options,
+    required String selected,
+    required String Function(String) itemLabel,
+    required ValueChanged<String> onSelect,
+    Color? Function(String)? colorBuilder,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.65,
+          ),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF141414) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 20),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: options.map((opt) {
+                      final isSel = selected == opt;
+                      final customColor = colorBuilder?.call(opt);
+                      final activeColor = customColor ?? AppTheme.pokemonRed;
+
+                      return InkWell(
+                        onTap: () {
+                          onSelect(opt);
+                          Navigator.pop(context);
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: isSel
+                                ? activeColor
+                                : (customColor != null
+                                    ? customColor.withValues(alpha: 0.12)
+                                    : (isDark ? const Color(0xFF222222) : const Color(0xFFF1F5F9))),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isSel ? activeColor : (customColor ?? (isDark ? const Color(0xFF333333) : const Color(0xFFE2E8F0))),
+                              width: isSel ? 2 : 1,
+                            ),
+                          ),
+                          child: Text(
+                            itemLabel(opt),
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: isSel
+                                  ? Colors.white
+                                  : (customColor ?? (isDark ? Colors.white70 : Colors.black87)),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
