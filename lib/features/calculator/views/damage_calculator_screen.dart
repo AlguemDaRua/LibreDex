@@ -1045,10 +1045,9 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     final hasParentalBond = state.attackerAbility?.toLowerCase() == 'parental bond' &&
         hitBasePowers.length == 1;
     final breaksProtection = CombatUtils.breaksProtect(activeMove.name);
-    final unseenFistProtectionHit = CombatUtils.isUnseenFistProtectionHit(
-      activeMove.name,
-      state.attackerAbility,
-    );
+    // Use DB isContact flag first (100% accurate), fallback to curated name set for sandbox/synthetic moves.
+    final bool unseenFistProtectionHit = state.attackerAbility?.toLowerCase().replaceAll('-', ' ').replaceAll('_', ' ').trim() == 'unseen fist' &&
+        (activeMove.isContact || CombatUtils.isContactMove(activeMove.name));
     final blockedByProtect = state.defenderProtected && !breaksProtection && !unseenFistProtectionHit;
     final double spreadMult = CombatUtils.spreadMultiplier(activeMove.name, state.isDoubleBattle);
     final finalDamageModifiers = <double>[

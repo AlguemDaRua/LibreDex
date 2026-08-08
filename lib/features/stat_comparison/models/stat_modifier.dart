@@ -8,6 +8,7 @@ library;
 
 
 
+import 'package:libredex/core/utils/pokemon_properties.dart';
 import 'package:libredex/features/calculator/models/battle_ruleset.dart';
 import 'package:libredex/features/calculator/utils/combat_utils.dart';
 import 'package:libredex/features/pokedex/models/stat_calculator.dart';
@@ -394,10 +395,11 @@ class StatModifier {
     if (item == 'choice specs' && statKey == 'spa') return 1.5;
     if (item == 'assault vest' && statKey == 'spd') return 1.5;
 
-    // Eviolite — requires not-fully-evolved check, which we approximate
-    // by checking if the Pokémon has evolutions. For now, always apply if
-    // the item is set (the user is responsible for correct assignment).
-    if (item == 'eviolite') {
+    // Eviolite — only on Pokémon that can still evolve (uses the
+    // Can Evolve filter's data-driven `canEvolve`, now derived from
+    // evolution_chains.json: final evos + isolated singles, plus
+    // legendary/mythic/paradox/UB exclusion).
+    if (item == 'eviolite' && entry.pokemon.canEvolve) {
       if (statKey == 'def' || statKey == 'spd') return 1.5;
     }
 
