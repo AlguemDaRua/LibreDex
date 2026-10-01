@@ -1,26 +1,30 @@
 #!/usr/bin/env python3
-"""Build flavor text/genus and local evolution-chain assets from PokéAPI.
+"""Build English Pokédex flavor text and genera from PokéAPI.
 
-Run this in a networked environment. Existing assets are left untouched on
-failure so the app always keeps a usable offline bundle.
+Evolution chains and Pokémon generation/evolution metadata are built offline
+from the pinned CSV extracts by ``tools/build_pokemon_metadata.py``. Keeping
+these pipelines separate prevents this online lore refresh from replacing the
+complete, form-aware bundled evolution graph with a thinner API response.
+
+Run from any directory with ``python3 tools/build_pokedex_lore_asset.py``.
 """
-
 from __future__ import annotations
 
 import json
 import re
 import sys
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from urllib.error import URLError
 
 API = "https://pokeapi.co/api/v2"
-ENTRIES_OUT = Path("assets/data/pokedex_entries.json")
-EVOS_OUT = Path("assets/data/evolution_chains.json")
+ROOT = Path(__file__).resolve().parents[1]
+ENTRIES_OUT = ROOT / "assets" / "data" / "pokedex_entries.json"
 
 
 def get_json(url: str) -> dict:
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    req = urllib.request.Request(url, headers={"User-Agent": "LibreDex data builder"})
     with urllib.request.urlopen(req, timeout=30) as response:
         return json.loads(response.read().decode("utf-8"))
 
@@ -43,88 +47,41 @@ def english_flavor(entries: list[dict]) -> str:
     return ""
 
 
-def species_id(url: str) -> int:
-    return int([part for part in url.split("/") if part][-1])
-
-
-def trigger_text(detail: dict) -> str:
-    parts: list[str] = []
-    if detail.get("min_level") is not None:
-        parts.append(f"Lvl {detail['min_level']}")
-    for key, prefix in (("item", ""), ("held_item", "Hold "), ("known_move", "Know ")):
-        value = detail.get(key)
-        if value:
-            parts.append(prefix + value["name"].replace("-", " ").title())
-    if detail.get("min_happiness") is not None:
-        parts.append("High Friendship")
-    if detail.get("time_of_day"):
-        parts.append(f"({detail['time_of_day'].title()})")
-    if parts:
-        return " ".join(parts)
-    trigger = detail.get("trigger", {}).get("name")
-    return "Trade" if trigger == "trade" else "Level Up"
-
-
-def walk_chain(node: dict, steps: list[dict]) -> None:
-    from_id = species_id(node["species"]["url"])
-    for child in node.get("evolves_to") or []:
-        to_id = species_id(child["species"]["url"])
-        details = child.get("evolution_details") or [{}]
-        steps.append({"from": from_id, "to": to_id, "trigger": trigger_text(details[0])})
-        walk_chain(child, steps)
-
-
-from concurrent.futures import ThreadPoolExecutor, as_completed
-
 def main() -> int:
     try:
         index = get_json(f"{API}/pokemon-species?limit=20000")
         species = index.get("results") or []
-        entries: dict[str, dict] = {}
-        evolution_urls: dict[str, str] = {}
+        entries: dict[str, dict[str, str]] = {}
 
-        def fetch_species(row: dict) -> tuple[int, dict, str | None]:
+        def fetch_species(row: dict) -> tuple[int, dict[str, str]]:
             raw = get_json(row["url"])
-            dex = raw["id"]
+            dex = int(raw["id"])
             entry = {
                 "genus": english_genus(raw.get("genera") or []),
                 "flavor": english_flavor(raw.get("flavor_text_entries") or []),
             }
-            evo_url = raw.get("evolution_chain", {}).get("url")
-            return (dex, entry, evo_url)
+            return dex, entry
 
         with ThreadPoolExecutor(max_workers=20) as executor:
             futures = [executor.submit(fetch_species, row) for row in species]
-            for i, future in enumerate(as_completed(futures), start=1):
-                dex, entry, evo_url = future.result()
+            for index, future in enumerate(as_completed(futures), start=1):
+                dex, entry = future.result()
                 entries[str(dex)] = entry
-                if evo_url:
-                    evolution_urls.setdefault(evo_url, str(dex))
-                if i % 100 == 0:
-                    print(f"Fetched {i}/{len(species)} species...")
-
-        chains: dict[str, list[dict]] = {}
-        def fetch_chain(item: tuple[str, str]) -> tuple[str, list[dict]]:
-            url, root_dex = item
-            raw = get_json(url)
-            steps: list[dict] = []
-            walk_chain(raw["chain"], steps)
-            return (root_dex, steps)
-
-        with ThreadPoolExecutor(max_workers=20) as executor:
-            chain_futures = [executor.submit(fetch_chain, item) for item in evolution_urls.items()]
-            for future in as_completed(chain_futures):
-                root_dex, steps = future.result()
-                if steps:
-                    chains[root_dex] = steps
+                if index % 100 == 0:
+                    print(f"Fetched {index}/{len(species)} Pokédex entries...")
     except (URLError, TimeoutError, OSError, KeyError, ValueError) as error:
-        print(f"Could not build Pokédex lore assets: {error}", file=sys.stderr)
-        print("Existing assets were left untouched.", file=sys.stderr)
+        print(f"Could not build Pokédex lore asset: {error}", file=sys.stderr)
+        print("Existing lore asset was left untouched.", file=sys.stderr)
         return 1
 
-    ENTRIES_OUT.write_text(json.dumps(entries, separators=(",", ":")))
-    EVOS_OUT.write_text(json.dumps(chains, separators=(",", ":")))
-    print(f"Wrote {len(entries)} Pokédex entries and {len(chains)} evolution chains.")
+    ENTRIES_OUT.parent.mkdir(parents=True, exist_ok=True)
+    temporary = ENTRIES_OUT.with_suffix(ENTRIES_OUT.suffix + ".tmp")
+    temporary.write_text(
+        json.dumps(entries, ensure_ascii=False, separators=(",", ":")) + "\n",
+        encoding="utf-8",
+    )
+    temporary.replace(ENTRIES_OUT)
+    print(f"Wrote {len(entries)} Pokédex entries to {ENTRIES_OUT}.")
     return 0
 
 

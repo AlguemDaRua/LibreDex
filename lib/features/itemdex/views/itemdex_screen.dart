@@ -1,8 +1,9 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:libredex/core/data/champions_regulation.dart';
 import 'package:libredex/core/theme/app_theme.dart';
+import 'package:libredex/core/widgets/content_badge.dart';
+import 'package:libredex/core/widgets/item_artwork_icon.dart';
 import 'package:libredex/core/widgets/app_state_widgets.dart';
 import 'package:libredex/features/itemdex/data/itemdex_data.dart';
 import 'package:libredex/core/theme/app_spacing.dart';
@@ -28,13 +29,17 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
   // Filters
   String? _selectedCategory;
   String? _selectedSubcategory;
-  
+  String? _selectedTag;
+
   bool _filterHeldItem = false;
   bool _filterBattleItem = false;
   bool _filterEvolutionItem = false;
   bool _filterDLCItem = false;
-  bool _filterChampionsItem = false;
+  bool _filterMCAvailable = false;
+  bool _filterNewInMC = false;
+  bool _filterChampionsOrigin = false;
   bool _filterLegendsZAItem = false;
+  bool _includeAliases = false;
 
   String? _selectedEffectKeyword;
   String _sortOption = 'name_asc';
@@ -42,18 +47,8 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
   // Download State
   bool _isDownloadingAll = false;
   double _downloadProgress = 0.0;
-  int _downloadedCount = 0;
+  int _processedDownloadCount = 0;
   int _totalToDownload = 0;
-
-  static const List<String> _categories = [
-    'Berry', 'Held Item', 'Battle-Item', 'Pokeball', 'Key Item',
-    'Medicine', 'TM', 'Mega Stone', 'Z-Crystal', 'Dynamax', 'Tera Item'
-  ];
-
-  static const List<String> _subcategories = [
-    'Healing', 'Status Recovery', 'Stat Boost', 'Evolution', 'Epower-Up',
-    'Plate', 'Apricorn', 'Choice Item', 'Incense', 'Gem', 'Vitamin', 'Mail'
-  ];
 
   static const List<String> _keywords = [
     'Heal', 'Boost', 'Attack', 'Defense', 'Speed', 'Evolve', 'Catch', 'Recovers',
@@ -70,12 +65,16 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
     setState(() {
       _selectedCategory = null;
       _selectedSubcategory = null;
+      _selectedTag = null;
       _filterHeldItem = false;
       _filterBattleItem = false;
       _filterEvolutionItem = false;
       _filterDLCItem = false;
-      _filterChampionsItem = false;
+      _filterMCAvailable = false;
+      _filterNewInMC = false;
+      _filterChampionsOrigin = false;
       _filterLegendsZAItem = false;
+      _includeAliases = false;
       _selectedEffectKeyword = null;
       _sortOption = 'name_asc';
     });
@@ -84,12 +83,16 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
   bool get _hasActiveFilters {
     return _selectedCategory != null ||
         _selectedSubcategory != null ||
+        _selectedTag != null ||
         _filterHeldItem ||
         _filterBattleItem ||
         _filterEvolutionItem ||
         _filterDLCItem ||
-        _filterChampionsItem ||
+        _filterMCAvailable ||
+        _filterNewInMC ||
+        _filterChampionsOrigin ||
         _filterLegendsZAItem ||
+        _includeAliases ||
         _selectedEffectKeyword != null ||
         _sortOption != 'name_asc';
   }
@@ -109,6 +112,12 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
         onDeleted: () => setState(() => _selectedSubcategory = null),
       ));
     }
+    if (_selectedTag != null) {
+      list.add(ActiveFilterItem(
+        label: 'Tag: $_selectedTag',
+        onDeleted: () => setState(() => _selectedTag = null),
+      ));
+    }
     if (_filterHeldItem) {
       list.add(ActiveFilterItem(label: 'Held Items', onDeleted: () => setState(() => _filterHeldItem = false)));
     }
@@ -121,11 +130,32 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
     if (_filterDLCItem) {
       list.add(ActiveFilterItem(label: 'DLC Items', onDeleted: () => setState(() => _filterDLCItem = false)));
     }
-    if (_filterChampionsItem) {
-      list.add(ActiveFilterItem(label: 'Champions Items', onDeleted: () => setState(() => _filterChampionsItem = false)));
+    if (_filterMCAvailable) {
+      list.add(ActiveFilterItem(
+        label: 'Available in M-C',
+        onDeleted: () => setState(() => _filterMCAvailable = false),
+      ));
+    }
+    if (_filterNewInMC) {
+      list.add(ActiveFilterItem(
+        label: 'New to M-C',
+        onDeleted: () => setState(() => _filterNewInMC = false),
+      ));
+    }
+    if (_filterChampionsOrigin) {
+      list.add(ActiveFilterItem(
+        label: 'Champions-origin item',
+        onDeleted: () => setState(() => _filterChampionsOrigin = false),
+      ));
     }
     if (_filterLegendsZAItem) {
       list.add(ActiveFilterItem(label: 'Legends Z-A', onDeleted: () => setState(() => _filterLegendsZAItem = false)));
+    }
+    if (_includeAliases) {
+      list.add(ActiveFilterItem(
+        label: 'Include item aliases',
+        onDeleted: () => setState(() => _includeAliases = false),
+      ));
     }
     if (_selectedEffectKeyword != null) {
       list.add(ActiveFilterItem(
@@ -133,11 +163,40 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
         onDeleted: () => setState(() => _selectedEffectKeyword = null),
       ));
     }
+    if (_sortOption != 'name_asc') {
+      list.add(ActiveFilterItem(
+        label: 'Sort: ${_sortOption.replaceAll('_', ' ')}',
+        onDeleted: () => setState(() => _sortOption = 'name_asc'),
+      ));
+    }
 
     return list;
   }
 
   void _openFilterSheet(List<ItemDexEntry> allItems) {
+    final categories = allItems
+        .map((item) => item.category.trim())
+        .where((value) => value.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
+    final subcategories = allItems
+        .map((item) => item.subcategory.trim())
+        .where((value) => value.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
+    final tags = allItems
+        .expand((item) => item.tags)
+        .map((tag) => tag.trim())
+        .where((value) => value.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    final hasDlcProvenance = allItems.any((item) => item.isDLCItem);
+    final hasChampionsProvenance = allItems.any((item) => item.isChampionsItem);
+    final hasAliases = allItems.any((item) => item.isAlias);
+
     showDialog(
       context: context,
       builder: (context) {
@@ -155,45 +214,37 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Category
-                  const Text('CATEGORY', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: _categories.map((cat) {
-                      final isSel = _selectedCategory == cat;
-                      return ChoiceChip(
-                        label: Text(cat.toUpperCase(), style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
-                        selected: isSel,
-                        selectedColor: AppTheme.pokemonRed,
-                        onSelected: (selected) {
-                          setState(() { _selectedCategory = selected ? cat : null; });
-                          setModalState(() {});
-                        },
-                      );
-                    }).toList(),
+                  _buildCatalogDropdown(
+                    label: 'Category',
+                    anyLabel: 'Any category',
+                    selectedValue: _selectedCategory,
+                    options: categories,
+                    onChanged: (value) {
+                      setState(() => _selectedCategory = value);
+                      setModalState(() {});
+                    },
                   ),
-                  const SizedBox(height: 20),
-
-                  // Subcategory
-                  const Text('SUBCATEGORY', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: _subcategories.map((sub) {
-                      final isSel = _selectedSubcategory == sub;
-                      return ChoiceChip(
-                        label: Text(sub.toUpperCase(), style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
-                        selected: isSel,
-                        selectedColor: AppTheme.pokemonRed,
-                        onSelected: (selected) {
-                          setState(() { _selectedSubcategory = selected ? sub : null; });
-                          setModalState(() {});
-                        },
-                      );
-                    }).toList(),
+                  const SizedBox(height: 12),
+                  _buildCatalogDropdown(
+                    label: 'Subcategory',
+                    anyLabel: 'Any subcategory',
+                    selectedValue: _selectedSubcategory,
+                    options: subcategories,
+                    onChanged: (value) {
+                      setState(() => _selectedSubcategory = value);
+                      setModalState(() {});
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  _buildCatalogDropdown(
+                    label: 'Tag',
+                    anyLabel: 'Any tag',
+                    selectedValue: _selectedTag,
+                    options: tags,
+                    onChanged: (value) {
+                      setState(() => _selectedTag = value);
+                      setModalState(() {});
+                    },
                   ),
                   const SizedBox(height: 20),
 
@@ -209,30 +260,45 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
                     ),
                     child: Column(
                       children: [
-                        _buildSwitchRow('Held Item Compat', _filterHeldItem, (val) {
+                        _buildSwitchRow('Held item compatibility', _filterHeldItem, (val) {
                           setState(() => _filterHeldItem = val);
                           setModalState(() {});
                         }),
-                        _buildSwitchRow('Battle Usage Only', _filterBattleItem, (val) {
+                        _buildSwitchRow('Usable in battle', _filterBattleItem, (val) {
                           setState(() => _filterBattleItem = val);
                           setModalState(() {});
                         }),
-                        _buildSwitchRow('Evolution Stone/Item', _filterEvolutionItem, (val) {
+                        _buildSwitchRow('Evolution items', _filterEvolutionItem, (val) {
                           setState(() => _filterEvolutionItem = val);
                           setModalState(() {});
                         }),
-                        _buildSwitchRow('Scarlet/Violet DLC', _filterDLCItem, (val) {
-                          setState(() => _filterDLCItem = val);
+                        if (hasDlcProvenance)
+                          _buildSwitchRow('Scarlet/Violet DLC', _filterDLCItem, (val) {
+                            setState(() => _filterDLCItem = val);
+                            setModalState(() {});
+                          }),
+                        _buildSwitchRow('Available in Regulation M-C', _filterMCAvailable, (val) {
+                          setState(() => _filterMCAvailable = val);
                           setModalState(() {});
                         }),
-                        _buildSwitchRow('Champions Custom', _filterChampionsItem, (val) {
-                          setState(() => _filterChampionsItem = val);
+                        _buildSwitchRow('Newly added to M-C', _filterNewInMC, (val) {
+                          setState(() => _filterNewInMC = val);
                           setModalState(() {});
                         }),
-                        _buildSwitchRow('Legends: Z-A Mega Stones', _filterLegendsZAItem, (val) {
+                        if (hasChampionsProvenance)
+                          _buildSwitchRow('Champions-origin items', _filterChampionsOrigin, (val) {
+                            setState(() => _filterChampionsOrigin = val);
+                            setModalState(() {});
+                          }),
+                        _buildSwitchRow('Legends: Z-A origin', _filterLegendsZAItem, (val) {
                           setState(() => _filterLegendsZAItem = val);
                           setModalState(() {});
                         }),
+                        if (hasAliases)
+                          _buildSwitchRow('Include duplicate API aliases', _includeAliases, (val) {
+                            setState(() => _includeAliases = val);
+                            setModalState(() {});
+                          }),
                       ],
                     ),
                   ),
@@ -293,7 +359,11 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
                             _bulkDownloadIcons(allItems);
                           },
                           icon: const Icon(Icons.download_for_offline_rounded, size: 16),
-                          label: Text(_isDownloadingAll ? 'Downloading...' : 'Bulk Download Icons'),
+                          label: Text(
+                            _isDownloadingAll
+                                ? 'Downloading $_processedDownloadCount/$_totalToDownload'
+                                : 'Bulk Download Icons',
+                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.pokemonRed,
                             foregroundColor: Colors.white,
@@ -343,11 +413,53 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
     );
   }
 
+  Widget _buildCatalogDropdown({
+    required String label,
+    required String anyLabel,
+    required String? selectedValue,
+    required List<String> options,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return DropdownButtonFormField<String>(
+      value: selectedValue ?? '',
+      isExpanded: true,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      ),
+      items: [
+        DropdownMenuItem<String>(value: '', child: Text(anyLabel)),
+        ...options.map(
+          (option) => DropdownMenuItem<String>(
+            value: option,
+            child: Text(option, overflow: TextOverflow.ellipsis),
+          ),
+        ),
+      ],
+      onChanged: (value) => onChanged(value == null || value.isEmpty ? null : value),
+    );
+  }
+
   Future<void> _bulkDownloadIcons(List<ItemDexEntry> items) async {
+    // Count actual artwork URLs, not database rows. Aliases and same-name
+    // records can share one sprite and should not inflate the success total.
+    final uniqueArtwork = <String, ItemDexEntry>{};
+    for (final item in items) {
+      if (!item.isAlias) uniqueArtwork.putIfAbsent(item.iconUrl, () => item);
+    }
+    final downloadableItems = uniqueArtwork.values.toList();
+    if (downloadableItems.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('There are no item icons to download.')),
+      );
+      return;
+    }
+
     setState(() {
       _isDownloadingAll = true;
-      _downloadedCount = 0;
-      _totalToDownload = items.length;
+      _processedDownloadCount = 0;
+      _totalToDownload = downloadableItems.length;
       _downloadProgress = 0.0;
     });
 
@@ -355,37 +467,51 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
       const SnackBar(content: Text('Bulk download of item artwork started...')),
     );
 
-    for (final item in items) {
-      if (!_isDownloadingAll) break;
+    final artworkStore = OfflineArtworkStore.instance;
+    var succeeded = 0;
+    var failed = 0;
+    var processed = 0;
+
+    for (final item in downloadableItems) {
+      if (!mounted || !_isDownloadingAll) break;
       try {
-        await OfflineArtworkStore.instance.downloadArtwork(
+        await artworkStore.downloadArtwork(
           sourceUrl: item.iconUrl,
           remoteUrl: item.iconUrl,
           quality: 'standard',
         );
-      } catch (_) {}
-      
+        if (await artworkStore.hasArtwork(item.iconUrl, quality: 'standard')) {
+          succeeded++;
+        } else {
+          failed++;
+        }
+      } catch (_) {
+        failed++;
+      }
+
+      processed++;
       if (mounted) {
         setState(() {
-          _downloadedCount++;
-          _downloadProgress = _downloadedCount / _totalToDownload;
+          _processedDownloadCount = processed;
+          _downloadProgress = processed / _totalToDownload;
         });
       }
     }
 
     if (mounted) {
-      setState(() {
-        _isDownloadingAll = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Finished downloading $_downloadedCount items successfully!')),
-      );
+      setState(() => _isDownloadingAll = false);
+      final total = downloadableItems.length;
+      final result = processed == total
+          ? 'Offline artwork available for $succeeded of $total unique item icons; $failed failed.'
+          : 'Bulk download stopped after $processed of $total unique item icons; $succeeded ready, $failed failed.';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result)));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final itemsAsync = ref.watch(itemDexProvider);
+    final regulation = ref.watch(championsRegulationProvider).asData?.value;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -422,26 +548,47 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
         data: (items) {
           final filtered = items.where((item) {
             final q = _query.trim().toLowerCase();
+            final idQuery = q.replaceFirst(RegExp(r'^(?:#|item\s*)'), '').trim();
+            final matchesId = idQuery == item.id.toString();
+            // Keep the duplicate upstream Roseli stub in the bundled data, but
+            // hide it in ordinary browsing. It remains discoverable by ID or
+            // by enabling the aliases filter.
+            if (item.isAlias && !_includeAliases && !matchesId) return false;
             if (q.isNotEmpty) {
               final matchesQuery = item.name.toLowerCase().contains(q) ||
                   item.category.toLowerCase().contains(q) ||
                   item.subcategory.toLowerCase().contains(q) ||
-                  item.tags.any((tag) => tag.toLowerCase().contains(q));
+                  item.tags.any((tag) => tag.toLowerCase().contains(q)) ||
+                  item.id.toString() == idQuery;
               if (!matchesQuery) return false;
             }
 
-            if (_selectedCategory != null && item.category != _selectedCategory) return false;
-            if (_selectedSubcategory != null && item.subcategory != _selectedSubcategory) return false;
+            if (_selectedCategory != null &&
+                item.category.trim().toLowerCase() != _selectedCategory!.trim().toLowerCase()) {
+              return false;
+            }
+            if (_selectedSubcategory != null &&
+                item.subcategory.trim().toLowerCase() != _selectedSubcategory!.trim().toLowerCase()) {
+              return false;
+            }
+            if (_selectedTag != null &&
+                !item.tags.any((tag) => tag.trim().toLowerCase() == _selectedTag!.trim().toLowerCase())) {
+              return false;
+            }
 
             if (_filterHeldItem && !item.isHeldItem) return false;
             if (_filterBattleItem && !item.isBattleItem) return false;
             if (_filterEvolutionItem && !item.isEvolutionItem) return false;
             if (_filterDLCItem && !item.isDLCItem) return false;
-            if (_filterChampionsItem && !item.isChampionsItem) return false;
+            if (_filterMCAvailable && !(regulation?.isItemAvailable(item.id) ?? false)) return false;
+            if (_filterNewInMC && !(regulation?.isNewItem(item.id) ?? false)) return false;
+            if (_filterChampionsOrigin && !item.isChampionsItem) return false;
             if (_filterLegendsZAItem && !item.isLegendsZAItem) return false;
 
             if (_selectedEffectKeyword != null) {
-              final text = '${item.name} ${item.shortEffect} ${item.description}'.toLowerCase();
+              final text = ('${item.name} ${item.category} ${item.subcategory} '
+                      '${item.shortEffect} ${item.description} ${item.tags.join(' ')}')
+                  .toLowerCase();
               if (!text.contains(_selectedEffectKeyword!.toLowerCase())) return false;
             }
 
@@ -456,7 +603,9 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
               case 'category':
                 return a.category.compareTo(b.category);
               case 'generation':
-                return b.generation.compareTo(a.generation);
+                if (a.generation == null && b.generation != null) return 1;
+                if (a.generation != null && b.generation == null) return -1;
+                return (b.generation ?? 0).compareTo(a.generation ?? 0);
               case 'id':
                 return a.id.compareTo(b.id);
               case 'held_first':
@@ -518,7 +667,14 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
                     : ListView.builder(
                         padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 8, AppSpacing.pagePadding, AppSpacing.bottomScrollPadding),
                         itemCount: filtered.length,
-                        itemBuilder: (context, index) => _ItemCard(item: filtered[index]),
+                        itemBuilder: (context, index) {
+                          final item = filtered[index];
+                          return _ItemCard(
+                            item: item,
+                            mCAvailable: regulation?.isItemAvailable(item.id) ?? false,
+                            newInMC: regulation?.isNewItem(item.id) ?? false,
+                          );
+                        },
                       ),
               ),
             ],
@@ -531,8 +687,14 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
 
 class _ItemCard extends StatelessWidget {
   final ItemDexEntry item;
+  final bool mCAvailable;
+  final bool newInMC;
 
-  const _ItemCard({required this.item});
+  const _ItemCard({
+    required this.item,
+    required this.mCAvailable,
+    required this.newInMC,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -562,7 +724,11 @@ class _ItemCard extends StatelessWidget {
                     color: accent.withValues(alpha: 0.14),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: _ItemIconWidget(item: item, accent: accent),
+                  child: ItemArtworkIcon(
+                    imageUrl: item.iconUrl,
+                    accent: accent,
+                    fallbackIcon: _itemIcon(item.category),
+                  ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -571,21 +737,46 @@ class _ItemCard extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          Text(item.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
-                          if (item.isChampionsItem) ...[
+                          Flexible(
+                            child: Text(
+                              item.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+                            ),
+                          ),
+                          if (mCAvailable) ...[
                             const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                              decoration: BoxDecoration(color: Colors.orangeAccent, borderRadius: BorderRadius.circular(4)),
-                              child: const Text('CHAMP', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                            const ContentBadge.mC(tooltip: 'Available in Regulation M-C'),
+                          ],
+                          if (newInMC) ...[
+                            const SizedBox(width: 4),
+                            const ContentBadge.mC(isNew: true, tooltip: 'Newly added to Regulation M-C'),
+                          ],
+                          if (item.isChampionsItem) ...[
+                            const SizedBox(width: 4),
+                            const ContentBadge(label: 'CHAMP', color: Colors.orangeAccent, tooltip: 'Champions-origin item'),
+                          ],
+                          if (item.isLegendsZAItem) ...[
+                            const SizedBox(width: 4),
+                            const ContentBadge(label: 'LZA', color: Colors.purpleAccent, tooltip: 'Legends: Z-A item'),
+                          ],
+                          if (item.isDLCItem) ...[
+                            const SizedBox(width: 4),
+                            ContentBadge(
+                              label: 'DLC',
+                              color: Colors.blueAccent,
+                              tooltip: item.dlcSource == null
+                                  ? 'Downloadable-content item'
+                                  : 'Introduced in ${item.dlcSource}',
                             ),
                           ],
-                          if (item.isLegendsZAItem && !item.name.toLowerCase().contains('mega')) ...[
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                              decoration: BoxDecoration(color: Colors.purpleAccent, borderRadius: BorderRadius.circular(4)),
-                              child: const Text('LZA', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                          if (item.isAlias) ...[
+                            const SizedBox(width: 4),
+                            ContentBadge(
+                              label: 'ALIAS',
+                              color: Colors.blueGrey,
+                              tooltip: 'Upstream alias of item #${item.aliasOf}; the source row is preserved.',
                             ),
                           ],
                         ],
@@ -655,7 +846,11 @@ class _ItemCard extends StatelessWidget {
                         width: 56,
                         height: 56,
                         decoration: BoxDecoration(color: accent.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(18)),
-                        child: _ItemIconWidget(item: item, accent: accent),
+                        child: ItemArtworkIcon(
+                          imageUrl: item.iconUrl,
+                          accent: accent,
+                          fallbackIcon: _itemIcon(item.category),
+                        ),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -664,7 +859,37 @@ class _ItemCard extends StatelessWidget {
                           children: [
                             Text(item.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
                             const SizedBox(height: 4),
-                            Text('${item.category} · ${item.subcategory} · ${item.introducedIn}', style: TextStyle(color: accent, fontWeight: FontWeight.w800)),
+                            Text('#${item.id} · ${item.category} · ${item.subcategory} · ${item.introducedIn}', style: TextStyle(color: accent, fontWeight: FontWeight.w800)),
+                            if (mCAvailable || newInMC || item.isChampionsItem || item.isLegendsZAItem || item.isDLCItem || item.isAlias) ...[
+                              const SizedBox(height: 6),
+                              Wrap(
+                                spacing: 6,
+                                runSpacing: 4,
+                                children: [
+                                  if (mCAvailable)
+                                    const ContentBadge.mC(tooltip: 'Available in Regulation M-C'),
+                                  if (newInMC)
+                                    const ContentBadge.mC(isNew: true, tooltip: 'Newly added to Regulation M-C'),
+                                  if (item.isChampionsItem)
+                                    const ContentBadge(label: 'CHAMP', color: Colors.orangeAccent, tooltip: 'Champions-origin item'),
+                                  if (item.isLegendsZAItem)
+                                    const ContentBadge(label: 'LZA', color: Colors.purpleAccent),
+                                  if (item.isDLCItem)
+                                    ContentBadge(
+                                      label: 'DLC',
+                                      color: Colors.blueAccent,
+                                      tooltip: item.dlcSource == null
+                                          ? 'Downloadable-content item'
+                                          : 'Introduced in ${item.dlcSource}',
+                                    ),
+                                  if (item.isAlias)
+                                    ContentBadge(
+                                      label: 'ALIAS OF #${item.aliasOf}',
+                                      color: Colors.blueGrey,
+                                    ),
+                                ],
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -682,48 +907,6 @@ class _ItemCard extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-class _ItemIconWidget extends StatelessWidget {
-  final ItemDexEntry item;
-  final Color accent;
-
-  const _ItemIconWidget({required this.item, required this.accent});
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<File?>(
-      future: OfflineArtworkStore.instance.fileForUrl(item.iconUrl),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done && snapshot.data != null) {
-          // 1. Check durable offline artwork first
-          return Image.file(
-            snapshot.data!,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) => _buildCachedNetworkImage(),
-          );
-        }
-        // 2 & 3. Check cached network artwork or remote
-        return _buildCachedNetworkImage();
-      },
-    );
-  }
-
-  Widget _buildCachedNetworkImage() {
-    return CachedNetworkImage(
-      imageUrl: item.iconUrl,
-      fit: BoxFit.contain,
-      placeholder: (context, url) => const Center(
-        child: SizedBox(
-          width: 16,
-          height: 16,
-          child: CircularProgressIndicator(strokeWidth: 1.5, color: AppTheme.pokemonRed),
-        ),
-      ),
-      // 6. Show category fallback icon if network/remote fails or is missing
-      errorWidget: (context, url, error) => Icon(_itemIcon(item.category), color: accent),
     );
   }
 }

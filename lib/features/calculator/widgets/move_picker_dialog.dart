@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:libredex/core/data/champions_regulation.dart';
 import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/features/calculator/utils/combat_utils.dart';
@@ -9,13 +10,15 @@ import 'package:libredex/core/widgets/debounced_search_field.dart';
 class MovePickerDialog extends StatefulWidget {
   final List<Move> moves;
   final DamageCalculatorViewModel viewModel;
-  final ValueChanged<Move> onMoveSelected;
+  final ChampionsRegulationCatalog? regulation;
+  final bool useRegulationPp;
 
   const MovePickerDialog({
     super.key,
     required this.moves,
     required this.viewModel,
-    required this.onMoveSelected,
+    this.regulation,
+    this.useRegulationPp = false,
   });
 
   /// Displays the MovePickerDialog.
@@ -23,7 +26,8 @@ class MovePickerDialog extends StatefulWidget {
     BuildContext context, {
     required List<Move> moves,
     required DamageCalculatorViewModel vm,
-    required ValueChanged<Move> onMoveSelected,
+    ChampionsRegulationCatalog? regulation,
+    bool useRegulationPp = false,
   }) {
     return showDialog<void>(
       context: context,
@@ -31,7 +35,8 @@ class MovePickerDialog extends StatefulWidget {
       builder: (ctx) => MovePickerDialog(
         moves: moves,
         viewModel: vm,
-        onMoveSelected: onMoveSelected,
+        regulation: regulation,
+        useRegulationPp: useRegulationPp,
       ),
     );
   }
@@ -93,6 +98,21 @@ class _MovePickerDialogState extends State<MovePickerDialog> {
                 itemBuilder: (ctx, i) {
                   final m = filtered[i];
                   final typeColor = CombatUtils.typeColors[m.type.toLowerCase()] ?? Colors.grey;
+                  final mCPp = widget.regulation?.movePpFor(m.id);
+                  final previousMCPp = widget.regulation?.previousMovePpFor(m.id);
+                  final previousPpLabel = previousMCPp == null ? '' : ', was $previousMCPp';
+                  final ppLabel = widget.useRegulationPp && mCPp != null
+                      ? 'PP: $mCPp (M-C$previousPpLabel)'
+                      : 'PP: ${m.pp}';
+                  final priorityLabel = m.priority == 0
+                      ? null
+                      : 'Priority ${m.priority > 0 ? '+' : ''}${m.priority}';
+                  final moveFacts = [
+                    m.damageClass.toUpperCase(),
+                    ppLabel,
+                    if (priorityLabel != null) priorityLabel,
+                    m.isContact ? 'Contact' : 'Non-contact',
+                  ].join(' · ');
                   return ListTile(
                     leading: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -100,11 +120,10 @@ class _MovePickerDialogState extends State<MovePickerDialog> {
                       child: Text(m.type.toUpperCase(), style: TextStyle(color: typeColor, fontSize: 10, fontWeight: FontWeight.bold)),
                     ),
                     title: Text(m.name, style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black, fontSize: 14)),
-                    subtitle: Text('${m.damageClass.toUpperCase()} \u2022 PP: ${m.pp}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                    subtitle: Text(moveFacts, style: const TextStyle(fontSize: 11, color: Colors.grey)),
                     trailing: Text('BP: ${m.power ?? "\u2014"}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.pokemonRed)),
                     onTap: () {
-                      widget.viewModel.selectMove(m.name, m.type, m.damageClass, m.power?.toDouble() ?? 50.0);
-                      widget.onMoveSelected(m);
+                      widget.viewModel.selectDatabaseMove(m);
                       Navigator.pop(ctx);
                     },
                   );

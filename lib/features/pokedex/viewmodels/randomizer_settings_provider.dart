@@ -71,12 +71,9 @@ class RandomizerSettings {
     final bst = p.baseHp + p.baseAtk + p.baseDef + p.baseSpAtk + p.baseSpDef + p.baseSpd;
     if (bst < minBst || bst > maxBst) return false;
 
-    if (fullyEvolvedOnly) {
-      if (p.evolutionStage < 2 && p.generation <= 9) {
-        if (p.evolutionStage == 0 || p.evolutionStage == 1) {
-        }
-      }
-    }
+    // Include final evolutions and genuine single-stage Pokémon, but exclude
+    // every form that has a real outgoing evolution edge.
+    if (fullyEvolvedOnly && p.hasEvolution) return false;
 
     return true;
   }

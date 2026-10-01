@@ -14,6 +14,7 @@ import 'package:libredex/features/calculator/utils/combat_utils.dart';
 import 'package:libredex/features/calculator/utils/damage_math.dart';
 import 'package:libredex/core/theme/app_spacing.dart';
 import 'package:libredex/core/data/battle_data_manifest.dart';
+import 'package:libredex/core/data/champions_regulation.dart';
 import 'package:libredex/features/battle_engine/battle_engine.dart';
 import 'package:libredex/features/calculator/viewmodels/damage_calculator_viewmodel.dart';
 import 'package:libredex/features/calculator/views/damage_summary_card.dart';
@@ -66,8 +67,6 @@ class DamageCalculatorScreen extends ConsumerStatefulWidget {
 class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   List<Move> _dbDamagingMoves = [];
-
-  Move _simpleSelectedMove = const Move(id: 0, name: 'Custom Move', type: 'fire', pp: 15, damageClass: 'physical', power: 90, priority: 0, isContact: false, isHealing: false, isSound: false, isPunching: false, isBiting: false, isPowder: false, isPulse: false, isBallistic: false, isSlicing: false, isWind: false, isDance: false, isBite: false, isMultiHit: false, isProtective: false, isSwitching: false, isRecharge: false, isRecoil: false, isDraining: false, isStatusMove: false, isDamagingMove: true, isSignatureMove: false, isDLCMove: false, isChampionsMove: false, isLegendsZAMove: false, generation: 1);
 
   @override
   void initState() {
@@ -126,14 +125,11 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
           .toList();
       damaging.sort((a, b) => a.name.compareTo(b.name));
       if (mounted) {
-        setState(() {
-          _dbDamagingMoves = damaging;
-          if (damaging.isNotEmpty) {
-            if (!_dbDamagingMoves.any((m) => m.id == _simpleSelectedMove.id)) {
-              _simpleSelectedMove = damaging.first;
-            }
-          }
-        });
+        setState(() => _dbDamagingMoves = damaging);
+        if (damaging.isNotEmpty &&
+            ref.read(damageCalculatorViewModelProvider).selectedMoveName == null) {
+          ref.read(damageCalculatorViewModelProvider.notifier).selectDatabaseMove(damaging.first);
+        }
       }
     } catch (_) {}
   }
@@ -382,6 +378,28 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     final bool isSpecial = state.moveCategory.toLowerCase() == 'special';
     final double bp = state.movePower;
     final moveType = state.moveType.toLowerCase();
+    final bool isCritical = state.isCriticalHit ||
+        CombatUtils.alwaysCriticalHit(state.selectedMoveName ?? '');
+    final defenderPokemon = state.defender;
+    final priorityBlockReason = CombatUtils.priorityMoveBlockReason(
+      priority: state.movePriority,
+      attackerAbility: state.attackerAbility,
+      defenderAbility: state.defenderAbility,
+      defenderHeldItem: state.defenderHeldItem,
+      terrain: state.terrain,
+      defenderGrounded: defenderPokemon != null &&
+          CombatUtils.isGrounded(
+            types: [
+              defenderPokemon.type1,
+              if (defenderPokemon.type2 != null) defenderPokemon.type2!,
+            ],
+            ability: state.defenderAbility,
+            heldItem: state.defenderHeldItem,
+          ),
+    );
+    final double simpleEffectiveness = priorityBlockReason == null
+        ? state.simpleEffectiveness
+        : 0.0;
 
     // Integer-parity sandbox — same fixed-point path as the Duel tab & Showdown.
     final int sandboxLevel = state.ruleset.isChampions ? ChampionsRules.level : state.attackerLevel;
@@ -389,16 +407,16 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     // Stages are ignored correctly on crit (negative Atk / positive Def don't apply).
     final double atkRaw = state.simpleAttackerStat;
     final int atkStage = state.attackerStages['atk'] ?? 0;
-    final int effectiveAtkStage = state.isCriticalHit ? (atkStage < 0 ? 0 : atkStage) : atkStage;
+    final int effectiveAtkStage = isCritical ? (atkStage < 0 ? 0 : atkStage) : atkStage;
     final double atkWithStage = (atkRaw * CombatUtils.getStageMultiplier(effectiveAtkStage)).clamp(1.0, 9999.0);
     final double defRaw = state.simpleDefenderStat;
     final int defStage = state.defenderStages['def'] ?? 0;
-    final int effectiveDefStage = state.isCriticalHit ? (defStage > 0 ? 0 : defStage) : defStage;
+    final int effectiveDefStage = isCritical ? (defStage > 0 ? 0 : defStage) : defStage;
     final double defWithStage = (defRaw * CombatUtils.getStageMultiplier(effectiveDefStage)).clamp(1.0, 9999.0);
 
     final double atkItemMult = HeldItemsData.getAttackMultiplier(state.attackerHeldItem, moveType, isSpecial);
     final double defStatItemMult = HeldItemsData.getDefenseMultiplier(state.defenderHeldItem, isSpecial);
-    final double defResistMult = HeldItemsData.getDefenderResistMultiplier(state.defenderHeldItem, moveType, state.simpleEffectiveness);
+    final double defResistMult = HeldItemsData.getDefenderResistMultiplier(state.defenderHeldItem, moveType, simpleEffectiveness);
     final int atkFinal = (atkWithStage * atkItemMult).round().clamp(1, 9999);
     final int defFinal = (defWithStage * defStatItemMult).round().clamp(1, 9999);
 
@@ -418,18 +436,25 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
 
     // Screens: 0.5 singles, 2732/4096 doubles; Champions supports both formats like mainline.
     double screenMult = 1.0;
-    if (!state.isCriticalHit) {
+    if (!isCritical) {
       final double doublesScreen = 2732 / 4096;
       final bool isDoubles = state.isDoubleBattle;
       if (isSpecial && state.lightScreenActive) screenMult = isDoubles ? doublesScreen : 0.5;
       if (!isSpecial && state.reflectActive) screenMult = isDoubles ? doublesScreen : 0.5;
     }
     final bool burned = !isSpecial && state.attackerStatus == 'burn' && state.attackerAbility?.toLowerCase() != 'guts' && state.selectedMoveName?.toLowerCase() != 'facade';
-    final double spreadMult = CombatUtils.spreadMultiplier(state.selectedMoveName ?? 'custom move', state.isDoubleBattle);
+    final moveName = state.selectedMoveName ?? 'custom move';
+    final double spreadMult = CombatUtils.spreadMultiplier(moveName, state.isDoubleBattle);
+    final isAuraGuardContact = CombatUtils.auraGuardReducesDamage(
+      championsRuleset: state.ruleset.isChampions,
+      defenderAbility: state.defenderAbility,
+      contactMove: state.moveIsContact,
+    );
     final List<double> sandboxFinalMods = [
       if (screenMult != 1.0) screenMult,
       if (defResistMult != 1.0) defResistMult,
       if (spreadMult != 1.0) spreadMult,
+      if (isAuraGuardContact) 0.5,
     ];
     final DamageRange sandboxRange = DamageMath.calculate(
       level: sandboxLevel,
@@ -437,8 +462,8 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
       attack: atkFinal,
       defense: defFinal,
       stab: state.simpleStab,
-      effectiveness: state.simpleEffectiveness,
-      critical: state.isCriticalHit,
+      effectiveness: simpleEffectiveness,
+      critical: isCritical,
       weather: weatherMult,
       burned: burned,
       finalModifiers: sandboxFinalMods,
@@ -745,10 +770,11 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                     spacing: 6, runSpacing: 4, alignment: WrapAlignment.center,
                     children: [
                       if (state.simpleStab > 1.0) _modChip('STAB ×${state.simpleStab}', Colors.amber),
-                      if (state.simpleEffectiveness != 1.0) _modChip('Eff ×${state.simpleEffectiveness}', state.simpleEffectiveness > 1.0 ? Colors.green : Colors.red),
+                      if (simpleEffectiveness != 1.0) _modChip('Eff ×$simpleEffectiveness', simpleEffectiveness > 1.0 ? Colors.green : Colors.red),
+                      if (priorityBlockReason != null) _modChip('$priorityBlockReason blocks priority', Colors.redAccent),
                       if (state.attackerHeldItem != 'None') _modChip(state.attackerHeldItem, Colors.purple),
                       if (state.defenderHeldItem != 'None') _modChip('Def Item: ${state.defenderHeldItem}', Colors.blue),
-                      if (state.isCriticalHit) _modChip('CRITICAL HIT ×1.5', Colors.redAccent),
+                      if (isCritical) _modChip('CRITICAL HIT ×1.5', Colors.redAccent),
                       if (spreadMult != 1.0) _modChip('Spread ×0.75', Colors.indigo),
                       if (state.isDoubleBattle) _modChip('Doubles', Colors.cyan),
                       if (state.weather != 'none') _modChip('☁ ${state.weather}', Colors.teal),
@@ -793,7 +819,6 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     }
 
     final bool isChampions = state.ruleset.isChampions;
-    final int battleLevel = isChampions ? ChampionsRules.level : state.attackerLevel;
 
     /// One funnel for final stat math. Mainline keeps the classic IV/EV
     /// formulas; Champions swaps in the Lv. 50 / 31 IV / Stat Point system
@@ -832,28 +857,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     final isSlowStartActive = state.attackerAbility?.toLowerCase() == 'slow start' &&
         state.attackerTurnsOnField < 5;
 
-    // Speed calculation with Paralysis check
-    final int rawAttackerSpeed = sideStat(
-      attacker: true, key: 'spe', base: p1.baseSpd, natureLabel: 'Speed',
-    );
-    double atkSpdMult = CombatUtils.getStageMultiplier(state.attackerStages['spe'] ?? 0);
-    if (state.attackerStatus == 'paralysis' && state.attackerAbility != 'quick feet') atkSpdMult *= 0.5;
-    if (state.attackerStatus != 'none' && state.attackerAbility == 'quick feet') atkSpdMult *= 1.5;
-    if (isSlowStartActive) atkSpdMult *= 0.5;
-    final int attackerSpeed = (rawAttackerSpeed * atkSpdMult).toInt();
-
-    final int rawDefenderSpeed = sideStat(
-      attacker: false, key: 'spe', base: p2.baseSpd, natureLabel: 'Speed',
-    );
-    double defSpdMult = CombatUtils.getStageMultiplier(state.defenderStages['spe'] ?? 0);
-    if (state.defenderStatus == 'paralysis' && state.defenderAbility != 'quick feet') defSpdMult *= 0.5;
-    if (state.defenderStatus != 'none' && state.defenderAbility == 'quick feet') defSpdMult *= 1.5;
-    final int defenderSpeed = (rawDefenderSpeed * defSpdMult).toInt();
-
-    // Dynamic Move Power: gimmick moves (weight, speed, status, item, HP%,
-    // weather/terrain, ...) resolve from the live battle context instead of
-    // their — often missing — database power. Runs after the speed block so
-    // Gyro Ball / Electro Ball can use the final, paralysis-adjusted stats.
+    // Resolve weights once for both the dynamic-power label and BattleEngine.
     final speciesDataset = ref.watch(speciesDatasetProvider).asData?.value;
     final double attackerWeightKg = speciesDataset
             ?.formFacts(p1.id, nationalDexNumber: p1.nationalDexNumber)
@@ -863,6 +867,58 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
             ?.formFacts(p2.id, nationalDexNumber: p2.nationalDexNumber)
             ?.weightKg ??
         0.0;
+    final initialBattleState = state.toBattleState();
+    final weightedBattleState = initialBattleState == null
+        ? null
+        : initialBattleState.copyWith(
+            attacker: initialBattleState.attacker.copyWith(weightKg: attackerWeightKg),
+            defender: initialBattleState.defender.copyWith(weightKg: defenderWeightKg),
+          );
+
+    int fallbackSpeed({required bool attacker}) {
+      final ability = attacker ? state.attackerAbility : state.defenderAbility;
+      final status = attacker ? state.attackerStatus : state.defenderStatus;
+      final stages = attacker ? state.attackerStages : state.defenderStages;
+      final rawSpeed = sideStat(
+        attacker: attacker,
+        key: 'spe',
+        base: attacker ? p1.baseSpd : p2.baseSpd,
+        natureLabel: 'Speed',
+      );
+      var multiplier = CombatUtils.getStageMultiplier(stages['spe'] ?? 0);
+      if (status == 'paralysis' && ability?.toLowerCase() != 'quick feet') {
+        multiplier *= 0.5;
+      }
+      if (status != 'none' && ability?.toLowerCase() == 'quick feet') {
+        multiplier *= 1.5;
+      }
+      if (attacker && isSlowStartActive) multiplier *= 0.5;
+      return (rawSpeed * multiplier *
+              HeldItemsData.getSpeedMultiplier(
+                attacker ? state.attackerHeldItem : state.defenderHeldItem,
+              ))
+          .toInt();
+    }
+
+    final int finalAttackerSpeed = weightedBattleState == null
+        ? fallbackSpeed(attacker: true)
+        : StatEngine.computeEffectiveStats(
+            weightedBattleState.attacker,
+            state.ruleset,
+            weather: state.weather,
+            terrain: state.terrain,
+          ).speed.effectiveStat;
+    final int finalDefenderSpeed = weightedBattleState == null
+        ? fallbackSpeed(attacker: false)
+        : StatEngine.computeEffectiveStats(
+            weightedBattleState.defender,
+            state.ruleset,
+            weather: state.weather,
+            terrain: state.terrain,
+          ).speed.effectiveStat;
+
+    // Dynamic Move Power: weight-, speed-, status-, item- and HP-dependent
+    // moves resolve from the same battle context that feeds the damage engine.
     final double rawBp = activeMove.power?.toDouble() ?? 50.0;
     final dynamicBp = CombatUtils.resolveDynamicBasePower(
       moveName: activeMove.name,
@@ -877,8 +933,8 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
       rageFistHits: state.rageFistHits,
       attackerWeightKg: attackerWeightKg,
       defenderWeightKg: defenderWeightKg,
-      attackerSpeedStat: attackerSpeed.toDouble(),
-      defenderSpeedStat: defenderSpeed.toDouble(),
+      attackerSpeedStat: finalAttackerSpeed.toDouble(),
+      defenderSpeedStat: finalDefenderSpeed.toDouble(),
       weather: state.weather,
       terrain: state.terrain,
       championsRules: isChampions,
@@ -894,100 +950,10 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
       terrain: state.terrain,
       attackerAbility: state.attackerAbility,
     );
-
-    final isSpecial = activeMove.damageClass.toLowerCase() == 'special';
-    final bool isBodyPress = activeMove.name.toLowerCase() == 'body press';
-    final bool isFoulPlay = activeMove.name.toLowerCase() == 'foul play';
-
-    final int attackerAtk;
-    final double atkItemMult;
-
-    if (isFoulPlay) {
-      // Foul Play uses defender's attack stat
-      final int rawDefAtk = sideStat(
-        attacker: false, key: 'atk', base: p2.baseAtk, natureLabel: 'Attack',
-      );
-      final int defAtkStage = state.defenderStages['atk'] ?? 0;
-      final int effDefAtkStage = isCritical ? (defAtkStage < 0 ? 0 : defAtkStage) : defAtkStage;
-      attackerAtk = (rawDefAtk * CombatUtils.getStageMultiplier(effDefAtkStage)).toInt();
-      atkItemMult = HeldItemsData.getAttackMultiplier(state.attackerHeldItem, effectiveMoveType, false);
-    } else if (isBodyPress) {
-      final int rawAttackerDef = sideStat(
-        attacker: true, key: 'def', base: p1.baseDef, natureLabel: 'Defense',
-      );
-      final int atkDefStage = state.attackerStages['def'] ?? 0;
-      final int effAtkDefStage = isCritical ? (atkDefStage < 0 ? 0 : atkDefStage) : atkDefStage;
-      final int attackerDef = (rawAttackerDef * CombatUtils.getStageMultiplier(effAtkDefStage)).toInt();
-      final double defItemMult = HeldItemsData.getDefenseMultiplier(state.attackerHeldItem, false);
-      attackerAtk = (attackerDef * defItemMult).toInt();
-      final attackerItem = HeldItemsData.findByName(state.attackerHeldItem);
-      atkItemMult = attackerItem?.universalDamageMultiplier ?? 1.0;
-    } else {
-      final int rawAttackerAtk = sideStat(
-        attacker: true,
-        key: isSpecial ? 'spa' : 'atk',
-        base: isSpecial ? p1.baseSpAtk : p1.baseAtk,
-        natureLabel: isSpecial ? 'Sp. Atk' : 'Attack',
-      );
-      final int stageVal = isSpecial ? (state.attackerStages['spa'] ?? 0) : (state.attackerStages['atk'] ?? 0);
-      final int effStageVal = isCritical ? (stageVal < 0 ? 0 : stageVal) : stageVal;
-      double gutsMult = 1.0;
-      if (!isSpecial && state.attackerStatus != 'none' && state.attackerAbility == 'guts') gutsMult = 1.5;
-      final slowStartMult = !isSpecial && isSlowStartActive ? 0.5 : 1.0;
-      attackerAtk = (rawAttackerAtk * CombatUtils.getStageMultiplier(effStageVal) * gutsMult * slowStartMult).toInt();
-      atkItemMult = HeldItemsData.getAttackMultiplier(state.attackerHeldItem, effectiveMoveType, isSpecial);
-    }
-
-    final int rawDefenderDef = sideStat(
-      attacker: false,
-      key: isSpecial ? 'spd' : 'def',
-      base: isSpecial ? p2.baseSpDef : p2.baseDef,
-      natureLabel: isSpecial ? 'Sp. Def' : 'Defense',
-    );
-    final int defStageVal = isSpecial ? (state.defenderStages['spd'] ?? 0) : (state.defenderStages['def'] ?? 0);
-    final int effDefStageVal = isCritical ? (defStageVal > 0 ? 0 : defStageVal) : defStageVal;
-    final int defenderDef = (rawDefenderDef * CombatUtils.getStageMultiplier(effDefStageVal)).toInt();
-
-    final int defenderMaxHp = isChampions
-        ? StatCalculator.calculateChampionsHp(
-            base: p2.baseHp,
-            sp: state.defenderSps['hp'] ?? 0,
-            isShedinja: p2.name.toLowerCase() == 'shedinja',
-          )
-        : StatCalculator.calculateHp(
-            base: p2.baseHp,
-            iv: state.defenderIvs['hp'] ?? 31,
-            ev: state.defenderEvs['hp'] ?? 252,
-            level: state.defenderLevel,
-          );
-
-    double weatherMult = 1.0;
-    if (state.weather == 'sunny' && effectiveMoveType == 'fire') weatherMult = 1.5;
-    if (state.weather == 'sunny' && effectiveMoveType == 'water') weatherMult = 0.5;
-    if (state.weather == 'rainy' && effectiveMoveType == 'water') weatherMult = 1.5;
-    if (state.weather == 'rainy' && effectiveMoveType == 'fire') weatherMult = 0.5;
-
-    // Gen 9 Terastallization STAB multiplier
-    double stabMult = 1.0;
-    final moveTypeLower = effectiveMoveType;
-    if (!state.ruleset.isChampions && state.attackerTeraActive && state.attackerTeraType != null) {
-      final teraTypeLower = state.attackerTeraType!.toLowerCase();
-      final isOriginalStab = p1.type1.toLowerCase() == moveTypeLower || p1.type2?.toLowerCase() == moveTypeLower;
-      if (teraTypeLower == moveTypeLower) {
-        stabMult = isOriginalStab ? 2.0 : 1.5;
-      } else if (isOriginalStab) {
-        stabMult = 1.5;
-      }
-    } else {
-      if (p1.type1.toLowerCase() == moveTypeLower || p1.type2?.toLowerCase() == moveTypeLower) {
-        stabMult = 1.5;
-      }
-    }
-
-    double effectivenessMult = CombatUtils.getTypeEffectiveness(
-      effectiveMoveType,
-      p2.type1,
-      p2.type2,
+    final abilityContextBadge = CombatUtils.getAbilityContextBadge(
+      moveType: effectiveMoveType,
+      t1: p2.type1,
+      t2: p2.type2,
       attackerAbility: state.attackerAbility,
       defenderAbility: state.defenderAbility,
       moveName: activeMove.name,
@@ -995,85 +961,35 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
       defenderTeraType: state.defenderTeraType,
     );
 
-    double screenMult = 1.0;
-    if (!isCritical) {
-      final double doublesScreen = 2732 / 4096;
-      final bool isDoubles = state.isDoubleBattle;
-      if (isSpecial && state.lightScreenActive) screenMult = isDoubles ? doublesScreen : 0.5;
-      if (!isSpecial && state.reflectActive) screenMult = isDoubles ? doublesScreen : 0.5;
-    }
+    final bool p1Outspeeds = state.trickRoomActive
+        ? finalAttackerSpeed < finalDefenderSpeed
+        : finalAttackerSpeed >= finalDefenderSpeed;
 
-    double terrainMult = 1.0;
-    if (state.terrain == 'electric' && effectiveMoveType == 'electric') terrainMult = 1.3;
-    if (state.terrain == 'grassy' && effectiveMoveType == 'grass') terrainMult = 1.3;
-    if (state.terrain == 'psychic' && effectiveMoveType == 'psychic') terrainMult = 1.3;
-
-    final double hhMult = state.helpingHandActive ? 1.5 : 1.0;
-    // -ate / Normalize's Gen IX 1.2× power bonus is a base-power modifier.
-    final double typeAbilityBpMult = CombatUtils.typeChangingAbilityPowerMultiplier(
-      state.attackerAbility,
-      activeMove.type,
-    );
-
-    // Burn physical reduction (0.5x)
-    double burnMult = 1.0;
-    if (!isSpecial && state.attackerStatus == 'burn' && state.attackerAbility != 'guts' && activeMove.name.toLowerCase() != 'facade') {
-      burnMult = 0.5;
-    }
-
-    final double defResistMult = HeldItemsData.getDefenderResistMultiplier(state.defenderHeldItem, effectiveMoveType, effectivenessMult);
-    final double defStatItemMult = HeldItemsData.getDefenseMultiplier(state.defenderHeldItem, isSpecial);
-
-    final int finalAttackerSpeed = (attackerSpeed * HeldItemsData.getSpeedMultiplier(state.attackerHeldItem)).toInt();
-    final int finalDefenderSpeed = (defenderSpeed * HeldItemsData.getSpeedMultiplier(state.defenderHeldItem)).toInt();
-    bool p1Outspeeds = state.trickRoomActive ? finalAttackerSpeed < finalDefenderSpeed : finalAttackerSpeed > finalDefenderSpeed;
-    if (finalAttackerSpeed == finalDefenderSpeed) p1Outspeeds = true;
-
-    final int defenderDefFinal = (defenderDef * defStatItemMult).toInt().clamp(1, 9999);
-    final int atkWithItem = (attackerAtk * atkItemMult).toInt().clamp(1, 9999);
-    // Keep the game's rounding boundaries. This replaces the former single
-    // floating-point expression, whose intermediate rounding differed from
-    // Pokémon Showdown by several points in common match-ups.
-    // Apply base-power modifiers to every strike. Triple Axel's later hits
-    // are 40/60 BP before Helping Hand and similar modifiers, not copies of
-    // the first hit's final power.
-    final bpModifier = terrainMult * hhMult * typeAbilityBpMult;
-    final hitBasePowers = CombatUtils.guaranteedHitBasePowers(
-      activeMove.name,
-      basePowerVal.round(),
-    ).map((bp) => (bp * bpModifier).round()).toList();
-    final hasParentalBond = state.attackerAbility?.toLowerCase() == 'parental bond' &&
-        hitBasePowers.length == 1;
-    final breaksProtection = CombatUtils.breaksProtect(activeMove.name);
-    // Use DB isContact flag first (100% accurate), fallback to curated name set for sandbox/synthetic moves.
-    final bool unseenFistProtectionHit = state.attackerAbility?.toLowerCase().replaceAll('-', ' ').replaceAll('_', ' ').trim() == 'unseen fist' &&
-        (activeMove.isContact || CombatUtils.isContactMove(activeMove.name));
-    final blockedByProtect = state.defenderProtected && !breaksProtection && !unseenFistProtectionHit;
-    final double spreadMult = CombatUtils.spreadMultiplier(activeMove.name, state.isDoubleBattle);
-    final finalDamageModifiers = <double>[
-      if (screenMult != 1.0) screenMult,
-      if (defResistMult != 1.0) defResistMult,
-      if (spreadMult != 1.0) spreadMult,
-      if (state.defenderProtected && unseenFistProtectionHit) 0.25,
-    ];
-    final multiHitDamage = DamageMath.calculateMultiHit(
-      basePowers: hitBasePowers,
-      level: battleLevel,
-      attack: atkWithItem,
-      defense: defenderDefFinal,
-      weather: weatherMult,
-      critical: isCritical,
-      stab: stabMult,
-      effectiveness: blockedByProtect ? 0.0 : effectivenessMult,
-      burned: burnMult != 1.0,
-      finalModifiers: finalDamageModifiers,
-      parentalBond: hasParentalBond,
-    );
-    final damageRange = multiHitDamage.total;
-    final int finalMinDamage = damageRange.min;
-    final int finalMaxDamage = damageRange.max;
-    final double minPercent = (finalMinDamage / defenderMaxHp) * 100;
-    final double maxPercent = (finalMaxDamage / defenderMaxHp) * 100;
+    final moveHits = CombatUtils.isVariableMultiHitMove(activeMove.name)
+        ? state.moveHits
+        : 1;
+    final damageResult = weightedBattleState == null
+        ? null
+        : BattleEngine.calculate(
+            weightedBattleState.copyWith(
+              move: MoveState(
+                name: activeMove.name,
+                type: activeMove.type,
+                basePower: activeMove.power ?? 50,
+                damageClass: activeMove.damageClass,
+                priority: activeMove.priority,
+                isCritical: isCritical,
+                isContact: activeMove.isContact,
+                isPunching: activeMove.isPunching,
+                isBiting: activeMove.isBiting,
+                isPulse: activeMove.isPulse,
+                isSlicing: activeMove.isSlicing,
+                isRecoil: activeMove.isRecoil,
+                hits: moveHits,
+                rageFistHits: state.rageFistHits,
+              ),
+            ),
+          );
 
     Widget buildPokemonDuelCard(Pokemon p, bool isAttacker, String heldItem) {
       final typeColor = CombatUtils.typeColors[p.type1.toLowerCase()] ?? Colors.grey;
@@ -1242,10 +1158,23 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                   child: Text(effectiveMoveType.toUpperCase(), style: TextStyle(color: CombatUtils.typeColors[effectiveMoveType] ?? Colors.grey, fontSize: 9, fontWeight: FontWeight.bold)),
                 ),
                 const SizedBox(width: 10),
-                Expanded(child: Text(
-                  state.selectedMoveName ?? activeMove.name,
-                  style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 13),
-                )),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        activeMove.name,
+                        style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 13),
+                      ),
+                      Text(
+                        'Priority ${activeMove.priority > 0 ? '+' : ''}${activeMove.priority} · '
+                        '${activeMove.isContact ? 'Contact' : 'Non-contact'}',
+                        style: const TextStyle(fontSize: 9, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                ),
                 Text('BP: ${basePowerVal.toInt()}', style: const TextStyle(color: Colors.grey, fontSize: 11)),
                 const SizedBox(width: 4),
                 const Icon(Icons.search, color: AppTheme.pokemonRed, size: 18),
@@ -1392,142 +1321,22 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
           ],
           const SizedBox(height: 16),
 
-          // Engine-Powered Damage Summary Card
-          if (state.calculateDamage() != null) ...[
+          // The normal duel tab has one authoritative engine result; the raw
+          // sandbox keeps its separate calculation above.
+          if (damageResult != null) ...[
             DamageSummaryCard(
-              result: state.calculateDamage()!,
+              result: damageResult,
               moveName: activeMove.name,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
           ],
-
-          // Legacy Quick Reference Range Card
-          Card(
-            elevation: 0,
-            color: isDark ? const Color(0xFF121212) : Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-              side: BorderSide(color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE2E8F0), width: 1.2),
+          if (abilityContextBadge != null) ...[
+            Wrap(
+              alignment: WrapAlignment.center,
+              children: [_modChip(abilityContextBadge, AppTheme.pokemonRed)],
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(children: [
-                const Text('CALCULATED DAMAGE RANGE', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: Colors.grey, letterSpacing: 0.5)),
-                const SizedBox(height: 12),
-                Text(
-                  '${finalMinDamage.toStringAsFixed(0)} – ${finalMaxDamage.toStringAsFixed(0)}',
-                  style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w900, color: AppTheme.pokemonRed),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  '${minPercent.toStringAsFixed(1)}% – ${maxPercent.toStringAsFixed(1)}% of ${p2.name}\'s HP',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.orangeAccent),
-                ),
-                if (multiHitDamage.perHit.length > 1) ...[
-                  const SizedBox(height: 12),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.deepPurple.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.deepPurple.withValues(alpha: 0.25)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          hasParentalBond
-                              ? 'PARENTAL BOND — TOTAL INCLUDES BABY HIT'
-                              : 'MULTI-HIT BREAKDOWN — TOTAL ABOVE',
-                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.deepPurple),
-                        ),
-                        const SizedBox(height: 5),
-                        for (var i = 0; i < multiHitDamage.perHit.length; i++)
-                          Text(
-                            '${hasParentalBond && i == 1 ? 'Baby hit (25%)' : 'Hit ${i + 1}${activeMove.name.toLowerCase() == 'triple axel' ? ' (${hitBasePowers[i]} BP)' : ''}'}: '
-                            '${multiHitDamage.perHit[i].min} – ${multiHitDamage.perHit[i].max}',
-                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 8),
-
-                // Contextual ability badge
-                if (CombatUtils.getAbilityContextBadge(
-                  moveType: effectiveMoveType,
-                  t1: p2.type1,
-                  t2: p2.type2,
-                  attackerAbility: state.attackerAbility,
-                  defenderAbility: state.defenderAbility,
-                  moveName: activeMove.name,
-                  defenderTeraActive: state.defenderTeraActive,
-                  defenderTeraType: state.defenderTeraType,
-                ) != null) ...[
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppTheme.pokemonRed.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppTheme.pokemonRed.withValues(alpha: 0.3)),
-                    ),
-                    child: Text(
-                      CombatUtils.getAbilityContextBadge(
-                        moveType: effectiveMoveType,
-                        t1: p2.type1,
-                        t2: p2.type2,
-                        attackerAbility: state.attackerAbility,
-                        defenderAbility: state.defenderAbility,
-                        moveName: activeMove.name,
-                        defenderTeraActive: state.defenderTeraActive,
-                        defenderTeraType: state.defenderTeraType,
-                      )!,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: AppTheme.pokemonRed),
-                    ),
-                  ),
-                ],
-
-                // Berry reduction badge
-                if (defResistMult < 1.0) ...[
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
-                    ),
-                    child: Text(
-                      '🫐 ${state.defenderHeldItem}: Halved Damage (0.5x)',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.blueAccent),
-                    ),
-                  ),
-                ],
-
-                Wrap(spacing: 6, runSpacing: 4, alignment: WrapAlignment.center, children: [
-                  if (stabMult > 1.0) _modChip('STAB ×${stabMult.toStringAsFixed(1)}', Colors.amber),
-                  if (effectivenessMult > 1.0) _modChip('Super Effective ×${effectivenessMult.toStringAsFixed(1)}', Colors.green),
-                  if (effectivenessMult < 1.0 && effectivenessMult > 0.0) _modChip('Not Effective ×${effectivenessMult.toStringAsFixed(2)}', Colors.red),
-                  if (effectivenessMult == 0.0) _modChip('IMMUNE ×0.0', Colors.grey),
-                  if (state.attackerHeldItem != 'None') _modChip(state.attackerHeldItem, Colors.purple),
-                  if (state.defenderHeldItem != 'None') _modChip('Def: ${state.defenderHeldItem}', Colors.blueAccent),
-                  if (isCritical) _modChip('CRITICAL HIT ×1.5', Colors.redAccent),
-                  if (blockedByProtect) _modChip('PROTECT — BLOCKED', Colors.grey),
-                  if (state.defenderProtected && unseenFistProtectionHit) _modChip('Unseen Fist through Protect (¼)', Colors.blueAccent),
-                  if (state.defenderProtected && breaksProtection) _modChip('Breaks Protect', Colors.green),
-                  if (spreadMult != 1.0) _modChip('Spread Move ×0.75', Colors.indigo),
-                  if (state.isDoubleBattle) _modChip('Doubles', Colors.cyan),
-                  if (state.attackerStatus == 'burn' && !isSpecial) _modChip('BURN (Halved Atk)', Colors.deepOrange),
-                  if (isSlowStartActive) _modChip('Slow Start (½ Atk / Spe)', Colors.orangeAccent),
-                  if (state.weather != 'none') _modChip('☁ ${state.weather}', Colors.teal),
-                  if (state.helpingHandActive) _modChip('Helping Hand ×1.5', Colors.orange),
-                ]),
-              ]),
-            ),
-          ),
+            const SizedBox(height: 8),
+          ],
           const SizedBox(height: 16),
 
           // Battlefield Tweaks
@@ -1669,12 +1478,16 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     PokemonPickerDialog.show(context, list: list, isAttacker: isAttacker, vm: vm);
   }
 
-  void _showMovePicker(BuildContext context, DamageCalculatorViewModel vm) {
-    MovePickerDialog.show(
+  Future<void> _showMovePicker(BuildContext context, DamageCalculatorViewModel vm) async {
+    final regulation = await ref.read(championsRegulationProvider.future);
+    if (!mounted) return;
+
+    await MovePickerDialog.show(
       context,
       moves: _dbDamagingMoves,
       vm: vm,
-      onMoveSelected: (m) => setState(() => _simpleSelectedMove = m),
+      regulation: regulation,
+      useRegulationPp: ref.read(damageCalculatorViewModelProvider).ruleset.isChampions,
     );
   }
 

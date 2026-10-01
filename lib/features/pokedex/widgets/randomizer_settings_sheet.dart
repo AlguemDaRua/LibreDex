@@ -330,6 +330,23 @@ class _RandomizerSettingsSheetState extends ConsumerState<RandomizerSettingsShee
                         });
                       },
                     ),
+                    SwitchListTile.adaptive(
+                      contentPadding: EdgeInsets.zero,
+                      secondary: Icon(
+                        Icons.verified_outlined,
+                        color: _fullyEvolvedOnly ? AppTheme.pokemonRed : Colors.grey,
+                      ),
+                      title: const Text('Fully evolved only'),
+                      subtitle: const Text(
+                        'Keep final evolutions and single-stage Pokémon.',
+                      ),
+                      value: _fullyEvolvedOnly,
+                      activeColor: AppTheme.pokemonRed,
+                      onChanged: (value) {
+                        HapticFeedback.selectionClick();
+                        setState(() => _fullyEvolvedOnly = value);
+                      },
+                    ),
                   ],
 
                   const SizedBox(height: 20),

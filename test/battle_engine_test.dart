@@ -142,6 +142,184 @@ void main() {
       expect(result.koChance, isNotEmpty);
     });
 
+    test('Critical hits ignore negative attacking and positive defending stages', () {
+      final attacker = PokemonState.fromDatabase(pikachu, level: 50);
+      final defender = PokemonState.fromDatabase(blastoise, level: 50);
+      const move = MoveState(
+        name: 'Tackle',
+        type: 'normal',
+        basePower: 40,
+        damageClass: 'physical',
+        isCritical: true,
+      );
+
+      DamageResult calculate({
+        PokemonState? attackerState,
+        PokemonState? defenderState,
+      }) => BattleEngine.calculate(BattleState(
+            attacker: attackerState ?? attacker,
+            defender: defenderState ?? defender,
+            move: move,
+            field: const FieldState(),
+          ));
+
+      final baseline = calculate();
+      final negativeAttack = calculate(
+        attackerState: attacker.copyWith(stages: const {'atk': -1}),
+      );
+      final positiveAttack = calculate(
+        attackerState: attacker.copyWith(stages: const {'atk': 1}),
+      );
+      final positiveDefense = calculate(
+        defenderState: defender.copyWith(stages: const {'def': 1}),
+      );
+      final negativeDefense = calculate(
+        defenderState: defender.copyWith(stages: const {'def': -1}),
+      );
+
+      expect(negativeAttack.effectiveAttack, baseline.effectiveAttack);
+      expect(positiveAttack.effectiveAttack, greaterThan(baseline.effectiveAttack));
+      expect(positiveDefense.effectiveDefense, baseline.effectiveDefense);
+      expect(negativeDefense.effectiveDefense, lessThan(baseline.effectiveDefense));
+    });
+
+    test('Critical Body Press and Foul Play use their actual source-stat stages', () {
+      final attacker = PokemonState.fromDatabase(pikachu, level: 50);
+      final defender = PokemonState.fromDatabase(blastoise, level: 50);
+
+      DamageResult calculate({
+        required String moveName,
+        required PokemonState attackerState,
+        required PokemonState defenderState,
+      }) => BattleEngine.calculate(BattleState(
+            attacker: attackerState,
+            defender: defenderState,
+            move: MoveState(
+              name: moveName,
+              type: 'fighting',
+              basePower: 60,
+              damageClass: 'physical',
+              isCritical: true,
+            ),
+            field: const FieldState(),
+          ));
+
+      final bodyPressBase = calculate(
+        moveName: 'Body Press',
+        attackerState: attacker,
+        defenderState: defender,
+      );
+      final bodyPressNegativeDefense = calculate(
+        moveName: 'Body Press',
+        attackerState: attacker.copyWith(stages: const {'def': -1}),
+        defenderState: defender,
+      );
+      expect(bodyPressNegativeDefense.effectiveAttack, bodyPressBase.effectiveAttack);
+
+      final foulPlayBase = calculate(
+        moveName: 'Foul Play',
+        attackerState: attacker,
+        defenderState: defender,
+      );
+      final foulPlayNegativeTargetAttack = calculate(
+        moveName: 'Foul Play',
+        attackerState: attacker,
+        defenderState: defender.copyWith(stages: const {'atk': -1}),
+      );
+      expect(foulPlayNegativeTargetAttack.effectiveAttack, foulPlayBase.effectiveAttack);
+    });
+
+    test('Priority metadata blocks priority moves through abilities and Psychic Terrain', () {
+      final attacker = PokemonState.fromDatabase(pikachu, level: 50);
+      final groundedDefender = PokemonState.fromDatabase(
+        blastoise,
+        level: 50,
+        ability: 'Dazzling',
+      );
+      const priorityMove = MoveState(
+        name: 'Quick Attack',
+        type: 'normal',
+        basePower: 40,
+        damageClass: 'physical',
+        priority: 1,
+      );
+
+      final abilityBlocked = BattleEngine.calculate(BattleState(
+        attacker: attacker,
+        defender: groundedDefender,
+        move: priorityMove,
+        field: const FieldState(),
+      ));
+      final terrainBlocked = BattleEngine.calculate(BattleState(
+        attacker: attacker,
+        defender: groundedDefender.copyWith(ability: null),
+        move: priorityMove,
+        field: const FieldState(terrain: 'psychic'),
+      ));
+      final ordinaryMove = BattleEngine.calculate(BattleState(
+        attacker: attacker,
+        defender: groundedDefender.copyWith(ability: null),
+        move: priorityMove.copyWith(priority: 0),
+        field: const FieldState(terrain: 'psychic'),
+      ));
+
+      expect(abilityBlocked.maxDamage, 0);
+      expect(abilityBlocked.modifiers.any((m) => m.name.contains('Dazzling')), isTrue);
+      expect(terrainBlocked.maxDamage, 0);
+      expect(terrainBlocked.modifiers.any((m) => m.name.contains('Psychic Terrain')), isTrue);
+      expect(ordinaryMove.maxDamage, greaterThan(0));
+    });
+
+    test('Aura Guard halves only contact-move damage in Champions', () {
+      final attacker = PokemonState.fromDatabase(pikachu, level: 50);
+      final defender = PokemonState.fromDatabase(
+        blastoise,
+        level: 50,
+        ability: 'Aura Guard',
+      );
+      const contactMove = MoveState(
+        name: 'Test Strike',
+        type: 'normal',
+        basePower: 60,
+        damageClass: 'physical',
+        isContact: true,
+      );
+      const nonContactMove = MoveState(
+        name: 'Test Strike',
+        type: 'normal',
+        basePower: 60,
+        damageClass: 'physical',
+        isContact: false,
+      );
+
+      final contactResult = BattleEngine.calculate(BattleState(
+        attacker: attacker,
+        defender: defender,
+        move: contactMove,
+        field: const FieldState(),
+        ruleset: BattleRuleset.champions,
+      ));
+      final nonContactResult = BattleEngine.calculate(BattleState(
+        attacker: attacker,
+        defender: defender,
+        move: nonContactMove,
+        field: const FieldState(),
+        ruleset: BattleRuleset.champions,
+      ));
+      final mainlineResult = BattleEngine.calculate(BattleState(
+        attacker: attacker,
+        defender: defender,
+        move: contactMove,
+        field: const FieldState(),
+        ruleset: BattleRuleset.mainline,
+      ));
+
+      expect(contactResult.modifiers.any((m) => m.name.startsWith('Aura Guard')), isTrue);
+      expect(nonContactResult.modifiers.any((m) => m.name.startsWith('Aura Guard')), isFalse);
+      expect(mainlineResult.modifiers.any((m) => m.name.startsWith('Aura Guard')), isFalse);
+      expect(contactResult.maxDamage, lessThan(nonContactResult.maxDamage));
+    });
+
     test('Burn halves physical damage in ModifierPipeline', () {
       final atkState = PokemonState.fromDatabase(
         pikachu,

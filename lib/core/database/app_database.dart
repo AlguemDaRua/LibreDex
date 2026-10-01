@@ -31,6 +31,9 @@ class PokemonTable extends Table {
   IntColumn get generation => integer().withDefault(Constant(1))();
   IntColumn get evolutionStage => integer().withDefault(Constant(0))();
   TextColumn get eggGroups => text().nullable()();
+  BoolColumn get isBaby => boolean().withDefault(Constant(false))();
+  BoolColumn get hasEvolution => boolean().withDefault(Constant(false))();
+  TextColumn get evolutionMethods => text().nullable()();
   TextColumn get formSource => text().nullable()();
   TextColumn get dlcSource => text().nullable()();
   BoolColumn get isChampions => boolean().withDefault(Constant(false))();
@@ -73,7 +76,9 @@ class MoveTable extends Table {
   BoolColumn get isStatusMove => boolean().withDefault(Constant(false))();
   BoolColumn get isDamagingMove => boolean().withDefault(Constant(false))();
   BoolColumn get isSignatureMove => boolean().withDefault(Constant(false))();
+  /// Explicit source metadata from the move asset; do not infer origin from IDs or names.
   BoolColumn get isDLCMove => boolean().withDefault(Constant(false))();
+  /// In particular, local Shadow moves use IDs 10001 through 10018.
   BoolColumn get isChampionsMove => boolean().withDefault(Constant(false))();
   BoolColumn get isLegendsZAMove => boolean().withDefault(Constant(false))();
   IntColumn get generation => integer().withDefault(Constant(1))();
@@ -155,7 +160,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration {
@@ -274,6 +279,11 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(abilityTable, abilityTable.effectTags);
           await m.addColumn(abilityTable, abilityTable.battleEffectTags);
           await m.addColumn(abilityTable, abilityTable.pokemonTypes);
+        }
+        if (from < 5) {
+          await m.addColumn(pokemonTable, pokemonTable.isBaby);
+          await m.addColumn(pokemonTable, pokemonTable.hasEvolution);
+          await m.addColumn(pokemonTable, pokemonTable.evolutionMethods);
         }
       },
     );

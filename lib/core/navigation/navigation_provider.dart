@@ -1,3 +1,4 @@
+import 'package:libredex/core/navigation/app_sections.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -16,7 +17,9 @@ class CurrentMenuIndex extends _$CurrentMenuIndex {
   Future<void> _loadLastIndex() async {
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getInt(_prefsKey);
-    if (saved != null && saved >= 0 && saved <= 9) state = saved;
+    if (saved != null && saved >= 0 && saved < AppSection.values.length) {
+      state = saved;
+    }
   }
 
   Future<void> setIndex(int index) async {

@@ -243,6 +243,45 @@ class $PokemonTableTable extends PokemonTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _isBabyMeta = const VerificationMeta('isBaby');
+  @override
+  late final GeneratedColumn<bool> isBaby = GeneratedColumn<bool>(
+    'is_baby',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_baby" IN (0, 1))',
+    ),
+    defaultValue: Constant(false),
+  );
+  static const VerificationMeta _hasEvolutionMeta = const VerificationMeta(
+    'hasEvolution',
+  );
+  @override
+  late final GeneratedColumn<bool> hasEvolution = GeneratedColumn<bool>(
+    'has_evolution',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("has_evolution" IN (0, 1))',
+    ),
+    defaultValue: Constant(false),
+  );
+  static const VerificationMeta _evolutionMethodsMeta = const VerificationMeta(
+    'evolutionMethods',
+  );
+  @override
+  late final GeneratedColumn<String> evolutionMethods = GeneratedColumn<String>(
+    'evolution_methods',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _formSourceMeta = const VerificationMeta(
     'formSource',
   );
@@ -318,6 +357,9 @@ class $PokemonTableTable extends PokemonTable
     generation,
     evolutionStage,
     eggGroups,
+    isBaby,
+    hasEvolution,
+    evolutionMethods,
     formSource,
     dlcSource,
     isChampions,
@@ -503,6 +545,30 @@ class $PokemonTableTable extends PokemonTable
         eggGroups.isAcceptableOrUnknown(data['egg_groups']!, _eggGroupsMeta),
       );
     }
+    if (data.containsKey('is_baby')) {
+      context.handle(
+        _isBabyMeta,
+        isBaby.isAcceptableOrUnknown(data['is_baby']!, _isBabyMeta),
+      );
+    }
+    if (data.containsKey('has_evolution')) {
+      context.handle(
+        _hasEvolutionMeta,
+        hasEvolution.isAcceptableOrUnknown(
+          data['has_evolution']!,
+          _hasEvolutionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('evolution_methods')) {
+      context.handle(
+        _evolutionMethodsMeta,
+        evolutionMethods.isAcceptableOrUnknown(
+          data['evolution_methods']!,
+          _evolutionMethodsMeta,
+        ),
+      );
+    }
     if (data.containsKey('form_source')) {
       context.handle(
         _formSourceMeta,
@@ -626,6 +692,18 @@ class $PokemonTableTable extends PokemonTable
         DriftSqlType.string,
         data['${effectivePrefix}egg_groups'],
       ),
+      isBaby: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_baby'],
+      )!,
+      hasEvolution: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}has_evolution'],
+      )!,
+      evolutionMethods: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}evolution_methods'],
+      ),
       formSource: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}form_source'],
@@ -673,6 +751,9 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
   final int generation;
   final int evolutionStage;
   final String? eggGroups;
+  final bool isBaby;
+  final bool hasEvolution;
+  final String? evolutionMethods;
   final String? formSource;
   final String? dlcSource;
   final bool isChampions;
@@ -699,6 +780,9 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
     required this.generation,
     required this.evolutionStage,
     this.eggGroups,
+    this.isBaby = false,
+    this.hasEvolution = false,
+    this.evolutionMethods,
     this.formSource,
     this.dlcSource,
     required this.isChampions,
@@ -731,6 +815,11 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
     map['evolution_stage'] = Variable<int>(evolutionStage);
     if (!nullToAbsent || eggGroups != null) {
       map['egg_groups'] = Variable<String>(eggGroups);
+    }
+    map['is_baby'] = Variable<bool>(isBaby);
+    map['has_evolution'] = Variable<bool>(hasEvolution);
+    if (!nullToAbsent || evolutionMethods != null) {
+      map['evolution_methods'] = Variable<String>(evolutionMethods);
     }
     if (!nullToAbsent || formSource != null) {
       map['form_source'] = Variable<String>(formSource);
@@ -770,6 +859,11 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
       eggGroups: eggGroups == null && nullToAbsent
           ? const Value.absent()
           : Value(eggGroups),
+      isBaby: Value(isBaby),
+      hasEvolution: Value(hasEvolution),
+      evolutionMethods: evolutionMethods == null && nullToAbsent
+          ? const Value.absent()
+          : Value(evolutionMethods),
       formSource: formSource == null && nullToAbsent
           ? const Value.absent()
           : Value(formSource),
@@ -808,6 +902,9 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
       generation: serializer.fromJson<int>(json['generation']),
       evolutionStage: serializer.fromJson<int>(json['evolutionStage']),
       eggGroups: serializer.fromJson<String?>(json['eggGroups']),
+      isBaby: serializer.fromJson<bool>(json['isBaby'] ?? false),
+      hasEvolution: serializer.fromJson<bool>(json['hasEvolution'] ?? false),
+      evolutionMethods: serializer.fromJson<String?>(json['evolutionMethods']),
       formSource: serializer.fromJson<String?>(json['formSource']),
       dlcSource: serializer.fromJson<String?>(json['dlcSource']),
       isChampions: serializer.fromJson<bool>(json['isChampions']),
@@ -839,6 +936,9 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
       'generation': serializer.toJson<int>(generation),
       'evolutionStage': serializer.toJson<int>(evolutionStage),
       'eggGroups': serializer.toJson<String?>(eggGroups),
+      'isBaby': serializer.toJson<bool>(isBaby),
+      'hasEvolution': serializer.toJson<bool>(hasEvolution),
+      'evolutionMethods': serializer.toJson<String?>(evolutionMethods),
       'formSource': serializer.toJson<String?>(formSource),
       'dlcSource': serializer.toJson<String?>(dlcSource),
       'isChampions': serializer.toJson<bool>(isChampions),
@@ -868,6 +968,9 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
     int? generation,
     int? evolutionStage,
     Value<String?> eggGroups = const Value.absent(),
+    bool? isBaby,
+    bool? hasEvolution,
+    Value<String?> evolutionMethods = const Value.absent(),
     Value<String?> formSource = const Value.absent(),
     Value<String?> dlcSource = const Value.absent(),
     bool? isChampions,
@@ -894,6 +997,11 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
     generation: generation ?? this.generation,
     evolutionStage: evolutionStage ?? this.evolutionStage,
     eggGroups: eggGroups.present ? eggGroups.value : this.eggGroups,
+    isBaby: isBaby ?? this.isBaby,
+    hasEvolution: hasEvolution ?? this.hasEvolution,
+    evolutionMethods: evolutionMethods.present
+        ? evolutionMethods.value
+        : this.evolutionMethods,
     formSource: formSource.present ? formSource.value : this.formSource,
     dlcSource: dlcSource.present ? dlcSource.value : this.dlcSource,
     isChampions: isChampions ?? this.isChampions,
@@ -936,6 +1044,13 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
           ? data.evolutionStage.value
           : this.evolutionStage,
       eggGroups: data.eggGroups.present ? data.eggGroups.value : this.eggGroups,
+      isBaby: data.isBaby.present ? data.isBaby.value : this.isBaby,
+      hasEvolution: data.hasEvolution.present
+          ? data.hasEvolution.value
+          : this.hasEvolution,
+      evolutionMethods: data.evolutionMethods.present
+          ? data.evolutionMethods.value
+          : this.evolutionMethods,
       formSource: data.formSource.present
           ? data.formSource.value
           : this.formSource,
@@ -973,6 +1088,9 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
           ..write('generation: $generation, ')
           ..write('evolutionStage: $evolutionStage, ')
           ..write('eggGroups: $eggGroups, ')
+          ..write('isBaby: $isBaby, ')
+          ..write('hasEvolution: $hasEvolution, ')
+          ..write('evolutionMethods: $evolutionMethods, ')
           ..write('formSource: $formSource, ')
           ..write('dlcSource: $dlcSource, ')
           ..write('isChampions: $isChampions, ')
@@ -1004,6 +1122,9 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
     generation,
     evolutionStage,
     eggGroups,
+    isBaby,
+    hasEvolution,
+    evolutionMethods,
     formSource,
     dlcSource,
     isChampions,
@@ -1034,6 +1155,9 @@ class Pokemon extends DataClass implements Insertable<Pokemon> {
           other.generation == this.generation &&
           other.evolutionStage == this.evolutionStage &&
           other.eggGroups == this.eggGroups &&
+          other.isBaby == this.isBaby &&
+          other.hasEvolution == this.hasEvolution &&
+          other.evolutionMethods == this.evolutionMethods &&
           other.formSource == this.formSource &&
           other.dlcSource == this.dlcSource &&
           other.isChampions == this.isChampions &&
@@ -1062,6 +1186,9 @@ class PokemonTableCompanion extends UpdateCompanion<Pokemon> {
   final Value<int> generation;
   final Value<int> evolutionStage;
   final Value<String?> eggGroups;
+  final Value<bool> isBaby;
+  final Value<bool> hasEvolution;
+  final Value<String?> evolutionMethods;
   final Value<String?> formSource;
   final Value<String?> dlcSource;
   final Value<bool> isChampions;
@@ -1088,6 +1215,9 @@ class PokemonTableCompanion extends UpdateCompanion<Pokemon> {
     this.generation = const Value.absent(),
     this.evolutionStage = const Value.absent(),
     this.eggGroups = const Value.absent(),
+    this.isBaby = const Value.absent(),
+    this.hasEvolution = const Value.absent(),
+    this.evolutionMethods = const Value.absent(),
     this.formSource = const Value.absent(),
     this.dlcSource = const Value.absent(),
     this.isChampions = const Value.absent(),
@@ -1115,6 +1245,9 @@ class PokemonTableCompanion extends UpdateCompanion<Pokemon> {
     this.generation = const Value.absent(),
     this.evolutionStage = const Value.absent(),
     this.eggGroups = const Value.absent(),
+    this.isBaby = const Value.absent(),
+    this.hasEvolution = const Value.absent(),
+    this.evolutionMethods = const Value.absent(),
     this.formSource = const Value.absent(),
     this.dlcSource = const Value.absent(),
     this.isChampions = const Value.absent(),
@@ -1156,6 +1289,9 @@ class PokemonTableCompanion extends UpdateCompanion<Pokemon> {
     Expression<int>? generation,
     Expression<int>? evolutionStage,
     Expression<String>? eggGroups,
+    Expression<bool>? isBaby,
+    Expression<bool>? hasEvolution,
+    Expression<String>? evolutionMethods,
     Expression<String>? formSource,
     Expression<String>? dlcSource,
     Expression<bool>? isChampions,
@@ -1183,6 +1319,9 @@ class PokemonTableCompanion extends UpdateCompanion<Pokemon> {
       if (generation != null) 'generation': generation,
       if (evolutionStage != null) 'evolution_stage': evolutionStage,
       if (eggGroups != null) 'egg_groups': eggGroups,
+      if (isBaby != null) 'is_baby': isBaby,
+      if (hasEvolution != null) 'has_evolution': hasEvolution,
+      if (evolutionMethods != null) 'evolution_methods': evolutionMethods,
       if (formSource != null) 'form_source': formSource,
       if (dlcSource != null) 'dlc_source': dlcSource,
       if (isChampions != null) 'is_champions': isChampions,
@@ -1212,6 +1351,9 @@ class PokemonTableCompanion extends UpdateCompanion<Pokemon> {
     Value<int>? generation,
     Value<int>? evolutionStage,
     Value<String?>? eggGroups,
+    Value<bool>? isBaby,
+    Value<bool>? hasEvolution,
+    Value<String?>? evolutionMethods,
     Value<String?>? formSource,
     Value<String?>? dlcSource,
     Value<bool>? isChampions,
@@ -1239,6 +1381,9 @@ class PokemonTableCompanion extends UpdateCompanion<Pokemon> {
       generation: generation ?? this.generation,
       evolutionStage: evolutionStage ?? this.evolutionStage,
       eggGroups: eggGroups ?? this.eggGroups,
+      isBaby: isBaby ?? this.isBaby,
+      hasEvolution: hasEvolution ?? this.hasEvolution,
+      evolutionMethods: evolutionMethods ?? this.evolutionMethods,
       formSource: formSource ?? this.formSource,
       dlcSource: dlcSource ?? this.dlcSource,
       isChampions: isChampions ?? this.isChampions,
@@ -1312,6 +1457,15 @@ class PokemonTableCompanion extends UpdateCompanion<Pokemon> {
     if (eggGroups.present) {
       map['egg_groups'] = Variable<String>(eggGroups.value);
     }
+    if (isBaby.present) {
+      map['is_baby'] = Variable<bool>(isBaby.value);
+    }
+    if (hasEvolution.present) {
+      map['has_evolution'] = Variable<bool>(hasEvolution.value);
+    }
+    if (evolutionMethods.present) {
+      map['evolution_methods'] = Variable<String>(evolutionMethods.value);
+    }
     if (formSource.present) {
       map['form_source'] = Variable<String>(formSource.value);
     }
@@ -1351,6 +1505,9 @@ class PokemonTableCompanion extends UpdateCompanion<Pokemon> {
           ..write('generation: $generation, ')
           ..write('evolutionStage: $evolutionStage, ')
           ..write('eggGroups: $eggGroups, ')
+          ..write('isBaby: $isBaby, ')
+          ..write('hasEvolution: $hasEvolution, ')
+          ..write('evolutionMethods: $evolutionMethods, ')
           ..write('formSource: $formSource, ')
           ..write('dlcSource: $dlcSource, ')
           ..write('isChampions: $isChampions, ')
@@ -4657,6 +4814,9 @@ typedef $$PokemonTableTableCreateCompanionBuilder =
       Value<int> generation,
       Value<int> evolutionStage,
       Value<String?> eggGroups,
+      Value<bool> isBaby,
+      Value<bool> hasEvolution,
+      Value<String?> evolutionMethods,
       Value<String?> formSource,
       Value<String?> dlcSource,
       Value<bool> isChampions,
@@ -4685,6 +4845,9 @@ typedef $$PokemonTableTableUpdateCompanionBuilder =
       Value<int> generation,
       Value<int> evolutionStage,
       Value<String?> eggGroups,
+      Value<bool> isBaby,
+      Value<bool> hasEvolution,
+      Value<String?> evolutionMethods,
       Value<String?> formSource,
       Value<String?> dlcSource,
       Value<bool> isChampions,
@@ -4856,6 +5019,21 @@ class $$PokemonTableTableFilterComposer
 
   ColumnFilters<String> get eggGroups => $composableBuilder(
     column: $table.eggGroups,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isBaby => $composableBuilder(
+    column: $table.isBaby,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get hasEvolution => $composableBuilder(
+    column: $table.hasEvolution,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get evolutionMethods => $composableBuilder(
+    column: $table.evolutionMethods,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5045,6 +5223,21 @@ class $$PokemonTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isBaby => $composableBuilder(
+    column: $table.isBaby,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get hasEvolution => $composableBuilder(
+    column: $table.hasEvolution,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get evolutionMethods => $composableBuilder(
+    column: $table.evolutionMethods,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get formSource => $composableBuilder(
     column: $table.formSource,
     builder: (column) => ColumnOrderings(column),
@@ -5151,6 +5344,21 @@ class $$PokemonTableTableAnnotationComposer
 
   GeneratedColumn<String> get eggGroups =>
       $composableBuilder(column: $table.eggGroups, builder: (column) => column);
+
+  GeneratedColumn<bool> get isBaby => $composableBuilder(
+    column: $table.isBaby,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get hasEvolution => $composableBuilder(
+    column: $table.hasEvolution,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get evolutionMethods => $composableBuilder(
+    column: $table.evolutionMethods,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get formSource => $composableBuilder(
     column: $table.formSource,
@@ -5275,6 +5483,9 @@ class $$PokemonTableTableTableManager
                 Value<int> generation = const Value.absent(),
                 Value<int> evolutionStage = const Value.absent(),
                 Value<String?> eggGroups = const Value.absent(),
+                Value<bool> isBaby = const Value.absent(),
+                Value<bool> hasEvolution = const Value.absent(),
+                Value<String?> evolutionMethods = const Value.absent(),
                 Value<String?> formSource = const Value.absent(),
                 Value<String?> dlcSource = const Value.absent(),
                 Value<bool> isChampions = const Value.absent(),
@@ -5301,6 +5512,9 @@ class $$PokemonTableTableTableManager
                 generation: generation,
                 evolutionStage: evolutionStage,
                 eggGroups: eggGroups,
+                isBaby: isBaby,
+                hasEvolution: hasEvolution,
+                evolutionMethods: evolutionMethods,
                 formSource: formSource,
                 dlcSource: dlcSource,
                 isChampions: isChampions,
@@ -5329,6 +5543,9 @@ class $$PokemonTableTableTableManager
                 Value<int> generation = const Value.absent(),
                 Value<int> evolutionStage = const Value.absent(),
                 Value<String?> eggGroups = const Value.absent(),
+                Value<bool> isBaby = const Value.absent(),
+                Value<bool> hasEvolution = const Value.absent(),
+                Value<String?> evolutionMethods = const Value.absent(),
                 Value<String?> formSource = const Value.absent(),
                 Value<String?> dlcSource = const Value.absent(),
                 Value<bool> isChampions = const Value.absent(),
@@ -5355,6 +5572,9 @@ class $$PokemonTableTableTableManager
                 generation: generation,
                 evolutionStage: evolutionStage,
                 eggGroups: eggGroups,
+                isBaby: isBaby,
+                hasEvolution: hasEvolution,
+                evolutionMethods: evolutionMethods,
                 formSource: formSource,
                 dlcSource: dlcSource,
                 isChampions: isChampions,

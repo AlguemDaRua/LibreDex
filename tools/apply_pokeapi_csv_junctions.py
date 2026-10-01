@@ -1,14 +1,10 @@
 #!/usr/bin/env python3
-"""Merges Pokémon Champions learnset rows into ``assets/data/pokemon_moves.json``
-from a local PokéAPI CSV dataset, fully offline.
+"""Legacy helper for merging pre-M-C Champions train rows from PokéAPI CSV.
 
-``tools/generate_junctions.dart`` is the main generator for
-``pokemon_moves.json``/``pokemon_abilities.json`` and talks to the live
-PokéAPI GraphQL endpoint. The Pokémon Champions version group is very new,
-so depending on the endpoint snapshot its rows may be missing. This tool is
-the surgical companion step: it keeps every existing row untouched and only
-merges in the Champions ``train`` rows (learn method id 12, which only
-exists under the Champions version group, so nothing else can change).
+Regulation M-C now has an explicit pinned learnset source. For the current
+bundle, use ``tools/apply_champions_regulation_learnsets.py`` instead; this
+legacy merge is intentionally blocked once the M-C catalog is present so it
+cannot reintroduce out-of-regulation moves/form rows.
 
 Policy
 ------
@@ -74,6 +70,15 @@ def main() -> None:
     pokemon_asset = repo_root / "assets" / "data" / "pokemon.json"
     moves_asset = repo_root / "assets" / "data" / "moves.json"
     overlay_asset = repo_root / "assets" / "data" / "forms_extra.json"
+    regulation_asset = repo_root / "assets" / "data" / "champions_regulation_mc.json"
+    if regulation_asset.exists() and args.out.resolve() == (repo_root / "assets" / "data" / "pokemon_moves.json").resolve():
+        regulation = json.loads(regulation_asset.read_text())
+        if regulation.get("meta", {}).get("gameVersion") == "1.2.0":
+            fail(
+                "Regulation M-C is pinned in the bundle. Use "
+                "tools/apply_champions_regulation_learnsets.py with the matching "
+                "M-C learnsets.json instead of merging generic Champions CSV rows."
+            )
     moves_csv = args.csv_dir / "pokemon_moves.csv"
     vg_csv = args.csv_dir / "version_groups.csv"
     for path in (pokemon_asset, moves_asset, moves_csv, vg_csv, args.out):

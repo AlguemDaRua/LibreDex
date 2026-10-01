@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:libredex/core/data/champions_regulation.dart';
+import 'package:libredex/core/navigation/app_sections.dart';
 import 'package:libredex/core/navigation/navigation_provider.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/theme/theme_provider.dart';
@@ -22,6 +24,7 @@ class FeatureHubSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final currentTheme = ref.watch(themeModeProvider);
+    final regulation = ref.watch(championsRegulationProvider).asData?.value;
 
     return ConstrainedBox(
       constraints: BoxConstraints(
@@ -146,7 +149,53 @@ class FeatureHubSheet extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // DATABASES SECTION
+                    // CHAMPIONS REGULATION SECTION
+                    _buildSectionHeader('POKÉMON CHAMPIONS · REGULATION M-C'),
+                    const SizedBox(height: 10),
+                    _buildRegulationOverviewCard(regulation, isDark),
+                    const SizedBox(height: 12),
+                    GridView.count(
+                      crossAxisCount: 2,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      mainAxisSpacing: 10,
+                      crossAxisSpacing: 10,
+                      childAspectRatio: 2.3,
+                      children: [
+                        _buildHubTile(
+                          context: context,
+                          ref: ref,
+                          section: AppSection.pokedex,
+                          subtitle: 'Roster eligibility & new Pokémon',
+                          color: const Color(0xFFE3350D),
+                        ),
+                        _buildHubTile(
+                          context: context,
+                          ref: ref,
+                          section: AppSection.movedex,
+                          subtitle: 'M-C moves, PP & patch notes',
+                          color: const Color(0xFFF7D02C),
+                        ),
+                        _buildHubTile(
+                          context: context,
+                          ref: ref,
+                          section: AppSection.abilitydex,
+                          subtitle: 'Eligible abilities & effects',
+                          color: const Color(0xFFA78BFA),
+                        ),
+                        _buildHubTile(
+                          context: context,
+                          ref: ref,
+                          section: AppSection.itemdex,
+                          subtitle: 'M-C held items & artwork',
+                          color: const Color(0xFF34D399),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // REFERENCE DATABASES SECTION
                     _buildSectionHeader('REFERENCE DATABASES'),
                     const SizedBox(height: 10),
                     GridView.count(
@@ -160,56 +209,16 @@ class FeatureHubSheet extends ConsumerWidget {
                         _buildHubTile(
                           context: context,
                           ref: ref,
-                          title: 'Pokédex',
-                          subtitle: '1025+ Pokémon',
-                          icon: Icons.catching_pokemon,
-                          color: const Color(0xFFE3350D),
-                          index: 0,
-                        ),
-                        _buildHubTile(
-                          context: context,
-                          ref: ref,
-                          title: 'MoveDex',
-                          subtitle: '900+ Moves & BP',
-                          icon: Icons.flash_on_rounded,
-                          color: const Color(0xFFF7D02C),
-                          index: 3,
-                        ),
-                        _buildHubTile(
-                          context: context,
-                          ref: ref,
-                          title: 'AbilityDex',
-                          subtitle: 'Passive abilities',
-                          icon: Icons.auto_awesome_rounded,
-                          color: const Color(0xFFA78BFA),
-                          index: 4,
-                        ),
-                        _buildHubTile(
-                          context: context,
-                          ref: ref,
-                          title: 'ItemDex',
-                          subtitle: 'Held items & balls',
-                          icon: Icons.inventory_2_rounded,
-                          color: const Color(0xFF34D399),
-                          index: 5,
-                        ),
-                        _buildHubTile(
-                          context: context,
-                          ref: ref,
-                          title: 'NatureDex',
-                          subtitle: 'Stat multipliers',
-                          icon: Icons.analytics_rounded,
+                          section: AppSection.naturedex,
+                          subtitle: 'Natures & stat modifiers',
                           color: const Color(0xFFF59E0B),
-                          index: 6,
                         ),
                         _buildHubTile(
                           context: context,
                           ref: ref,
-                          title: 'Type Chart',
-                          subtitle: 'Type match-ups',
-                          icon: Icons.grid_on_rounded,
+                          section: AppSection.typeChart,
+                          subtitle: 'Type strengths & weaknesses',
                           color: const Color(0xFF60A5FA),
-                          index: 7,
                         ),
                       ],
                     ),
@@ -217,7 +226,7 @@ class FeatureHubSheet extends ConsumerWidget {
                     const SizedBox(height: 20),
 
                     // COMPETITIVE TOOLS SECTION
-                    _buildSectionHeader('COMPETITIVE & BATTLE TOOLS'),
+                    _buildSectionHeader('TEAM & BATTLE TOOLS'),
                     const SizedBox(height: 10),
                     GridView.count(
                       crossAxisCount: 2,
@@ -230,38 +239,45 @@ class FeatureHubSheet extends ConsumerWidget {
                         _buildHubTile(
                           context: context,
                           ref: ref,
-                          title: 'Team Builder',
+                          section: AppSection.teamBuilder,
                           subtitle: 'Build & export teams',
-                          icon: Icons.groups_rounded,
                           color: const Color(0xFFEC4899),
-                          index: 1,
                         ),
                         _buildHubTile(
                           context: context,
                           ref: ref,
-                          title: 'Damage Calc',
-                          subtitle: 'Showdown battle engine',
-                          icon: Icons.calculate_rounded,
+                          section: AppSection.calculator,
+                          subtitle: 'Mainline & Champions damage',
                           color: const Color(0xFF10B981),
-                          index: 8,
                         ),
                         _buildHubTile(
                           context: context,
                           ref: ref,
-                          title: 'Stat Compare',
-                          subtitle: 'Side-by-side stats',
-                          icon: Icons.compare_arrows_rounded,
+                          section: AppSection.statCompare,
+                          subtitle: 'Side-by-side base stats',
                           color: const Color(0xFF8B5CF6),
-                          index: 2,
                         ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    _buildSectionHeader('APP & PREFERENCES'),
+                    const SizedBox(height: 10),
+                    GridView.count(
+                      crossAxisCount: 2,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      mainAxisSpacing: 10,
+                      crossAxisSpacing: 10,
+                      childAspectRatio: 2.3,
+                      children: [
                         _buildHubTile(
                           context: context,
                           ref: ref,
-                          title: 'Settings',
-                          subtitle: 'Artwork & theme',
-                          icon: Icons.settings_rounded,
+                          section: AppSection.settings,
+                          subtitle: 'Artwork, theme & app options',
                           color: const Color(0xFF6B7280),
-                          index: 9,
                         ),
                       ],
                     ),
@@ -291,26 +307,215 @@ class FeatureHubSheet extends ConsumerWidget {
     );
   }
 
+  Widget _buildRegulationOverviewCard(
+    ChampionsRegulationCatalog? regulation,
+    bool isDark,
+  ) {
+    const accent = Colors.deepPurpleAccent;
+    final period = regulation?.officialAnnouncementPeriod ?? '';
+    final gameVersion = regulation?.gameVersion ?? '';
+    final dataDate = regulation?.asOf ?? '';
+    final rosterCount = regulation?.rosterEntryCount ?? 0;
+    final newPokemonCount = regulation?.officialNewPokemonCount ?? 0;
+    final newMegaCount = regulation?.newMegaFormIds.length ?? 0;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF171322) : const Color(0xFFF6F2FF),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: accent.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(9),
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.emoji_events_rounded, color: accent, size: 21),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      regulation?.regulationName ?? 'Pokémon Champions Regulation M-C',
+                      style: TextStyle(
+                        color: isDark ? Colors.white : const Color(0xFF211A31),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (gameVersion.isNotEmpty || dataDate.isNotEmpty)
+                      Text(
+                        [
+                          if (gameVersion.isNotEmpty) 'Game v$gameVersion',
+                          if (dataDate.isNotEmpty) 'Data snapshot $dataDate',
+                        ].join(' · '),
+                        style: TextStyle(
+                          color: isDark ? Colors.grey[400] : Colors.grey[700],
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+                decoration: BoxDecoration(
+                  color: accent,
+                  borderRadius: BorderRadius.circular(7),
+                ),
+                child: const Text(
+                  'M-C',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Browse regulation eligibility and M-C-specific move, ability and item data. Availability is separate from game origin: older content can be eligible without being new to Pokémon Champions.',
+            style: TextStyle(
+              color: isDark ? Colors.grey[300] : const Color(0xFF4B4655),
+              fontSize: 11,
+              height: 1.35,
+            ),
+          ),
+          if (period.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.calendar_month_rounded, color: accent, size: 14),
+                const SizedBox(width: 5),
+                Expanded(
+                  child: Text(
+                    'Official period: $period',
+                    style: TextStyle(
+                      color: isDark ? Colors.grey[400] : Colors.grey[700],
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          if (regulation?.patchSummary.isNotEmpty ?? false) ...[
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.system_update_rounded, color: accent, size: 14),
+                const SizedBox(width: 5),
+                Expanded(
+                  child: Text(
+                    regulation!.patchSummary,
+                    style: TextStyle(
+                      color: isDark ? Colors.grey[300] : const Color(0xFF4B4655),
+                      fontSize: 10,
+                      height: 1.3,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          if (rosterCount > 0 || newPokemonCount > 0 || newMegaCount > 0) ...[
+            const SizedBox(height: 9),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                if (rosterCount > 0)
+                  _buildRegulationFactPill(
+                    icon: Icons.catching_pokemon_rounded,
+                    label: '$rosterCount roster entries',
+                    isDark: isDark,
+                  ),
+                if (newPokemonCount > 0)
+                  _buildRegulationFactPill(
+                    icon: Icons.add_circle_outline_rounded,
+                    label: '$newPokemonCount newly available Pokémon',
+                    isDark: isDark,
+                  ),
+                if (newMegaCount > 0)
+                  _buildRegulationFactPill(
+                    icon: Icons.auto_awesome_rounded,
+                    label: '$newMegaCount new Mega forms',
+                    isDark: isDark,
+                  ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRegulationFactPill({
+    required IconData icon,
+    required String label,
+    required bool isDark,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.deepPurpleAccent.withValues(alpha: isDark ? 0.20 : 0.10),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: Colors.deepPurpleAccent),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: isDark ? Colors.white70 : const Color(0xFF3D315A),
+              fontSize: 9,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildHubTile({
     required BuildContext context,
     required WidgetRef ref,
-    required String title,
+    required AppSection section,
     required String subtitle,
-    required IconData icon,
     required Color color,
-    required int index,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final currentIndex = ref.watch(currentMenuIndexProvider);
-    final isSelected = currentIndex == index;
+    final isSelected = currentIndex == section.index;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
           Navigator.pop(context);
-          if (currentIndex != index) {
-            ref.read(currentMenuIndexProvider.notifier).setIndex(index);
+          if (currentIndex != section.index) {
+            ref.read(currentMenuIndexProvider.notifier).setIndex(section.index);
           }
         },
         borderRadius: BorderRadius.circular(16),
@@ -336,7 +541,7 @@ class FeatureHubSheet extends ConsumerWidget {
                   color: color.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: color, size: 20),
+                child: Icon(section.selectedIcon, color: color, size: 20),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -345,7 +550,7 @@ class FeatureHubSheet extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      title,
+                      section.hubTitle,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 13,

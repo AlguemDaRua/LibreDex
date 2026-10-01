@@ -40,19 +40,21 @@ On a typical Android install, the database is under `/data/user/0/com.alguemdaru
 
 Use **Settings → Clear browsing artwork cache** for temporary images, **Delete downloaded artwork** for the durable library, or **Delete everything** to erase LibreDex data before closing, uninstalling or restarting the app.
 
-## Features & Enhancements
+## Features & data snapshot
 
-LibreDex is **100% up to date as of 08 Aug 2026** — Pokémon Champions **66 SP / 21 Alignments** and Legends: Z-A **Mega Dimension DLC (10 Dec 2025, 49 Megas)** are fully bundled and the damage engine is Showdown integer-parity (singles & doubles, spread `0.75×`, screens `0.5`/`2732`).
+Bundled game-data snapshot: **1 October 2026**. LibreDex includes Pokémon Champions Regulation Set M-C data (game version 1.2.0), alongside Champions stat rules and Legends: Z-A forms. Regulation eligibility is kept separate from a record's game origin. Start at the [documentation index](docs/README.md) for the implementation guide, full source/provenance workflow, game-support notes, migration guide, testing instructions, and release checklist.
 
 LibreDex includes full-fledged, multi-game features covering:
 - **Adaptive Navigation (new in Aug 2026)**: Bottom `NavigationBar` on phones + `NavigationRail` on tablets, single `More` overflow — no hamburger + bar duplication. Theme toggle plays the wavy reveal from the tap point.
 - **Shared Filter & Sort Framework**: Universal debouncing, search, sorting menus, active filter summaries, and result counters.
-- **Advanced Pokédex Filtering**: Query Pokémon by generation, stage, form source (Alola, Galar, Hisui, Paldea, Champions, Legends: Z-A), and complex dual-type predicates.
-- **Expanded MoveDex (27 Fields)**: Detailed property search for priority, contact, sound-based, punching, slicing, wind, dance, multi-hit, and battle property configurations.
-- **AbilityDex Metadata**: Filter standard and hidden abilities affecting Weather, Terrain, Healing, Stats, Status, Damage, and more.
-- **Offline ItemDex Caching**: Durable artwork, fallbacks, category fallback icons, and manual bulk downloader with real-time download progress.
-- **NatureDex Alignments**: Supports both Pokémon Champions 66 SP / 21 Alignments (Singles & Doubles, Regulation M-B) and Legends: Z-A Effort level rules with responsive mobile/tablet displays.
-- **Damage Calculator**: Showdown-parity integer engine — level 50 (Champions) / 1-100 (mainline), stages, weather, Tera, Protect/Unseen Fist, spread `0.75×`, Helping Hand `1.5×`, Life Orb `1.3×`, and more.
+- **Advanced Pokédex Filtering**: Query by generation, form/source, egg group, evolution stage/method, M-C eligibility, ability compatibility, per-Pokémon hidden ability, stats, and type predicates.
+- **Expanded MoveDex**: 22 property switches share data-backed predicates, filter chips, and reset behavior; includes priority/contact traits, move classes, and source/rule filters.
+- **AbilityDex Metadata**: Hidden-ability flags live on Pokémon–ability junctions; AbilityDex filters abilities used in a hidden slot, and detail pages identify the exact Pokémon rows.
+- **ItemDex Provenance & Offline Artwork**: Category/role/origin filters, explicit aliases, source-backed generation (unknown stays unknown), and bulk downloads counted by unique stored artwork.
+- **Random Pokémon**: Choose the full catalog, active Pokédex results, or custom type/generation/BST/evolution criteria; settings persist locally.
+- **Responsive Pokédex Counts**: Cards group matching forms by National Dex; the result count reports unique species, while MoveDex/AbilityDex/ItemDex counts report filtered records.
+- **NatureDex Alignments**: Supports both Pokémon Champions' 66 Stat Points / 21 Alignments (Singles & Doubles, Regulation M-C) and Legends: Z-A Effort Level rules.
+- **Damage Calculator**: One shared battle-engine damage result per duel view, data-backed move priority/contact metadata, critical-stage handling, level 50 Champions rules, and a separate raw sandbox formula.
 
 ## Run from source
 

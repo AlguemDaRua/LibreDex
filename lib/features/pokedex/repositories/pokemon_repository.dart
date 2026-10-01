@@ -232,14 +232,16 @@ class PokemonRepository {
       await rootBundle.loadString('assets/data/evolution_chains.json'),
     ) as Map<String, dynamic>;
 
-    List<dynamic>? chain = _localEvolutionChains![dexNum.toString()] as List<dynamic>?;
-    chain ??= _localEvolutionChains!.values.whereType<List<dynamic>>().firstWhere(
-      (rows) => rows.any((raw) {
+    final chain = _localEvolutionChains!.entries
+        .where((entry) => entry.value is List<dynamic>)
+        .map((entry) => entry.value as List<dynamic>)
+        .firstWhere(
+          (rows) => rows.any((raw) {
             final row = raw as Map<String, dynamic>;
             return row['from'] == dexNum || row['to'] == dexNum;
           }),
-      orElse: () => <dynamic>[],
-    );
+          orElse: () => <dynamic>[],
+        );
     if (chain.isEmpty) return const [];
 
     final steps = <EvolutionStep>[];
@@ -247,20 +249,38 @@ class PokemonRepository {
       final row = raw as Map<String, dynamic>;
       final fromDex = row['from'] as int;
       final toDex = row['to'] as int;
-      final fromPokemon = await _firstPokemonForDex(fromDex);
-      final toPokemon = await _firstPokemonForDex(toDex);
+      final fromPokemonId = row['fromPokemon'] as int? ?? fromDex;
+      final toPokemonId = row['toPokemon'] as int? ?? toDex;
+      final fromPokemon = await _pokemonById(fromPokemonId) ?? await _firstPokemonForDex(fromDex);
+      final toPokemon = await _pokemonById(toPokemonId) ?? await _firstPokemonForDex(toDex);
+      final fromForm = row['fromForm'] as String? ?? fromPokemon?.form ?? 'normal';
+      final toForm = row['toForm'] as String? ?? toPokemon?.form ?? 'normal';
+
       steps.add(EvolutionStep(
-        fromId: fromPokemon?.id ?? fromDex,
-        fromName: _formatDisplayName(fromPokemon?.name ?? 'pokemon-$fromDex', fromPokemon?.form ?? 'normal'),
+        fromId: fromPokemon?.id ?? fromPokemonId,
+        fromName: _formatEvolutionPokemonName(
+          fromPokemon?.name ?? 'pokemon-$fromDex',
+          fromPokemon?.form ?? fromForm,
+        ),
         fromSprite: fromPokemon?.spriteUrl,
-        toId: toPokemon?.id ?? toDex,
-        toName: _formatDisplayName(toPokemon?.name ?? 'pokemon-$toDex', toPokemon?.form ?? 'normal'),
+        toId: toPokemon?.id ?? toPokemonId,
+        toName: _formatEvolutionPokemonName(
+          toPokemon?.name ?? 'pokemon-$toDex',
+          toPokemon?.form ?? toForm,
+        ),
         toSprite: toPokemon?.spriteUrl,
         trigger: row['trigger'] as String? ?? 'Evolves',
-        form: fromPokemon?.form ?? 'normal',
+        form: row['form'] as String? ?? _evolutionFormLabel(fromForm, toForm),
+        fromForm: fromForm,
+        toForm: toForm,
       ));
     }
     return steps;
+  }
+
+  Future<Pokemon?> _pokemonById(int pokemonId) async {
+    final rows = await (db.select(db.pokemonTable)..where((t) => t.id.equals(pokemonId))).get();
+    return rows.isEmpty ? null : rows.first;
   }
 
   Future<Pokemon?> _firstPokemonForDex(int dexNum) async {
@@ -269,134 +289,104 @@ class PokemonRepository {
     return rows.firstWhere((p) => p.form == 'normal', orElse: () => rows.first);
   }
 
+  String _evolutionFormLabel(String fromForm, String toForm) {
+    final forms = [fromForm, toForm]
+        .where((form) => form.toLowerCase() != 'normal')
+        .toSet();
+    return forms.isEmpty ? 'normal' : forms.join(' → ');
+  }
+
+  String _formatEvolutionPokemonName(String rawName, String form) {
+    final name = _capitalize(rawName.replaceAll('-', ' '));
+    if (form == 'normal') return name;
+
+    final aliases = <String, String>{
+      'alolan': 'alola',
+      'galarian': 'galar',
+      'hisuian': 'hisui',
+      'paldean': 'paldea',
+    };
+    final formWords = form.toLowerCase();
+    final formSuffix = aliases[formWords] ?? formWords.replaceAll(' ', '-');
+    final rawParts = rawName.toLowerCase().split('-');
+    if (rawParts.length > 1 && rawParts.last == formSuffix) {
+      return '${_capitalize(rawParts.take(rawParts.length - 1).join(' '))} (${_capitalize(form)})';
+    }
+    if (name.toLowerCase().contains(formWords)) return name;
+    return '$name (${_capitalize(form)})';
+  }
+
   Future<void> _parseChainNode(Map<String, dynamic> node, List<EvolutionStep> steps) async {
     final speciesName = node['species']['name'] as String;
     final speciesUrl = node['species']['url'] as String;
-    final fromDexId = int.parse(speciesUrl.split('/').where((s) => s.isNotEmpty).last);
+    final fromDexId = int.parse(speciesUrl.split('/').where((part) => part.isNotEmpty).last);
+    final evolvesTo = node['evolves_to'] as List<dynamic>? ?? const [];
 
-    final evolvesTo = node['evolves_to'] as List<dynamic>?;
-    if (evolvesTo == null || evolvesTo.isEmpty) return;
-
-    for (final next in evolvesTo) {
+    for (final rawNext in evolvesTo) {
+      final next = rawNext as Map<String, dynamic>;
       final nextSpeciesName = next['species']['name'] as String;
       final nextSpeciesUrl = next['species']['url'] as String;
-      final toDexId = int.parse(nextSpeciesUrl.split('/').where((s) => s.isNotEmpty).last);
+      final toDexId = int.parse(nextSpeciesUrl.split('/').where((part) => part.isNotEmpty).last);
+      final fromPokemon = await _firstPokemonForDex(fromDexId);
+      final toPokemon = await _firstPokemonForDex(toDexId);
+      final details = (next['evolution_details'] as List<dynamic>? ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .toList();
 
-      final evoDetailsList = next['evolution_details'] as List<dynamic>?;
-      String triggerText = 'Level Up';
-
-      if (evoDetailsList != null && evoDetailsList.isNotEmpty) {
-        triggerText = _formatEvolutionTrigger(evoDetailsList.first);
+      // A child can have more than one published trigger/condition row; keep
+      // every row rather than silently dropping all but the first.
+      for (final detail in details.isEmpty ? <Map<String, dynamic>>[{}] : details) {
+        final fromForm = fromPokemon?.form ?? 'normal';
+        final toForm = toPokemon?.form ?? 'normal';
+        final trigger = _formatEvolutionTrigger(detail);
+        steps.add(EvolutionStep(
+          fromId: fromPokemon?.id ?? fromDexId,
+          fromName: _formatEvolutionPokemonName(fromPokemon?.name ?? speciesName, fromForm),
+          fromSprite: fromPokemon?.spriteUrl,
+          toId: toPokemon?.id ?? toDexId,
+          toName: _formatEvolutionPokemonName(toPokemon?.name ?? nextSpeciesName, toForm),
+          toSprite: toPokemon?.spriteUrl,
+          trigger: trigger,
+          form: _evolutionFormLabel(fromForm, toForm),
+          fromForm: fromForm,
+          toForm: toForm,
+        ));
       }
 
-      // Fetch all forms for fromDexId and toDexId to resolve regional form branches
-      final allFromForms = await (db.select(db.pokemonTable)..where((t) => t.nationalDexNumber.equals(fromDexId))).get();
-      final allToForms = await (db.select(db.pokemonTable)..where((t) => t.nationalDexNumber.equals(toDexId))).get();
-
-      Pokemon? fromPokemon;
-      Pokemon? toPokemon;
-
-      if (allToForms.isNotEmpty) {
-        toPokemon = allToForms.first;
-      }
-      if (allFromForms.isNotEmpty) {
-        fromPokemon = allFromForms.first;
-      }
-
-      // Determine regional form matching
-      final evoDetail = (evoDetailsList != null && evoDetailsList.isNotEmpty) ? evoDetailsList.first : null;
-      final String? reqForm = evoDetail?['gender'] != null
-          ? (evoDetail!['gender'] == 1 ? 'Female' : 'Male')
-          : null;
-
-      // If toPokemon is a regional evolution or form (e.g., Sneasler, Sirfetch'd, Perrserker, Clodsire)
-      if (toPokemon != null && toPokemon.form != 'normal') {
-        final formName = toPokemon.form.toLowerCase();
-        final matchFrom = allFromForms.firstWhere(
-          (f) => f.form.toLowerCase() == formName || formName.contains(f.form.toLowerCase()),
-          orElse: () => allFromForms.first,
-        );
-        fromPokemon = matchFrom;
-      } else if (allFromForms.length > 1) {
-        // If fromPokemon has regional variants (e.g. Sneasel Hisui vs Sneasel Normal)
-        // Check if evoDetail has specific conditions or if toPokemon is an exclusive evolution
-        if (nextSpeciesName == 'sneasler' || nextSpeciesName == 'overqwil' || nextSpeciesName == 'basculegion' || nextSpeciesName == 'wyrdeer' || nextSpeciesName == 'ursaluna' || nextSpeciesName == 'kleavor') {
-          fromPokemon = allFromForms.firstWhere(
-            (f) => f.form.toLowerCase().contains('hisui'),
-            orElse: () => allFromForms.first,
-          );
-        } else if (nextSpeciesName == 'perrserker' || nextSpeciesName == 'sirfetchd' || nextSpeciesName == 'mr-rime' || nextSpeciesName == 'runerigus' || nextSpeciesName == 'obstagoon') {
-          fromPokemon = allFromForms.firstWhere(
-            (f) => f.form.toLowerCase().contains('galar'),
-            orElse: () => allFromForms.first,
-          );
-        } else if (nextSpeciesName == 'clodsire') {
-          fromPokemon = allFromForms.firstWhere(
-            (f) => f.form.toLowerCase().contains('paldea'),
-            orElse: () => allFromForms.first,
-          );
-        } else if (nextSpeciesName == 'alolan-raichu' || nextSpeciesName == 'marowak-alola' || nextSpeciesName == 'exeggutor-alola') {
-          // Regional form evolutions from normal base species
-        }
-      }
-
-      steps.add(EvolutionStep(
-        fromId: fromPokemon?.id ?? fromDexId,
-        fromName: _formatDisplayName(fromPokemon?.name ?? speciesName, fromPokemon?.form ?? 'normal'),
-        fromSprite: fromPokemon?.spriteUrl,
-        toId: toPokemon?.id ?? toDexId,
-        toName: _formatDisplayName(toPokemon?.name ?? nextSpeciesName, toPokemon?.form ?? 'normal'),
-        toSprite: toPokemon?.spriteUrl,
-        trigger: reqForm != null ? '$triggerText ($reqForm)' : triggerText,
-        form: fromPokemon?.form ?? 'normal',
-      ));
-
-      // Recurse down the tree
+      // Recursion walks every branch from the family root, so a detail view
+      // for any member receives the complete chain rather than one adjacent edge.
       await _parseChainNode(next, steps);
     }
   }
 
-  String _formatDisplayName(String rawName, String form) {
-    final capName = _capitalize(rawName.replaceAll('-', ' '));
-    if (form != 'normal' && !capName.toLowerCase().contains(form.toLowerCase())) {
-      return '$capName (${_capitalize(form)})';
-    }
-    return capName;
-  }
-
   String _formatEvolutionTrigger(Map<String, dynamic> detail) {
-    final trigger = detail['trigger']?['name'] ?? '';
+    final trigger = detail['trigger']?['name']?.toString() ?? '';
     final minLevel = detail['min_level'];
     final item = detail['item']?['name'];
     final heldItem = detail['held_item']?['name'];
     final knownMove = detail['known_move']?['name'];
     final knownMoveType = detail['known_move_type']?['name'];
     final happiness = detail['min_happiness'];
-    final timeOfDay = detail['time_of_day'] ?? '';
+    final timeOfDay = detail['time_of_day']?.toString() ?? '';
     final location = detail['location']?['name'];
+    final gender = detail['gender'];
+    final parts = <String>[];
 
-    List<String> parts = [];
+    if (minLevel != null) parts.add('Level $minLevel');
+    if (item != null) parts.add('Use ${_capitalize(item.toString().replaceAll('-', ' '))}');
+    if (heldItem != null) parts.add('Hold ${_capitalize(heldItem.toString().replaceAll('-', ' '))}');
+    if (knownMove != null) parts.add('Know ${_capitalize(knownMove.toString().replaceAll('-', ' '))}');
+    if (knownMoveType != null) parts.add('Know a ${_capitalize(knownMoveType.toString())}-type move');
+    if (happiness != null) parts.add('High friendship');
+    if (gender != null) parts.add(gender == 1 ? 'Female only' : 'Male only');
+    if (timeOfDay.isNotEmpty) parts.add(timeOfDay[0].toUpperCase() + timeOfDay.substring(1));
+    if (location != null) parts.add('At ${_capitalize(location.toString().replaceAll('-', ' '))}');
 
-    if (minLevel != null) parts.add('Lvl $minLevel');
-    if (item != null) parts.add(_capitalize(item.replaceAll('-', ' ')));
-    if (heldItem != null) parts.add('Hold ${_capitalize(heldItem.replaceAll('-', ' '))}');
-    if (knownMove != null) parts.add('Know ${_capitalize(knownMove.replaceAll('-', ' '))}');
-    if (knownMoveType != null) parts.add('Know ${_capitalize(knownMoveType.replaceAll('-', ' '))} move');
-    if (happiness != null) parts.add('High Friendship');
-    if (timeOfDay.toString().isNotEmpty) parts.add('(${_capitalize(timeOfDay)})');
-    if (location != null) parts.add('at ${_capitalize(location.replaceAll('-', ' '))}');
-
-    if (parts.isEmpty) {
-      if (trigger == 'trade') {
-        parts.add('Trade');
-      } else if (trigger == 'shed') {
-        parts.add('Empty PokeBall in party');
-      } else {
-        parts.add('Level Up');
-      }
-    }
-
-    return parts.join(' ');
+    if (parts.isNotEmpty) return parts.join(' · ');
+    if (trigger == 'trade') return 'Trade';
+    if (trigger == 'shed') return 'Shed shell';
+    if (trigger == 'use-item') return 'Use an item';
+    return trigger.isEmpty ? 'Evolution condition' : _capitalize(trigger.replaceAll('-', ' '));
   }
 
   String _capitalize(String s) {
