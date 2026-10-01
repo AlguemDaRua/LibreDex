@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:libredex/core/data/champions_regulation.dart';
 import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/core/theme/app_spacing.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/widgets/app_state_widgets.dart';
+import 'package:libredex/core/widgets/content_badge.dart';
 import 'package:libredex/core/widgets/pokemon_sprite.dart';
 import 'package:libredex/features/abilitydex/views/ability_detail_screen.dart';
 import 'package:libredex/features/calculator/utils/combat_utils.dart';
@@ -35,6 +37,8 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final regulation = ref.watch(championsRegulationProvider).asData?.value;
+    final isAvailableInMC = regulation?.isPokemonEligible(activePokemon.id) ?? false;
     final doubleEffs = TypeEfficiencyCalculator.getCombinedEffectiveness(
       activePokemon.type1,
       activePokemon.type2,
@@ -73,6 +77,15 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
               if (activePokemon.type2 != null) ...[
                 const SizedBox(width: 12),
                 _buildTypeBadge(activePokemon.type2!),
+              ],
+              if (isAvailableInMC) ...[
+                const SizedBox(width: 12),
+                ContentBadge.mC(
+                  isNew: regulation?.isNewPokemon(activePokemon.id) ?? false,
+                  tooltip: regulation?.isNewPokemon(activePokemon.id) ?? false
+                      ? 'Newly eligible in Pokémon Champions Regulation M-C'
+                      : 'Eligible in Pokémon Champions Regulation M-C',
+                ),
               ],
             ],
           ),

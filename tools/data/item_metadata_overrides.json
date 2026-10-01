@@ -1,0 +1,182 @@
+{
+  "meta": {
+    "purpose": "Explicit item aliases and locally verified origin/mechanics tags; regulation membership is stored separately.",
+    "provenancePolicy": "Never infer game origin from an ID range or regulation eligibility."
+  },
+  "aliases": {
+    "2279": 723
+  },
+  "tagsById": {
+    "2265": [
+      "evolution",
+      "legends za",
+      "mega stone"
+    ],
+    "2255": [
+      "evolution",
+      "legends za",
+      "mega stone"
+    ],
+    "2275": [
+      "evolution",
+      "legends za",
+      "mega stone"
+    ],
+    "2248": [
+      "evolution",
+      "legends za",
+      "mega stone"
+    ],
+    "2249": [
+      "evolution",
+      "legends za",
+      "mega stone"
+    ],
+    "2264": [
+      "evolution",
+      "legends za",
+      "mega stone"
+    ],
+    "2271": [
+      "evolution",
+      "legends za",
+      "mega stone"
+    ],
+    "2250": [
+      "evolution",
+      "legends za",
+      "mega stone"
+    ],
+    "2256": [
+      "evolution",
+      "legends za",
+      "mega stone"
+    ],
+    "2259": [
+      "evolution",
+      "legends za",
+      "mega stone"
+    ],
+    "2247": [
+      "evolution",
+      "legends za",
+      "mega stone"
+    ],
+    "2243": [
+      "evolution",
+      "legends za",
+      "mega stone"
+    ],
+    "2244": [
+      "evolution",
+      "legends za",
+      "mega stone"
+    ],
+    "2261": [
+      "evolution",
+      "legends za",
+      "mega stone"
+    ],
+    "2253": [
+      "evolution",
+      "legends za",
+      "mega stone"
+    ],
+    "2240": [
+      "evolution",
+      "legends za",
+      "mega stone"
+    ],
+    "2267": [
+      "evolution",
+      "legends za",
+      "mega stone"
+    ],
+    "2277": [
+      "evolution",
+      "legends za",
+      "mega stone"
+    ],
+    "2272": [
+      "evolution",
+      "legends za",
+      "mega stone"
+    ],
+    "2269": [
+      "evolution",
+      "legends za",
+      "mega stone"
+    ],
+    "2251": [
+      "evolution",
+      "legends za",
+      "mega stone"
+    ],
+    "2257": [
+      "evolution",
+      "legends za",
+      "mega stone"
+    ],
+    "2268": [
+      "evolution",
+      "legends za",
+      "mega stone"
+    ],
+    "2254": [
+      "evolution",
+      "legends za",
+      "mega stone"
+    ],
+    "2270": [
+      "evolution",
+      "legends za",
+      "mega stone"
+    ],
+    "2252": [
+      "evolution",
+      "legends za",
+      "mega stone"
+    ],
+    "2262": [
+      "evolution",
+      "legends za",
+      "mega stone"
+    ],
+    "2263": [
+      "evolution",
+      "legends za",
+      "mega stone"
+    ],
+    "723": [
+      "berry",
+      "holdable",
+      "type protection"
+    ],
+    "2279": [
+      "berry",
+      "holdable",
+      "type protection"
+    ],
+    "2245": [
+      "evolution",
+      "legends za",
+      "mega stone"
+    ],
+    "2274": [
+      "evolution",
+      "legends za",
+      "mega stone"
+    ],
+    "2246": [
+      "evolution",
+      "legends za",
+      "mega stone"
+    ],
+    "2266": [
+      "evolution",
+      "legends za",
+      "mega stone"
+    ]
+  },
+  "generationOverrides": {}
+}

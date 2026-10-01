@@ -1,0 +1,27 @@
+{
+  "isSlicing": [
+    "Aerial Ace", "Air Cutter", "Air Slash", "Behemoth Blade", "Bitter Blade",
+    "Ceaseless Edge", "Cross Poison", "Cut", "False Swipe", "Fury Cutter",
+    "Kowtow Cleave", "Leaf Blade", "Night Slash", "Psyblade", "Psycho Cut",
+    "Razor Leaf", "Razor Shell", "Sacred Sword", "Slash", "Stone Axe", "X-Scissor"
+  ],
+  "isWind": [
+    "Air Cutter", "Air Slash", "Blizzard", "Bleakwind Storm", "Fairy Wind",
+    "Gust", "Heat Wave", "Hurricane", "Icy Wind", "Leaf Tornado",
+    "Ominous Wind", "Razor Wind", "Sandsear Storm", "Silver Wind", "Springtide Storm",
+    "Tailwind", "Twister", "Whirlwind", "Wildbolt Storm"
+  ],
+  "isProtective": [
+    "Baneful Bunker", "Burning Bulwark", "Crafty Shield", "Detect", "King's Shield",
+    "Mat Block", "Max Guard", "Obstruct", "Protect", "Quick Guard", "Shelter",
+    "Silk Trap", "Spiky Shield", "Wide Guard"
+  ],
+  "isSwitching": [
+    "Baton Pass", "Chilly Reception", "Circle Throw", "Dragon Tail", "Flip Turn",
+    "Parting Shot", "Roar", "Shed Tail", "Teleport", "U-turn", "Volt Switch", "Whirlwind"
+  ],
+  "isSignatureMove": [
+    "Dark Void", "Dragon Ascent", "Judgment", "Origin Pulse", "Precipice Blades",
+    "Roar of Time", "Shadow Force", "Spacial Rend", "Surging Strikes", "Wicked Blow"
+  ]
+}

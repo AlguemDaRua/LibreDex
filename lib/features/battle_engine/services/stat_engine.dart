@@ -13,7 +13,11 @@ class StatEngine {
 
   /// Converts a [PokemonState] into a [ComparisonEntry] so it can leverage
   /// the verified [StatModifier] engine.
-  static ComparisonEntry _toComparisonEntry(PokemonState state) {
+  static ComparisonEntry _toComparisonEntry(
+    PokemonState state, {
+    String weather = 'none',
+    String terrain = 'none',
+  }) {
     // Construct dummy database Pokemon object for StatModifier
     final p = Pokemon(
       id: state.id,
@@ -36,6 +40,7 @@ class StatEngine {
       nationalDexNumber: state.id,
       generation: 1,
       evolutionStage: 0,
+      hasEvolution: state.hasEvolution,
       isChampions: false,
       isLegendsZA: false,
     );
@@ -53,6 +58,8 @@ class StatEngine {
       stages: state.stages,
       turnsOnField: state.turnsOnField,
       hpPercent: state.hpPercent,
+      weather: weather,
+      terrain: terrain,
     );
   }
 
@@ -85,8 +92,46 @@ class StatEngine {
   }
 
   /// Compute full effective battle stats for a Pokémon state.
-  static ComparisonStats computeEffectiveStats(PokemonState state, BattleRuleset ruleset) {
-    final entry = _toComparisonEntry(state);
+  ///
+  /// A critical hit ignores negative Attack / Special Attack stages on the
+  /// attacker and positive Defense / Special Defense stages on the defender.
+  /// Those stage adjustments happen before the shared stat modifier pipeline
+  /// so the same rule applies to both mainline and Champions calculations.
+  static ComparisonStats computeEffectiveStats(
+    PokemonState state,
+    BattleRuleset ruleset, {
+    bool isCriticalAttacker = false,
+    bool isCriticalDefender = false,
+    Set<String> additionallyIgnoreNegativeStages = const {},
+    Set<String> additionallyIgnorePositiveStages = const {},
+    String weather = 'none',
+    String terrain = 'none',
+  }) {
+    if (isCriticalAttacker ||
+        isCriticalDefender ||
+        additionallyIgnoreNegativeStages.isNotEmpty ||
+        additionallyIgnorePositiveStages.isNotEmpty) {
+      final stages = Map<String, int>.from(state.stages);
+      final negativeKeys = {
+        if (isCriticalAttacker) 'atk',
+        if (isCriticalAttacker) 'spa',
+        ...additionallyIgnoreNegativeStages,
+      };
+      final positiveKeys = {
+        if (isCriticalDefender) 'def',
+        if (isCriticalDefender) 'spd',
+        ...additionallyIgnorePositiveStages,
+      };
+      for (final key in negativeKeys) {
+        if ((stages[key] ?? 0) < 0) stages[key] = 0;
+      }
+      for (final key in positiveKeys) {
+        if ((stages[key] ?? 0) > 0) stages[key] = 0;
+      }
+      state = state.copyWith(stages: stages);
+    }
+
+    final entry = _toComparisonEntry(state, weather: weather, terrain: terrain);
     return StatModifier.computeEffectiveStats(entry, ruleset);
   }
 }

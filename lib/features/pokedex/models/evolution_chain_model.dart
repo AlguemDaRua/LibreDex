@@ -7,8 +7,10 @@ class EvolutionStep {
   final String? toSprite;
   final String trigger;
   final String form;
+  final String fromForm;
+  final String toForm;
 
-  EvolutionStep({
+  const EvolutionStep({
     required this.fromId,
     required this.fromName,
     this.fromSprite,
@@ -17,5 +19,7 @@ class EvolutionStep {
     this.toSprite,
     required this.trigger,
     this.form = 'normal',
+    this.fromForm = 'normal',
+    this.toForm = 'normal',
   });
 }

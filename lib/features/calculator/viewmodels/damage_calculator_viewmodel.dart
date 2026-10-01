@@ -35,6 +35,13 @@ class DamageCalculatorState {
   final String? selectedMoveName;
   final String moveType;
   final String moveCategory;
+  final int movePriority;
+  final bool moveIsContact;
+  final bool moveIsPunching;
+  final bool moveIsBiting;
+  final bool moveIsPulse;
+  final bool moveIsSlicing;
+  final bool moveIsRecoil;
   final double movePower;
   final int moveHits;
   final int rageFistHits;
@@ -98,6 +105,13 @@ class DamageCalculatorState {
     this.selectedMoveName,
     this.moveType = 'fire',
     this.moveCategory = 'physical',
+    this.movePriority = 0,
+    this.moveIsContact = false,
+    this.moveIsPunching = false,
+    this.moveIsBiting = false,
+    this.moveIsPulse = false,
+    this.moveIsSlicing = false,
+    this.moveIsRecoil = false,
     this.movePower = 90.0,
     this.moveHits = 3,
     this.rageFistHits = 0,
@@ -149,6 +163,13 @@ class DamageCalculatorState {
     String? selectedMoveName,
     String? moveType,
     String? moveCategory,
+    int? movePriority,
+    bool? moveIsContact,
+    bool? moveIsPunching,
+    bool? moveIsBiting,
+    bool? moveIsPulse,
+    bool? moveIsSlicing,
+    bool? moveIsRecoil,
     double? movePower,
     int? moveHits,
     int? rageFistHits,
@@ -199,6 +220,13 @@ class DamageCalculatorState {
       selectedMoveName: selectedMoveName ?? this.selectedMoveName,
       moveType: moveType ?? this.moveType,
       moveCategory: moveCategory ?? this.moveCategory,
+      movePriority: movePriority ?? this.movePriority,
+      moveIsContact: moveIsContact ?? this.moveIsContact,
+      moveIsPunching: moveIsPunching ?? this.moveIsPunching,
+      moveIsBiting: moveIsBiting ?? this.moveIsBiting,
+      moveIsPulse: moveIsPulse ?? this.moveIsPulse,
+      moveIsSlicing: moveIsSlicing ?? this.moveIsSlicing,
+      moveIsRecoil: moveIsRecoil ?? this.moveIsRecoil,
       movePower: movePower ?? this.movePower,
       rageFistHits: rageFistHits ?? this.rageFistHits,
       attackerTurnsOnField: attackerTurnsOnField ?? this.attackerTurnsOnField,
@@ -246,7 +274,7 @@ class DamageCalculatorState {
       heldItem: attackerHeldItem,
       ability: attackerAbility,
       status: attackerStatus,
-      teraActive: attackerTeraActive,
+      teraActive: !ruleset.isChampions && attackerTeraActive,
       teraType: attackerTeraType,
       hpPercent: attackerHpPercent,
       turnsOnField: attackerTurnsOnField,
@@ -264,7 +292,7 @@ class DamageCalculatorState {
       heldItem: defenderHeldItem,
       ability: defenderAbility,
       status: defenderStatus,
-      teraActive: defenderTeraActive,
+      teraActive: !ruleset.isChampions && defenderTeraActive,
       teraType: defenderTeraType,
       hpPercent: defenderHpPercent,
     );
@@ -274,7 +302,14 @@ class DamageCalculatorState {
       type: moveType,
       basePower: movePower.round(),
       damageClass: moveCategory,
+      priority: movePriority,
       isCritical: isCriticalHit,
+      isContact: moveIsContact,
+      isPunching: moveIsPunching,
+      isBiting: moveIsBiting,
+      isPulse: moveIsPulse,
+      isSlicing: moveIsSlicing,
+      isRecoil: moveIsRecoil,
       hits: moveHits,
       rageFistHits: rageFistHits,
     );
@@ -409,6 +444,22 @@ class DamageCalculatorViewModel extends _$DamageCalculatorViewModel {
     );
   }
 
+  void selectDatabaseMove(Move move) {
+    selectMove(
+      move.name,
+      move.type,
+      move.damageClass,
+      move.power?.toDouble() ?? 50.0,
+      priority: move.priority,
+      isContact: move.isContact,
+      isPunching: move.isPunching,
+      isBiting: move.isBiting,
+      isPulse: move.isPulse,
+      isSlicing: move.isSlicing,
+      isRecoil: move.isRecoil,
+    );
+  }
+
   void setAttackerAbility(String? ability) => state = state.copyWith(attackerAbility: ability);
   void setDefenderAbility(String? ability) => state = state.copyWith(defenderAbility: ability);
   void toggleAttackerTera(bool active) => state = state.copyWith(attackerTeraActive: active);
@@ -475,7 +526,19 @@ class DamageCalculatorViewModel extends _$DamageCalculatorViewModel {
     state = state.copyWith(defenderStages: map);
   }
 
-  void selectMove(String name, String type, String category, double power) {
+  void selectMove(
+    String name,
+    String type,
+    String category,
+    double power, {
+    int priority = 0,
+    bool isContact = false,
+    bool isPunching = false,
+    bool isBiting = false,
+    bool isPulse = false,
+    bool isSlicing = false,
+    bool isRecoil = false,
+  }) {
     int hits = state.rageFistHits;
     double actualPower = power;
     if (name.toLowerCase() == 'rage fist') {
@@ -486,6 +549,13 @@ class DamageCalculatorViewModel extends _$DamageCalculatorViewModel {
       selectedMoveName: name,
       moveType: type,
       moveCategory: category,
+      movePriority: priority,
+      moveIsContact: isContact,
+      moveIsPunching: isPunching,
+      moveIsBiting: isBiting,
+      moveIsPulse: isPulse,
+      moveIsSlicing: isSlicing,
+      moveIsRecoil: isRecoil,
       movePower: actualPower,
       moveHits: isVariableMulti ? 3 : 1,
     );

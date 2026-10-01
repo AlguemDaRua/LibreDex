@@ -17,8 +17,23 @@ class ChampionsDamageEngine {
     // Ensure state uses Champions ruleset
     final championsState = state.copyWith(ruleset: BattleRuleset.champions);
 
-    final attackerStats = StatEngine.computeEffectiveStats(championsState.attacker, BattleRuleset.champions);
-    final defenderStats = StatEngine.computeEffectiveStats(championsState.defender, BattleRuleset.champions);
+    final moveName = championsState.move.name.toLowerCase().replaceAll('-', ' ').trim();
+    final attackerStats = StatEngine.computeEffectiveStats(
+      championsState.attacker,
+      BattleRuleset.champions,
+      isCriticalAttacker: championsState.move.isCritical,
+      additionallyIgnoreNegativeStages: championsState.move.isCritical && moveName == 'body press' ? const {'def'} : const {},
+      weather: championsState.field.weather,
+      terrain: championsState.field.terrain,
+    );
+    final defenderStats = StatEngine.computeEffectiveStats(
+      championsState.defender,
+      BattleRuleset.champions,
+      isCriticalDefender: championsState.move.isCritical,
+      additionallyIgnoreNegativeStages: championsState.move.isCritical && moveName == 'foul play' ? const {'atk'} : const {},
+      weather: championsState.field.weather,
+      terrain: championsState.field.terrain,
+    );
 
     final maxHp = defenderStats.hp.effectiveStat;
 

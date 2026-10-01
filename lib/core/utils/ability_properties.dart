@@ -27,6 +27,8 @@ extension AbilityPropertiesExtension on Ability {
     if (desc.contains('stat') || desc.contains('attack') || desc.contains('defense') || desc.contains('speed') || desc.contains('sp. atk') || desc.contains('sp. def')) tags.add('Stats');
     if (desc.contains('status') || desc.contains('poison') || desc.contains('paralyze') || desc.contains('burn') || desc.contains('sleep') || desc.contains('freeze') || desc.contains('confusion')) tags.add('Status');
     if (desc.contains('damage') || desc.contains('power') || desc.contains('weakens') || desc.contains('boosts')) tags.add('Damage');
+    if (desc.contains('contact move') || desc.contains('contact moves')) tags.add('Contact');
+    if (desc.contains('half damage') || desc.contains('1/2 damage') || desc.contains('damage reduction') || desc.contains('reduces damage')) tags.add('Defense');
     if (desc.contains('immune') || desc.contains('immunity') || desc.contains('prevents') || desc.contains('negates')) tags.add('Immunity');
     if (desc.contains('type') || desc.contains('changes type')) tags.add('Type');
     if (desc.contains('speed') || desc.contains('first')) tags.add('Speed');

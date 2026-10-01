@@ -23,8 +23,10 @@ class SyncRepository {
   ///
   /// History: v1 initial bundle; v2 Champions/Z-A forms overlay + Champions
   /// train learnsets; v3 fixes form sprite URLs that 404 upstream
-  /// (transportation/cosplay forms now reuse the base species render).
-  static const int bundledDataVersion = 3;
+  /// (transportation/cosplay forms now reuse the base species render); v4
+  /// Regulation M-C roster, abilities/items, Aura Guard, and current learnsets;
+  /// v5 source-backed Pokémon generation/evolution/egg-group metadata.
+  static const int bundledDataVersion = 5;
 
   static const String _bundledDataVersionKey = 'bundled_data_version';
 
@@ -111,6 +113,9 @@ class SyncRepository {
       generation: (p['generation'] as int?) ?? 1,
       evolutionStage: (p['evolutionStage'] as int?) ?? 0,
       eggGroups: p['eggGroups'] as String?,
+      isBaby: (p['isBaby'] as bool?) ?? false,
+      hasEvolution: (p['hasEvolution'] as bool?) ?? false,
+      evolutionMethods: p['evolutionMethods'] as String?,
       formSource: p['formSource'] as String?,
       dlcSource: p['dlcSource'] as String?,
       isChampions: (p['isChampions'] as bool?) ?? false,
@@ -229,8 +234,8 @@ class SyncRepository {
               pokemonTypes: a['pokemonTypes'] as String?,
             ))
         .toList()
-      // Champions-only abilities (Mega Sol, Dragonize, ...) ship with the
-      // overlay because the base snapshot predates them.
+      // Recent custom abilities are kept with their game-origin metadata;
+      // Regulation M-C availability is resolved separately by its catalog.
       ..addAll(
         (overlay['extraAbilities'] as List<dynamic>? ?? const []).map(
           (a) => Ability(
@@ -239,8 +244,13 @@ class SyncRepository {
             description: a['description'] as String,
             generation: (a['generation'] as int?) ?? 9,
             isHiddenAbility: (a['isHiddenAbility'] as bool?) ?? false,
-            isChampionsAbility: (a['isChampionsAbility'] as bool?) ?? true,
+            isChampionsAbility: (a['isChampionsAbility'] as bool?) ?? false,
             isLegendsZAAbility: (a['isLegendsZAAbility'] as bool?) ?? false,
+            introducedIn: a['introducedIn'] as String?,
+            sourceGames: a['sourceGames'] as String?,
+            effectTags: a['effectTags'] as String?,
+            battleEffectTags: a['battleEffectTags'] as String?,
+            pokemonTypes: a['pokemonTypes'] as String?,
           ),
         ),
       );

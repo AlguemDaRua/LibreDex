@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:libredex/core/data/champions_regulation.dart';
 import 'package:libredex/core/database/app_database.dart';
+import 'package:libredex/core/widgets/content_badge.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/widgets/learn_method_badge.dart';
 import 'package:libredex/core/widgets/pokemon_sprite.dart';
@@ -147,6 +149,7 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final regulation = ref.watch(championsRegulationProvider).asData?.value;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? Colors.white : Colors.black;
 
@@ -188,7 +191,7 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
                     // Move Card Header (Scrolls away cleanly!)
                     if (_moveDetails != null)
                       SliverToBoxAdapter(
-                        child: _buildMoveHeaderCard(isDark),
+                        child: _buildMoveHeaderCard(isDark, regulation),
                       ),
 
                     // Section Title: Learned By
@@ -382,7 +385,15 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
     );
   }
 
-  Widget _buildMoveHeaderCard(bool isDark) {
+  Widget _buildMoveHeaderCard(bool isDark, ChampionsRegulationCatalog? regulation) {
+    final move = _moveDetails!;
+    final isMCAvailable = regulation?.isMoveAvailable(move.id) ?? false;
+    final isNewInMC = regulation?.isNewMove(move.id) ?? false;
+    final isNewlyUsable = regulation?.newlyUsableMoveIds.contains(move.id) ?? false;
+    final mCEffect = isMCAvailable ? regulation?.moveDescriptionFor(move.id) : null;
+    final mCPp = regulation?.movePpFor(move.id);
+    final previousMCPp = regulation?.previousMovePpFor(move.id);
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(16),
@@ -400,13 +411,13 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: _getTypeColor(_moveDetails!.type).withValues(alpha: 0.15),
+                  color: _getTypeColor(move.type).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  _moveDetails!.type.toUpperCase(),
+                  move.type.toUpperCase(),
                   style: TextStyle(
-                    color: _getTypeColor(_moveDetails!.type),
+                    color: _getTypeColor(move.type),
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                   ),
@@ -414,21 +425,42 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
               ),
               Row(
                 children: [
-                  _buildStatBadge('BP', _moveDetails!.power?.toString() ?? '—', Colors.redAccent),
+                  _buildStatBadge('BP', move.power?.toString() ?? '—', Colors.redAccent),
                   const SizedBox(width: 8),
                   _buildStatBadge(
-                      'ACC', _moveDetails!.accuracy != null ? '${_moveDetails!.accuracy}%' : '—', Colors.blueAccent),
+                    'ACC',
+                    move.accuracy != null ? '${move.accuracy}%' : '—',
+                    Colors.blueAccent,
+                  ),
                   const SizedBox(width: 8),
-                  _buildStatBadge('PP', _moveDetails!.pp.toString(), Colors.greenAccent),
+                  _buildStatBadge('PP', move.pp.toString(), Colors.greenAccent),
                 ],
               ),
             ],
           ),
+          if (isMCAvailable || isNewInMC || isNewlyUsable) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                if (isMCAvailable)
+                  const ContentBadge.mC(tooltip: 'Available in Regulation M-C'),
+                if (isNewInMC)
+                  const ContentBadge.mC(isNew: true, tooltip: 'Newly added to Regulation M-C'),
+                if (isNewlyUsable)
+                  const ContentBadge(label: 'NEWLY USABLE', color: Colors.teal, tooltip: 'Newly permitted by the M-C update'),
+              ],
+            ),
+          ],
           const SizedBox(height: 12),
-          const Text('MOVE EFFECT', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
+          Text(
+            mCEffect == null ? 'MOVE EFFECT' : 'REGULATION M-C EFFECT',
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey),
+          ),
           const SizedBox(height: 4),
           Text(
-            _moveDetails!.description ?? 'No description available.',
+            mCEffect ?? move.description ?? 'No description available.',
             style: TextStyle(fontSize: 14, color: isDark ? Colors.white70 : Colors.black87, height: 1.4),
           ),
           const SizedBox(height: 12),
@@ -438,35 +470,39 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
             spacing: 6,
             runSpacing: 6,
             children: [
-              _buildPropertyBadge('Priority: ${_moveDetails!.priority}', Colors.orangeAccent, icon: Icons.priority_high),
-              _buildPropertyBadge('Contact: ${_moveDetails!.isContact ? "Yes" : "No"}', Colors.blueAccent,
-                  icon: Icons.pan_tool_outlined),
-              if (_moveDetails!.isHealing) _buildPropertyBadge('Healing', Colors.green, icon: Icons.healing),
-              if (_moveDetails!.isSound) _buildPropertyBadge('Sound-Based', Colors.purple, icon: Icons.volume_up),
-              if (_moveDetails!.isPunching) _buildPropertyBadge('Punching', Colors.red, icon: Icons.sports_mma),
-              if (_moveDetails!.isBiting) _buildPropertyBadge('Biting', Colors.deepOrange, icon: Icons.pets),
-              if (_moveDetails!.isPowder) _buildPropertyBadge('Powder', Colors.lime, icon: Icons.blur_on),
-              if (_moveDetails!.isPulse)
-                _buildPropertyBadge('Pulse/Aura', Colors.indigo, icon: Icons.radio_button_unchecked),
-              if (_moveDetails!.isBallistic) _buildPropertyBadge('Ballistic', Colors.blueGrey, icon: Icons.gps_fixed),
-              if (_moveDetails!.isSlicing) _buildPropertyBadge('Slicing', Colors.teal, icon: Icons.content_cut),
-              if (_moveDetails!.isWind) _buildPropertyBadge('Wind-Based', Colors.cyan, icon: Icons.air),
-              if (_moveDetails!.isDance) _buildPropertyBadge('Dance', Colors.pink, icon: Icons.music_note),
-              if (_moveDetails!.isMultiHit) _buildPropertyBadge('Multi-Hit', Colors.brown, icon: Icons.repeat),
-              if (_moveDetails!.isProtective) _buildPropertyBadge('Protective', Colors.green, icon: Icons.security),
-              if (_moveDetails!.isSwitching) _buildPropertyBadge('Switching', Colors.deepPurple, icon: Icons.swap_horiz),
-              if (_moveDetails!.isRecharge)
-                _buildPropertyBadge('Recharge Required', Colors.red, icon: Icons.battery_charging_full),
-              if (_moveDetails!.isRecoil) _buildPropertyBadge('Recoil', Colors.blue, icon: Icons.keyboard_return),
-              if (_moveDetails!.isDraining)
-                _buildPropertyBadge('Draining', Colors.green, icon: Icons.add_circle_outline),
-              _buildPropertyBadge(_moveDetails!.introducedIn ?? 'Unknown', Colors.grey, icon: Icons.calendar_today),
-              if (_moveDetails!.isChampionsMove)
-                _buildPropertyBadge('Pokémon Champions', Colors.amber, icon: Icons.emoji_events),
-              if (_moveDetails!.isLegendsZAMove)
+              _buildPropertyBadge('Priority: ${move.priority}', Colors.orangeAccent, icon: Icons.priority_high),
+              _buildPropertyBadge('Contact: ${move.isContact ? "Yes" : "No"}', Colors.blueAccent, icon: Icons.pan_tool_outlined),
+              if (mCPp != null)
+                _buildPropertyBadge(
+                  'M-C PP: $mCPp${previousMCPp == null ? "" : " (was $previousMCPp)"}',
+                  Colors.deepPurpleAccent,
+                  icon: Icons.tune_rounded,
+                ),
+              if (move.isHealing) _buildPropertyBadge('Healing', Colors.green, icon: Icons.healing),
+              if (move.isSound) _buildPropertyBadge('Sound-Based', Colors.purple, icon: Icons.volume_up),
+              if (move.isPunching) _buildPropertyBadge('Punching', Colors.red, icon: Icons.sports_mma),
+              if (move.isBiting) _buildPropertyBadge('Biting', Colors.deepOrange, icon: Icons.pets),
+              if (move.isPowder) _buildPropertyBadge('Powder', Colors.lime, icon: Icons.blur_on),
+              if (move.isPulse) _buildPropertyBadge('Pulse/Aura', Colors.indigo, icon: Icons.radio_button_unchecked),
+              if (move.isBallistic) _buildPropertyBadge('Ballistic', Colors.blueGrey, icon: Icons.gps_fixed),
+              if (move.isSlicing) _buildPropertyBadge('Slicing', Colors.teal, icon: Icons.content_cut),
+              if (move.isWind) _buildPropertyBadge('Wind-Based', Colors.cyan, icon: Icons.air),
+              if (move.isDance) _buildPropertyBadge('Dance', Colors.pink, icon: Icons.music_note),
+              if (move.isMultiHit) _buildPropertyBadge('Multi-Hit', Colors.brown, icon: Icons.repeat),
+              if (move.isProtective) _buildPropertyBadge('Protective', Colors.green, icon: Icons.security),
+              if (move.isSwitching) _buildPropertyBadge('Switching', Colors.deepPurple, icon: Icons.swap_horiz),
+              if (move.isRecharge) _buildPropertyBadge('Recharge Required', Colors.red, icon: Icons.battery_charging_full),
+              if (move.isRecoil) _buildPropertyBadge('Recoil', Colors.blue, icon: Icons.keyboard_return),
+              if (move.isDraining) _buildPropertyBadge('Draining', Colors.green, icon: Icons.add_circle_outline),
+              _buildPropertyBadge(move.introducedIn ?? 'Unknown', Colors.grey, icon: Icons.calendar_today),
+              if (isMCAvailable)
+                _buildPropertyBadge('Available in M-C', Colors.deepPurpleAccent, icon: Icons.emoji_events),
+              if (move.isChampionsMove)
+                _buildPropertyBadge('Champions-origin move', Colors.orangeAccent, icon: Icons.sports_esports),
+              if (move.isLegendsZAMove)
                 _buildPropertyBadge('Legends: Z-A', Colors.purple, icon: Icons.auto_awesome),
-              if (_moveDetails!.isDLCMove) _buildPropertyBadge('DLC Content', Colors.indigoAccent, icon: Icons.extension),
-              if (_moveDetails!.isSignatureMove)
+              if (move.isDLCMove) _buildPropertyBadge('DLC Content', Colors.indigoAccent, icon: Icons.extension),
+              if (move.isSignatureMove)
                 _buildPropertyBadge('Signature Move', Colors.amber, icon: Icons.workspace_premium),
             ],
           ),

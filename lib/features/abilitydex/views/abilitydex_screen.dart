@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:libredex/core/data/champions_regulation.dart';
 import 'package:libredex/core/database/app_database.dart';
+import 'package:libredex/core/widgets/ability_effect_icon.dart';
+import 'package:libredex/core/widgets/content_badge.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
 import 'package:libredex/core/theme/app_spacing.dart';
@@ -32,8 +35,13 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
   String? _selectedEffectTag;
   
   bool _filterChampions = false;
+  bool _filterCurrentMC = false;
+  bool _filterNewInMC = false;
   bool _filterLegendsZA = false;
   bool _filterHidden = false;
+  Set<int> _mCAbilityIds = {};
+  Set<int> _newMCAbilityIds = {};
+  Set<int> _hiddenAbilityIds = {};
 
   static const List<String> _effectTags = [
     'Weather', 'Terrain', 'Stats', 'Status', 'Damage', 'Immunity', 'Type',
@@ -56,9 +64,16 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
   Future<void> _loadAbilities() async {
     try {
       final db = ref.read(databaseProvider);
+      final regulation = await ref.read(championsRegulationProvider.future);
       final abilities = await db.select(db.abilityTable).get();
+      final hiddenJunctions = await (db.select(db.pokemonAbilitiesTable)
+            ..where((junction) => junction.isHidden.equals(true)))
+          .get();
       if (mounted) {
         setState(() {
+          _mCAbilityIds = regulation.abilityIds.toSet();
+          _newMCAbilityIds = regulation.newAbilityIds.toSet();
+          _hiddenAbilityIds = hiddenJunctions.map((junction) => junction.abilityId).toSet();
           _allAbilities = abilities;
           _isLoading = false;
           _applyFilters();
@@ -78,6 +93,8 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
       _selectedGeneration = null;
       _selectedEffectTag = null;
       _filterChampions = false;
+      _filterCurrentMC = false;
+      _filterNewInMC = false;
       _filterLegendsZA = false;
       _filterHidden = false;
       _sortOption = 'name_asc';
@@ -89,6 +106,8 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
     return _selectedGeneration != null ||
         _selectedEffectTag != null ||
         _filterChampions ||
+        _filterCurrentMC ||
+        _filterNewInMC ||
         _filterLegendsZA ||
         _filterHidden ||
         _sortOption != 'name_asc';
@@ -106,8 +125,10 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
       if (_selectedGeneration != null && a.generation != _selectedGeneration) return false;
 
       if (_filterChampions && !a.isChampionsAbility) return false;
+      if (_filterCurrentMC && !_mCAbilityIds.contains(a.id)) return false;
+      if (_filterNewInMC && !_newMCAbilityIds.contains(a.id)) return false;
       if (_filterLegendsZA && !a.isLegendsZAAbility) return false;
-      if (_filterHidden && !a.isHiddenAbility) return false;
+      if (_filterHidden && !_hiddenAbilityIds.contains(a.id)) return false;
 
       if (_selectedEffectTag != null) {
         final tags = a.effectTagsList.map((t) => t.toLowerCase()).toList();
@@ -162,8 +183,20 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
     }
     if (_filterChampions) {
       list.add(ActiveFilterItem(
-        label: 'Champions',
+        label: 'Champions-origin ability',
         onDeleted: () => setState(() { _filterChampions = false; _applyFilters(); }),
+      ));
+    }
+    if (_filterCurrentMC) {
+      list.add(ActiveFilterItem(
+        label: 'Available in M-C',
+        onDeleted: () => setState(() { _filterCurrentMC = false; _applyFilters(); }),
+      ));
+    }
+    if (_filterNewInMC) {
+      list.add(ActiveFilterItem(
+        label: 'New to M-C',
+        onDeleted: () => setState(() { _filterNewInMC = false; _applyFilters(); }),
       ));
     }
     if (_filterLegendsZA) {
@@ -176,6 +209,15 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
       list.add(ActiveFilterItem(
         label: 'Hidden Abilities',
         onDeleted: () => setState(() { _filterHidden = false; _applyFilters(); }),
+      ));
+    }
+    if (_sortOption != 'name_asc') {
+      list.add(ActiveFilterItem(
+        label: 'Sort: ${_sortOption.replaceAll('_', ' ')}',
+        onDeleted: () => setState(() {
+          _sortOption = 'name_asc';
+          _applyFilters();
+        }),
       ));
     }
 
@@ -255,12 +297,22 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
                     ),
                     child: Column(
                       children: [
-                        _buildSwitchRow('Pokémon Champions', _filterChampions, (val) {
+                        _buildSwitchRow('Champions-origin / custom abilities', _filterChampions, (val) {
                           setState(() => _filterChampions = val);
                           _applyFilters();
                           setModalState(() {});
                         }),
-                        _buildSwitchRow('Legends: Z-A', _filterLegendsZA, (val) {
+                        _buildSwitchRow('Available in Regulation M-C', _filterCurrentMC, (val) {
+                          setState(() => _filterCurrentMC = val);
+                          _applyFilters();
+                          setModalState(() {});
+                        }),
+                        _buildSwitchRow('Newly added to M-C', _filterNewInMC, (val) {
+                          setState(() => _filterNewInMC = val);
+                          _applyFilters();
+                          setModalState(() {});
+                        }),
+                        _buildSwitchRow('Legends: Z-A origin', _filterLegendsZA, (val) {
                           setState(() => _filterLegendsZA = val);
                           _applyFilters();
                           setModalState(() {});
@@ -319,6 +371,7 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final regulation = ref.watch(championsRegulationProvider).asData?.value;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? Colors.white : Colors.black;
 
@@ -372,36 +425,44 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
                             ),
                             itemBuilder: (context, index) {
                               final ab = _filteredAbilities[index];
+                              final isMCAvailable = regulation?.isAbilityAvailable(ab.id) ?? _mCAbilityIds.contains(ab.id);
+                              final isNewInMC = regulation?.isNewAbility(ab.id) ?? _newMCAbilityIds.contains(ab.id);
+                              final description = regulation?.abilityDescriptionFor(ab.id) ?? ab.description;
                               return ListTile(
                                 contentPadding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                                leading: AbilityEffectIcon(effectTags: ab.effectTagsList, size: 21),
                                 title: Row(
                                   children: [
-                                    Text(
-                                      ab.name,
-                                      style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 15),
-                                    ),
-                                    if (ab.isChampionsAbility) ...[
-                                      const SizedBox(width: 6),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                        decoration: BoxDecoration(color: Colors.orangeAccent, borderRadius: BorderRadius.circular(4)),
-                                        child: const Text('CHAMP', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                                    Flexible(
+                                      child: Text(
+                                        ab.name,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 15),
                                       ),
+                                    ),
+                                    if (isMCAvailable) ...[
+                                      const SizedBox(width: 6),
+                                      const ContentBadge.mC(tooltip: 'Available in Regulation M-C'),
+                                    ],
+                                    if (isNewInMC) ...[
+                                      const SizedBox(width: 4),
+                                      const ContentBadge.mC(isNew: true, tooltip: 'Newly added to Regulation M-C'),
+                                    ],
+                                    if (ab.isChampionsAbility) ...[
+                                      const SizedBox(width: 4),
+                                      const ContentBadge(label: 'CHAMP', color: Colors.orangeAccent, tooltip: 'Champions-origin ability'),
                                     ],
                                     if (ab.isLegendsZAAbility) ...[
-                                      const SizedBox(width: 6),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                        decoration: BoxDecoration(color: Colors.purpleAccent, borderRadius: BorderRadius.circular(4)),
-                                        child: const Text('LZA', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
-                                      ),
+                                      const SizedBox(width: 4),
+                                      const ContentBadge(label: 'LZA', color: Colors.purpleAccent, tooltip: 'Legends: Z-A-origin ability'),
                                     ],
                                   ],
                                 ),
                                 subtitle: Padding(
                                   padding: const EdgeInsets.only(top: 4.0),
                                   child: Text(
-                                    ab.description,
+                                    description,
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 12),

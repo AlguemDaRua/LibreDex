@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:libredex/core/data/champions_regulation.dart';
 import 'package:libredex/core/database/app_database.dart';
+import 'package:libredex/core/widgets/content_badge.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
 import 'package:libredex/core/theme/app_spacing.dart';
@@ -11,6 +13,20 @@ import 'package:libredex/core/widgets/dex_filter_sheet.dart';
 import 'package:libredex/core/widgets/active_filter_summary.dart';
 import 'package:libredex/core/widgets/result_count_label.dart';
 import 'package:libredex/core/utils/type_utils.dart';
+
+class _MovePropertyFilter {
+  const _MovePropertyFilter({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+    required this.matches,
+  });
+
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final bool Function(Move move) matches;
+}
 
 class MovedexScreen extends ConsumerStatefulWidget {
   const MovedexScreen({super.key});
@@ -65,9 +81,13 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
   bool _filterWind = false;
   bool _filterDance = false;
 
-  // Source filters
-  bool _filterChampions = false;
+  // Source / current-regulation filters
+  bool _filterMCAvailable = false;
+  bool _filterNewInMC = false;
+  bool _filterChampionsOrigin = false;
   bool _filterLegendsZA = false;
+  Set<int> _mCMoveIds = {};
+  Set<int> _newMCMoveIds = {};
   bool _filterDLC = false;
   bool _filterSignature = false;
 
@@ -86,6 +106,141 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
     'Healing', 'Recovery', 'Substitute', 'Protection', 'Type change'
   ];
 
+  List<_MovePropertyFilter> get _propertyFilters => [
+        _MovePropertyFilter(
+          label: 'Priority moves',
+          value: _filterPriority,
+          onChanged: (v) => _filterPriority = v,
+          matches: (move) => move.priority > 0,
+        ),
+        _MovePropertyFilter(
+          label: 'Negative-priority moves',
+          value: _filterNegativePriority,
+          onChanged: (v) => _filterNegativePriority = v,
+          matches: (move) => move.priority < 0,
+        ),
+        _MovePropertyFilter(
+          label: 'Makes contact',
+          value: _filterContact,
+          onChanged: (v) => _filterContact = v,
+          matches: (move) => move.isContact,
+        ),
+        _MovePropertyFilter(
+          label: 'Non-contact',
+          value: _filterNonContact,
+          onChanged: (v) => _filterNonContact = v,
+          matches: (move) => !move.isContact,
+        ),
+        _MovePropertyFilter(
+          label: 'Status moves',
+          value: _filterStatus,
+          onChanged: (v) => _filterStatus = v,
+          matches: (move) => move.isStatusMove,
+        ),
+        _MovePropertyFilter(
+          label: 'Damaging moves',
+          value: _filterDamaging,
+          onChanged: (v) => _filterDamaging = v,
+          matches: (move) => move.isDamagingMove,
+        ),
+        _MovePropertyFilter(
+          label: 'Multi-hit',
+          value: _filterMultiHit,
+          onChanged: (v) => _filterMultiHit = v,
+          matches: (move) => move.isMultiHit,
+        ),
+        _MovePropertyFilter(
+          label: 'Recoil',
+          value: _filterRecoil,
+          onChanged: (v) => _filterRecoil = v,
+          matches: (move) => move.isRecoil,
+        ),
+        _MovePropertyFilter(
+          label: 'Draining',
+          value: _filterDraining,
+          onChanged: (v) => _filterDraining = v,
+          matches: (move) => move.isDraining,
+        ),
+        _MovePropertyFilter(
+          label: 'Healing',
+          value: _filterHealing,
+          onChanged: (v) => _filterHealing = v,
+          matches: (move) => move.isHealing,
+        ),
+        _MovePropertyFilter(
+          label: 'Switching',
+          value: _filterSwitching,
+          onChanged: (v) => _filterSwitching = v,
+          matches: (move) => move.isSwitching,
+        ),
+        _MovePropertyFilter(
+          label: 'Protective',
+          value: _filterProtecting,
+          onChanged: (v) => _filterProtecting = v,
+          matches: (move) => move.isProtective,
+        ),
+        _MovePropertyFilter(
+          label: 'Recharge',
+          value: _filterRecharge,
+          onChanged: (v) => _filterRecharge = v,
+          matches: (move) => move.isRecharge,
+        ),
+        _MovePropertyFilter(
+          label: 'Sound-based',
+          value: _filterSound,
+          onChanged: (v) => _filterSound = v,
+          matches: (move) => move.isSound,
+        ),
+        _MovePropertyFilter(
+          label: 'Punching',
+          value: _filterPunching,
+          onChanged: (v) => _filterPunching = v,
+          matches: (move) => move.isPunching,
+        ),
+        _MovePropertyFilter(
+          label: 'Biting',
+          value: _filterBiting,
+          onChanged: (v) => _filterBiting = v,
+          matches: (move) => move.isBiting,
+        ),
+        _MovePropertyFilter(
+          label: 'Powder',
+          value: _filterPowder,
+          onChanged: (v) => _filterPowder = v,
+          matches: (move) => move.isPowder,
+        ),
+        _MovePropertyFilter(
+          label: 'Pulse / aura',
+          value: _filterPulse,
+          onChanged: (v) => _filterPulse = v,
+          matches: (move) => move.isPulse,
+        ),
+        _MovePropertyFilter(
+          label: 'Ballistic',
+          value: _filterBallistic,
+          onChanged: (v) => _filterBallistic = v,
+          matches: (move) => move.isBallistic,
+        ),
+        _MovePropertyFilter(
+          label: 'Slicing',
+          value: _filterSlicing,
+          onChanged: (v) => _filterSlicing = v,
+          matches: (move) => move.isSlicing,
+        ),
+        _MovePropertyFilter(
+          label: 'Wind',
+          value: _filterWind,
+          onChanged: (v) => _filterWind = v,
+          matches: (move) => move.isWind,
+        ),
+        _MovePropertyFilter(
+          label: 'Dance',
+          value: _filterDance,
+          onChanged: (v) => _filterDance = v,
+          matches: (move) => move.isDance,
+        ),
+      ];
+
   @override
   void initState() {
     super.initState();
@@ -101,9 +256,12 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
   Future<void> _loadMoves() async {
     try {
       final db = ref.read(databaseProvider);
+      final regulation = await ref.read(championsRegulationProvider.future);
       final moves = await db.select(db.moveTable).get();
       if (mounted) {
         setState(() {
+          _mCMoveIds = regulation.moveIds.toSet();
+          _newMCMoveIds = regulation.newMoveIds.toSet();
           _allMoves = moves;
           _isLoading = false;
           _applyFilters();
@@ -129,29 +287,12 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
       _maxAccuracy = 100.0;
       _minPp = 0.0;
       _maxPp = 40.0;
-      _filterPriority = false;
-      _filterNegativePriority = false;
-      _filterContact = false;
-      _filterNonContact = false;
-      _filterStatus = false;
-      _filterDamaging = false;
-      _filterMultiHit = false;
-      _filterRecoil = false;
-      _filterDraining = false;
-      _filterHealing = false;
-      _filterSwitching = false;
-      _filterProtecting = false;
-      _filterRecharge = false;
-      _filterSound = false;
-      _filterPunching = false;
-      _filterBiting = false;
-      _filterPowder = false;
-      _filterPulse = false;
-      _filterBallistic = false;
-      _filterSlicing = false;
-      _filterWind = false;
-      _filterDance = false;
-      _filterChampions = false;
+      for (final filter in _propertyFilters) {
+        filter.onChanged(false);
+      }
+      _filterMCAvailable = false;
+      _filterNewInMC = false;
+      _filterChampionsOrigin = false;
       _filterLegendsZA = false;
       _filterDLC = false;
       _filterSignature = false;
@@ -171,29 +312,10 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
         _maxAccuracy < 100.0 ||
         _minPp > 0.0 ||
         _maxPp < 40.0 ||
-        _filterPriority ||
-        _filterNegativePriority ||
-        _filterContact ||
-        _filterNonContact ||
-        _filterStatus ||
-        _filterDamaging ||
-        _filterMultiHit ||
-        _filterRecoil ||
-        _filterDraining ||
-        _filterHealing ||
-        _filterSwitching ||
-        _filterProtecting ||
-        _filterRecharge ||
-        _filterSound ||
-        _filterPunching ||
-        _filterBiting ||
-        _filterPowder ||
-        _filterPulse ||
-        _filterBallistic ||
-        _filterSlicing ||
-        _filterWind ||
-        _filterDance ||
-        _filterChampions ||
+        _propertyFilters.any((filter) => filter.value) ||
+        _filterMCAvailable ||
+        _filterNewInMC ||
+        _filterChampionsOrigin ||
         _filterLegendsZA ||
         _filterDLC ||
         _filterSignature ||
@@ -224,32 +346,14 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
 
       if (m.pp < _minPp || m.pp > _maxPp) return false;
 
-      // Property flags
-      if (_filterPriority && m.priority <= 0) return false;
-      if (_filterNegativePriority && m.priority >= 0) return false;
-      if (_filterContact && !m.isContact) return false;
-      if (_filterNonContact && m.isContact) return false;
-      if (_filterStatus && !m.isStatusMove) return false;
-      if (_filterDamaging && !m.isDamagingMove) return false;
-      if (_filterMultiHit && !m.isMultiHit) return false;
-      if (_filterRecoil && !m.isRecoil) return false;
-      if (_filterDraining && !m.isDraining) return false;
-      if (_filterHealing && !m.isHealing) return false;
-      if (_filterSwitching && !m.isSwitching) return false;
-      if (_filterProtecting && !m.isProtective) return false;
-      if (_filterRecharge && !m.isRecharge) return false;
-      if (_filterSound && !m.isSound) return false;
-      if (_filterPunching && !m.isPunching) return false;
-      if (_filterBiting && !m.isBiting) return false;
-      if (_filterPowder && !m.isPowder) return false;
-      if (_filterPulse && !m.isPulse) return false;
-      if (_filterBallistic && !m.isBallistic) return false;
-      if (_filterSlicing && !m.isSlicing) return false;
-      if (_filterWind && !m.isWind) return false;
-      if (_filterDance && !m.isDance) return false;
+      for (final filter in _propertyFilters) {
+        if (filter.value && !filter.matches(m)) return false;
+      }
 
-      // Source flags
-      if (_filterChampions && !m.isChampionsMove) return false;
+      // Regulation availability is not the same as a Champions-exclusive move.
+      if (_filterMCAvailable && !_mCMoveIds.contains(m.id)) return false;
+      if (_filterNewInMC && !_newMCMoveIds.contains(m.id)) return false;
+      if (_filterChampionsOrigin && !m.isChampionsMove) return false;
       if (_filterLegendsZA && !m.isLegendsZAMove) return false;
       if (_filterDLC && !m.isDLCMove) return false;
       if (_filterSignature && !m.isSignatureMove) return false;
@@ -342,31 +446,46 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
         onDeleted: () => setState(() { _minPp = 0.0; _maxPp = 40.0; _applyFilters(); }),
       ));
     }
-    if (_filterPriority) {
-      list.add(ActiveFilterItem(label: 'Priority', onDeleted: () => setState(() { _filterPriority = false; _applyFilters(); })));
-    }
-    if (_filterContact) {
-      list.add(ActiveFilterItem(label: 'Contact', onDeleted: () => setState(() { _filterContact = false; _applyFilters(); })));
-    }
-    if (_filterHealing) {
-      list.add(ActiveFilterItem(label: 'Healing', onDeleted: () => setState(() { _filterHealing = false; _applyFilters(); })));
-    }
-    if (_filterSound) {
-      list.add(ActiveFilterItem(label: 'Sound', onDeleted: () => setState(() { _filterSound = false; _applyFilters(); })));
+    for (final filter in _propertyFilters.where((filter) => filter.value)) {
+      list.add(ActiveFilterItem(
+        label: filter.label,
+        onDeleted: () => setState(() {
+          filter.onChanged(false);
+          _applyFilters();
+        }),
+      ));
     }
     if (_filterDLC) {
       list.add(ActiveFilterItem(label: 'DLC', onDeleted: () => setState(() { _filterDLC = false; _applyFilters(); })));
     }
-    if (_filterChampions) {
-      list.add(ActiveFilterItem(label: 'Champions', onDeleted: () => setState(() { _filterChampions = false; _applyFilters(); })));
+    if (_filterMCAvailable) {
+      list.add(ActiveFilterItem(label: 'Available in M-C', onDeleted: () => setState(() { _filterMCAvailable = false; _applyFilters(); })));
+    }
+    if (_filterNewInMC) {
+      list.add(ActiveFilterItem(label: 'New to M-C', onDeleted: () => setState(() { _filterNewInMC = false; _applyFilters(); })));
+    }
+    if (_filterChampionsOrigin) {
+      list.add(ActiveFilterItem(label: 'Champions-origin move', onDeleted: () => setState(() { _filterChampionsOrigin = false; _applyFilters(); })));
     }
     if (_filterLegendsZA) {
       list.add(ActiveFilterItem(label: 'Legends Z-A', onDeleted: () => setState(() { _filterLegendsZA = false; _applyFilters(); })));
+    }
+    if (_filterSignature) {
+      list.add(ActiveFilterItem(label: 'Signature move', onDeleted: () => setState(() { _filterSignature = false; _applyFilters(); })));
     }
     if (_selectedEffect != null) {
       list.add(ActiveFilterItem(
         label: 'Effect: $_selectedEffect',
         onDeleted: () => setState(() { _selectedEffect = null; _applyFilters(); }),
+      ));
+    }
+    if (_sortOption != 'name_asc') {
+      list.add(ActiveFilterItem(
+        label: 'Sort: ${_sortOption.replaceAll('_', ' ')}',
+        onDeleted: () => setState(() {
+          _sortOption = 'name_asc';
+          _applyFilters();
+        }),
       ));
     }
 
@@ -515,61 +634,12 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
                     ),
                     child: Column(
                       children: [
-                        _buildSwitchRow('Priority Moves', _filterPriority, (val) {
-                          setState(() => _filterPriority = val);
-                          _applyFilters();
-                          setModalState(() {});
-                        }),
-                        _buildSwitchRow('Negative Priority Moves', _filterNegativePriority, (val) {
-                          setState(() => _filterNegativePriority = val);
-                          _applyFilters();
-                          setModalState(() {});
-                        }),
-                        _buildSwitchRow('Makes Contact', _filterContact, (val) {
-                          setState(() => _filterContact = val);
-                          _applyFilters();
-                          setModalState(() {});
-                        }),
-                        _buildSwitchRow('Healing Moves', _filterHealing, (val) {
-                          setState(() => _filterHealing = val);
-                          _applyFilters();
-                          setModalState(() {});
-                        }),
-                        _buildSwitchRow('Sound-Based', _filterSound, (val) {
-                          setState(() => _filterSound = val);
-                          _applyFilters();
-                          setModalState(() {});
-                        }),
-                        _buildSwitchRow('Punching Moves', _filterPunching, (val) {
-                          setState(() => _filterPunching = val);
-                          _applyFilters();
-                          setModalState(() {});
-                        }),
-                        _buildSwitchRow('Biting Moves', _filterBiting, (val) {
-                          setState(() => _filterBiting = val);
-                          _applyFilters();
-                          setModalState(() {});
-                        }),
-                        _buildSwitchRow('Powder Moves', _filterPowder, (val) {
-                          setState(() => _filterPowder = val);
-                          _applyFilters();
-                          setModalState(() {});
-                        }),
-                        _buildSwitchRow('Pulse / Aura Moves', _filterPulse, (val) {
-                          setState(() => _filterPulse = val);
-                          _applyFilters();
-                          setModalState(() {});
-                        }),
-                        _buildSwitchRow('Slicing Moves', _filterSlicing, (val) {
-                          setState(() => _filterSlicing = val);
-                          _applyFilters();
-                          setModalState(() {});
-                        }),
-                        _buildSwitchRow('Wind Moves', _filterWind, (val) {
-                          setState(() => _filterWind = val);
-                          _applyFilters();
-                          setModalState(() {});
-                        }),
+                        for (final filter in _propertyFilters)
+                          _buildSwitchRow(filter.label, filter.value, (value) {
+                            setState(() => filter.onChanged(value));
+                            _applyFilters();
+                            setModalState(() {});
+                          }),
                       ],
                     ),
                   ),
@@ -587,8 +657,18 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
                     ),
                     child: Column(
                       children: [
-                        _buildSwitchRow('Pokémon Champions', _filterChampions, (val) {
-                          setState(() => _filterChampions = val);
+                        _buildSwitchRow('Available in Regulation M-C', _filterMCAvailable, (val) {
+                          setState(() => _filterMCAvailable = val);
+                          _applyFilters();
+                          setModalState(() {});
+                        }),
+                        _buildSwitchRow('Newly added to M-C', _filterNewInMC, (val) {
+                          setState(() => _filterNewInMC = val);
+                          _applyFilters();
+                          setModalState(() {});
+                        }),
+                        _buildSwitchRow('Champions-origin moves', _filterChampionsOrigin, (val) {
+                          setState(() => _filterChampionsOrigin = val);
                           _applyFilters();
                           setModalState(() {});
                         }),
@@ -694,6 +774,7 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final regulation = ref.watch(championsRegulationProvider).asData?.value;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? Colors.white : Colors.black;
 
@@ -752,21 +833,37 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
                             itemBuilder: (context, index) {
                               final move = _filteredMoves[index];
                               final color = _getTypeColor(move.type);
+                              final isMCAvailable = regulation?.isMoveAvailable(move.id) ?? _mCMoveIds.contains(move.id);
+                              final isNewInMC = regulation?.isNewMove(move.id) ?? _newMCMoveIds.contains(move.id);
+                              final isNewlyUsable = regulation?.newlyUsableMoveIds.contains(move.id) ?? false;
+                              final mCPp = regulation?.movePpFor(move.id);
                               return ListTile(
                                 contentPadding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                                 title: Row(
                                   children: [
-                                    Text(
-                                      move.name,
-                                      style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 15),
+                                    Flexible(
+                                      child: Text(
+                                        move.name,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 15),
+                                      ),
                                     ),
+                                    if (isMCAvailable) ...[
+                                      const SizedBox(width: 6),
+                                      const ContentBadge.mC(tooltip: 'Available in Regulation M-C'),
+                                    ],
+                                    if (isNewInMC) ...[
+                                      const SizedBox(width: 4),
+                                      const ContentBadge.mC(isNew: true, tooltip: 'Newly added to Regulation M-C'),
+                                    ],
+                                    if (isNewlyUsable) ...[
+                                      const SizedBox(width: 4),
+                                      const ContentBadge(label: 'NEWLY USABLE', color: Colors.teal),
+                                    ],
                                     if (move.isChampionsMove) ...[
                                       const SizedBox(width: 6),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                        decoration: BoxDecoration(color: Colors.orangeAccent, borderRadius: BorderRadius.circular(4)),
-                                        child: const Text('CHAMP', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
-                                      ),
+                                      const ContentBadge(label: 'CHAMP', color: Colors.orangeAccent),
                                     ],
                                     if (move.isLegendsZAMove) ...[
                                       const SizedBox(width: 6),
@@ -804,6 +901,13 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
                                       move.damageClass.toUpperCase(),
                                       style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold),
                                     ),
+                                    if (mCPp != null) ...[
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'M-C PP: $mCPp',
+                                        style: const TextStyle(fontSize: 10, color: Colors.deepPurpleAccent, fontWeight: FontWeight.bold),
+                                      ),
+                                    ],
                                   ],
                                 ),
                                 trailing: Column(

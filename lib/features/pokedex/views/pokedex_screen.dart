@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/data/champions_catalog.dart';
+import 'package:libredex/core/data/champions_regulation.dart';
 import 'package:libredex/core/data/ev_yield_data.dart';
 import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/widgets/app_state_widgets.dart';
+import 'package:libredex/core/widgets/content_badge.dart';
 import 'package:libredex/features/calculator/utils/combat_utils.dart';
 import 'package:libredex/features/pokedex/utils/pokemon_data_helpers.dart';
 import 'package:libredex/features/pokedex/viewmodels/favorites_provider.dart';
@@ -35,6 +36,7 @@ class PokedexScreen extends ConsumerStatefulWidget {
 
 class _PokedexScreenState extends ConsumerState<PokedexScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _abilityFilterController = TextEditingController();
   String _searchQuery = '';
 
   bool _globalShinyMode = false;
@@ -49,6 +51,8 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
   bool _showShinyOnly = false;
   bool _showFavoritesOnly = false;
   bool _showTeamOnly = false;
+  bool _filterMCAvailable = false;
+  bool _filterNewInMC = false;
   String _sortOption = 'id_asc';
 
   final List<String> _selectedFormats = [];
@@ -90,16 +94,12 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
     try {
       final db = ref.read(databaseProvider);
       final abilitiesList = await db.select(db.abilityTable).get();
-      
-      final String rawAb = await rootBundle.loadString('assets/data/pokemon_abilities.json');
-      final List<dynamic> jsonAb = jsonDecode(rawAb);
+      final abilityJunctions = await db.select(db.pokemonAbilitiesTable).get();
       final abMap = <int, List<Map<String, dynamic>>>{};
-      for (final item in jsonAb) {
-        final map = item as Map<String, dynamic>;
-        final pId = map['pokemonId'] as int;
-        abMap.putIfAbsent(pId, () => []).add({
-          'abilityId': map['abilityId'] as int,
-          'isHidden': map['isHidden'] as bool,
+      for (final junction in abilityJunctions) {
+        abMap.putIfAbsent(junction.pokemonId, () => []).add({
+          'abilityId': junction.abilityId,
+          'isHidden': junction.isHidden,
         });
       }
 
@@ -115,20 +115,8 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _abilityFilterController.dispose();
     super.dispose();
-  }
-
-  int _getGeneration(int id) {
-    if (id >= 1 && id <= 151) return 1;
-    if (id >= 152 && id <= 251) return 2;
-    if (id >= 252 && id <= 386) return 3;
-    if (id >= 387 && id <= 493) return 4;
-    if (id >= 494 && id <= 649) return 5;
-    if (id >= 650 && id <= 721) return 6;
-    if (id >= 722 && id <= 809) return 7;
-    if (id >= 810 && id <= 898) return 8;
-    if (id >= 899 && id <= 1025) return 9;
-    return 9;
   }
 
   int _getBst(Pokemon p) {
@@ -190,6 +178,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
       _filterNoEvolution = false;
       _selectedEvolutionMethod = null;
       _filterAbilityQuery = null;
+      _abilityFilterController.clear();
       _filterHiddenAbilityOnly = false;
       _showLegendary = false;
       _showMythical = false;
@@ -198,6 +187,8 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
       _showShinyOnly = false;
       _showFavoritesOnly = false;
       _showTeamOnly = false;
+      _filterMCAvailable = false;
+      _filterNewInMC = false;
       _sortOption = 'id_asc';
       _minBst = 100.0;
       _maxBst = 780.0;
@@ -221,7 +212,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
         _filterCanEvolve ||
         _filterNoEvolution ||
         _selectedEvolutionMethod != null ||
-        _filterAbilityQuery != null ||
+        (_filterAbilityQuery?.trim().isNotEmpty ?? false) ||
         _filterHiddenAbilityOnly ||
         _showLegendary ||
         _showMythical ||
@@ -230,6 +221,8 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
         _showShinyOnly ||
         _showFavoritesOnly ||
         _showTeamOnly ||
+        _filterMCAvailable ||
+        _filterNewInMC ||
         _minBst > 100.0 ||
         _maxBst < 780.0 ||
         _minHp > 0.0 ||
@@ -241,7 +234,13 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
         _sortOption != 'id_asc';
   }
 
-  bool _matchesSearch(Pokemon pokemon, int dexNum, String query, ChampionsCatalog? champions) {
+  bool _matchesSearch(
+    Pokemon pokemon,
+    int dexNum,
+    String query,
+    ChampionsCatalog? champions,
+    ChampionsRegulationCatalog? regulation,
+  ) {
     if (query.isEmpty) return true;
     final name = pokemon.name.toLowerCase();
     final form = pokemon.form.toLowerCase();
@@ -259,6 +258,12 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
         // as "champions", "mega raichu x", "raichu x", "legends za",
         // "eternal", "floette eternal" or a Champions ability name.
         (champions?.matchesSearch(pokemon.id, query) ?? false) ||
+        (regulation?.matchesPokemonSearch(
+              pokemon.id,
+              query,
+              aliases: '$name $form $type1 $type2 $dex',
+            ) ??
+            false) ||
         // Order-free token search, so "floette eternal" still finds the
         // "Eternal Flower Floette" display name (and "raichu x" the Mega).
         _matchesTokens(query, name, form) ||
@@ -338,6 +343,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
     Set<int> favoriteDexNumbers,
     Set<int> teamPokemonIds,
     ChampionsCatalog? championsCatalog,
+    ChampionsRegulationCatalog? regulation,
     AsyncValue<Map<int, EvYieldFacts>> evYieldDataset,
   ) {
     return pokemonList.where((pokemon) {
@@ -348,9 +354,15 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
       if (_showTeamOnly && !teamPokemonIds.contains(pokemon.id)) {
         return false;
       }
+      if (_filterMCAvailable && !(regulation?.isPokemonEligible(pokemon.id) ?? false)) {
+        return false;
+      }
+      if (_filterNewInMC && !(regulation?.isNewPokemon(pokemon.id) ?? false)) {
+        return false;
+      }
 
       final query = _searchQuery.trim().toLowerCase();
-      if (!_matchesSearch(pokemon, dexNum, query, championsCatalog)) return false;
+      if (!_matchesSearch(pokemon, dexNum, query, championsCatalog, regulation)) return false;
 
       if (_selectedTypes.isNotEmpty) {
         if (_selectedTypes.length == 1) {
@@ -368,10 +380,9 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
         }
       }
 
-      if (_selectedGenerations.isNotEmpty) {
-        if (!_selectedGenerations.contains(_getGeneration(dexNum))) {
-          return false;
-        }
+      if (_selectedGenerations.isNotEmpty &&
+          !_selectedGenerations.contains(pokemon.generation)) {
+        return false;
       }
 
       final hasCategoryFilter = _showLegendary || _showMythical || _showUltraBeast || _showParadox;
@@ -420,21 +431,24 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
 
       if (_filterCanEvolve && !pokemon.canEvolve) return false;
       if (_filterNoEvolution && !pokemon.hasNoEvolution) return false;
-      if (_selectedEvolutionMethod != null) {
-        if (pokemon.evolutionMethod.toLowerCase() != _selectedEvolutionMethod!.toLowerCase()) return false;
+      if (_selectedEvolutionMethod != null &&
+          !pokemon.hasEvolutionMethod(_selectedEvolutionMethod!)) {
+        return false;
       }
 
-      if (_filterAbilityQuery != null && _filterAbilityQuery!.isNotEmpty) {
-        final query = _filterAbilityQuery!.trim().toLowerCase();
+      final abilityQuery = _filterAbilityQuery?.trim().toLowerCase() ?? '';
+      if (abilityQuery.isNotEmpty || _filterHiddenAbilityOnly) {
         final abList = _pokemonAbilitiesMap[pokemon.id] ?? [];
         final hasMatchingAbility = abList.any((entry) {
           final abId = entry['abilityId'] as int;
-          final ab = _abilitiesIdMap[abId];
-          if (ab == null) return false;
-          
-          final matchesQuery = ab.name.toLowerCase().contains(query) || ab.description.toLowerCase().contains(query);
-          final matchesHidden = !_filterHiddenAbilityOnly || (entry['isHidden'] as bool);
-          
+          final ability = _abilitiesIdMap[abId];
+          if (ability == null) return false;
+
+          final matchesQuery = abilityQuery.isEmpty ||
+              ability.name.toLowerCase().contains(abilityQuery) ||
+              ability.description.toLowerCase().contains(abilityQuery);
+          final matchesHidden =
+              !_filterHiddenAbilityOnly || (entry['isHidden'] as bool? ?? false);
           return matchesQuery && matchesHidden;
         });
         if (!hasMatchingAbility) return false;
@@ -450,6 +464,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
     final favoriteDexNumbers = ref.watch(favoritePokemonProvider);
     final teamPokemonIds = ref.watch(teamBuilderProvider).whereType<int>().toSet();
     final championsCatalog = ref.watch(championsCatalogProvider).asData?.value;
+    final regulation = ref.watch(championsRegulationProvider).asData?.value;
     final evYieldDataset = ref.watch(evYieldDatasetProvider);
     final syncState = ref.watch(pokedexSyncNotifierProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -491,6 +506,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                         favoriteDexNumbers,
                         teamPokemonIds,
                         championsCatalog,
+                        regulation,
                         evYieldDataset,
                       );
                       if (randomSettings.instantRollOnTap) {
@@ -509,6 +525,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                         favoriteDexNumbers,
                         teamPokemonIds,
                         championsCatalog,
+                        regulation,
                         evYieldDataset,
                       );
                       RandomizerSettingsSheet.show(
@@ -596,6 +613,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                         favoriteDexNumbers,
                         teamPokemonIds,
                         championsCatalog,
+                        regulation,
                         evYieldDataset,
                       );
 
@@ -650,7 +668,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                             delegate: _StickySearchHeaderDelegate(
                               height: 72,
                               child: DexFilterBar(
-                                searchHint: 'Search name, type, form, or #...',
+                                searchHint: 'Search name, type, form, #, or M-C...',
                                 initialSearchValue: _searchQuery,
                                 onSearchChanged: (val) {
                                   setState(() {
@@ -674,7 +692,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                             ),
 
                           SliverToBoxAdapter(
-                            child: ResultCountLabel(count: filteredList.length, label: 'Pokémon found'),
+                            child: ResultCountLabel(count: sortedKeys.length, label: 'species found'),
                           ),
 
                           sortedKeys.isEmpty
@@ -695,8 +713,8 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                               : SliverPadding(
                                   padding: const EdgeInsets.only(left: AppSpacing.pagePadding, right: AppSpacing.pagePadding, top: 8, bottom: AppSpacing.bottomScrollPadding),
                                   sliver: SliverGrid(
-                                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 2,
+                                    gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                                      maxCrossAxisExtent: 250,
                                       crossAxisSpacing: 10,
                                       mainAxisSpacing: 10,
                                       childAspectRatio: 0.80,
@@ -704,7 +722,12 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                                     delegate: SliverChildBuilderDelegate(
                                       (context, index) {
                                         final group = groupedMap[sortedKeys[index]] ?? [];
-                                        return _buildPokemonCard(group, isDark, favoriteDexNumbers);
+                                        return _buildPokemonCard(
+                                          group,
+                                          isDark,
+                                          favoriteDexNumbers,
+                                          regulation,
+                                        );
                                       },
                                       childCount: sortedKeys.length,
                                     ),
@@ -721,7 +744,12 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
     );
   }
 
-  Widget _buildPokemonCard(List<Pokemon> group, bool isDark, Set<int> favoriteDexNumbers) {
+  Widget _buildPokemonCard(
+    List<Pokemon> group,
+    bool isDark,
+    Set<int> favoriteDexNumbers,
+    ChampionsRegulationCatalog? regulation,
+  ) {
     if (group.isEmpty) return const SizedBox.shrink();
 
     // The grid shows one species card, then passes every bundled form forward.
@@ -730,6 +758,10 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
     final typeColor = _getTypeColor(pokemon.type1);
     final secondaryColor = pokemon.type2 == null ? typeColor : _getTypeColor(pokemon.type2!);
     final isFavorite = favoriteDexNumbers.contains(dexNum);
+    final isAvailableInMC = regulation != null &&
+        group.any((form) => regulation.isPokemonEligible(form.id));
+    final isNewInMC = regulation != null &&
+        group.any((form) => regulation.isNewPokemon(form.id));
     final imageUrl = ((_showShinyOnly || _globalShinyMode) && pokemon.shinySpriteUrl.isNotEmpty)
         ? pokemon.shinySpriteUrl
         : pokemon.spriteUrl;
@@ -840,6 +872,13 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                             children: [
                               _buildTypeBadge(pokemon.type1, typeColor),
                               if (pokemon.type2 != null) _buildTypeBadge(pokemon.type2!, secondaryColor),
+                              if (isAvailableInMC)
+                                ContentBadge.mC(
+                                  isNew: isNewInMC,
+                                  tooltip: isNewInMC
+                                      ? 'Newly eligible in Pokémon Champions Regulation M-C'
+                                      : 'Eligible in Pokémon Champions Regulation M-C',
+                                ),
                             ],
                           ),
                           Expanded(
@@ -929,6 +968,12 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
         onDeleted: () => setState(() => _selectedGenerations.clear()),
       ));
     }
+    if (_globalShinyMode) {
+      list.add(ActiveFilterItem(
+        label: 'Shiny display',
+        onDeleted: () => setState(() => _globalShinyMode = false),
+      ));
+    }
 
     if (_showLegendary) {
       list.add(ActiveFilterItem(
@@ -972,10 +1017,76 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
         onDeleted: () => setState(() => _showTeamOnly = false),
       ));
     }
+    if (_filterMCAvailable) {
+      list.add(ActiveFilterItem(
+        label: 'Available in M-C',
+        color: Colors.deepPurpleAccent,
+        onDeleted: () => setState(() => _filterMCAvailable = false),
+      ));
+    }
+    if (_filterNewInMC) {
+      list.add(ActiveFilterItem(
+        label: 'New in M-C',
+        color: Colors.deepOrangeAccent,
+        onDeleted: () => setState(() => _filterNewInMC = false),
+      ));
+    }
     if (_selectedFormats.isNotEmpty) {
       list.add(ActiveFilterItem(
         label: 'Format: ${_selectedFormats.join(', ')}',
         onDeleted: () => setState(() => _selectedFormats.clear()),
+      ));
+    }
+    if (_selectedEggGroup != null) {
+      list.add(ActiveFilterItem(
+        label: 'Egg group: $_selectedEggGroup',
+        onDeleted: () => setState(() => _selectedEggGroup = null),
+      ));
+    }
+    if (_selectedEvolutionStage != null) {
+      final stageLabel = switch (_selectedEvolutionStage) {
+        0 => 'Basic',
+        1 => 'Stage 1',
+        2 => 'Stage 2',
+        final stage => 'Stage $stage',
+      };
+      list.add(ActiveFilterItem(
+        label: 'Evolution: $stageLabel',
+        onDeleted: () => setState(() => _selectedEvolutionStage = null),
+      ));
+    }
+    if (_filterCanEvolve) {
+      list.add(ActiveFilterItem(
+        label: 'Can evolve',
+        onDeleted: () => setState(() => _filterCanEvolve = false),
+      ));
+    }
+    if (_filterNoEvolution) {
+      list.add(ActiveFilterItem(
+        label: 'Single-stage',
+        onDeleted: () => setState(() => _filterNoEvolution = false),
+      ));
+    }
+    if (_selectedEvolutionMethod != null) {
+      list.add(ActiveFilterItem(
+        label: 'Evolution method: $_selectedEvolutionMethod',
+        onDeleted: () => setState(() => _selectedEvolutionMethod = null),
+      ));
+    }
+    final abilityQuery = _filterAbilityQuery?.trim() ?? '';
+    if (abilityQuery.isNotEmpty) {
+      list.add(ActiveFilterItem(
+        label: 'Ability: $abilityQuery',
+        onDeleted: () => setState(() {
+          _filterAbilityQuery = null;
+          _abilityFilterController.clear();
+        }),
+      ));
+    }
+    if (_filterHiddenAbilityOnly) {
+      list.add(ActiveFilterItem(
+        label: 'Hidden ability',
+        onDeleted: () => setState(() => _filterHiddenAbilityOnly = false),
       ));
     }
     if (_minBst > 100.0 || _maxBst < 780.0) {
@@ -1006,6 +1117,12 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
         onDeleted: () => setState(() => _selectedEvYieldStat = null),
       ));
     }
+    if (_sortOption != 'id_asc') {
+      list.add(ActiveFilterItem(
+        label: 'Sort: ${_sortOption.replaceAll('_', ' ')}',
+        onDeleted: () => setState(() => _sortOption = 'id_asc'),
+      ));
+    }
 
     return ActiveFilterSummary(
       items: list,
@@ -1033,6 +1150,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
   }
 
   void _openAdvancedFilterBottomSheet(BuildContext context) {
+    _abilityFilterController.text = _filterAbilityQuery ?? '';
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -1185,6 +1303,37 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                   ),
                   const SizedBox(height: 18),
 
+                  _buildSectionLabel('POKÉMON CHAMPIONS · REGULATION M-C'),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Eligibility is regulation-specific; it is different from Pokémon Champions origin tags.',
+                    style: TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF141414) : const Color(0xFFF7FAFC),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE2E8F0)),
+                    ),
+                    child: Column(
+                      children: [
+                        _buildSwitchRow('Available in Regulation M-C', _filterMCAvailable, (val) {
+                          HapticFeedback.selectionClick();
+                          setState(() => _filterMCAvailable = val);
+                          setModalState(() {});
+                        }),
+                        _buildSwitchRow('Newly added to M-C', _filterNewInMC, (val) {
+                          HapticFeedback.selectionClick();
+                          setState(() => _filterNewInMC = val);
+                          setModalState(() {});
+                        }),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+
                   _buildSectionLabel('REGIONAL / SPECIAL FORMATS'),
                   const SizedBox(height: 8),
                   Wrap(
@@ -1292,7 +1441,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                   Wrap(
                     spacing: 6,
                     runSpacing: 6,
-                    children: ['Level', 'Item/Stone', 'Friendship', 'Trade', 'Move'].map((method) {
+                    children: ['Level', 'Item/Stone', 'Friendship', 'Trade', 'Move', 'Other'].map((method) {
                       final isSel = _selectedEvolutionMethod == method;
                       return ChoiceChip(
                         label: Text(method.toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isSel ? Colors.white : Colors.grey)),
@@ -1310,8 +1459,10 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                   _buildSectionLabel('FILTER BY ABILITY COMPATIBILITY'),
                   const SizedBox(height: 8),
                   TextField(
+                    controller: _abilityFilterController,
                     onChanged: (val) {
-                      setState(() { _filterAbilityQuery = val; });
+                      setState(() => _filterAbilityQuery = val);
+                      setModalState(() {});
                     },
                     decoration: InputDecoration(
                       hintText: 'Ability name or keyword...',

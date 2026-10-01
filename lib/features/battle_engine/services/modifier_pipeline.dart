@@ -2,8 +2,10 @@
 library;
 
 import 'package:libredex/core/utils/type_utils.dart';
-import 'package:libredex/features/pokedex/models/type_efficiency_calculator.dart';
+import 'package:libredex/features/calculator/models/battle_ruleset.dart';
+import 'package:libredex/features/calculator/utils/held_items_data.dart';
 import 'package:libredex/features/stat_comparison/models/stat_modifier.dart';
+import 'package:libredex/features/battle_engine/services/stat_engine.dart';
 import 'package:libredex/features/battle_engine/models/applied_modifier.dart';
 import 'package:libredex/features/battle_engine/models/battle_state.dart';
 import 'package:libredex/features/calculator/utils/combat_utils.dart';
@@ -56,34 +58,23 @@ class ModifierPipeline {
     final defenderItem = _normalize(state.defender.heldItem);
 
     // ── 1. Determine Effective Move Type ────────────────────────────────────
-    String effectiveType = state.move.type.toLowerCase();
-    if (moveName == 'weather ball') {
-      effectiveType = switch (state.field.weather) {
-        'sunny' => 'fire',
-        'rainy' => 'water',
-        'sandstorm' => 'rock',
-        'snow' => 'ice',
-        _ => effectiveType,
-      };
-      if (state.field.weather != 'none') {
-        applied.add(AppliedModifier(
-          name: 'Weather Ball (${titleCasePokemonText(effectiveType)})',
-          multiplier: 1.0,
-          category: ModifierCategory.weather,
-        ));
-      }
-    } else if (moveName == 'terrain pulse' && state.field.terrain != 'none') {
-      effectiveType = switch (state.field.terrain) {
-        'electric' => 'electric',
-        'grassy' => 'grass',
-        'psychic' => 'psychic',
-        'misty' => 'fairy',
-        _ => effectiveType,
-      };
+    final effectiveType = CombatUtils.effectiveMoveType(
+      moveName: state.move.name,
+      moveType: state.move.type,
+      weather: state.field.weather,
+      terrain: state.field.terrain,
+      attackerAbility: state.attacker.ability,
+    );
+    if (effectiveType != state.move.type.toLowerCase()) {
+      final category = moveName == 'weather ball'
+          ? ModifierCategory.weather
+          : moveName == 'terrain pulse'
+              ? ModifierCategory.terrain
+              : ModifierCategory.ability;
       applied.add(AppliedModifier(
-        name: 'Terrain Pulse (${titleCasePokemonText(effectiveType)})',
+        name: '$moveName (${titleCasePokemonText(effectiveType)})',
         multiplier: 1.0,
-        category: ModifierCategory.terrain,
+        category: category,
       ));
     }
 
@@ -116,41 +107,61 @@ class ModifierPipeline {
     }
 
     // ── 3. Base Power Calculation ───────────────────────────────────────────
-    int bp = state.move.basePower;
-
+    final dynamicPower = CombatUtils.resolveDynamicBasePower(
+      moveName: state.move.name,
+      basePower: state.move.basePower.toDouble(),
+      friendship: state.attacker.friendship,
+      attackerHpPercent: state.attacker.hpPercent,
+      defenderHpPercent: state.defender.hpPercent,
+      attackerStatus: state.attacker.status,
+      defenderStatus: state.defender.status,
+      attackerHeldItem: state.attacker.heldItem,
+      defenderHeldItem: state.defender.heldItem,
+      rageFistHits: state.move.rageFistHits,
+      attackerWeightKg: state.attacker.weightKg,
+      defenderWeightKg: state.defender.weightKg,
+      attackerSpeedStat: attackerStats.speed.effectiveStat.toDouble(),
+      defenderSpeedStat: defenderStats.speed.effectiveStat.toDouble(),
+      weather: state.field.weather,
+      terrain: state.field.terrain,
+      championsRules: state.ruleset.isChampions,
+    );
+    int bp = dynamicPower.basePower.round();
     if (bp <= 0 && !state.move.isStatus) {
       warnings.add('Base power is 0 for an attacking move. Check move configuration.');
     }
 
-    // DB-accurate category checks — no more `contains('punch')` hacks
-    final isPunching = CombatUtils.isPunchingMove(moveName);
-    final isSlicing = CombatUtils.isSlicingMove(moveName);
-    final isBiting = CombatUtils.isBitingMove(moveName);
-    final isPulse = CombatUtils.isPulseMove(moveName);
-    final isRecoil = CombatUtils.isRecoilMove(moveName);
+    // These traits come from the same move record shown in the calculator;
+    // keep ability/item modifiers independent of fragile name matching.
+    final isPunching = state.move.isPunching;
+    final isSlicing = state.move.isSlicing;
+    final isBiting = state.move.isBiting;
+    final isPulse = state.move.isPulse;
+    final isRecoil = state.move.isRecoil;
 
-    // Dynamic Base Power logic
-    if (moveName == 'facade' && state.attacker.status != 'none') {
-      bp *= 2;
-      applied.add(const AppliedModifier(name: 'Facade (Statused)', multiplier: 2.0, category: ModifierCategory.basePower));
-    } else if (moveName == 'brine' && state.defender.hpPercent <= 50.0) {
-      bp = (bp * 2);
-      applied.add(const AppliedModifier(name: 'Brine (Defender HP ≤ 50%)', multiplier: 2.0, category: ModifierCategory.basePower));
-    } else if (moveName == 'venoshock' && (state.defender.status == 'poison' || state.defender.status == 'toxic')) {
-      bp *= 2;
-      applied.add(const AppliedModifier(name: 'Venoshock (Poisoned)', multiplier: 2.0, category: ModifierCategory.basePower));
-    } else if (moveName == 'hex' && state.defender.status != 'none') {
-      bp *= 2;
-      applied.add(const AppliedModifier(name: 'Hex (Statused)', multiplier: 2.0, category: ModifierCategory.basePower));
-    } else if (moveName == 'rage fist') {
-      bp = 50 + (state.move.rageFistHits * 50).clamp(0, 300);
-      applied.add(AppliedModifier(name: 'Rage Fist (${state.move.rageFistHits} hits)', multiplier: bp / 50.0, category: ModifierCategory.basePower));
-    } else if (moveName == 'acrobatics' && attackerItem == 'none') {
-      bp *= 2;
-      applied.add(const AppliedModifier(name: 'Acrobatics (No Item)', multiplier: 2.0, category: ModifierCategory.basePower));
-    } else if (moveName == 'knock off' && defenderItem != 'none') {
-      bp = (bp * 1.5).floor();
-      applied.add(const AppliedModifier(name: 'Knock Off (Holding Item)', multiplier: 1.5, category: ModifierCategory.basePower));
+    final typeAbilityBpMultiplier = CombatUtils.typeChangingAbilityPowerMultiplier(
+      state.attacker.ability,
+      state.move.type,
+    );
+    if (typeAbilityBpMultiplier != 1.0) {
+      bp = (bp * typeAbilityBpMultiplier).round();
+      applied.add(AppliedModifier(
+        name: '${titleCasePokemonText(attackerAbility)} (Type Power)',
+        multiplier: typeAbilityBpMultiplier,
+        category: ModifierCategory.ability,
+      ));
+    }
+    final terrainBpMultiplier = switch ((state.field.terrain, effectiveType)) {
+      ('electric', 'electric') || ('grassy', 'grass') || ('psychic', 'psychic') => 1.3,
+      _ => 1.0,
+    };
+    if (terrainBpMultiplier != 1.0) {
+      bp = (bp * terrainBpMultiplier).round();
+      applied.add(AppliedModifier(
+        name: '${titleCasePokemonText(state.field.terrain)} Terrain',
+        multiplier: terrainBpMultiplier,
+        category: ModifierCategory.terrain,
+      ));
     }
 
     // Ability BP modifiers
@@ -183,7 +194,40 @@ class ModifierPipeline {
     // ── 4. Effective Attack & Defense Stats ──────────────────────────────────
     int atkVal;
     if (moveName == 'foul play') {
-      atkVal = defenderStats.byKey('atk').effectiveStat;
+      // Foul Play uses the target's base Attack and Attack stage, but the
+      // user's item, ability and status modifiers. On a critical hit, the
+      // target's negative Attack stage is ignored as the move's attack source.
+      final userWithTargetAttack = state.attacker.copyWith(
+        level: state.defender.level,
+        nature: state.defender.nature,
+        baseStats: {
+          ...state.attacker.baseStats,
+          'atk': state.defender.baseStats['atk'] ?? 50,
+        },
+        ivs: {
+          ...state.attacker.ivs,
+          'atk': state.defender.ivs['atk'] ?? 31,
+        },
+        evs: {
+          ...state.attacker.evs,
+          'atk': state.defender.evs['atk'] ?? 0,
+        },
+        sps: {
+          ...state.attacker.sps,
+          'atk': state.defender.sps['atk'] ?? 0,
+        },
+        stages: {
+          ...state.attacker.stages,
+          'atk': state.defender.stages['atk'] ?? 0,
+        },
+      );
+      atkVal = StatEngine.computeEffectiveStats(
+        userWithTargetAttack,
+        state.ruleset,
+        isCriticalAttacker: state.move.isCritical,
+        weather: state.field.weather,
+        terrain: state.field.terrain,
+      ).attack.effectiveStat;
     } else {
       atkVal = attackerStats.byKey(atkKey).effectiveStat;
     }
@@ -217,44 +261,77 @@ class ModifierPipeline {
 
     // ── 6. STAB Multiplier ───────────────────────────────────────────────────
     double stab = 1.0;
-    final activeAttackerTypes = state.attacker.activeTypes;
-    final isStab = activeAttackerTypes.contains(effectiveType);
+    final originalTypes = state.attacker.types.map((type) => type.toLowerCase()).toSet();
+    final hasOriginalStab = originalTypes.contains(effectiveType);
+    final hasAdaptability = attackerAbility == 'adaptability';
+    final teraActive = !state.ruleset.isChampions &&
+        state.attacker.teraActive &&
+        state.attacker.teraType != null;
+    final teraType = state.attacker.teraType?.toLowerCase();
 
-    if (isStab) {
-      if (attackerAbility == 'adaptability') {
-        stab = 2.0;
-        applied.add(const AppliedModifier(name: 'Adaptability STAB', multiplier: 2.0, category: ModifierCategory.stab));
-      } else {
-        stab = 1.5;
-        applied.add(const AppliedModifier(name: 'STAB', multiplier: 1.5, category: ModifierCategory.stab));
-      }
+    if (teraActive && state.attacker.isTeraStellar) {
+      stab = hasOriginalStab ? (hasAdaptability ? 2.25 : 2.0) : 1.2;
+    } else if (teraActive && teraType == effectiveType) {
+      stab = hasOriginalStab
+          ? (hasAdaptability ? 2.25 : 2.0)
+          : (hasAdaptability ? 2.0 : 1.5);
+    } else if (hasOriginalStab) {
+      stab = hasAdaptability ? 2.0 : 1.5;
+    }
+    if (stab != 1.0) {
+      applied.add(AppliedModifier(
+        name: hasAdaptability ? 'Adaptability STAB' : 'STAB',
+        multiplier: stab,
+        category: ModifierCategory.stab,
+      ));
     }
 
     // ── 7. Type Effectiveness ────────────────────────────────────────────────
-    final defenderTypes = state.defender.activeTypes;
-    final type1 = defenderTypes.first;
-    final type2 = defenderTypes.length > 1 ? defenderTypes[1] : null;
+    final type1 = state.defender.types.first;
+    final type2 = state.defender.types.length > 1 ? state.defender.types[1] : null;
+    double effectiveness = CombatUtils.getTypeEffectiveness(
+      effectiveType,
+      type1,
+      type2,
+      attackerAbility: state.attacker.ability,
+      defenderAbility: state.defender.ability,
+      moveName: state.move.name,
+      defenderTeraActive: !state.ruleset.isChampions && state.defender.teraActive,
+      defenderTeraType: state.defender.teraType,
+    );
 
-    double effectiveness = TypeEfficiencyCalculator.getCombinedEffectiveness(
-      type1, type2,
-    )[effectiveType] ?? 1.0;
-
-    // Ability Type Immunities
-    if (effectiveType == 'ground' && defenderAbility == 'levitate') {
+    final breaksProtection = CombatUtils.breaksProtect(state.move.name);
+    final unseenFistProtectionHit = attackerAbility == 'unseen fist' && state.move.isContact;
+    final priorityBlockReason = CombatUtils.priorityMoveBlockReason(
+      priority: state.move.priority,
+      attackerAbility: state.attacker.ability,
+      defenderAbility: state.defender.ability,
+      defenderHeldItem: state.defender.heldItem,
+      terrain: state.field.terrain,
+      defenderGrounded: CombatUtils.isGrounded(
+        types: state.defender.types,
+        ability: state.defender.ability,
+        heldItem: state.defender.heldItem,
+      ),
+    );
+    if (priorityBlockReason != null) {
       effectiveness = 0.0;
-      applied.add(const AppliedModifier(name: 'Levitate Immunity', multiplier: 0.0, category: ModifierCategory.ability));
-    } else if (effectiveType == 'fire' && (defenderAbility == 'well baked body' || defenderAbility == 'flash fire')) {
+      applied.add(AppliedModifier(
+        name: '$priorityBlockReason (Priority Move Blocked)',
+        multiplier: 0.0,
+        category: priorityBlockReason == 'Psychic Terrain'
+            ? ModifierCategory.terrain
+            : ModifierCategory.ability,
+      ));
+    } else if (state.field.defenderProtected &&
+        !breaksProtection &&
+        !unseenFistProtectionHit) {
       effectiveness = 0.0;
-      applied.add(AppliedModifier(name: '$defenderAbility Immunity', multiplier: 0.0, category: ModifierCategory.ability));
-    } else if (effectiveType == 'water' && (defenderAbility == 'water absorb' || defenderAbility == 'dry skin')) {
-      effectiveness = 0.0;
-      applied.add(AppliedModifier(name: '$defenderAbility Immunity', multiplier: 0.0, category: ModifierCategory.ability));
-    } else if (effectiveType == 'electric' && (defenderAbility == 'volt absorb' || defenderAbility == 'lightning rod')) {
-      effectiveness = 0.0;
-      applied.add(AppliedModifier(name: '$defenderAbility Immunity', multiplier: 0.0, category: ModifierCategory.ability));
-    } else if (effectiveType == 'grass' && defenderAbility == 'sap sipper') {
-      effectiveness = 0.0;
-      applied.add(const AppliedModifier(name: 'Sap Sipper Immunity', multiplier: 0.0, category: ModifierCategory.ability));
+      applied.add(const AppliedModifier(
+        name: 'Protect (Move Blocked)',
+        multiplier: 0.0,
+        category: ModifierCategory.rule,
+      ));
     }
 
     if (effectiveness != 1.0 && effectiveness > 0) {
@@ -266,19 +343,75 @@ class ModifierPipeline {
         multiplier: effectiveness,
         category: ModifierCategory.typeEffectiveness,
       ));
-    } else if (effectiveness == 0.0 && !applied.any((m) => m.category == ModifierCategory.ability)) {
-      applied.add(const AppliedModifier(name: 'Type Immunity (0×)', multiplier: 0.0, category: ModifierCategory.typeEffectiveness));
+    } else if (effectiveness == 0.0 &&
+        !applied.any((modifier) =>
+            modifier.category == ModifierCategory.ability ||
+            modifier.category == ModifierCategory.rule ||
+            modifier.category == ModifierCategory.terrain)) {
+      applied.add(const AppliedModifier(
+        name: 'Type Immunity (0×)',
+        multiplier: 0.0,
+        category: ModifierCategory.typeEffectiveness,
+      ));
+    }
+    if (state.field.defenderProtected && breaksProtection) {
+      applied.add(const AppliedModifier(
+        name: 'Move Breaks Protect',
+        multiplier: 1.0,
+        category: ModifierCategory.rule,
+      ));
     }
 
     // ── 8. Burn Penalty ─────────────────────────────────────────────────────
     bool isBurnApplied = false;
-    if (state.attacker.status == 'burn' && state.move.isPhysical && attackerAbility != 'guts' && moveName != 'facade') {
+    if (state.attacker.status == 'burn' && state.move.isPhysical && attackerAbility != 'guts') {
       isBurnApplied = true;
       applied.add(const AppliedModifier(name: 'Burn (Physical Halved)', multiplier: 0.5, category: ModifierCategory.status));
     }
 
     // ── 9. Final Modifiers List ──────────────────────────────────────────────
     final finalModifiers = <double>[];
+
+    // Unseen Fist allows contact damage through Protect, but at one quarter.
+    if (state.field.defenderProtected && unseenFistProtectionHit && !breaksProtection) {
+      finalModifiers.add(0.25);
+      applied.add(const AppliedModifier(
+        name: 'Unseen Fist (¼ through Protect)',
+        multiplier: 0.25,
+        category: ModifierCategory.ability,
+      ));
+    }
+
+    // Resist berries reduce matching super-effective hits (Chilan Berry is
+    // the exception and also activates against neutral Normal damage).
+    final defenderResistMultiplier = HeldItemsData.getDefenderResistMultiplier(
+      state.defender.heldItem,
+      effectiveType,
+      effectiveness,
+    );
+    if (defenderResistMultiplier != 1.0) {
+      finalModifiers.add(defenderResistMultiplier);
+      applied.add(AppliedModifier(
+        name: '${titleCasePokemonText(defenderItem)} (Damage Reduction)',
+        multiplier: defenderResistMultiplier,
+        category: ModifierCategory.item,
+      ));
+    }
+
+    // Aura Guard (Pokémon Champions): halve damage from contact moves.
+    if (CombatUtils.auraGuardReducesDamage(
+      championsRuleset: state.ruleset.isChampions,
+      defenderAbility: defenderAbility,
+      contactMove: state.move.isContact,
+    )) {
+      finalModifiers.add(0.5);
+      applied.add(const AppliedModifier(
+        name: 'Aura Guard (Contact Damage Halved)',
+        multiplier: 0.5,
+        category: ModifierCategory.ability,
+        description: 'Aura Guard halves damage from contact moves in Pokémon Champions.',
+      ));
+    }
 
     // Screen reduction
     if (state.move.isPhysical && state.field.reflectActive && !state.move.isCritical && attackerAbility != 'infiltrator') {
@@ -304,10 +437,26 @@ class ModifierPipeline {
       applied.add(const AppliedModifier(name: 'Spread Move (Doubles 0.75×)', multiplier: 0.75, category: ModifierCategory.finalModifier));
     }
 
-    // Life Orb
-    if (attackerItem == 'life orb') {
-      finalModifiers.add(1.3);
-      applied.add(const AppliedModifier(name: 'Life Orb', multiplier: 1.3, category: ModifierCategory.item));
+    // Universal and type-boosting held items (stat items are already applied
+    // by the shared StatModifier engine).
+    final attackerHeldItemData = HeldItemsData.findByName(state.attacker.heldItem);
+    final itemDamageMultiplier = attackerHeldItemData?.universalDamageMultiplier ?? 1.0;
+    if (itemDamageMultiplier != 1.0) {
+      finalModifiers.add(itemDamageMultiplier);
+      applied.add(AppliedModifier(
+        name: titleCasePokemonText(attackerItem),
+        multiplier: itemDamageMultiplier,
+        category: ModifierCategory.item,
+      ));
+    }
+    if (attackerHeldItemData?.typeBoostType?.toLowerCase() == effectiveType) {
+      final typeBoostMultiplier = attackerHeldItemData!.typeBoostMultiplier;
+      finalModifiers.add(typeBoostMultiplier);
+      applied.add(AppliedModifier(
+        name: titleCasePokemonText(attackerItem),
+        multiplier: typeBoostMultiplier,
+        category: ModifierCategory.item,
+      ));
     }
 
     // Expert Belt

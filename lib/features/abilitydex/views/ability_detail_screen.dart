@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:libredex/core/data/champions_regulation.dart';
 import 'package:libredex/core/database/app_database.dart';
+import 'package:libredex/core/widgets/ability_effect_icon.dart';
+import 'package:libredex/core/widgets/content_badge.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/utils/ability_properties.dart';
 import 'package:libredex/core/widgets/pokemon_sprite.dart';
@@ -151,6 +154,7 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final regulation = ref.watch(championsRegulationProvider).asData?.value;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? Colors.white : Colors.black;
 
@@ -192,7 +196,7 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
                     // Ability Header Card (Scrolls away cleanly!)
                     if (_abilityDetails != null)
                       SliverToBoxAdapter(
-                        child: _buildAbilityHeaderCard(isDark),
+                        child: _buildAbilityHeaderCard(isDark, regulation),
                       ),
 
                     // Section Title: Pokémon with this ability
@@ -419,7 +423,12 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
     );
   }
 
-  Widget _buildAbilityHeaderCard(bool isDark) {
+  Widget _buildAbilityHeaderCard(bool isDark, ChampionsRegulationCatalog? regulation) {
+    final ability = _abilityDetails!;
+    final mCEffect = regulation?.abilityDescriptionFor(ability.id);
+    final isMCAvailable = regulation?.isAbilityAvailable(ability.id) ?? false;
+    final isNewInMC = regulation?.isNewAbility(ability.id) ?? false;
+
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.all(16),
@@ -433,37 +442,76 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('ABILITY EFFECT', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
-              if (_abilityDetails!.isChampionsAbility)
-                _buildBadge('CHAMPIONS', Colors.orangeAccent)
-              else if (_abilityDetails!.isLegendsZAAbility)
-                _buildBadge('LEGENDS Z-A', Colors.purpleAccent)
-              else
-                _buildBadge(_abilityDetails!.introducedInLabel, Colors.grey),
+              AbilityEffectIcon(effectTags: ability.effectTagsList, size: 20),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text('ABILITY EFFECT', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
+              ),
+              if (isMCAvailable)
+                const ContentBadge.mC(tooltip: 'Available in Regulation M-C'),
+              if (isNewInMC) ...[
+                const SizedBox(width: 5),
+                const ContentBadge.mC(isNew: true, tooltip: 'Newly added to Regulation M-C'),
+              ],
+              if (ability.isChampionsAbility) ...[
+                const SizedBox(width: 5),
+                const ContentBadge(label: 'CHAMP', color: Colors.orangeAccent, tooltip: 'Champions-origin ability'),
+              ],
+              if (ability.isLegendsZAAbility) ...[
+                const SizedBox(width: 5),
+                const ContentBadge(label: 'LZA', color: Colors.purpleAccent, tooltip: 'Legends: Z-A-origin ability'),
+              ],
             ],
           ),
           const SizedBox(height: 8),
           Text(
-            _abilityDetails!.description,
+            ability.description,
             style: TextStyle(
               fontSize: 14,
               color: isDark ? Colors.white70 : Colors.black87,
               height: 1.45,
             ),
           ),
+          if (mCEffect != null) ...[
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                const Icon(Icons.emoji_events_rounded, size: 17, color: Colors.deepPurpleAccent),
+                const SizedBox(width: 6),
+                const Expanded(
+                  child: Text(
+                    'REGULATION M-C EFFECT',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.deepPurpleAccent),
+                  ),
+                ),
+                if (isNewInMC)
+                  const ContentBadge.mC(isNew: true, tooltip: 'Newly added to Regulation M-C'),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              mCEffect,
+              style: TextStyle(
+                fontSize: 14,
+                color: isDark ? Colors.white70 : Colors.black87,
+                height: 1.45,
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
           Wrap(
             spacing: 6,
             runSpacing: 6,
             children: [
-              _buildPropertyBadge('Introduced: ${_abilityDetails!.introducedInLabel}', Colors.blue, icon: Icons.history),
-              _buildPropertyBadge('Games: ${_abilityDetails!.sourceGames}', Colors.grey, icon: Icons.sports_esports),
-              if (_abilityDetails!.isChampionsAbility)
-                _buildPropertyBadge('Pokémon Champions Format', Colors.amber, icon: Icons.emoji_events),
-              if (_abilityDetails!.isLegendsZAAbility)
-                _buildPropertyBadge('Legends: Z-A Overlay', Colors.purple, icon: Icons.auto_awesome),
+              _buildPropertyBadge('Introduced: ${ability.introducedInLabel}', Colors.blue, icon: Icons.history),
+              _buildPropertyBadge('Games: ${ability.sourceGames}', Colors.grey, icon: Icons.sports_esports),
+              if (ability.isChampionsAbility)
+                _buildPropertyBadge('Champions-origin ability', Colors.amber, icon: Icons.emoji_events),
+              if (ability.isLegendsZAAbility)
+                _buildPropertyBadge('Legends: Z-A origin', Colors.purple, icon: Icons.auto_awesome),
+              if (isMCAvailable)
+                _buildPropertyBadge('Available in M-C', Colors.deepPurpleAccent, icon: Icons.verified_rounded),
             ],
           ),
         ],

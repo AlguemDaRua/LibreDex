@@ -46,13 +46,13 @@ HOME_SHINY_SPRITE = (
 #
 # flags vocabulary:
 #   mega       — Mega Evolution form
-#   champions  — playable (ability + learnset) in Pokémon Champions
+#   champions  — released/curated Pokémon Champions ability data is available
 #   legendsZA  — introduced in Pokémon Legends Z-A (incl. Mega Dimension DLC)
 #   provisional— marked when a form is not fully confirmed yet (kept off)
 #
-# "abilityInChampions": False means the form is confirmed for Legends Z-A but
-# has no released Champions ability yet (Mega Dimension wave); the app then
-# falls back to the base species abilities with a visible note.
+# The final tuple field records whether a released Champions ability is known
+# for this form. It does not assert a complete learnset or regulation eligibility;
+# those data live in the corresponding learnset asset and champions_regulation_mc.json.
 # ---------------------------------------------------------------------------
 CURATED_FORMS = [
     # id      display name                    form label                champions ability
@@ -85,16 +85,16 @@ CURATED_FORMS = [
     (10304, "Mega Raichu X",                 "Mega X",                True),
     (10305, "Mega Raichu Y",                 "Mega Y",                True),
     (10306, "Mega Chimecho",                 "Mega",                  True),
-    (10307, "Mega Absol Z",                  "Mega Z",                False),
+    (10307, "Mega Absol Z",                  "Mega Z",                True),
     (10308, "Mega Staraptor",                "Mega",                  True),
-    (10309, "Mega Garchomp Z",               "Mega Z",                False),
-    (10310, "Mega Lucario Z",                "Mega Z",                False),
+    (10309, "Mega Garchomp Z",               "Mega Z",                True),
+    (10310, "Mega Lucario Z",                "Mega Z",                True),
     (10311, "Mega Heatran",                  "Mega",                  False),
     (10312, "Mega Darkrai",                  "Mega",                  False),
     (10313, "Mega Golurk",                   "Mega",                  True),
     (10314, "Mega Meowstic (Male)",          "Mega (Male)",           True),
     (10315, "Mega Crabominable",             "Mega",                  True),
-    (10316, "Mega Golisopod",                "Mega",                  False),
+    (10316, "Mega Golisopod",                "Mega",                  True),
     (10317, "Mega Magearna",                 "Mega",                  False),
     (10318, "Mega Magearna (Original Color)", "Mega (Original Color)", False),
     (10319, "Mega Zeraora",                  "Mega",                  False),
@@ -103,7 +103,7 @@ CURATED_FORMS = [
     (10322, "Mega Tatsugiri (Curly)",        "Mega (Curly)",          False),
     (10323, "Mega Tatsugiri (Droopy)",       "Mega (Droopy)",         False),
     (10324, "Mega Tatsugiri (Stretchy)",     "Mega (Stretchy)",       False),
-    (10325, "Mega Baxcalibur",               "Mega",                  False),
+    (10325, "Mega Baxcalibur",               "Mega",                  True),
     (10326, "Mega Meowstic (Female)",        "Mega (Female)",         True),
 ]
 
@@ -122,40 +122,81 @@ POKEMON_OVERRIDES = [
     },
 ]
 
-# New Champions abilities missing from the bundled abilities.json snapshot.
-# Descriptions quoted from PokéAPI ability_prose (short_effect, English).
+# Custom abilities absent from the main PokéAPI ability snapshot. The six
+# Mega Dimension abilities are attributed to Legends: Z-A; Aura Guard is the
+# newly published Champions ability. Current M-C eligibility is stored in the
+# separate regulation catalog, never inferred from these origin flags.
 EXTRA_ABILITIES = [
     {
         "id": 308,
         "name": "Piercing Drill",
-        "description": "When the Pokémon uses contact moves, it can hit even targets that are protecting themselves.",
+        "description": "This Pokémon's contact moves ignore a target's protection and deal one quarter of their usual damage.",
+        "isChampionsAbility": False,
+        "isLegendsZAAbility": True,
+        "sourceGames": "Pokémon Legends: Z-A",
     },
     {
         "id": 309,
         "name": "Dragonize",
-        "description": "The Pokémon's Normal-type moves become Dragon-type moves and their power is boosted by 20%.",
+        "description": "This Pokémon's Normal-type moves become Dragon-type moves and have their power multiplied by 1.2. This takes effect after other move-type changes but before Ion Deluge and Electrify.",
+        "isChampionsAbility": False,
+        "isLegendsZAAbility": True,
+        "sourceGames": "Pokémon Legends: Z-A",
     },
     {
         "id": 310,
         "name": "Mega Sol",
-        "description": "The Pokémon can use its moves as if the weather were harsh sunlight.",
+        "description": "This Pokémon's moves are used as if the effects of harsh sunlight were active.",
+        "isChampionsAbility": False,
+        "isLegendsZAAbility": True,
+        "sourceGames": "Pokémon Legends: Z-A",
     },
     {
         "id": 311,
         "name": "Spicy Spray",
-        "description": "When the Pokémon takes damage from a move, it burns the attacker.",
+        "description": "If this Pokémon is hit by an attack, the attacker becomes burned.",
+        "isChampionsAbility": False,
+        "isLegendsZAAbility": True,
+        "sourceGames": "Pokémon Legends: Z-A",
     },
     {
         "id": 312,
         "name": "Eelevate",
-        "description": "The Pokémon floats off the ground, making it immune to Ground-type moves, as well as the Spikes, Toxic Spikes, and Sticky Web statuses. When the Pokémon knocks out a target with an attack, its highest stat is boosted by 1 stage.",
+        "description": "This Pokémon is immune to Ground-type attacks and the effects of Spikes, Toxic Spikes, Sticky Web, and Arena Trap. Gravity, Ingrain, Smack Down, Thousand Arrows, and Iron Ball can suppress the immunity. If it attacks and knocks out a Pokémon, its highest stat rises by one stage; ties prioritize Attack, Defense, Special Attack, Special Defense, then Speed.",
+        "isChampionsAbility": False,
+        "isLegendsZAAbility": True,
+        "sourceGames": "Pokémon Legends: Z-A",
     },
     {
         "id": 313,
         "name": "Fire Mane",
-        "description": "Boosts the power of the Pokémon's Fire-type moves by 50%.",
+        "description": "This Pokémon's offensive stat is multiplied by 1.5 while it uses a Fire-type attack.",
+        "isChampionsAbility": False,
+        "isLegendsZAAbility": True,
+        "sourceGames": "Pokémon Legends: Z-A",
+    },
+    {
+        "id": 314,
+        "name": "Aura Guard",
+        "description": "This Pokémon takes half damage from contact moves.",
+        "isChampionsAbility": True,
+        "isLegendsZAAbility": False,
+        "sourceGames": "Pokémon Champions",
+        "introducedIn": "Pokémon Champions",
+        "effectTags": "Damage, Contact, Defense",
     },
 ]
+
+# Published M-C Mega abilities missing from the upstream CSV snapshot. The
+# records are authoritative game data; keep the override list small and keyed
+# by PokéAPI form id so the builder stays reproducible.
+CURATED_ABILITY_OVERRIDES = {
+    10307: [{"abilityId": 292, "isHidden": False, "slot": 1}],  # Sharpness
+    10309: [{"abilityId": 26, "isHidden": False, "slot": 1}],   # Levitate
+    10310: [{"abilityId": 314, "isHidden": False, "slot": 1}],  # Aura Guard
+    10316: [{"abilityId": 181, "isHidden": False, "slot": 1}],  # Tough Claws
+    10325: [{"abilityId": 270, "isHidden": False, "slot": 1}],  # Thermal Exchange
+}
 
 TYPE_NAMES = {
     1: "normal", 2: "fighting", 3: "flying", 4: "poison", 5: "ground",
@@ -200,6 +241,9 @@ def main() -> None:
         fail("CURATED_FORMS contains duplicate ids.")
 
     pokemon_rows = {int(r["id"]): r for r in load_csv_map(args.csv_dir, "pokemon.csv", "id")}
+    species_rows = {
+        int(r["id"]): r for r in load_csv_map(args.csv_dir, "pokemon_species.csv", "id")
+    }
     stats_rows = load_csv_map(args.csv_dir, "pokemon_stats.csv", "pokemon_id")
     type_rows = load_csv_map(args.csv_dir, "pokemon_types.csv", "pokemon_id")
     ability_rows = load_csv_map(args.csv_dir, "pokemon_abilities.csv", "pokemon_id")
@@ -245,6 +289,10 @@ def main() -> None:
         if base is None:
             problems.append(f"{display_name} (#{poke_id}): no pokemon.csv row — CSV dataset too old?")
             continue
+        species = species_rows.get(int(base["species_id"]))
+        if species is None:
+            problems.append(f"{display_name} (#{poke_id}): no species metadata row.")
+            continue
         stat_map = stats.get(poke_id)
         if not stat_map or set(stat_map) != {1, 2, 3, 4, 5, 6}:
             problems.append(f"{display_name} (#{poke_id}): missing or partial base stats.")
@@ -257,7 +305,7 @@ def main() -> None:
         flags = ["mega", "legendsZA"]
         if has_champions_ability:
             flags.append("champions")
-        form_abilities = abilities.get(poke_id, [])
+        form_abilities = CURATED_ABILITY_OVERRIDES.get(poke_id, abilities.get(poke_id, []))
         if has_champions_ability and not form_abilities:
             problems.append(f"{display_name} (#{poke_id}): expected a Champions ability row, found none.")
             continue
@@ -278,8 +326,8 @@ def main() -> None:
                 "baseSpAtk": stat_map[4],
                 "baseSpDef": stat_map[5],
                 "baseSpd": stat_map[6],
-                "isLegendary": False,
-                "isMythical": False,
+                "isLegendary": species.get("is_legendary") == "1",
+                "isMythical": species.get("is_mythical") == "1",
                 "isParadox": False,
                 "isUltraBeast": False,
                 "spriteUrl": HOME_SPRITE.format(poke_id),
@@ -305,7 +353,7 @@ def main() -> None:
             "title": "LibreDex forms overlay — Pokémon Champions / Legends Z-A",
             "source": "PokéAPI CSV master (official ids 10278-10326) cross-checked with Serebii Legends Z-A & Pokémon Champions pages",
             "idNamespace": "Official PokéAPI form ids (10278..10326); no collisions with the bundled pokemon.json snapshot",
-            "flags": {"mega": "Mega Evolution", "champions": "usable in Pokémon Champions", "legendsZA": "introduced in Pokémon Legends Z-A"},
+            "flags": {"mega": "Mega Evolution", "champions": "Pokémon Champions ability data available", "legendsZA": "introduced in Pokémon Legends Z-A"},
         },
         "pokemon": forms,
         "extraAbilities": EXTRA_ABILITIES,

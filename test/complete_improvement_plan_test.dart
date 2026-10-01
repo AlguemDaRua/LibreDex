@@ -55,6 +55,8 @@ Ability createTestAbility({
   required int id,
   required String name,
   required String description,
+  bool isChampionsAbility = false,
+  String sourceGames = 'Mainline Games',
 }) {
   return Ability(
     id: id,
@@ -62,10 +64,10 @@ Ability createTestAbility({
     description: description,
     generation: 1,
     isHiddenAbility: false,
-    isChampionsAbility: id >= 10000,
+    isChampionsAbility: isChampionsAbility,
     isLegendsZAAbility: false,
     effectTags: description.contains('rain') ? 'Weather' : 'Status',
-    sourceGames: id >= 10000 ? 'Pokémon Champions' : 'Mainline Games',
+    sourceGames: sourceGames,
   );
 }
 
@@ -127,10 +129,25 @@ void main() {
 
     test('Ability Source games', () {
       final regular = createTestAbility(id: 2, name: 'Drizzle', description: 'Summons rain.');
-      final champ = createTestAbility(id: 10001, name: 'Mountaineer', description: 'No description.');
+      final conquest = createTestAbility(
+        id: 10001,
+        name: 'Mountaineer',
+        description: 'Mountaineer is a Pokémon Conquest ability.',
+        sourceGames: 'Pokémon Conquest',
+      );
+      final champions = createTestAbility(
+        id: 314,
+        name: 'Aura Guard',
+        description: 'Halves damage from contact moves.',
+        isChampionsAbility: true,
+        sourceGames: 'Pokémon Champions',
+      );
 
       expect(regular.sourceGames, equals('Mainline Games'));
-      expect(champ.sourceGames, equals('Pokémon Champions'));
+      expect(conquest.sourceGames, equals('Pokémon Conquest'));
+      expect(conquest.isChampionsAbility, isFalse);
+      expect(champions.sourceGames, equals('Pokémon Champions'));
+      expect(champions.isChampionsAbility, isTrue);
     });
   });
 

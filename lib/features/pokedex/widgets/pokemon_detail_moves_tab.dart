@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:libredex/core/data/champions_regulation.dart';
 import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/core/theme/app_spacing.dart';
 import 'package:libredex/core/theme/app_theme.dart';
@@ -59,6 +60,57 @@ class _PokemonDetailMovesTabState extends ConsumerState<PokemonDetailMovesTab> {
     );
   }
 
+  Widget _buildMCLearnsetNote(
+    List<ChampionsMoveChange> changes, {
+    required bool isDark,
+  }) {
+    final moveNames = changes
+        .map((change) => change.moveName.isEmpty ? 'Move #${change.moveId}' : change.moveName)
+        .toList(growable: false);
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.deepOrangeAccent.withValues(alpha: isDark ? 0.12 : 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.deepOrangeAccent.withValues(alpha: 0.38)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.info_outline_rounded, color: Colors.deepOrangeAccent, size: 18),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'REGULATION M-C LEARNSET CHANGE',
+                  style: TextStyle(
+                    color: Colors.deepOrangeAccent,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.25,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  '${widget.activePokemon.name} can no longer use ${moveNames.join(', ')} in M-C.',
+                  style: TextStyle(
+                    color: isDark ? Colors.white70 : const Color(0xFF4B3A35),
+                    fontSize: 11,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildFilterChip(String filterId, String label) {
     final isSelected = _moveFilter == filterId;
     return ChoiceChip(
@@ -90,6 +142,9 @@ class _PokemonDetailMovesTabState extends ConsumerState<PokemonDetailMovesTab> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final regulation = ref.watch(championsRegulationProvider).asData?.value;
+    final removedMoves = regulation?.removedMovesForPokemon(widget.activePokemon.id) ??
+        const <ChampionsMoveChange>[];
     final movesAsync = ref.watch(pokemonMovesStreamProvider(widget.activePokemon.id));
 
     final movesValue = movesAsync.asData?.value;
@@ -130,6 +185,8 @@ class _PokemonDetailMovesTabState extends ConsumerState<PokemonDetailMovesTab> {
             source: fallbackFrom,
             isDark: isDark,
           ),
+        if (removedMoves.isNotEmpty)
+          _buildMCLearnsetNote(removedMoves, isDark: isDark),
         Expanded(
           child: movesAsync.when(
             data: (movesList) {
@@ -181,6 +238,10 @@ class _PokemonDetailMovesTabState extends ConsumerState<PokemonDetailMovesTab> {
                 ),
                 itemBuilder: (context, index) {
                   final move = filteredMoves[index];
+                  final int moveId = move['id'] as int? ?? 0;
+                  final int? mCPp = regulation?.movePpFor(moveId);
+                  final int? previousMCPp = regulation?.previousMovePpFor(moveId);
+                  final String previousPpLabel = previousMCPp == null ? '' : ' (was $previousMCPp)';
                   final String name = move['name'] ?? '';
                   final String moveType = move['type'] ?? 'normal';
                   final String damageClass = move['damageClass'] ?? 'physical';
@@ -285,6 +346,15 @@ class _PokemonDetailMovesTabState extends ConsumerState<PokemonDetailMovesTab> {
                               'PP: $pp',
                               style: const TextStyle(color: Colors.grey, fontSize: 10),
                             ),
+                            if (mCPp != null)
+                              Text(
+                                'M-C PP: $mCPp$previousPpLabel',
+                                style: const TextStyle(
+                                  color: Colors.deepPurpleAccent,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                           ],
                         ),
                       ],

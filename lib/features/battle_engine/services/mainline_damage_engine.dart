@@ -13,9 +13,25 @@ class MainlineDamageEngine {
 
   /// Calculate precise 16-roll damage result for a Mainline battle state.
   static DamageResult calculate(BattleState state) {
-    // 1. Compute effective battle stats
-    final attackerStats = StatEngine.computeEffectiveStats(state.attacker, state.ruleset);
-    final defenderStats = StatEngine.computeEffectiveStats(state.defender, state.ruleset);
+    // 1. Compute effective battle stats. Foul Play draws its attacking stat
+    // stage from the target, while Body Press uses the user's Defense stage.
+    final moveName = state.move.name.toLowerCase().replaceAll('-', ' ').trim();
+    final attackerStats = StatEngine.computeEffectiveStats(
+      state.attacker,
+      state.ruleset,
+      isCriticalAttacker: state.move.isCritical,
+      additionallyIgnoreNegativeStages: state.move.isCritical && moveName == 'body press' ? const {'def'} : const {},
+      weather: state.field.weather,
+      terrain: state.field.terrain,
+    );
+    final defenderStats = StatEngine.computeEffectiveStats(
+      state.defender,
+      state.ruleset,
+      isCriticalDefender: state.move.isCritical,
+      additionallyIgnoreNegativeStages: state.move.isCritical && moveName == 'foul play' ? const {'atk'} : const {},
+      weather: state.field.weather,
+      terrain: state.field.terrain,
+    );
 
     final maxHp = defenderStats.hp.effectiveStat;
 

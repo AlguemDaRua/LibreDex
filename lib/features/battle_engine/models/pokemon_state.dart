@@ -7,6 +7,7 @@ class PokemonState {
   final int id;
   final String name;
   final String form;
+  final bool hasEvolution;
   final List<String> types;
   final Map<String, int> baseStats;
 
@@ -31,6 +32,7 @@ class PokemonState {
     required this.id,
     required this.name,
     this.form = 'normal',
+    this.hasEvolution = false,
     required this.types,
     required this.baseStats,
     this.level = 50,
@@ -77,6 +79,7 @@ class PokemonState {
       id: p.id,
       name: p.name,
       form: p.form,
+      hasEvolution: p.hasEvolution,
       types: types,
       baseStats: {
         'hp': p.baseHp,
@@ -119,6 +122,7 @@ class PokemonState {
     int? id,
     String? name,
     String? form,
+    bool? hasEvolution,
     List<String>? types,
     Map<String, int>? baseStats,
     int? level,
@@ -141,6 +145,7 @@ class PokemonState {
       id: id ?? this.id,
       name: name ?? this.name,
       form: form ?? this.form,
+      hasEvolution: hasEvolution ?? this.hasEvolution,
       types: types ?? List.from(this.types),
       baseStats: baseStats ?? Map.from(this.baseStats),
       level: level ?? this.level,

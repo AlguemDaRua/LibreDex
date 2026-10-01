@@ -50,6 +50,22 @@ for row in rows(load('pokemon_abilities.json')):
     if row.get('pokemonId') not in pokemon: errors.append(f"pokemon_abilities: missing pokemon {row.get('pokemonId')}")
     if row.get('abilityId') not in abilities: errors.append(f"pokemon_abilities: missing ability {row.get('abilityId')}")
 
+for key, row in moves.items():
+    if not isinstance(row.get('priority'), int):
+        errors.append(f'move {key}: missing integer priority')
+    if not isinstance(row.get('isContact'), bool):
+        errors.append(f'move {key}: missing boolean isContact')
+
+for key, row in items.items():
+    alias_id = row.get('aliasOf')
+    if alias_id is not None and alias_id not in items:
+        errors.append(f'item {key}: alias target {alias_id} does not exist')
+    if alias_id == key:
+        errors.append(f'item {key}: cannot alias itself')
+    generation = row.get('generation')
+    if generation is not None and (not isinstance(generation, int) or generation < 1):
+        errors.append(f'item {key}: invalid introduction generation {generation}')
+
 if isinstance(forms, dict):
     for row in forms.get('pokemon', []):
         if not row.get('name'): errors.append('forms_extra: form missing name')

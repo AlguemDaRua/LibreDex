@@ -86,12 +86,38 @@ void main() {
           expect(abilities, isNotEmpty, reason: '${form['name']} needs its Champions ability');
           expect(form['championsAbility'], isTrue);
         } else {
-          // Mega Dimension wave: confirmed for Z-A, waiting on Champions data.
           expect(flags, contains('legendsZA'), reason: '${form['name']} flags');
           expect(form['championsAbility'], isFalse);
         }
       }
-      expect(championsCount, 35);
+      expect(championsCount, 40);
+    });
+
+    test('special Mega forms retain their species legendary and mythical flags', () {
+      final byId = {for (final raw in forms) raw['name'] as String: raw as Map<String, dynamic>};
+      expect(byId['Mega Zygarde']!['isLegendary'], isTrue);
+      expect(byId['Mega Heatran']!['isLegendary'], isTrue);
+      expect(byId['Mega Darkrai']!['isMythical'], isTrue);
+      expect(byId['Mega Magearna']!['isMythical'], isTrue);
+      expect(byId['Mega Zeraora']!['isMythical'], isTrue);
+    });
+
+    test('M-C Mega forms include their published abilities without duplicate form rows', () {
+      final byId = {for (final raw in forms) raw['id'] as int: raw as Map<String, dynamic>};
+      final expected = <int, String>{
+        10307: 'Sharpness',
+        10309: 'Levitate',
+        10310: 'Aura Guard',
+        10316: 'Tough Claws',
+        10325: 'Thermal Exchange',
+      };
+      for (final entry in expected.entries) {
+        final form = byId[entry.key]!;
+        expect(form['flags'], contains('champions'));
+        expect(form['championsAbility'], isTrue);
+        expect(form['abilityNames'], contains(entry.value));
+        expect(form['abilities'], hasLength(1));
+      }
     });
 
     test('new Champions abilities are bundled in extraAbilities', () {
@@ -105,6 +131,7 @@ void main() {
         'Spicy Spray',
         'Eelevate',
         'Fire Mane',
+        'Aura Guard',
       ]) {
         expect(extra, contains(ability));
       }
@@ -132,10 +159,12 @@ void main() {
 
     test('Champions "train" rows are merged without dropping mainline rows', () {
       final train = rows.where((r) => r[2] == 'train').toList();
-      expect(train.length, 19810);
-      // Champions forms learn moves via Victory Points…
+      expect(train.length, 21488);
+      // Current Regulation M-C learns moves via Victory Points…
       expect(train.any((r) => r[0] == 10304), isTrue, reason: 'Mega Raichu X needs Champions train rows');
       expect(train.any((r) => r[0] == 10278), isTrue, reason: 'Mega Clefable needs Champions train rows');
+      expect(train.any((r) => r[0] == 10307), isTrue, reason: 'Mega Absol Z needs M-C train rows');
+      expect(train.any((r) => r[0] == 10089), isTrue, reason: 'Mega Salamence needs M-C train rows');
       // …and the classic mainline learnsets stay untouched.
       expect(rows.any((r) => r[2] == 'level-up' && r[0] == 6), isTrue,
           reason: 'Charizard level-up rows must survive the merge');

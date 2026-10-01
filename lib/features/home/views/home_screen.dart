@@ -131,31 +131,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       color: isDark ? Colors.grey[500] : Colors.grey[600],
                     ),
                     labelType: NavigationRailLabelType.all,
-                    destinations: const [
+                    destinations: [
+                      for (final section in PrimaryNav.bottomBarSections)
+                        NavigationRailDestination(
+                          icon: Icon(section.unselectedIcon),
+                          selectedIcon: Icon(
+                            section.selectedIcon,
+                            color: AppTheme.pokemonRed,
+                          ),
+                          label: Text(section.label),
+                        ),
                       NavigationRailDestination(
-                        icon: Icon(Icons.catching_pokemon_outlined),
-                        selectedIcon: Icon(Icons.catching_pokemon, color: AppTheme.pokemonRed),
-                        label: Text('Pokédex'),
-                      ),
-                      NavigationRailDestination(
-                        icon: Icon(Icons.groups_outlined),
-                        selectedIcon: Icon(Icons.groups_rounded, color: AppTheme.pokemonRed),
-                        label: Text('Teams'),
-                      ),
-                      NavigationRailDestination(
-                        icon: Icon(Icons.flash_on_outlined),
-                        selectedIcon: Icon(Icons.flash_on_rounded, color: AppTheme.pokemonRed),
-                        label: Text('Moves'),
-                      ),
-                      NavigationRailDestination(
-                        icon: Icon(Icons.calculate_outlined),
-                        selectedIcon: Icon(Icons.calculate_rounded, color: AppTheme.pokemonRed),
-                        label: Text('Calc'),
-                      ),
-                      NavigationRailDestination(
-                        icon: Icon(Icons.apps_outlined),
-                        selectedIcon: Icon(Icons.apps_rounded, color: AppTheme.pokemonRed),
-                        label: Text('More'),
+                        icon: Icon(PrimaryNav.overflowUnselectedIcon),
+                        selectedIcon: Icon(
+                          PrimaryNav.overflowSelectedIcon,
+                          color: AppTheme.pokemonRed,
+                        ),
+                        label: const Text(PrimaryNav.overflowLabel),
                       ),
                     ],
                   ),
@@ -217,31 +209,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               elevation: 8,
               height: 64,
               labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-              destinations: const [
-                NavigationDestination(
-                  icon: Icon(Icons.catching_pokemon_outlined),
-                  selectedIcon: Icon(Icons.catching_pokemon, color: AppTheme.pokemonRed),
-                  label: 'Pokédex',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.groups_outlined),
-                  selectedIcon: Icon(Icons.groups_rounded, color: AppTheme.pokemonRed),
-                  label: 'Teams',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.flash_on_outlined),
-                  selectedIcon: Icon(Icons.flash_on_rounded, color: AppTheme.pokemonRed),
-                  label: 'Moves',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.calculate_outlined),
-                  selectedIcon: Icon(Icons.calculate_rounded, color: AppTheme.pokemonRed),
-                  label: 'Calc',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.apps_outlined),
-                  selectedIcon: Icon(Icons.apps_rounded, color: AppTheme.pokemonRed),
-                  label: 'More',
+              destinations: [
+                for (final section in PrimaryNav.bottomBarSections)
+                  NavigationDestination(
+                    icon: Icon(section.unselectedIcon),
+                    selectedIcon: Icon(
+                      section.selectedIcon,
+                      color: AppTheme.pokemonRed,
+                    ),
+                    label: section.label,
+                  ),
+                const NavigationDestination(
+                  icon: Icon(PrimaryNav.overflowUnselectedIcon),
+                  selectedIcon: Icon(
+                    PrimaryNav.overflowSelectedIcon,
+                    color: AppTheme.pokemonRed,
+                  ),
+                  label: PrimaryNav.overflowLabel,
                 ),
               ],
             ),
