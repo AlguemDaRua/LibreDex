@@ -489,7 +489,13 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
       }
 
       final query = _searchQuery.trim().toLowerCase();
-      if (!_matchesSearch(pokemon, dexNum, query, championsCatalog, regulation)) {
+      if (!_matchesSearch(
+        pokemon,
+        dexNum,
+        query,
+        championsCatalog,
+        regulation,
+      )) {
         return false;
       }
 

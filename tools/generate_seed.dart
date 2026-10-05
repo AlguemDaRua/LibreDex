@@ -58,12 +58,21 @@ Future<void> main() async {
     }
     return {
       'id': m['id'],
-      'name': m['name'].toString().replaceAll('-', ' ').split(' ').map((w) => w.isNotEmpty ? w[0].toUpperCase() + w.substring(1) : '').join(' '),
-      'type': m['pokemon_v2_type'] != null ? m['pokemon_v2_type']['name'] : 'normal',
+      'name': m['name']
+          .toString()
+          .replaceAll('-', ' ')
+          .split(' ')
+          .map((w) => w.isNotEmpty ? w[0].toUpperCase() + w.substring(1) : '')
+          .join(' '),
+      'type': m['pokemon_v2_type'] != null
+          ? m['pokemon_v2_type']['name']
+          : 'normal',
       'power': m['power'],
       'accuracy': m['accuracy'],
       'pp': m['pp'] ?? 10,
-      'damageClass': m['pokemon_v2_movedamageclass'] != null ? m['pokemon_v2_movedamageclass']['name'] : 'status',
+      'damageClass': m['pokemon_v2_movedamageclass'] != null
+          ? m['pokemon_v2_movedamageclass']['name']
+          : 'status',
       'description': desc,
     };
   }).toList();
@@ -76,7 +85,12 @@ Future<void> main() async {
     }
     return {
       'id': a['id'],
-      'name': a['name'].toString().replaceAll('-', ' ').split(' ').map((w) => w.isNotEmpty ? w[0].toUpperCase() + w.substring(1) : '').join(' '),
+      'name': a['name']
+          .toString()
+          .replaceAll('-', ' ')
+          .split(' ')
+          .map((w) => w.isNotEmpty ? w[0].toUpperCase() + w.substring(1) : '')
+          .join(' '),
       'description': desc,
     };
   }).toList();
@@ -87,7 +101,11 @@ Future<void> main() async {
   }
 
   File('assets/data/moves.json').writeAsStringSync(jsonEncode(processedMoves));
-  File('assets/data/abilities.json').writeAsStringSync(jsonEncode(processedAbilities));
+  File(
+    'assets/data/abilities.json',
+  ).writeAsStringSync(jsonEncode(processedAbilities));
 
-  print('Successfully saved \${processedMoves.length} moves and \${processedAbilities.length} abilities.');
+  print(
+    'Successfully saved \${processedMoves.length} moves and \${processedAbilities.length} abilities.',
+  );
 }

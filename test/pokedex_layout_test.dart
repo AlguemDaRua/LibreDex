@@ -7,7 +7,9 @@ import 'package:libredex/features/pokedex/viewmodels/pokedex_viewmodel.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 
 void main() {
-  testWidgets('PokedexScreen renders list layout without SliverGeometry errors', (tester) async {
+  testWidgets('PokedexScreen renders list layout without SliverGeometry errors', (
+    tester,
+  ) async {
     const mockPokemon = Pokemon(
       id: 1,
       name: 'bulbasaur',
@@ -24,8 +26,10 @@ void main() {
       isMythical: false,
       isParadox: false,
       isUltraBeast: false,
-      spriteUrl: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png',
-      shinySpriteUrl: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/1.png',
+      spriteUrl:
+          'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png',
+      shinySpriteUrl:
+          'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/1.png',
       nationalDexNumber: 1,
       generation: 1,
       evolutionStage: 1,
@@ -41,20 +45,26 @@ void main() {
         overrides: [
           pokedexProvider.overrideWith((ref) => Stream.value([mockPokemon])),
         ],
-        child: MaterialApp(theme: AppTheme.lightTheme, home: const PokedexScreen()),
+        child: MaterialApp(
+          theme: AppTheme.lightTheme,
+          home: const PokedexScreen(),
+        ),
       ),
     );
 
-    await tester.pump(); 
+    await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
-    
+
     // Dump tree to debug if it fails
-    if (find.textContaining('ulbasaur', skipOffstage: false).evaluate().isEmpty) {
+    if (find
+        .textContaining('ulbasaur', skipOffstage: false)
+        .evaluate()
+        .isEmpty) {
       debugDumpApp();
     }
 
     expect(find.textContaining('ulbasaur', skipOffstage: false), findsWidgets);
-    
+
     // Reset view
     tester.view.resetPhysicalSize();
     tester.view.resetDevicePixelRatio();

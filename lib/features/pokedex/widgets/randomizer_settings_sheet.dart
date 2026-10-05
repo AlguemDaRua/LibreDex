@@ -430,7 +430,7 @@ class _RandomizerSettingsSheetState
                         'Keep final evolutions and single-stage Pokémon.',
                       ),
                       value: _fullyEvolvedOnly,
-                      activeColor: AppTheme.pokemonRed,
+                      activeTrackColor: AppTheme.pokemonRed,
                       onChanged: (value) {
                         HapticFeedback.selectionClick();
                         setState(() => _fullyEvolvedOnly = value);

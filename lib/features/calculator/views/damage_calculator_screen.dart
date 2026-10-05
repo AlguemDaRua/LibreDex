@@ -85,7 +85,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     if (intent == null) return;
     final vm = ref.read(damageCalculatorViewModelProvider.notifier);
     await vm.rulesetReady;
-    if (!mounted) return;
+    if (!context.mounted) return;
     if (intent.ruleset != null) {
       await vm.setRuleset(intent.ruleset!);
     }
@@ -2411,7 +2411,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     DamageCalculatorViewModel vm,
   ) async {
     final regulation = await ref.read(championsRegulationProvider.future);
-    if (!mounted) return;
+    if (!context.mounted) return;
 
     await MovePickerDialog.show(
       context,

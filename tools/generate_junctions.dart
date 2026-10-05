@@ -22,13 +22,7 @@ const _versionGroupsNewestFirst = [
   'platinum',
 ];
 
-const _mustHaveBaseDexNumbers = {
-  16,
-  18,
-  201,
-  351,
-  676,
-};
+const _mustHaveBaseDexNumbers = {16, 18, 201, 351, 676};
 
 Future<void> main() async {
   stdout.writeln('Fetching Pokémon junctions via GraphQL...');
@@ -74,7 +68,9 @@ Future<void> main() async {
     payload = jsonDecode(response.body) as Map<String, dynamic>;
   } on Object catch (error) {
     stderr.writeln('Could not reach PokéAPI GraphQL: $error');
-    stderr.writeln('Existing assets were left untouched. Re-run this tool when network access is available.');
+    stderr.writeln(
+      'Existing assets were left untouched. Re-run this tool when network access is available.',
+    );
     exitCode = 1;
     return;
   }
@@ -88,7 +84,9 @@ Future<void> main() async {
   final data = payload['data'] as Map<String, dynamic>?;
   final pokemons = data?['pokemon_v2_pokemon'] as List<dynamic>?;
   if (pokemons == null || pokemons.isEmpty) {
-    stderr.writeln('GraphQL returned no Pokémon; existing assets were left untouched.');
+    stderr.writeln(
+      'GraphQL returned no Pokémon; existing assets were left untouched.',
+    );
     exitCode = 1;
     return;
   }
@@ -107,7 +105,8 @@ Future<void> main() async {
     final pId = p['id'] as int;
     final speciesId = p['pokemon_species_id'] as int? ?? pId;
 
-    for (final rawAbility in p['pokemon_v2_pokemonabilities'] as List<dynamic>) {
+    for (final rawAbility
+        in p['pokemon_v2_pokemonabilities'] as List<dynamic>) {
       final a = rawAbility as Map<String, dynamic>;
       final ability = a['pokemon_v2_ability'] as Map<String, dynamic>?;
       if (ability == null) continue;
@@ -168,17 +167,29 @@ Future<void> main() async {
 
   final missingMustHave = _mustHaveBaseDexNumbers.difference(speciesWithMoves);
   if (missingMustHave.isNotEmpty) {
-    stderr.writeln('Validation failed. Still missing learnsets for: ${missingMustHave.join(', ')}');
-    stderr.writeln('Existing assets were left untouched. Add an older fallback version group and re-run.');
+    stderr.writeln(
+      'Validation failed. Still missing learnsets for: ${missingMustHave.join(', ')}',
+    );
+    stderr.writeln(
+      'Existing assets were left untouched. Add an older fallback version group and re-run.',
+    );
     exitCode = 1;
     return;
   }
 
-  File('assets/data/pokemon_abilities.json').writeAsStringSync(jsonEncode(pokemonAbilities));
-  File('assets/data/pokemon_moves.json').writeAsStringSync(jsonEncode(pokemonMoves.map((m) => m.toCompactJson()).toList()));
+  File(
+    'assets/data/pokemon_abilities.json',
+  ).writeAsStringSync(jsonEncode(pokemonAbilities));
+  File('assets/data/pokemon_moves.json').writeAsStringSync(
+    jsonEncode(pokemonMoves.map((m) => m.toCompactJson()).toList()),
+  );
 
-  stdout.writeln('Done. Abilities: ${pokemonAbilities.length}; moves: ${pokemonMoves.length}.');
-  stdout.writeln('pokemon_moves.json now uses compact [pokemonId, moveId, method, level] rows.');
+  stdout.writeln(
+    'Done. Abilities: ${pokemonAbilities.length}; moves: ${pokemonMoves.length}.',
+  );
+  stdout.writeln(
+    'pokemon_moves.json now uses compact [pokemonId, moveId, method, level] rows.',
+  );
 }
 
 class _MoveChoice {
@@ -199,7 +210,9 @@ class _MoveChoice {
   });
 
   bool isNewerThan(_MoveChoice other) {
-    if (versionRank != other.versionRank) return versionRank < other.versionRank;
+    if (versionRank != other.versionRank) {
+      return versionRank < other.versionRank;
+    }
     // Same version/method duplicates are rare; lower levels are more helpful to show.
     return (level ?? 999) < (other.level ?? 999);
   }
