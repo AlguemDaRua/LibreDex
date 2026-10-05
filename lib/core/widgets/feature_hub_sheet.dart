@@ -4,6 +4,7 @@ import 'package:libredex/core/data/champions_regulation.dart';
 import 'package:libredex/core/navigation/app_sections.dart';
 import 'package:libredex/core/navigation/navigation_provider.dart';
 import 'package:libredex/core/theme/app_theme.dart';
+import 'package:libredex/core/theme/responsive.dart';
 import 'package:libredex/core/theme/theme_provider.dart';
 import 'package:libredex/core/theme/theme_switcher.dart';
 
@@ -157,14 +158,14 @@ class FeatureHubSheet extends ConsumerWidget {
                       const SizedBox(height: 10),
                       _buildRegulationOverviewCard(regulation, isDark),
                       const SizedBox(height: 12),
-                      // Icon is the explanation — no subtitles
+                      // Responsive columns: 3 on tablet, 2 on phone — every rotation perfect
                       GridView.count(
-                        crossAxisCount: 2,
+                        crossAxisCount: Responsive.hubColumns(context),
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         mainAxisSpacing: 10,
                         crossAxisSpacing: 10,
-                        childAspectRatio: 3.2,
+                        childAspectRatio: Responsive.isTablet(context) ? 3.6 : 3.2,
                         children: [
                           _buildHubTile(context: context, ref: ref, section: AppSection.pokedex, color: const Color(0xFFE3350D)),
                           _buildHubTile(context: context, ref: ref, section: AppSection.movedex, color: const Color(0xFFF7D02C)),
@@ -178,12 +179,12 @@ class FeatureHubSheet extends ConsumerWidget {
                       _buildSectionHeader('REFERENCE'),
                       const SizedBox(height: 10),
                       GridView.count(
-                        crossAxisCount: 2,
+                        crossAxisCount: Responsive.hubColumns(context),
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         mainAxisSpacing: 10,
                         crossAxisSpacing: 10,
-                        childAspectRatio: 3.2,
+                        childAspectRatio: Responsive.isTablet(context) ? 3.6 : 3.2,
                         children: [
                           _buildHubTile(context: context, ref: ref, section: AppSection.naturedex, color: const Color(0xFFF59E0B)),
                           _buildHubTile(context: context, ref: ref, section: AppSection.typeChart, color: const Color(0xFF60A5FA)),
@@ -195,12 +196,12 @@ class FeatureHubSheet extends ConsumerWidget {
                       _buildSectionHeader('TEAM & BATTLE'),
                       const SizedBox(height: 10),
                       GridView.count(
-                        crossAxisCount: 2,
+                        crossAxisCount: Responsive.hubColumns(context),
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         mainAxisSpacing: 10,
                         crossAxisSpacing: 10,
-                        childAspectRatio: 3.2,
+                        childAspectRatio: Responsive.isTablet(context) ? 3.6 : 3.2,
                         children: [
                           _buildHubTile(context: context, ref: ref, section: AppSection.teamBuilder, color: const Color(0xFFEC4899)),
                           _buildHubTile(context: context, ref: ref, section: AppSection.calculator, color: const Color(0xFF10B981)),
@@ -213,12 +214,12 @@ class FeatureHubSheet extends ConsumerWidget {
                       _buildSectionHeader('APP'),
                       const SizedBox(height: 10),
                       GridView.count(
-                        crossAxisCount: 2,
+                        crossAxisCount: Responsive.hubColumns(context),
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         mainAxisSpacing: 10,
                         crossAxisSpacing: 10,
-                        childAspectRatio: 3.2,
+                        childAspectRatio: Responsive.isTablet(context) ? 3.6 : 3.2,
                         children: [
                           _buildHubTile(context: context, ref: ref, section: AppSection.settings, color: const Color(0xFF6B7280)),
                         ],

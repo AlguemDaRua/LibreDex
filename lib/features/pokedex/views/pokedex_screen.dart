@@ -15,9 +15,11 @@ import 'package:libredex/features/pokedex/viewmodels/pokedex_viewmodel.dart';
 import 'package:libredex/features/pokedex/viewmodels/team_builder_provider.dart';
 import 'package:libredex/features/pokedex/views/pokemon_detail_screen.dart';
 import 'package:libredex/core/theme/app_spacing.dart';
+import 'package:libredex/core/theme/responsive.dart';
 import 'package:libredex/core/widgets/pokemon_sprite.dart';
 import 'package:libredex/core/widgets/dex_filter_bar.dart';
 import 'package:libredex/core/widgets/active_filter_summary.dart';
+import 'package:libredex/core/widgets/filter_group.dart';
 import 'package:libredex/core/widgets/result_count_label.dart';
 import 'package:libredex/core/widgets/dex_filter_sheet.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
@@ -891,16 +893,16 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                               ),
                             )
                           : SliverPadding(
-                              padding: const EdgeInsets.only(
-                                left: AppSpacing.pagePadding,
-                                right: AppSpacing.pagePadding,
+                              padding: EdgeInsets.only(
+                                left: Responsive.pagePadding(context),
+                                right: Responsive.pagePadding(context),
                                 top: 8,
                                 bottom: AppSpacing.bottomScrollPadding,
                               ),
                               sliver: SliverGrid(
                                 gridDelegate:
-                                    const SliverGridDelegateWithMaxCrossAxisExtent(
-                                      maxCrossAxisExtent: 250,
+                                    SliverGridDelegateWithMaxCrossAxisExtent(
+                                      maxCrossAxisExtent: Responsive.gridMaxExtent(context),
                                       crossAxisSpacing: 10,
                                       mainAxisSpacing: 10,
                                       childAspectRatio: 0.80,
