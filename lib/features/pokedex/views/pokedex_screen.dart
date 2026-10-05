@@ -1448,11 +1448,19 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildSectionLabel('ELEMENTAL TYPES (UP TO 2)'),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Select 1 type to match primary/secondary, or 2 types for exact dual-type matching.',
-                    style: TextStyle(fontSize: 11, color: Colors.grey),
+                  Row(
+                    children: [
+                      _buildSectionLabel('TYPES'),
+                      const SizedBox(width: 6),
+                      Tooltip(
+                        message: '1 type = matches either type slot · 2 types = exact dual-type match.',
+                        triggerMode: TooltipTriggerMode.tap,
+                        decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(10)),
+                        textStyle: const TextStyle(fontSize: 12, color: Colors.white, height: 1.35),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        child: const Icon(Icons.info_outline_rounded, size: 14, color: Colors.grey),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   Wrap(
@@ -1614,11 +1622,19 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                   ),
                   const SizedBox(height: 18),
 
-                  _buildSectionLabel('POKÉMON CHAMPIONS · REGULATION M-C'),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Eligibility is regulation-specific; it is different from Pokémon Champions origin tags.',
-                    style: TextStyle(fontSize: 11, color: Colors.grey),
+                  Row(
+                    children: [
+                      _buildSectionLabel('REGULATION M-C'),
+                      const SizedBox(width: 6),
+                      Tooltip(
+                        message: 'Eligibility ≠ origin. Regulation says who can compete; origin is where it debuted.',
+                        triggerMode: TooltipTriggerMode.tap,
+                        decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(10)),
+                        textStyle: const TextStyle(fontSize: 12, color: Colors.white, height: 1.35),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        child: const Icon(Icons.info_outline_rounded, size: 14, color: Colors.grey),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   Container(

@@ -327,33 +327,32 @@ class _NaturedexScreenState extends State<NaturedexScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Info Banners for Rules (Champions Alignment & Legends Z-A)
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Row(
+              // Compact icon strip — no paragraphs. Details via ⓘ.
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
                   children: [
-                    _buildRuleCard(
-                      title: 'Standard Modifiers',
-                      desc:
-                          'Increased stats grow 10% faster (x1.1), decreased stats grow 10% slower (x0.9). Neutral Natures have no effect.',
+                    _buildCompactRuleChip(
+                      icon: Icons.rule_rounded,
+                      label: '1.1× / 0.9×',
                       color: AppTheme.pokemonRed,
+                      tooltip: 'Standard: increased stat ×1.1, decreased ×0.9. Neutral has no effect.',
                       isDark: isDark,
                     ),
-                    const SizedBox(width: 8),
-                    _buildRuleCard(
-                      title: 'Champions Alignments',
-                      desc:
-                          'Supports Champions custom Alignment Stat Points, optimizing physical, special, or balanced bulk distributions.',
+                    _buildCompactRuleChip(
+                      icon: Icons.emoji_events_rounded,
+                      label: 'Alignments',
                       color: Colors.amber,
+                      tooltip: 'Champions Alignments & 66 Stat Points — doubles-optimized distributions.',
                       isDark: isDark,
                     ),
-                    const SizedBox(width: 8),
-                    _buildRuleCard(
-                      title: 'Legends: Z-A Rules',
-                      desc:
-                          'Effort Level speeds and stat growths scale with Effort Grit levels rather than raw direct stat values.',
+                    _buildCompactRuleChip(
+                      icon: Icons.auto_awesome_rounded,
+                      label: 'Effort Lv.',
                       color: Colors.purple,
+                      tooltip: 'Legends: Z-A uses Effort Levels & Grit scales, not raw values.',
                       isDark: isDark,
                     ),
                   ],
@@ -656,49 +655,35 @@ class _NaturedexScreenState extends State<NaturedexScreen> {
     );
   }
 
-  Widget _buildRuleCard({
-    required String title,
-    required String desc,
+  Widget _buildCompactRuleChip({
+    required IconData icon,
+    required String label,
     required Color color,
+    required String tooltip,
     required bool isDark,
   }) {
     return Container(
-      width: 260,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF121212) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB),
-        ),
+        color: color.withValues(alpha: isDark ? 0.14 : 0.10),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            children: [
-              Icon(Icons.rule_folder, color: color, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                  color: isDark ? Colors.white : Colors.black87,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            desc,
-            style: TextStyle(
-              fontSize: 11,
-              color: isDark ? Colors.grey[400] : Colors.grey[600],
-              height: 1.35,
-            ),
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 6),
+          Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: color)),
+          const SizedBox(width: 4),
+          Tooltip(
+            message: tooltip,
+            triggerMode: TooltipTriggerMode.tap,
+            showDuration: const Duration(seconds: 4),
+            decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(10)),
+            textStyle: const TextStyle(fontSize: 12, color: Colors.white, height: 1.35),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Icon(Icons.info_outline_rounded, size: 12, color: color.withValues(alpha: 0.8)),
           ),
         ],
       ),

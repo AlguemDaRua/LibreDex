@@ -296,20 +296,34 @@ class _TeamHeader extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '$count / 6 selected',
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                      ),
+                      '$count / 6',
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      isChampions
-                          ? 'Plan a Champions squad — Lv. 50 battles, perfect IVs and 66 Stat Points each.'
-                          : 'Plan a balanced squad before jumping into the calculator.',
-                      style: TextStyle(
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
-                      ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Icon(
+                          isChampions ? Icons.emoji_events_rounded : Icons.science_outlined,
+                          size: 12,
+                          color: Colors.grey[500],
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          isChampions ? 'Champions · Lv.50 · 66 SP' : 'Balanced squad',
+                          style: TextStyle(fontSize: 11, color: Colors.grey[500], fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(width: 6),
+                        Tooltip(
+                          message: isChampions
+                              ? 'Champions: Lv.50, perfect IVs, 66 Stat Points (max 32 per stat).'
+                              : 'Assemble 6 Pokémon — defensive & offensive coverage below is Pokédex math, not a battle sim.',
+                          triggerMode: TooltipTriggerMode.tap,
+                          decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(10)),
+                          textStyle: const TextStyle(fontSize: 12, color: Colors.white, height: 1.35),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          child: Icon(Icons.info_outline_rounded, size: 12, color: Colors.grey[500]),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -612,34 +626,41 @@ class _TeamAnalysis extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ── SECTION: Defensive Overview ──
-        SectionHeader(
-          icon: Icons.shield_rounded,
-          title: 'Defensive Overview',
-          subtitle: 'How your team soaks hits — Pokédex math, not a battle',
-        ),
+        const SectionHeader(icon: Icons.shield_rounded, title: 'Defense', hint: 'How your team soaks hits — Pokédex math, no simulation.'),
         const SizedBox(height: 10),
         TeamDefenseMatrix(team: team),
         const SizedBox(height: 16),
 
-        // ── SECTION: Readout ──
-        SectionHeader(
-          icon: Icons.insights_rounded,
-          title: 'Team readout',
-          subtitle: 'Informational — no turns, no simulation',
-        ),
+        // ── READOUT ──
+        const SectionHeader(icon: Icons.insights_rounded, title: 'Readout', hint: 'Info only — no turns simulated.'),
         const SizedBox(height: 10),
-        if (isChampions) ...[
-          const AnalysisCard(
-            title: 'Pokémon Champions setup',
-            icon: Icons.emoji_events_rounded,
-            child: Text(
-              'Readout assumes Champions: Lv. 50, perfect IVs, 66 Stat Points (max 32 per stat). Use Stat Comparison to tune spreads.',
-              style: TextStyle(height: 1.45),
+        if (isChampions)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.deepPurpleAccent.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.deepPurpleAccent.withValues(alpha: 0.25)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.emoji_events_rounded, size: 14, color: Colors.deepPurpleAccent),
+                const SizedBox(width: 6),
+                const Expanded(
+                  child: Text('Champions · Lv.50 · 66 SP', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.deepPurpleAccent)),
+                ),
+                Tooltip(
+                  message: 'Lv.50, perfect IVs, 66 Stat Points (max 32/stat). Tune spreads in Stat Comparison.',
+                  triggerMode: TooltipTriggerMode.tap,
+                  decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(10)),
+                  textStyle: const TextStyle(fontSize: 12, color: Colors.white, height: 1.35),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  child: const Icon(Icons.info_outline_rounded, size: 14, color: Colors.deepPurpleAccent),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 12),
-        ],
+        if (isChampions) const SizedBox(height: 12),
         AnalysisCard(
           title: gaps.isEmpty
               ? 'Defensive shape looks solid'
@@ -781,11 +802,7 @@ class _TeamAnalysis extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        SectionHeader(
-          icon: Icons.compare_arrows_rounded,
-          title: 'Team Comparison',
-          subtitle: 'Compare two teams side-by-side — Pokédex info only',
-        ),
+        const SectionHeader(icon: Icons.compare_arrows_rounded, title: 'Team Comparison', hint: 'Side-by-side type & stat overview — Pokédex math only.'),
         const SizedBox(height: 10),
         _TeamCompareButton(team: team, format: format),
       ],
@@ -809,38 +826,22 @@ class _TeamCompareButton extends ConsumerWidget {
           color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0),
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Team vs Team — type & stat overview. No turns, no rolls, just Pokédex math.',
-            style: TextStyle(fontSize: 11, color: Colors.grey, height: 1.4),
+      child: SizedBox(
+        width: double.infinity,
+        child: FilledButton.icon(
+          icon: const Icon(Icons.compare_rounded, size: 18),
+          label: const Text('Compare Teams', style: TextStyle(fontWeight: FontWeight.w900)),
+          style: FilledButton.styleFrom(
+            backgroundColor: AppTheme.pokemonRed,
+            padding: const EdgeInsets.symmetric(vertical: 14),
           ),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              icon: const Icon(Icons.compare_rounded, size: 18),
-              label: const Text(
-                'Compare Teams',
-                style: TextStyle(fontWeight: FontWeight.w900),
-              ),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppTheme.pokemonRed,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-              ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        TeamComparisonScreen(myTeam: team, format: format),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => TeamComparisonScreen(myTeam: team, format: format)),
+            );
+          },
+        ),
       ),
     );
   }
