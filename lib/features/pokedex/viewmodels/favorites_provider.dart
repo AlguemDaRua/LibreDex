@@ -1,9 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-final favoritePokemonProvider = NotifierProvider<FavoritePokemonNotifier, Set<int>>(
-  FavoritePokemonNotifier.new,
-);
+final favoritePokemonProvider =
+    NotifierProvider<FavoritePokemonNotifier, Set<int>>(
+      FavoritePokemonNotifier.new,
+    );
 
 class FavoritePokemonNotifier extends Notifier<Set<int>> {
   static const _prefsKey = 'favorite_pokemon_dex_numbers';

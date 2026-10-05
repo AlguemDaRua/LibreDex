@@ -78,7 +78,8 @@ class SyncRepository {
     return await compute(_decodeList, raw);
   }
 
-  static List<dynamic> _decodeList(String raw) => jsonDecode(raw) as List<dynamic>;
+  static List<dynamic> _decodeList(String raw) =>
+      jsonDecode(raw) as List<dynamic>;
 
   /// Loads a bundled JSON object, decoding it off the UI isolate.
   static Future<Map<String, dynamic>> _loadJsonMap(String asset) async {
@@ -86,7 +87,8 @@ class SyncRepository {
     return await compute(_decodeMap, raw);
   }
 
-  static Map<String, dynamic> _decodeMap(String raw) => jsonDecode(raw) as Map<String, dynamic>;
+  static Map<String, dynamic> _decodeMap(String raw) =>
+      jsonDecode(raw) as Map<String, dynamic>;
 
   /// Decodes one Pokémon JSON row. Shared by the base bundle and the
   /// Champions / Legends Z-A forms overlay, which uses the same shape.
@@ -158,8 +160,11 @@ class SyncRepository {
       overlay = const {};
     }
     final overridesById = <int, Map<dynamic, dynamic>>{
-      for (final raw in (overlay['pokemonOverrides'] as List<dynamic>? ?? const []))
-        (raw as Map<dynamic, dynamic>)['id'] as int: Map<dynamic, dynamic>.from(raw),
+      for (final raw
+          in (overlay['pokemonOverrides'] as List<dynamic>? ?? const []))
+        (raw as Map<dynamic, dynamic>)['id'] as int: Map<dynamic, dynamic>.from(
+          raw,
+        ),
     };
     for (final row in pokemonRows) {
       final patch = overridesById[row['id'] as int];
@@ -172,106 +177,119 @@ class SyncRepository {
 
     final pokemon = pokemonRows.map(_pokemonFromJson).toList()
       ..addAll(
-        (overlay['pokemon'] as List<dynamic>? ?? const [])
-            .map((p) => _pokemonFromJson(p as Map<dynamic, dynamic>)),
+        (overlay['pokemon'] as List<dynamic>? ?? const []).map(
+          (p) => _pokemonFromJson(p as Map<dynamic, dynamic>),
+        ),
       );
 
     final moves = (await _loadJsonList('assets/data/moves.json'))
         .cast<Map<String, dynamic>>()
-        .map((m) => Move(
-              id: m['id'] as int,
-              name: m['name'] as String,
-              type: m['type'] as String,
-              power: m['power'] as int?,
-              accuracy: m['accuracy'] as int?,
-              pp: m['pp'] as int,
-              damageClass: m['damageClass'] as String,
-              description: m['description'] as String?,
-              priority: (m['priority'] as int?) ?? 0,
-              isContact: (m['isContact'] as bool?) ?? false,
-              isHealing: (m['isHealing'] as bool?) ?? false,
-              isSound: (m['isSound'] as bool?) ?? false,
-              isPunching: (m['isPunching'] as bool?) ?? false,
-              isBiting: (m['isBiting'] as bool?) ?? false,
-              isPowder: (m['isPowder'] as bool?) ?? false,
-              isPulse: (m['isPulse'] as bool?) ?? false,
-              isBallistic: (m['isBallistic'] as bool?) ?? false,
-              isSlicing: (m['isSlicing'] as bool?) ?? false,
-              isWind: (m['isWind'] as bool?) ?? false,
-              isDance: (m['isDance'] as bool?) ?? false,
-              isBite: (m['isBite'] as bool?) ?? false,
-              isMultiHit: (m['isMultiHit'] as bool?) ?? false,
-              isProtective: (m['isProtective'] as bool?) ?? false,
-              isSwitching: (m['isSwitching'] as bool?) ?? false,
-              isRecharge: (m['isRecharge'] as bool?) ?? false,
-              isRecoil: (m['isRecoil'] as bool?) ?? false,
-              isDraining: (m['isDraining'] as bool?) ?? false,
-              isStatusMove: (m['isStatusMove'] as bool?) ?? (m['damageClass'] == 'status'),
-              isDamagingMove: (m['isDamagingMove'] as bool?) ?? (m['damageClass'] != 'status'),
-              isSignatureMove: (m['isSignatureMove'] as bool?) ?? false,
-              isDLCMove: (m['isDLCMove'] as bool?) ?? false,
-              isChampionsMove: (m['isChampionsMove'] as bool?) ?? false,
-              isLegendsZAMove: (m['isLegendsZAMove'] as bool?) ?? false,
-              generation: (m['generation'] as int?) ?? 1,
-              introducedIn: m['introducedIn'] as String?,
-            ))
+        .map(
+          (m) => Move(
+            id: m['id'] as int,
+            name: m['name'] as String,
+            type: m['type'] as String,
+            power: m['power'] as int?,
+            accuracy: m['accuracy'] as int?,
+            pp: m['pp'] as int,
+            damageClass: m['damageClass'] as String,
+            description: m['description'] as String?,
+            priority: (m['priority'] as int?) ?? 0,
+            isContact: (m['isContact'] as bool?) ?? false,
+            isHealing: (m['isHealing'] as bool?) ?? false,
+            isSound: (m['isSound'] as bool?) ?? false,
+            isPunching: (m['isPunching'] as bool?) ?? false,
+            isBiting: (m['isBiting'] as bool?) ?? false,
+            isPowder: (m['isPowder'] as bool?) ?? false,
+            isPulse: (m['isPulse'] as bool?) ?? false,
+            isBallistic: (m['isBallistic'] as bool?) ?? false,
+            isSlicing: (m['isSlicing'] as bool?) ?? false,
+            isWind: (m['isWind'] as bool?) ?? false,
+            isDance: (m['isDance'] as bool?) ?? false,
+            isBite: (m['isBite'] as bool?) ?? false,
+            isMultiHit: (m['isMultiHit'] as bool?) ?? false,
+            isProtective: (m['isProtective'] as bool?) ?? false,
+            isSwitching: (m['isSwitching'] as bool?) ?? false,
+            isRecharge: (m['isRecharge'] as bool?) ?? false,
+            isRecoil: (m['isRecoil'] as bool?) ?? false,
+            isDraining: (m['isDraining'] as bool?) ?? false,
+            isStatusMove:
+                (m['isStatusMove'] as bool?) ?? (m['damageClass'] == 'status'),
+            isDamagingMove:
+                (m['isDamagingMove'] as bool?) ??
+                (m['damageClass'] != 'status'),
+            isSignatureMove: (m['isSignatureMove'] as bool?) ?? false,
+            isDLCMove: (m['isDLCMove'] as bool?) ?? false,
+            isChampionsMove: (m['isChampionsMove'] as bool?) ?? false,
+            isLegendsZAMove: (m['isLegendsZAMove'] as bool?) ?? false,
+            generation: (m['generation'] as int?) ?? 1,
+            introducedIn: m['introducedIn'] as String?,
+          ),
+        )
         .toList();
 
-    final abilities = (await _loadJsonList('assets/data/abilities.json'))
-        .cast<Map<String, dynamic>>()
-        .map((a) => Ability(
-              id: a['id'] as int,
-              name: a['name'] as String,
-              description: a['description'] as String,
-              generation: (a['generation'] as int?) ?? 1,
-              isHiddenAbility: (a['isHiddenAbility'] as bool?) ?? false,
-              isChampionsAbility: (a['isChampionsAbility'] as bool?) ?? false,
-              isLegendsZAAbility: (a['isLegendsZAAbility'] as bool?) ?? false,
-              introducedIn: a['introducedIn'] as String?,
-              sourceGames: a['sourceGames'] as String?,
-              effectTags: a['effectTags'] as String?,
-              battleEffectTags: a['battleEffectTags'] as String?,
-              pokemonTypes: a['pokemonTypes'] as String?,
-            ))
-        .toList()
-      // Recent custom abilities are kept with their game-origin metadata;
-      // Regulation M-C availability is resolved separately by its catalog.
-      ..addAll(
-        (overlay['extraAbilities'] as List<dynamic>? ?? const []).map(
-          (a) => Ability(
-            id: a['id'] as int,
-            name: a['name'] as String,
-            description: a['description'] as String,
-            generation: (a['generation'] as int?) ?? 9,
-            isHiddenAbility: (a['isHiddenAbility'] as bool?) ?? false,
-            isChampionsAbility: (a['isChampionsAbility'] as bool?) ?? false,
-            isLegendsZAAbility: (a['isLegendsZAAbility'] as bool?) ?? false,
-            introducedIn: a['introducedIn'] as String?,
-            sourceGames: a['sourceGames'] as String?,
-            effectTags: a['effectTags'] as String?,
-            battleEffectTags: a['battleEffectTags'] as String?,
-            pokemonTypes: a['pokemonTypes'] as String?,
-          ),
-        ),
-      );
-
-    final pokemonAbilities = (await _loadJsonList('assets/data/pokemon_abilities.json'))
-        .map((a) => PokemonAbility(
-              pokemonId: a['pokemonId'] as int,
-              abilityId: a['abilityId'] as int,
-              isHidden: a['isHidden'] as bool,
-            ))
-        .toList()
-      // Champions-specific ability overrides for the overlay Mega forms.
-      ..addAll([
-        for (final form in (overlay['pokemon'] as List<dynamic>? ?? const []))
-          for (final a in (form['abilities'] as List<dynamic>? ?? const []))
-            PokemonAbility(
-              pokemonId: form['id'] as int,
-              abilityId: a['abilityId'] as int,
-              isHidden: a['isHidden'] as bool,
+    final abilities =
+        (await _loadJsonList('assets/data/abilities.json'))
+            .cast<Map<String, dynamic>>()
+            .map(
+              (a) => Ability(
+                id: a['id'] as int,
+                name: a['name'] as String,
+                description: a['description'] as String,
+                generation: (a['generation'] as int?) ?? 1,
+                isHiddenAbility: (a['isHiddenAbility'] as bool?) ?? false,
+                isChampionsAbility: (a['isChampionsAbility'] as bool?) ?? false,
+                isLegendsZAAbility: (a['isLegendsZAAbility'] as bool?) ?? false,
+                introducedIn: a['introducedIn'] as String?,
+                sourceGames: a['sourceGames'] as String?,
+                effectTags: a['effectTags'] as String?,
+                battleEffectTags: a['battleEffectTags'] as String?,
+                pokemonTypes: a['pokemonTypes'] as String?,
+              ),
+            )
+            .toList()
+          // Recent custom abilities are kept with their game-origin metadata;
+          // Regulation M-C availability is resolved separately by its catalog.
+          ..addAll(
+            (overlay['extraAbilities'] as List<dynamic>? ?? const []).map(
+              (a) => Ability(
+                id: a['id'] as int,
+                name: a['name'] as String,
+                description: a['description'] as String,
+                generation: (a['generation'] as int?) ?? 9,
+                isHiddenAbility: (a['isHiddenAbility'] as bool?) ?? false,
+                isChampionsAbility: (a['isChampionsAbility'] as bool?) ?? false,
+                isLegendsZAAbility: (a['isLegendsZAAbility'] as bool?) ?? false,
+                introducedIn: a['introducedIn'] as String?,
+                sourceGames: a['sourceGames'] as String?,
+                effectTags: a['effectTags'] as String?,
+                battleEffectTags: a['battleEffectTags'] as String?,
+                pokemonTypes: a['pokemonTypes'] as String?,
+              ),
             ),
-      ]);
+          );
+
+    final pokemonAbilities =
+        (await _loadJsonList('assets/data/pokemon_abilities.json'))
+            .map(
+              (a) => PokemonAbility(
+                pokemonId: a['pokemonId'] as int,
+                abilityId: a['abilityId'] as int,
+                isHidden: a['isHidden'] as bool,
+              ),
+            )
+            .toList()
+          // Champions-specific ability overrides for the overlay Mega forms.
+          ..addAll([
+            for (final form
+                in (overlay['pokemon'] as List<dynamic>? ?? const []))
+              for (final a in (form['abilities'] as List<dynamic>? ?? const []))
+                PokemonAbility(
+                  pokemonId: form['id'] as int,
+                  abilityId: a['abilityId'] as int,
+                  isHidden: a['isHidden'] as bool,
+                ),
+          ]);
 
     final pokemonMoves = (await _loadJsonList('assets/data/pokemon_moves.json'))
         .map((m) {

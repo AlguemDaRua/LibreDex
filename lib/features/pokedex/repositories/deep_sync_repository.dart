@@ -109,7 +109,7 @@ class DeepSyncController extends Notifier<DeepSyncState> {
   bool _isRunning = false;
 
   DeepSyncController({OfflineArtworkStore? artworkStore})
-      : _artworkStore = artworkStore ?? OfflineArtworkStore.instance;
+    : _artworkStore = artworkStore ?? OfflineArtworkStore.instance;
 
   @override
   DeepSyncState build() => const DeepSyncState();
@@ -174,7 +174,8 @@ class DeepSyncController extends Notifier<DeepSyncState> {
               status: DownloadStatus.failed,
               completed: completed,
               failed: failed,
-              errorMessage: 'Download stopped — no internet connection detected. '
+              errorMessage:
+                  'Download stopped — no internet connection detected. '
                   'Your downloaded artwork is safe; resume any time.',
             );
             return;
@@ -185,9 +186,11 @@ class DeepSyncController extends Notifier<DeepSyncState> {
       }
 
       await Future.wait([
-        for (var workerIndex = 0;
-            workerIndex < _parallelDownloads && workerIndex < pokemon.length;
-            workerIndex++)
+        for (
+          var workerIndex = 0;
+          workerIndex < _parallelDownloads && workerIndex < pokemon.length;
+          workerIndex++
+        )
           worker(),
       ]);
 
@@ -259,7 +262,9 @@ class DeepSyncController extends Notifier<DeepSyncState> {
       } catch (error) {
         lastError = error;
         if (attempt + 1 < _attemptsPerArtwork) {
-          await Future<void>.delayed(Duration(milliseconds: 350 * (attempt + 1)));
+          await Future<void>.delayed(
+            Duration(milliseconds: 350 * (attempt + 1)),
+          );
         }
       }
     }

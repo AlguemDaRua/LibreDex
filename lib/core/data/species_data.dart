@@ -24,10 +24,10 @@ class FormFacts {
   });
 
   factory FormFacts.fromJson(Map<String, dynamic> json) => FormFacts(
-        heightM: (json['heightM'] as num).toDouble(),
-        weightKg: (json['weightKg'] as num).toDouble(),
-        baseExp: json['baseExp'] as int,
-      );
+    heightM: (json['heightM'] as num).toDouble(),
+    weightKg: (json['weightKg'] as num).toDouble(),
+    baseExp: json['baseExp'] as int,
+  );
 
   /// Height rendered as both metric and imperial, e.g. `2.1 m (6'11")`.
   String get heightLabel {
@@ -59,10 +59,10 @@ class GenderRatio {
   });
 
   factory GenderRatio.fromJson(Map<String, dynamic> json) => GenderRatio(
-        genderless: json['genderless'] as bool,
-        malePercent: (json['male'] as num).toDouble(),
-        femalePercent: (json['female'] as num).toDouble(),
-      );
+    genderless: json['genderless'] as bool,
+    malePercent: (json['male'] as num).toDouble(),
+    femalePercent: (json['female'] as num).toDouble(),
+  );
 
   String get label {
     if (genderless) return 'Genderless';
@@ -72,8 +72,9 @@ class GenderRatio {
   }
 
   /// Renders 50.0 as "50" but keeps 87.5 as "87.5".
-  static String formatPercent(double value) =>
-      value == value.roundToDouble() ? value.toStringAsFixed(0) : value.toStringAsFixed(1);
+  static String formatPercent(double value) => value == value.roundToDouble()
+      ? value.toStringAsFixed(0)
+      : value.toStringAsFixed(1);
 }
 
 /// Breeding, catching and training data shared by every form of a species.
@@ -122,24 +123,25 @@ class SpeciesFacts {
   });
 
   factory SpeciesFacts.fromJson(Map<String, dynamic> json) => SpeciesFacts(
-        id: json['id'] as int,
-        generation: json['generation'] as int,
-        evolvesFrom: json['evolvesFrom'] as int?,
-        gender: GenderRatio.fromJson(json['gender'] as Map<String, dynamic>),
-        captureRate: json['captureRate'] as int,
-        baseHappiness: json['baseHappiness'] as int,
-        isBaby: json['isBaby'] as bool,
-        eggCycles: json['eggCycles'] as int,
-        eggSteps: json['eggSteps'] as int,
-        growthRate: json['growthRate'] as String,
-        growthTotalExp: json['growthTotalExp'] as int,
-        isLegendary: json['isLegendary'] as bool,
-        isMythical: json['isMythical'] as bool,
-        eggGroups: (json['eggGroups'] as List<dynamic>).cast<String>(),
-      );
+    id: json['id'] as int,
+    generation: json['generation'] as int,
+    evolvesFrom: json['evolvesFrom'] as int?,
+    gender: GenderRatio.fromJson(json['gender'] as Map<String, dynamic>),
+    captureRate: json['captureRate'] as int,
+    baseHappiness: json['baseHappiness'] as int,
+    isBaby: json['isBaby'] as bool,
+    eggCycles: json['eggCycles'] as int,
+    eggSteps: json['eggSteps'] as int,
+    growthRate: json['growthRate'] as String,
+    growthTotalExp: json['growthTotalExp'] as int,
+    isLegendary: json['isLegendary'] as bool,
+    isMythical: json['isMythical'] as bool,
+    eggGroups: (json['eggGroups'] as List<dynamic>).cast<String>(),
+  );
 
   /// Species in the Undiscovered egg group cannot be bred.
-  bool get canBreed => eggGroups.isNotEmpty && !eggGroups.contains('Undiscovered');
+  bool get canBreed =>
+      eggGroups.isNotEmpty && !eggGroups.contains('Undiscovered');
 
   /// Odds of catching at full HP with a standard Poké Ball, as a percentage.
   ///
@@ -152,11 +154,14 @@ class SpeciesFacts {
 
   String get captureRateLabel {
     final percent = pokeballCatchPercent;
-    final formatted = percent >= 1 ? percent.toStringAsFixed(1) : percent.toStringAsFixed(2);
+    final formatted = percent >= 1
+        ? percent.toStringAsFixed(1)
+        : percent.toStringAsFixed(2);
     return '$captureRate ($formatted% with a Poké Ball at full HP)';
   }
 
-  String get eggGroupLabel => eggGroups.isEmpty ? 'Unknown' : eggGroups.join(' / ');
+  String get eggGroupLabel =>
+      eggGroups.isEmpty ? 'Unknown' : eggGroups.join(' / ');
 }
 
 /// The bundled species dataset, extracted from the open-source PokéAPI CSV data
@@ -171,12 +176,18 @@ class SpeciesDataset {
   static const SpeciesDataset empty = SpeciesDataset._({}, {});
 
   /// 100%-male distribution used by [formGenderOverrides].
-  static const GenderRatio maleLocked =
-      GenderRatio(genderless: false, malePercent: 100, femalePercent: 0);
+  static const GenderRatio maleLocked = GenderRatio(
+    genderless: false,
+    malePercent: 100,
+    femalePercent: 0,
+  );
 
   /// 100%-female distribution used by [formGenderOverrides].
-  static const GenderRatio femaleLocked =
-      GenderRatio(genderless: false, malePercent: 0, femalePercent: 100);
+  static const GenderRatio femaleLocked = GenderRatio(
+    genderless: false,
+    malePercent: 0,
+    femalePercent: 100,
+  );
 
   /// Forms whose gender ratio differs from the *species* ratio shipped by
   /// PokéAPI.
@@ -219,10 +230,12 @@ class SpeciesDataset {
   /// Physical facts for a specific form id (falls back to the base species when
   /// a form has no dedicated entry).
   FormFacts? formFacts(int formId, {int? nationalDexNumber}) =>
-      _forms[formId] ?? (nationalDexNumber != null ? _forms[nationalDexNumber] : null);
+      _forms[formId] ??
+      (nationalDexNumber != null ? _forms[nationalDexNumber] : null);
 
   /// Breeding and training facts for a national dex number.
-  SpeciesFacts? speciesFacts(int nationalDexNumber) => _species[nationalDexNumber];
+  SpeciesFacts? speciesFacts(int nationalDexNumber) =>
+      _species[nationalDexNumber];
 
   /// Gender ratio for a specific form, applying [formGenderOverrides] before
   /// falling back to the species-wide ratio.
@@ -238,13 +251,17 @@ class SpeciesDataset {
     final forms = <int, FormFacts>{};
     (json['forms'] as Map<String, dynamic>).forEach((key, value) {
       final id = int.tryParse(key);
-      if (id != null) forms[id] = FormFacts.fromJson(value as Map<String, dynamic>);
+      if (id != null) {
+        forms[id] = FormFacts.fromJson(value as Map<String, dynamic>);
+      }
     });
 
     final species = <int, SpeciesFacts>{};
     (json['species'] as Map<String, dynamic>).forEach((key, value) {
       final id = int.tryParse(key);
-      if (id != null) species[id] = SpeciesFacts.fromJson(value as Map<String, dynamic>);
+      if (id != null) {
+        species[id] = SpeciesFacts.fromJson(value as Map<String, dynamic>);
+      }
     });
 
     return SpeciesDataset._(forms, species);

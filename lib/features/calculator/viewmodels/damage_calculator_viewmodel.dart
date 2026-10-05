@@ -209,11 +209,16 @@ class DamageCalculatorState {
       attackerNature: attackerNature ?? this.attackerNature,
       attackerIvs: attackerIvs ?? Map<String, int>.from(this.attackerIvs),
       attackerEvs: attackerEvs ?? Map<String, int>.from(this.attackerEvs),
-      attackerStages: attackerStages ?? Map<String, int>.from(this.attackerStages),
+      attackerStages:
+          attackerStages ?? Map<String, int>.from(this.attackerStages),
       attackerHeldItem: attackerHeldItem ?? this.attackerHeldItem,
-      attackerAbility: attackerAbility is _Sentinel ? this.attackerAbility : attackerAbility as String?,
+      attackerAbility: attackerAbility is _Sentinel
+          ? this.attackerAbility
+          : attackerAbility as String?,
       attackerTeraActive: attackerTeraActive ?? this.attackerTeraActive,
-      attackerTeraType: attackerTeraType is _Sentinel ? this.attackerTeraType : attackerTeraType as String?,
+      attackerTeraType: attackerTeraType is _Sentinel
+          ? this.attackerTeraType
+          : attackerTeraType as String?,
       attackerStatus: attackerStatus ?? this.attackerStatus,
       attackerFriendship: attackerFriendship ?? this.attackerFriendship,
       attackerHpPercent: attackerHpPercent ?? this.attackerHpPercent,
@@ -234,11 +239,16 @@ class DamageCalculatorState {
       defenderNature: defenderNature ?? this.defenderNature,
       defenderIvs: defenderIvs ?? Map<String, int>.from(this.defenderIvs),
       defenderEvs: defenderEvs ?? Map<String, int>.from(this.defenderEvs),
-      defenderStages: defenderStages ?? Map<String, int>.from(this.defenderStages),
+      defenderStages:
+          defenderStages ?? Map<String, int>.from(this.defenderStages),
       defenderHeldItem: defenderHeldItem ?? this.defenderHeldItem,
-      defenderAbility: defenderAbility is _Sentinel ? this.defenderAbility : defenderAbility as String?,
+      defenderAbility: defenderAbility is _Sentinel
+          ? this.defenderAbility
+          : defenderAbility as String?,
       defenderTeraActive: defenderTeraActive ?? this.defenderTeraActive,
-      defenderTeraType: defenderTeraType is _Sentinel ? this.defenderTeraType : defenderTeraType as String?,
+      defenderTeraType: defenderTeraType is _Sentinel
+          ? this.defenderTeraType
+          : defenderTeraType as String?,
       defenderStatus: defenderStatus ?? this.defenderStatus,
       defenderHpPercent: defenderHpPercent ?? this.defenderHpPercent,
       isCriticalHit: isCriticalHit ?? this.isCriticalHit,
@@ -360,15 +370,45 @@ class DamageCalculatorViewModel extends _$DamageCalculatorViewModel {
   DamageCalculatorState build() {
     _loadRuleset();
     return DamageCalculatorState(
-      attackerIvs: {'hp': 31, 'atk': 31, 'def': 31, 'spa': 31, 'spd': 31, 'spe': 31},
-      attackerEvs: {'hp': 252, 'atk': 252, 'def': 0, 'spa': 0, 'spd': 0, 'spe': 4},
+      attackerIvs: {
+        'hp': 31,
+        'atk': 31,
+        'def': 31,
+        'spa': 31,
+        'spd': 31,
+        'spe': 31,
+      },
+      attackerEvs: {
+        'hp': 252,
+        'atk': 252,
+        'def': 0,
+        'spa': 0,
+        'spd': 0,
+        'spe': 4,
+      },
       attackerStages: {'atk': 0, 'def': 0, 'spa': 0, 'spd': 0, 'spe': 0},
-      defenderIvs: {'hp': 31, 'atk': 31, 'def': 31, 'spa': 31, 'spd': 31, 'spe': 31},
-      defenderEvs: {'hp': 252, 'atk': 0, 'def': 252, 'spa': 0, 'spd': 4, 'spe': 0},
+      defenderIvs: {
+        'hp': 31,
+        'atk': 31,
+        'def': 31,
+        'spa': 31,
+        'spd': 31,
+        'spe': 31,
+      },
+      defenderEvs: {
+        'hp': 252,
+        'atk': 0,
+        'def': 252,
+        'spa': 0,
+        'spd': 4,
+        'spe': 0,
+      },
       defenderStages: {'atk': 0, 'def': 0, 'spa': 0, 'spd': 0, 'spe': 0},
       // Champions defaults mirror the competitive mainline spreads on the
       // left: a fast physical attacker vs. a bulky physical defender.
-      attackerSps: Map<String, int>.from(ChampionsStatPreset.presets.first.spread),
+      attackerSps: Map<String, int>.from(
+        ChampionsStatPreset.presets.first.spread,
+      ),
       defenderSps: Map<String, int>.from(ChampionsStatPreset.presets[2].spread),
     );
   }
@@ -390,7 +430,9 @@ class DamageCalculatorViewModel extends _$DamageCalculatorViewModel {
   /// Serious, the single neutral alignment.
   void _applyRuleset(BattleRuleset next) {
     String normalize(String nature) =>
-        next.isChampions && !ChampionsRules.isValidAlignment(nature) ? 'serious' : nature;
+        next.isChampions && !ChampionsRules.isValidAlignment(nature)
+        ? 'serious'
+        : nature;
     final attacker = normalize(state.attackerNature);
     final defender = normalize(state.defenderNature);
     state = state.copyWith(
@@ -419,7 +461,10 @@ class DamageCalculatorViewModel extends _$DamageCalculatorViewModel {
     state = state.copyWith(defenderSps: map);
   }
 
-  void applyChampionsPreset({required bool isAttacker, required ChampionsStatPreset preset}) {
+  void applyChampionsPreset({
+    required bool isAttacker,
+    required ChampionsStatPreset preset,
+  }) {
     if (isAttacker) {
       state = state.copyWith(attackerSps: Map<String, int>.from(preset.spread));
     } else {
@@ -460,19 +505,31 @@ class DamageCalculatorViewModel extends _$DamageCalculatorViewModel {
     );
   }
 
-  void setAttackerAbility(String? ability) => state = state.copyWith(attackerAbility: ability);
-  void setDefenderAbility(String? ability) => state = state.copyWith(defenderAbility: ability);
-  void toggleAttackerTera(bool active) => state = state.copyWith(attackerTeraActive: active);
-  void setAttackerTeraType(String type) => state = state.copyWith(attackerTeraType: type);
-  void toggleDefenderTera(bool active) => state = state.copyWith(defenderTeraActive: active);
-  void setDefenderTeraType(String type) => state = state.copyWith(defenderTeraType: type);
+  void setAttackerAbility(String? ability) =>
+      state = state.copyWith(attackerAbility: ability);
+  void setDefenderAbility(String? ability) =>
+      state = state.copyWith(defenderAbility: ability);
+  void toggleAttackerTera(bool active) =>
+      state = state.copyWith(attackerTeraActive: active);
+  void setAttackerTeraType(String type) =>
+      state = state.copyWith(attackerTeraType: type);
+  void toggleDefenderTera(bool active) =>
+      state = state.copyWith(defenderTeraActive: active);
+  void setDefenderTeraType(String type) =>
+      state = state.copyWith(defenderTeraType: type);
 
-  void setAttackerStatus(String status) => state = state.copyWith(attackerStatus: status);
-  void setDefenderStatus(String status) => state = state.copyWith(defenderStatus: status);
-  void setAttackerFriendship(int val) => state = state.copyWith(attackerFriendship: val.clamp(0, 255));
-  void setAttackerHpPercent(double val) => state = state.copyWith(attackerHpPercent: val.clamp(1.0, 100.0));
-  void setDefenderHpPercent(double val) => state = state.copyWith(defenderHpPercent: val.clamp(1.0, 100.0));
-  void toggleCriticalHit(bool val) => state = state.copyWith(isCriticalHit: val);
+  void setAttackerStatus(String status) =>
+      state = state.copyWith(attackerStatus: status);
+  void setDefenderStatus(String status) =>
+      state = state.copyWith(defenderStatus: status);
+  void setAttackerFriendship(int val) =>
+      state = state.copyWith(attackerFriendship: val.clamp(0, 255));
+  void setAttackerHpPercent(double val) =>
+      state = state.copyWith(attackerHpPercent: val.clamp(1.0, 100.0));
+  void setDefenderHpPercent(double val) =>
+      state = state.copyWith(defenderHpPercent: val.clamp(1.0, 100.0));
+  void toggleCriticalHit(bool val) =>
+      state = state.copyWith(isCriticalHit: val);
   void setAttackerTurnsOnField(int turns) =>
       state = state.copyWith(attackerTurnsOnField: turns.clamp(0, 5));
 
@@ -482,13 +539,19 @@ class DamageCalculatorViewModel extends _$DamageCalculatorViewModel {
     state = state.copyWith(rageFistHits: clamped, movePower: basePower);
   }
 
-  void setAttackerHeldItem(String item) => state = state.copyWith(attackerHeldItem: item);
-  void setDefenderHeldItem(String item) => state = state.copyWith(defenderHeldItem: item);
+  void setAttackerHeldItem(String item) =>
+      state = state.copyWith(attackerHeldItem: item);
+  void setDefenderHeldItem(String item) =>
+      state = state.copyWith(defenderHeldItem: item);
 
-  void updateAttackerLevel(int lvl) => state = state.copyWith(attackerLevel: lvl);
-  void updateDefenderLevel(int lvl) => state = state.copyWith(defenderLevel: lvl);
-  void updateAttackerNature(String nature) => state = state.copyWith(attackerNature: nature);
-  void updateDefenderNature(String nature) => state = state.copyWith(defenderNature: nature);
+  void updateAttackerLevel(int lvl) =>
+      state = state.copyWith(attackerLevel: lvl);
+  void updateDefenderLevel(int lvl) =>
+      state = state.copyWith(defenderLevel: lvl);
+  void updateAttackerNature(String nature) =>
+      state = state.copyWith(attackerNature: nature);
+  void updateDefenderNature(String nature) =>
+      state = state.copyWith(defenderNature: nature);
 
   void updateAttackerIv(String key, int val) {
     final map = Map<String, int>.from(state.attackerIvs);
@@ -562,22 +625,33 @@ class DamageCalculatorViewModel extends _$DamageCalculatorViewModel {
   }
 
   void updateMoveType(String type) => state = state.copyWith(moveType: type);
-  void updateMoveCategory(String category) => state = state.copyWith(moveCategory: category);
-  void updateMovePower(double power) => state = state.copyWith(movePower: power);
-  void updateMoveHits(int hits) => state = state.copyWith(moveHits: hits.clamp(1, 10));
-  void setSimpleAttackerStat(double stat) => state = state.copyWith(simpleAttackerStat: stat);
-  void setSimpleDefenderStat(double stat) => state = state.copyWith(simpleDefenderStat: stat);
+  void updateMoveCategory(String category) =>
+      state = state.copyWith(moveCategory: category);
+  void updateMovePower(double power) =>
+      state = state.copyWith(movePower: power);
+  void updateMoveHits(int hits) =>
+      state = state.copyWith(moveHits: hits.clamp(1, 10));
+  void setSimpleAttackerStat(double stat) =>
+      state = state.copyWith(simpleAttackerStat: stat);
+  void setSimpleDefenderStat(double stat) =>
+      state = state.copyWith(simpleDefenderStat: stat);
   void setSimpleStab(double stab) => state = state.copyWith(simpleStab: stab);
-  void setSimpleEffectiveness(double eff) => state = state.copyWith(simpleEffectiveness: eff);
+  void setSimpleEffectiveness(double eff) =>
+      state = state.copyWith(simpleEffectiveness: eff);
 
   void setWeather(String w) => state = state.copyWith(weather: w);
   void setTerrain(String t) => state = state.copyWith(terrain: t);
   void toggleReflect(bool val) => state = state.copyWith(reflectActive: val);
-  void toggleLightScreen(bool val) => state = state.copyWith(lightScreenActive: val);
-  void toggleHelpingHand(bool val) => state = state.copyWith(helpingHandActive: val);
-  void toggleDefenderProtected(bool val) => state = state.copyWith(defenderProtected: val);
-  void toggleTrickRoom(bool val) => state = state.copyWith(trickRoomActive: val);
-  void toggleDoubleBattle(bool val) => state = state.copyWith(isDoubleBattle: val);
+  void toggleLightScreen(bool val) =>
+      state = state.copyWith(lightScreenActive: val);
+  void toggleHelpingHand(bool val) =>
+      state = state.copyWith(helpingHandActive: val);
+  void toggleDefenderProtected(bool val) =>
+      state = state.copyWith(defenderProtected: val);
+  void toggleTrickRoom(bool val) =>
+      state = state.copyWith(trickRoomActive: val);
+  void toggleDoubleBattle(bool val) =>
+      state = state.copyWith(isDoubleBattle: val);
 
   /// Swaps Attacker and Defender Pokémon and all their associated battle stats.
   void swapAttackerAndDefender() {
@@ -628,8 +702,8 @@ class CalculatorLaunchIntent {
 
 final calculatorLaunchIntentProvider =
     NotifierProvider<CalculatorLaunchIntentNotifier, CalculatorLaunchIntent?>(
-  CalculatorLaunchIntentNotifier.new,
-);
+      CalculatorLaunchIntentNotifier.new,
+    );
 
 class CalculatorLaunchIntentNotifier extends Notifier<CalculatorLaunchIntent?> {
   @override

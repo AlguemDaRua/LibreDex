@@ -12,7 +12,16 @@ import 'package:libredex/features/stat_comparison/models/stat_modifier.dart';
 
 /// Sort column for the comparison table.
 enum SortColumn {
-  hp, atk, def, spa, spd, spe, bst, physBulk, specBulk, effSpeed,
+  hp,
+  atk,
+  def,
+  spa,
+  spd,
+  spe,
+  bst,
+  physBulk,
+  specBulk,
+  effSpeed,
 }
 
 /// Sort direction.
@@ -69,8 +78,9 @@ class StatComparisonState {
 
   /// Computed stats for all non-null entries, in their current order.
   List<({int index, ComparisonEntry entry, ComparisonStats stats})>
-      computedEntries() {
-    final result = <({int index, ComparisonEntry entry, ComparisonStats stats})>[];
+  computedEntries() {
+    final result =
+        <({int index, ComparisonEntry entry, ComparisonStats stats})>[];
     for (var i = 0; i < entries.length; i++) {
       final entry = entries[i];
       if (entry == null) continue;
@@ -84,7 +94,7 @@ class StatComparisonState {
 
   /// Computed entries, sorted by the active sort column.
   List<({int index, ComparisonEntry entry, ComparisonStats stats})>
-      sortedEntries() {
+  sortedEntries() {
     final computed = computedEntries();
     if (sortColumn == null) return computed;
 
@@ -135,8 +145,8 @@ class _Sentinel {
 
 final statComparisonProvider =
     NotifierProvider<StatComparisonNotifier, StatComparisonState>(
-  StatComparisonNotifier.new,
-);
+      StatComparisonNotifier.new,
+    );
 
 class StatComparisonNotifier extends Notifier<StatComparisonState> {
   static const int maxSlots = 6;
@@ -156,7 +166,8 @@ class StatComparisonNotifier extends Notifier<StatComparisonState> {
     // Normalize natures: Champions removes 4 neutral natures
     final updated = state.entries.map((entry) {
       if (entry == null) return null;
-      if (ruleset.isChampions && !ChampionsRules.isValidAlignment(entry.nature)) {
+      if (ruleset.isChampions &&
+          !ChampionsRules.isValidAlignment(entry.nature)) {
         return entry.copyWith(nature: 'serious');
       }
       return entry;

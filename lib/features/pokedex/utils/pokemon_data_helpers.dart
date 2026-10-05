@@ -17,7 +17,13 @@ class PokemonDataHelpers {
       'Speed': p.baseSpd,
     };
 
-    final bst = p.baseHp + p.baseAtk + p.baseDef + p.baseSpAtk + p.baseSpDef + p.baseSpd;
+    final bst =
+        p.baseHp +
+        p.baseAtk +
+        p.baseDef +
+        p.baseSpAtk +
+        p.baseSpDef +
+        p.baseSpd;
     int points = 1;
     if (bst >= 600 || p.isLegendary || p.isMythical) {
       points = 3;
@@ -26,7 +32,8 @@ class PokemonDataHelpers {
     }
 
     // Find stat with highest base value
-    final sorted = stats.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    final sorted = stats.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
     final topStat = sorted.first;
 
     // Check if second stat is very close (dual EV yield)
@@ -48,7 +55,8 @@ class PokemonDataHelpers {
       'spd': p.baseSpd,
     };
 
-    final sorted = stats.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    final sorted = stats.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
     final topKey = sorted.first.key;
     final keys = [topKey];
 

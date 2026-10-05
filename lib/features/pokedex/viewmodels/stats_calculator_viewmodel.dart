@@ -45,22 +45,8 @@ class StatsCalculator extends _$StatsCalculator {
   StatsCalculatorState build() {
     return StatsCalculatorState(
       level: 100,
-      ivs: {
-        'hp': 31,
-        'atk': 31,
-        'def': 31,
-        'spa': 31,
-        'spd': 31,
-        'spe': 31,
-      },
-      evs: {
-        'hp': 0,
-        'atk': 0,
-        'def': 0,
-        'spa': 0,
-        'spd': 0,
-        'spe': 0,
-      },
+      ivs: {'hp': 31, 'atk': 31, 'def': 31, 'spa': 31, 'spd': 31, 'spe': 31},
+      evs: {'hp': 0, 'atk': 0, 'def': 0, 'spa': 0, 'spd': 0, 'spe': 0},
       nature: 'serious',
     );
   }
@@ -106,17 +92,28 @@ class StatsCalculator extends _$StatsCalculator {
   double _getItemStatMultiplier(String statKey) {
     final item = state.heldItem;
     switch (item) {
-      case 'Choice Band':   return statKey == 'atk' ? 1.5 : 1.0;
-      case 'Choice Specs':  return statKey == 'spa' ? 1.5 : 1.0;
-      case 'Choice Scarf':  return statKey == 'spe' ? 1.5 : 1.0;
-      case 'Assault Vest':  return statKey == 'spd' ? 1.5 : 1.0;
-      case 'Eviolite':      return (statKey == 'def' || statKey == 'spd') ? 1.5 : 1.0;
-      case 'Thick Club':    return statKey == 'atk' ? 2.0 : 1.0;
-      case 'Deep Sea Tooth': return statKey == 'spa' ? 2.0 : 1.0;
-      case 'Iron Ball':     return statKey == 'spe' ? 0.5 : 1.0;
-      case 'Lagging Tail':  return statKey == 'spe' ? 0.5 : 1.0;
-      case 'Quick Powder':  return statKey == 'spe' ? 2.0 : 1.0;
-      default:              return 1.0;
+      case 'Choice Band':
+        return statKey == 'atk' ? 1.5 : 1.0;
+      case 'Choice Specs':
+        return statKey == 'spa' ? 1.5 : 1.0;
+      case 'Choice Scarf':
+        return statKey == 'spe' ? 1.5 : 1.0;
+      case 'Assault Vest':
+        return statKey == 'spd' ? 1.5 : 1.0;
+      case 'Eviolite':
+        return (statKey == 'def' || statKey == 'spd') ? 1.5 : 1.0;
+      case 'Thick Club':
+        return statKey == 'atk' ? 2.0 : 1.0;
+      case 'Deep Sea Tooth':
+        return statKey == 'spa' ? 2.0 : 1.0;
+      case 'Iron Ball':
+        return statKey == 'spe' ? 0.5 : 1.0;
+      case 'Lagging Tail':
+        return statKey == 'spe' ? 0.5 : 1.0;
+      case 'Quick Powder':
+        return statKey == 'spe' ? 2.0 : 1.0;
+      default:
+        return 1.0;
     }
   }
 
@@ -124,7 +121,7 @@ class StatsCalculator extends _$StatsCalculator {
   double getNatureMultiplier(String nature, String stat) {
     if (stat == 'HP') return 1.0;
     final String n = nature.toLowerCase();
-    
+
     if (n == 'adamant') {
       if (stat == 'Attack') return 1.1;
       if (stat == 'Sp. Atk') return 0.9;
@@ -219,41 +216,56 @@ class StatsCalculator extends _$StatsCalculator {
         ev: state.evs['hp'] ?? 0,
         level: state.level,
       ),
-      'atk': applyItem(StatCalculator.calculateOtherStat(
-        base: pokemon.baseAtk,
-        iv: state.ivs['atk'] ?? 31,
-        ev: state.evs['atk'] ?? 0,
-        level: state.level,
-        natureModifier: getNatureMultiplier(state.nature, 'Attack'),
-      ), 'atk'),
-      'def': applyItem(StatCalculator.calculateOtherStat(
-        base: pokemon.baseDef,
-        iv: state.ivs['def'] ?? 31,
-        ev: state.evs['def'] ?? 0,
-        level: state.level,
-        natureModifier: getNatureMultiplier(state.nature, 'Defense'),
-      ), 'def'),
-      'spa': applyItem(StatCalculator.calculateOtherStat(
-        base: pokemon.baseSpAtk,
-        iv: state.ivs['spa'] ?? 31,
-        ev: state.evs['spa'] ?? 0,
-        level: state.level,
-        natureModifier: getNatureMultiplier(state.nature, 'Sp. Atk'),
-      ), 'spa'),
-      'spd': applyItem(StatCalculator.calculateOtherStat(
-        base: pokemon.baseSpDef,
-        iv: state.ivs['spd'] ?? 31,
-        ev: state.evs['spd'] ?? 0,
-        level: state.level,
-        natureModifier: getNatureMultiplier(state.nature, 'Sp. Def'),
-      ), 'spd'),
-      'spe': applyItem(StatCalculator.calculateOtherStat(
-        base: pokemon.baseSpd,
-        iv: state.ivs['spe'] ?? 31,
-        ev: state.evs['spe'] ?? 0,
-        level: state.level,
-        natureModifier: getNatureMultiplier(state.nature, 'Speed'),
-      ), 'spe'),
+      'atk': applyItem(
+        StatCalculator.calculateOtherStat(
+          base: pokemon.baseAtk,
+          iv: state.ivs['atk'] ?? 31,
+          ev: state.evs['atk'] ?? 0,
+          level: state.level,
+          natureModifier: getNatureMultiplier(state.nature, 'Attack'),
+        ),
+        'atk',
+      ),
+      'def': applyItem(
+        StatCalculator.calculateOtherStat(
+          base: pokemon.baseDef,
+          iv: state.ivs['def'] ?? 31,
+          ev: state.evs['def'] ?? 0,
+          level: state.level,
+          natureModifier: getNatureMultiplier(state.nature, 'Defense'),
+        ),
+        'def',
+      ),
+      'spa': applyItem(
+        StatCalculator.calculateOtherStat(
+          base: pokemon.baseSpAtk,
+          iv: state.ivs['spa'] ?? 31,
+          ev: state.evs['spa'] ?? 0,
+          level: state.level,
+          natureModifier: getNatureMultiplier(state.nature, 'Sp. Atk'),
+        ),
+        'spa',
+      ),
+      'spd': applyItem(
+        StatCalculator.calculateOtherStat(
+          base: pokemon.baseSpDef,
+          iv: state.ivs['spd'] ?? 31,
+          ev: state.evs['spd'] ?? 0,
+          level: state.level,
+          natureModifier: getNatureMultiplier(state.nature, 'Sp. Def'),
+        ),
+        'spd',
+      ),
+      'spe': applyItem(
+        StatCalculator.calculateOtherStat(
+          base: pokemon.baseSpd,
+          iv: state.ivs['spe'] ?? 31,
+          ev: state.evs['spe'] ?? 0,
+          level: state.level,
+          natureModifier: getNatureMultiplier(state.nature, 'Speed'),
+        ),
+        'spe',
+      ),
     };
   }
 }

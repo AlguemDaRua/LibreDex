@@ -10,5 +10,6 @@ class DebouncedQuery {
     _timer?.cancel();
     _timer = Timer(delay, () => callback(value));
   }
+
   void dispose() => _timer?.cancel();
 }

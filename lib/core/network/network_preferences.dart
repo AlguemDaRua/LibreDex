@@ -6,7 +6,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Turning this off guarantees that evolution pages use only the bundled
 /// records and do not make their optional network request.
 final liveEvolutionDataProvider =
-    NotifierProvider<LiveEvolutionDataNotifier, bool>(LiveEvolutionDataNotifier.new);
+    NotifierProvider<LiveEvolutionDataNotifier, bool>(
+      LiveEvolutionDataNotifier.new,
+    );
 
 class LiveEvolutionDataNotifier extends Notifier<bool> {
   static const _preferenceKey = 'use_live_evolution_data';

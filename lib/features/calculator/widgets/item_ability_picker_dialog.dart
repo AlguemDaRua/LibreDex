@@ -24,10 +24,7 @@ class ItemPickerDialog extends StatefulWidget {
     return showDialog<void>(
       context: context,
       barrierDismissible: true,
-      builder: (ctx) => ItemPickerDialog(
-        isAttacker: isAttacker,
-        viewModel: vm,
-      ),
+      builder: (ctx) => ItemPickerDialog(isAttacker: isAttacker, viewModel: vm),
     );
   }
 
@@ -65,8 +62,13 @@ class _ItemPickerDialogState extends State<ItemPickerDialog> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    widget.isAttacker ? 'Attacker Held Item' : 'Defender Held Item',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    widget.isAttacker
+                        ? 'Attacker Held Item'
+                        : 'Defender Held Item',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close_rounded, size: 22),
@@ -79,7 +81,8 @@ class _ItemPickerDialogState extends State<ItemPickerDialog> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: DebouncedSearchField(
-                hintText: 'Search held items (Choice, Berry, Vest, Boots...)...',
+                hintText:
+                    'Search held items (Choice, Berry, Vest, Boots...)...',
                 initialValue: _query,
                 onChanged: (v) => setState(() => _query = v),
               ),
@@ -91,12 +94,31 @@ class _ItemPickerDialogState extends State<ItemPickerDialog> {
                 itemBuilder: (ctx, i) {
                   final item = items[i];
                   return ListTile(
-                    title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text(item.description, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                    title: Text(
+                      item.name,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(
+                      item.description,
+                      style: const TextStyle(fontSize: 11, color: Colors.grey),
+                    ),
                     trailing: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(color: AppTheme.pokemonRed.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-                      child: Text(item.category, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppTheme.pokemonRed)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.pokemonRed.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        item.category,
+                        style: const TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.pokemonRed,
+                        ),
+                      ),
                     ),
                     onTap: () {
                       if (widget.isAttacker) {

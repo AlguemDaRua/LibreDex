@@ -53,7 +53,8 @@ class PokemonState {
   });
 
   /// Create a [PokemonState] from a Drift [Pokemon] database model with default build settings.
-  factory PokemonState.fromDatabase(Pokemon p, {
+  factory PokemonState.fromDatabase(
+    Pokemon p, {
     int level = 50,
     String nature = 'serious',
     Map<String, int>? ivs,
@@ -91,10 +92,24 @@ class PokemonState {
       },
       level: level,
       nature: nature,
-      ivs: ivs ?? const {'hp': 31, 'atk': 31, 'def': 31, 'spa': 31, 'spd': 31, 'spe': 31},
-      evs: evs ?? const {'hp': 0, 'atk': 0, 'def': 0, 'spa': 0, 'spd': 0, 'spe': 0},
-      sps: sps ?? const {'hp': 0, 'atk': 0, 'def': 0, 'spa': 0, 'spd': 0, 'spe': 0},
-      stages: stages ?? const {'atk': 0, 'def': 0, 'spa': 0, 'spd': 0, 'spe': 0},
+      ivs:
+          ivs ??
+          const {
+            'hp': 31,
+            'atk': 31,
+            'def': 31,
+            'spa': 31,
+            'spd': 31,
+            'spe': 31,
+          },
+      evs:
+          evs ??
+          const {'hp': 0, 'atk': 0, 'def': 0, 'spa': 0, 'spd': 0, 'spe': 0},
+      sps:
+          sps ??
+          const {'hp': 0, 'atk': 0, 'def': 0, 'spa': 0, 'spd': 0, 'spe': 0},
+      stages:
+          stages ?? const {'atk': 0, 'def': 0, 'spa': 0, 'spd': 0, 'spe': 0},
       heldItem: heldItem,
       ability: ability,
       status: status,
@@ -109,7 +124,10 @@ class PokemonState {
 
   /// Active types considering Tera Transformation.
   List<String> get activeTypes {
-    if (teraActive && teraType != null && teraType!.isNotEmpty && teraType!.toLowerCase() != 'stellar') {
+    if (teraActive &&
+        teraType != null &&
+        teraType!.isNotEmpty &&
+        teraType!.toLowerCase() != 'stellar') {
       return [teraType!.toLowerCase()];
     }
     return types.map((t) => t.toLowerCase()).toList();

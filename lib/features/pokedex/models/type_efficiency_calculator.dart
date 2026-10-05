@@ -4,18 +4,30 @@ class TypeEfficiencyCalculator {
   TypeEfficiencyCalculator._();
 
   static const List<String> allTypes = [
-    'normal', 'fire', 'water', 'grass', 'electric', 'ice', 'fighting', 'poison',
-    'ground', 'flying', 'psychic', 'bug', 'rock', 'ghost', 'dragon', 'dark',
-    'steel', 'fairy'
+    'normal',
+    'fire',
+    'water',
+    'grass',
+    'electric',
+    'ice',
+    'fighting',
+    'poison',
+    'ground',
+    'flying',
+    'psychic',
+    'bug',
+    'rock',
+    'ghost',
+    'dragon',
+    'dark',
+    'steel',
+    'fairy',
   ];
 
   /// Mapping from a defending type to a map of attacking types and their multipliers.
   /// Standard Generation VI+ type effectiveness chart.
   static const Map<String, Map<String, double>> _typeChart = {
-    'normal': {
-      'fighting': 2.0,
-      'ghost': 0.0,
-    },
+    'normal': {'fighting': 2.0, 'ghost': 0.0},
     'fire': {
       'water': 2.0,
       'ground': 2.0,
@@ -46,12 +58,7 @@ class TypeEfficiencyCalculator {
       'electric': 0.5,
       'ground': 0.5,
     },
-    'electric': {
-      'ground': 2.0,
-      'electric': 0.5,
-      'flying': 0.5,
-      'steel': 0.5,
-    },
+    'electric': {'ground': 2.0, 'electric': 0.5, 'flying': 0.5, 'steel': 0.5},
     'ice': {
       'fire': 2.0,
       'fighting': 2.0,
@@ -171,7 +178,10 @@ class TypeEfficiencyCalculator {
   };
 
   /// Calculates defensive multipliers for all attacking types.
-  static Map<String, double> getCombinedEffectiveness(String type1, String? type2) {
+  static Map<String, double> getCombinedEffectiveness(
+    String type1,
+    String? type2,
+  ) {
     final Map<String, double> effectiveness = {};
 
     final t1 = type1.trim().toLowerCase();

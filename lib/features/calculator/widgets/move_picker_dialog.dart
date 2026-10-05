@@ -74,7 +74,10 @@ class _MovePickerDialogState extends State<MovePickerDialog> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Select Move', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const Text(
+                    'Select Move',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
                   IconButton(
                     icon: const Icon(Icons.close_rounded, size: 22),
                     onPressed: () => Navigator.pop(context),
@@ -97,10 +100,16 @@ class _MovePickerDialogState extends State<MovePickerDialog> {
                 itemCount: filtered.length,
                 itemBuilder: (ctx, i) {
                   final m = filtered[i];
-                  final typeColor = CombatUtils.typeColors[m.type.toLowerCase()] ?? Colors.grey;
+                  final typeColor =
+                      CombatUtils.typeColors[m.type.toLowerCase()] ??
+                      Colors.grey;
                   final mCPp = widget.regulation?.movePpFor(m.id);
-                  final previousMCPp = widget.regulation?.previousMovePpFor(m.id);
-                  final previousPpLabel = previousMCPp == null ? '' : ', was $previousMCPp';
+                  final previousMCPp = widget.regulation?.previousMovePpFor(
+                    m.id,
+                  );
+                  final previousPpLabel = previousMCPp == null
+                      ? ''
+                      : ', was $previousMCPp';
                   final ppLabel = widget.useRegulationPp && mCPp != null
                       ? 'PP: $mCPp (M-C$previousPpLabel)'
                       : 'PP: ${m.pp}';
@@ -110,18 +119,48 @@ class _MovePickerDialogState extends State<MovePickerDialog> {
                   final moveFacts = [
                     m.damageClass.toUpperCase(),
                     ppLabel,
-                    if (priorityLabel != null) priorityLabel,
+                    ?priorityLabel,
                     m.isContact ? 'Contact' : 'Non-contact',
                   ].join(' · ');
                   return ListTile(
                     leading: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(color: typeColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
-                      child: Text(m.type.toUpperCase(), style: TextStyle(color: typeColor, fontSize: 10, fontWeight: FontWeight.bold)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: typeColor.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        m.type.toUpperCase(),
+                        style: TextStyle(
+                          color: typeColor,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                    title: Text(m.name, style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black, fontSize: 14)),
-                    subtitle: Text(moveFacts, style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                    trailing: Text('BP: ${m.power ?? "\u2014"}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.pokemonRed)),
+                    title: Text(
+                      m.name,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black,
+                        fontSize: 14,
+                      ),
+                    ),
+                    subtitle: Text(
+                      moveFacts,
+                      style: const TextStyle(fontSize: 11, color: Colors.grey),
+                    ),
+                    trailing: Text(
+                      'BP: ${m.power ?? "\u2014"}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: AppTheme.pokemonRed,
+                      ),
+                    ),
                     onTap: () {
                       widget.viewModel.selectDatabaseMove(m);
                       Navigator.pop(ctx);

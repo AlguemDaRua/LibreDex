@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/widgets/pokemon_sprite.dart';
 import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/core/theme/app_theme.dart';
-import 'package:libredex/features/calculator/models/battle_ruleset.dart';
 import 'package:libredex/features/calculator/utils/held_items_data.dart';
 import 'package:libredex/features/pokedex/models/stat_calculator.dart';
 import 'package:libredex/features/pokedex/viewmodels/pokedex_viewmodel.dart';
@@ -61,10 +60,12 @@ class DamageCalculatorScreen extends ConsumerStatefulWidget {
   const DamageCalculatorScreen({super.key});
 
   @override
-  ConsumerState<DamageCalculatorScreen> createState() => _DamageCalculatorScreenState();
+  ConsumerState<DamageCalculatorScreen> createState() =>
+      _DamageCalculatorScreenState();
 }
 
-class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen> with SingleTickerProviderStateMixin {
+class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   List<Move> _dbDamagingMoves = [];
 
@@ -92,16 +93,18 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     if (pokemonId == null) return;
     try {
       final db = ref.read(databaseProvider);
-      final pokemon = await (db.select(db.pokemonTable)
-            ..where((t) => t.id.equals(pokemonId)))
-          .getSingleOrNull();
+      final pokemon = await (db.select(
+        db.pokemonTable,
+      )..where((t) => t.id.equals(pokemonId))).getSingleOrNull();
       if (pokemon == null) return;
       final abilities = await ref
           .read(pokemonRepositoryProvider)
           .getAbilitiesWithFallback(pokemon.id);
       vm.setAttacker(
         pokemon,
-        defaultAbility: abilities.isNotEmpty ? abilities.first['name'] as String : null,
+        defaultAbility: abilities.isNotEmpty
+            ? abilities.first['name'] as String
+            : null,
       );
     } catch (_) {
       // The intent is best-effort; a wiped table must never break the screen.
@@ -119,16 +122,22 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
       final db = ref.read(databaseProvider);
       final allMoves = await db.select(db.moveTable).get();
       final damaging = allMoves
-          .where((m) =>
-              m.damageClass != 'status' &&
-              ((m.power != null && m.power! > 0) || CombatUtils.supportsDynamicBasePower(m.name)))
+          .where(
+            (m) =>
+                m.damageClass != 'status' &&
+                ((m.power != null && m.power! > 0) ||
+                    CombatUtils.supportsDynamicBasePower(m.name)),
+          )
           .toList();
       damaging.sort((a, b) => a.name.compareTo(b.name));
       if (mounted) {
         setState(() => _dbDamagingMoves = damaging);
         if (damaging.isNotEmpty &&
-            ref.read(damageCalculatorViewModelProvider).selectedMoveName == null) {
-          ref.read(damageCalculatorViewModelProvider.notifier).selectDatabaseMove(damaging.first);
+            ref.read(damageCalculatorViewModelProvider).selectedMoveName ==
+                null) {
+          ref
+              .read(damageCalculatorViewModelProvider.notifier)
+              .selectDatabaseMove(damaging.first);
         }
       }
     } catch (_) {}
@@ -148,7 +157,9 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     // while the section is parked inside HomeScreen's IndexedStack, so a
     // returning visit never misses the handoff.
     if (ref.watch(calculatorLaunchIntentProvider) != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _consumeLaunchIntent());
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _consumeLaunchIntent(),
+      );
     }
 
     return Scaffold(
@@ -166,11 +177,16 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
           indicatorColor: AppTheme.pokemonRed,
           labelColor: primaryColor,
           unselectedLabelColor: Colors.grey,
-          dividerColor: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB),
+          dividerColor: isDark
+              ? const Color(0xFF1E1E1E)
+              : const Color(0xFFE5E7EB),
           indicatorSize: TabBarIndicatorSize.tab,
           tabs: const [
             Tab(text: 'RAW SANDBOX', icon: Icon(Icons.tune_rounded, size: 20)),
-            Tab(text: '1VS1 DUEL', icon: Icon(Icons.compare_arrows_rounded, size: 20)),
+            Tab(
+              text: '1VS1 DUEL',
+              icon: Icon(Icons.compare_arrows_rounded, size: 20),
+            ),
           ],
         ),
       ),
@@ -179,48 +195,96 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
           _buildRulesetBar(isDark, state, vm),
           Expanded(
             child: pokedexAsync.when(
-        data: (pokemonList) {
-          if (pokemonList.isEmpty) {
-            return const Center(child: CircularProgressIndicator(color: AppTheme.pokemonRed));
-          }
+              data: (pokemonList) {
+                if (pokemonList.isEmpty) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: AppTheme.pokemonRed,
+                    ),
+                  );
+                }
 
-          if (state.attacker == null) {
-            final defAttacker = pokemonList.firstWhere((p) => p.name.toLowerCase() == 'charizard', orElse: () => pokemonList.first);
-            WidgetsBinding.instance.addPostFrameCallback((_) async {
-              try {
-                final abs = await ref.read(databaseProvider).getPokemonAbilities(defAttacker.id);
-                vm.setAttacker(defAttacker, defaultAbility: abs.isNotEmpty ? abs.first.ability.name : null);
-              } catch (_) {
-                vm.setAttacker(defAttacker);
-              }
-            });
-          }
+                if (state.attacker == null) {
+                  final defAttacker = pokemonList.firstWhere(
+                    (p) => p.name.toLowerCase() == 'charizard',
+                    orElse: () => pokemonList.first,
+                  );
+                  WidgetsBinding.instance.addPostFrameCallback((_) async {
+                    try {
+                      final abs = await ref
+                          .read(databaseProvider)
+                          .getPokemonAbilities(defAttacker.id);
+                      vm.setAttacker(
+                        defAttacker,
+                        defaultAbility: abs.isNotEmpty
+                            ? abs.first.ability.name
+                            : null,
+                      );
+                    } catch (_) {
+                      vm.setAttacker(defAttacker);
+                    }
+                  });
+                }
 
-          if (state.defender == null) {
-            final defDefender = pokemonList.firstWhere((p) => p.name.toLowerCase() == 'blastoise', orElse: () => pokemonList.length > 1 ? pokemonList[1] : pokemonList.first);
-            WidgetsBinding.instance.addPostFrameCallback((_) async {
-              try {
-                final abs = await ref.read(databaseProvider).getPokemonAbilities(defDefender.id);
-                vm.setDefender(defDefender, defaultAbility: abs.isNotEmpty ? abs.first.ability.name : null);
-              } catch (_) {
-                vm.setDefender(defDefender);
-              }
-            });
-          }
+                if (state.defender == null) {
+                  final defDefender = pokemonList.firstWhere(
+                    (p) => p.name.toLowerCase() == 'blastoise',
+                    orElse: () => pokemonList.length > 1
+                        ? pokemonList[1]
+                        : pokemonList.first,
+                  );
+                  WidgetsBinding.instance.addPostFrameCallback((_) async {
+                    try {
+                      final abs = await ref
+                          .read(databaseProvider)
+                          .getPokemonAbilities(defDefender.id);
+                      vm.setDefender(
+                        defDefender,
+                        defaultAbility: abs.isNotEmpty
+                            ? abs.first.ability.name
+                            : null,
+                      );
+                    } catch (_) {
+                      vm.setDefender(defDefender);
+                    }
+                  });
+                }
 
-          final p1 = state.attacker ?? pokemonList.first;
-          final p2 = state.defender ?? (pokemonList.length > 1 ? pokemonList[1] : pokemonList.first);
+                final p1 = state.attacker ?? pokemonList.first;
+                final p2 =
+                    state.defender ??
+                    (pokemonList.length > 1
+                        ? pokemonList[1]
+                        : pokemonList.first);
 
-          return TabBarView(
-            controller: _tabController,
-            children: [
-              _buildRawSandboxTab(context, isDark, primaryColor, state, vm),
-              _buildDuelCalculatorTab(context, isDark, primaryColor, pokemonList, p1, p2, state, vm),
-            ],
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator(color: AppTheme.pokemonRed)),
-        error: (err, stack) => Center(child: Text('Error loading Pokémon data: $err')),
+                return TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildRawSandboxTab(
+                      context,
+                      isDark,
+                      primaryColor,
+                      state,
+                      vm,
+                    ),
+                    _buildDuelCalculatorTab(
+                      context,
+                      isDark,
+                      primaryColor,
+                      pokemonList,
+                      p1,
+                      p2,
+                      state,
+                      vm,
+                    ),
+                  ],
+                );
+              },
+              loading: () => const Center(
+                child: CircularProgressIndicator(color: AppTheme.pokemonRed),
+              ),
+              error: (err, stack) =>
+                  Center(child: Text('Error loading Pokémon data: $err')),
             ),
           ),
         ],
@@ -265,7 +329,9 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       decoration: BoxDecoration(
                         color: state.ruleset == ruleset
-                            ? (ruleset.isChampions ? Colors.deepPurpleAccent : AppTheme.pokemonRed)
+                            ? (ruleset.isChampions
+                                  ? Colors.deepPurpleAccent
+                                  : AppTheme.pokemonRed)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -277,7 +343,9 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                                 ? Icons.emoji_events_rounded
                                 : Icons.videogame_asset_rounded,
                             size: 14,
-                            color: state.ruleset == ruleset ? Colors.white : Colors.grey,
+                            color: state.ruleset == ruleset
+                                ? Colors.white
+                                : Colors.grey,
                           ),
                           const SizedBox(width: 6),
                           Text(
@@ -286,7 +354,9 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                               fontSize: 10,
                               fontWeight: FontWeight.w900,
                               letterSpacing: 0.4,
-                              color: state.ruleset == ruleset ? Colors.white : Colors.grey,
+                              color: state.ruleset == ruleset
+                                  ? Colors.white
+                                  : Colors.grey,
                             ),
                           ),
                         ],
@@ -297,7 +367,11 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
               ],
               IconButton(
                 visualDensity: VisualDensity.compact,
-                icon: const Icon(Icons.verified_outlined, size: 18, color: Colors.blueAccent),
+                icon: const Icon(
+                  Icons.verified_outlined,
+                  size: 18,
+                  color: Colors.blueAccent,
+                ),
                 tooltip: 'Engine Parity & Data Manifest',
                 onPressed: () => _showManifestDialog(context),
               ),
@@ -309,7 +383,12 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
               padding: EdgeInsets.symmetric(horizontal: 6),
               child: Text(
                 'Champions uses 66 Stat Points instead of EVs and its own fixed stat formula.',
-                style: TextStyle(fontSize: 10.5, height: 1.35, color: Colors.grey, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  fontSize: 10.5,
+                  height: 1.35,
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w600,
+                ),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -328,7 +407,10 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
           children: [
             Icon(Icons.verified, color: Colors.blueAccent),
             SizedBox(width: 8),
-            Text('Battle Engine Manifest', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text(
+              'Battle Engine Manifest',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
           ],
         ),
         content: Column(
@@ -341,13 +423,22 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(entry.key, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+                    Text(
+                      entry.key,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         entry.value,
                         textAlign: TextAlign.end,
-                        style: const TextStyle(fontSize: 11, color: Colors.grey),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey,
+                        ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -378,7 +469,8 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     final bool isSpecial = state.moveCategory.toLowerCase() == 'special';
     final double bp = state.movePower;
     final moveType = state.moveType.toLowerCase();
-    final bool isCritical = state.isCriticalHit ||
+    final bool isCritical =
+        state.isCriticalHit ||
         CombatUtils.alwaysCriticalHit(state.selectedMoveName ?? '');
     final defenderPokemon = state.defender;
     final priorityBlockReason = CombatUtils.priorityMoveBlockReason(
@@ -387,7 +479,8 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
       defenderAbility: state.defenderAbility,
       defenderHeldItem: state.defenderHeldItem,
       terrain: state.terrain,
-      defenderGrounded: defenderPokemon != null &&
+      defenderGrounded:
+          defenderPokemon != null &&
           CombatUtils.isGrounded(
             types: [
               defenderPokemon.type1,
@@ -402,23 +495,51 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
         : 0.0;
 
     // Integer-parity sandbox — same fixed-point path as the Duel tab & Showdown.
-    final int sandboxLevel = state.ruleset.isChampions ? ChampionsRules.level : state.attackerLevel;
+    final int sandboxLevel = state.ruleset.isChampions
+        ? ChampionsRules.level
+        : state.attackerLevel;
 
     // Stages are ignored correctly on crit (negative Atk / positive Def don't apply).
     final double atkRaw = state.simpleAttackerStat;
     final int atkStage = state.attackerStages['atk'] ?? 0;
-    final int effectiveAtkStage = isCritical ? (atkStage < 0 ? 0 : atkStage) : atkStage;
-    final double atkWithStage = (atkRaw * CombatUtils.getStageMultiplier(effectiveAtkStage)).clamp(1.0, 9999.0);
+    final int effectiveAtkStage = isCritical
+        ? (atkStage < 0 ? 0 : atkStage)
+        : atkStage;
+    final double atkWithStage =
+        (atkRaw * CombatUtils.getStageMultiplier(effectiveAtkStage)).clamp(
+          1.0,
+          9999.0,
+        );
     final double defRaw = state.simpleDefenderStat;
     final int defStage = state.defenderStages['def'] ?? 0;
-    final int effectiveDefStage = isCritical ? (defStage > 0 ? 0 : defStage) : defStage;
-    final double defWithStage = (defRaw * CombatUtils.getStageMultiplier(effectiveDefStage)).clamp(1.0, 9999.0);
+    final int effectiveDefStage = isCritical
+        ? (defStage > 0 ? 0 : defStage)
+        : defStage;
+    final double defWithStage =
+        (defRaw * CombatUtils.getStageMultiplier(effectiveDefStage)).clamp(
+          1.0,
+          9999.0,
+        );
 
-    final double atkItemMult = HeldItemsData.getAttackMultiplier(state.attackerHeldItem, moveType, isSpecial);
-    final double defStatItemMult = HeldItemsData.getDefenseMultiplier(state.defenderHeldItem, isSpecial);
-    final double defResistMult = HeldItemsData.getDefenderResistMultiplier(state.defenderHeldItem, moveType, simpleEffectiveness);
+    final double atkItemMult = HeldItemsData.getAttackMultiplier(
+      state.attackerHeldItem,
+      moveType,
+      isSpecial,
+    );
+    final double defStatItemMult = HeldItemsData.getDefenseMultiplier(
+      state.defenderHeldItem,
+      isSpecial,
+    );
+    final double defResistMult = HeldItemsData.getDefenderResistMultiplier(
+      state.defenderHeldItem,
+      moveType,
+      simpleEffectiveness,
+    );
     final int atkFinal = (atkWithStage * atkItemMult).round().clamp(1, 9999);
-    final int defFinal = (defWithStage * defStatItemMult).round().clamp(1, 9999);
+    final int defFinal = (defWithStage * defStatItemMult).round().clamp(
+      1,
+      9999,
+    );
 
     double weatherMult = 1.0;
     if (state.weather == 'sunny' && moveType == 'fire') weatherMult = 1.5;
@@ -427,24 +548,43 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     if (state.weather == 'rainy' && moveType == 'fire') weatherMult = 0.5;
 
     double terrainMult = 1.0;
-    if (state.terrain == 'electric' && moveType == 'electric') terrainMult = 1.3;
+    if (state.terrain == 'electric' && moveType == 'electric') {
+      terrainMult = 1.3;
+    }
     if (state.terrain == 'grassy' && moveType == 'grass') terrainMult = 1.3;
     if (state.terrain == 'psychic' && moveType == 'psychic') terrainMult = 1.3;
     double hhMult = state.helpingHandActive ? 1.5 : 1.0;
-    final double typeAbilityBpMult = CombatUtils.typeChangingAbilityPowerMultiplier(state.attackerAbility, state.moveType);
-    final int finalBasePower = (bp * terrainMult * hhMult * typeAbilityBpMult).round().clamp(1, 9999);
+    final double typeAbilityBpMult =
+        CombatUtils.typeChangingAbilityPowerMultiplier(
+          state.attackerAbility,
+          state.moveType,
+        );
+    final int finalBasePower = (bp * terrainMult * hhMult * typeAbilityBpMult)
+        .round()
+        .clamp(1, 9999);
 
     // Screens: 0.5 singles, 2732/4096 doubles; Champions supports both formats like mainline.
     double screenMult = 1.0;
     if (!isCritical) {
       final double doublesScreen = 2732 / 4096;
       final bool isDoubles = state.isDoubleBattle;
-      if (isSpecial && state.lightScreenActive) screenMult = isDoubles ? doublesScreen : 0.5;
-      if (!isSpecial && state.reflectActive) screenMult = isDoubles ? doublesScreen : 0.5;
+      if (isSpecial && state.lightScreenActive) {
+        screenMult = isDoubles ? doublesScreen : 0.5;
+      }
+      if (!isSpecial && state.reflectActive) {
+        screenMult = isDoubles ? doublesScreen : 0.5;
+      }
     }
-    final bool burned = !isSpecial && state.attackerStatus == 'burn' && state.attackerAbility?.toLowerCase() != 'guts' && state.selectedMoveName?.toLowerCase() != 'facade';
+    final bool burned =
+        !isSpecial &&
+        state.attackerStatus == 'burn' &&
+        state.attackerAbility?.toLowerCase() != 'guts' &&
+        state.selectedMoveName?.toLowerCase() != 'facade';
     final moveName = state.selectedMoveName ?? 'custom move';
-    final double spreadMult = CombatUtils.spreadMultiplier(moveName, state.isDoubleBattle);
+    final double spreadMult = CombatUtils.spreadMultiplier(
+      moveName,
+      state.isDoubleBattle,
+    );
     final isAuraGuardContact = CombatUtils.auraGuardReducesDamage(
       championsRuleset: state.ruleset.isChampions,
       defenderAbility: state.defenderAbility,
@@ -472,7 +612,12 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     final int rawMaxDamage = sandboxRange.max;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, AppSpacing.topContentGap, AppSpacing.pagePadding, AppSpacing.bottomScrollPadding),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.pagePadding,
+        AppSpacing.topContentGap,
+        AppSpacing.pagePadding,
+        AppSpacing.bottomScrollPadding,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -482,7 +627,9 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
             decoration: BoxDecoration(
               color: AppTheme.pokemonRed.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppTheme.pokemonRed.withValues(alpha: 0.3)),
+              border: Border.all(
+                color: AppTheme.pokemonRed.withValues(alpha: 0.3),
+              ),
             ),
             child: Row(
               children: const [
@@ -492,8 +639,18 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('PURE RAW MOVE SANDBOX', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: AppTheme.pokemonRed)),
-                      Text('Calculate raw move output with full items, stats, STAB, effectiveness & conditions.', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                      Text(
+                        'PURE RAW MOVE SANDBOX',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13,
+                          color: AppTheme.pokemonRed,
+                        ),
+                      ),
+                      Text(
+                        'Calculate raw move output with full items, stats, STAB, effectiveness & conditions.',
+                        style: TextStyle(fontSize: 11, color: Colors.grey),
+                      ),
                     ],
                   ),
                 ),
@@ -512,18 +669,40 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Base Power (BP): ${state.movePower.toInt()}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    Text(
+                      'Base Power (BP): ${state.movePower.toInt()}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
                     ElevatedButton.icon(
                       icon: const Icon(Icons.search, size: 14),
-                      label: const Text('Pick Preset Move', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                      style: ElevatedButton.styleFrom(elevation: 0, backgroundColor: AppTheme.pokemonRed, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4)),
+                      label: const Text(
+                        'Pick Preset Move',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        elevation: 0,
+                        backgroundColor: AppTheme.pokemonRed,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                      ),
                       onPressed: () => _showMovePicker(context, vm),
                     ),
                   ],
                 ),
                 Slider(
                   value: state.movePower.clamp(1.0, 250.0),
-                  min: 1, max: 250, divisions: 249,
+                  min: 1,
+                  max: 250,
+                  divisions: 249,
                   activeColor: AppTheme.pokemonRed,
                   onChanged: (val) => vm.updateMovePower(val),
                 ),
@@ -534,18 +713,48 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('MOVE TYPE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
+                          const Text(
+                            'MOVE TYPE',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.grey,
+                            ),
+                          ),
                           const SizedBox(height: 4),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8),
-                            decoration: BoxDecoration(color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(8)),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? const Color(0xFF1E1E1E)
+                                  : const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
-                                value: CombatUtils.allTypes.contains(state.moveType.toLowerCase()) ? state.moveType.toLowerCase() : CombatUtils.allTypes.first,
+                                value:
+                                    CombatUtils.allTypes.contains(
+                                      state.moveType.toLowerCase(),
+                                    )
+                                    ? state.moveType.toLowerCase()
+                                    : CombatUtils.allTypes.first,
                                 isExpanded: true,
-                                style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 12),
-                                items: CombatUtils.allTypes.map((t) => DropdownMenuItem(value: t, child: Text(t.toUpperCase()))).toList(),
-                                onChanged: (t) { if (t != null) vm.updateMoveType(t); },
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: primaryColor,
+                                  fontSize: 12,
+                                ),
+                                items: CombatUtils.allTypes
+                                    .map(
+                                      (t) => DropdownMenuItem(
+                                        value: t,
+                                        child: Text(t.toUpperCase()),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: (t) {
+                                  if (t != null) vm.updateMoveType(t);
+                                },
                               ),
                             ),
                           ),
@@ -557,21 +766,45 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('CATEGORY', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
+                          const Text(
+                            'CATEGORY',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.grey,
+                            ),
+                          ),
                           const SizedBox(height: 4),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8),
-                            decoration: BoxDecoration(color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(8)),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? const Color(0xFF1E1E1E)
+                                  : const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
                                 value: state.moveCategory.toLowerCase(),
                                 isExpanded: true,
-                                style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 12),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: primaryColor,
+                                  fontSize: 12,
+                                ),
                                 items: const [
-                                  DropdownMenuItem(value: 'physical', child: Text('PHYSICAL ⚔️')),
-                                  DropdownMenuItem(value: 'special', child: Text('SPECIAL')),
+                                  DropdownMenuItem(
+                                    value: 'physical',
+                                    child: Text('PHYSICAL ⚔️'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'special',
+                                    child: Text('SPECIAL'),
+                                  ),
                                 ],
-                                onChanged: (c) { if (c != null) vm.updateMoveCategory(c); },
+                                onChanged: (c) {
+                                  if (c != null) vm.updateMoveCategory(c);
+                                },
                               ),
                             ),
                           ),
@@ -597,9 +830,18 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Attacker Stat: ${state.simpleAttackerStat.toInt()}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                          Text(
+                            'Attacker Stat: ${state.simpleAttackerStat.toInt()}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                            ),
+                          ),
                           Slider(
-                            value: state.simpleAttackerStat.clamp(10.0, 500.0), min: 10, max: 500, divisions: 98,
+                            value: state.simpleAttackerStat.clamp(10.0, 500.0),
+                            min: 10,
+                            max: 500,
+                            divisions: 98,
                             activeColor: AppTheme.pokemonRed,
                             onChanged: (v) => vm.setSimpleAttackerStat(v),
                           ),
@@ -611,9 +853,18 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Defender Stat: ${state.simpleDefenderStat.toInt()}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                          Text(
+                            'Defender Stat: ${state.simpleDefenderStat.toInt()}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                            ),
+                          ),
                           Slider(
-                            value: state.simpleDefenderStat.clamp(10.0, 500.0), min: 10, max: 500, divisions: 98,
+                            value: state.simpleDefenderStat.clamp(10.0, 500.0),
+                            min: 10,
+                            max: 500,
+                            divisions: 98,
                             activeColor: AppTheme.pokemonRed,
                             onChanged: (v) => vm.setSimpleDefenderStat(v),
                           ),
@@ -629,14 +880,33 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('ATTACKER ITEM', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Colors.grey)),
+                          const Text(
+                            'ATTACKER ITEM',
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.grey,
+                            ),
+                          ),
                           GestureDetector(
                             onTap: () => _showItemPicker(context, true, vm),
                             child: Container(
                               margin: const EdgeInsets.only(top: 4),
                               padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(8)),
-                              child: Text(state.attackerHeldItem, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11), overflow: TextOverflow.ellipsis),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? const Color(0xFF1E1E1E)
+                                    : const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                state.attackerHeldItem,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ),
                         ],
@@ -647,14 +917,33 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('DEFENDER ITEM', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Colors.grey)),
+                          const Text(
+                            'DEFENDER ITEM',
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.grey,
+                            ),
+                          ),
                           GestureDetector(
                             onTap: () => _showItemPicker(context, false, vm),
                             child: Container(
                               margin: const EdgeInsets.only(top: 4),
                               padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(8)),
-                              child: Text(state.defenderHeldItem, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11), overflow: TextOverflow.ellipsis),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? const Color(0xFF1E1E1E)
+                                    : const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                state.defenderHeldItem,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ),
                         ],
@@ -677,22 +966,49 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('STAB', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
+                      const Text(
+                        'STAB',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.grey,
+                        ),
+                      ),
                       const SizedBox(height: 4),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8),
-                        decoration: BoxDecoration(color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(8)),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? const Color(0xFF1E1E1E)
+                              : const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<double>(
                             value: state.simpleStab,
                             isExpanded: true,
-                            style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 12),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: primaryColor,
+                              fontSize: 12,
+                            ),
                             items: const [
-                              DropdownMenuItem(value: 1.0, child: Text('No STAB (1.0x)')),
-                              DropdownMenuItem(value: 1.5, child: Text('Standard STAB (1.5x)')),
-                              DropdownMenuItem(value: 2.0, child: Text('Adaptability / Tera (2.0x)')),
+                              DropdownMenuItem(
+                                value: 1.0,
+                                child: Text('No STAB (1.0x)'),
+                              ),
+                              DropdownMenuItem(
+                                value: 1.5,
+                                child: Text('Standard STAB (1.5x)'),
+                              ),
+                              DropdownMenuItem(
+                                value: 2.0,
+                                child: Text('Adaptability / Tera (2.0x)'),
+                              ),
                             ],
-                            onChanged: (v) { if (v != null) vm.setSimpleStab(v); },
+                            onChanged: (v) {
+                              if (v != null) vm.setSimpleStab(v);
+                            },
                           ),
                         ),
                       ),
@@ -704,25 +1020,61 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('EFFECTIVENESS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
+                      const Text(
+                        'EFFECTIVENESS',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.grey,
+                        ),
+                      ),
                       const SizedBox(height: 4),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8),
-                        decoration: BoxDecoration(color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(8)),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? const Color(0xFF1E1E1E)
+                              : const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<double>(
                             value: state.simpleEffectiveness,
                             isExpanded: true,
-                            style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 12),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: primaryColor,
+                              fontSize: 12,
+                            ),
                             items: const [
-                              DropdownMenuItem(value: 0.0, child: Text('Immune (0.0x)')),
-                              DropdownMenuItem(value: 0.25, child: Text('0.25x (Double Resist)')),
-                              DropdownMenuItem(value: 0.5, child: Text('0.5x (Resisted)')),
-                              DropdownMenuItem(value: 1.0, child: Text('1.0x (Neutral)')),
-                              DropdownMenuItem(value: 2.0, child: Text('2.0x (Super Effective)')),
-                              DropdownMenuItem(value: 4.0, child: Text('4.0x (4x Super)')),
+                              DropdownMenuItem(
+                                value: 0.0,
+                                child: Text('Immune (0.0x)'),
+                              ),
+                              DropdownMenuItem(
+                                value: 0.25,
+                                child: Text('0.25x (Double Resist)'),
+                              ),
+                              DropdownMenuItem(
+                                value: 0.5,
+                                child: Text('0.5x (Resisted)'),
+                              ),
+                              DropdownMenuItem(
+                                value: 1.0,
+                                child: Text('1.0x (Neutral)'),
+                              ),
+                              DropdownMenuItem(
+                                value: 2.0,
+                                child: Text('2.0x (Super Effective)'),
+                              ),
+                              DropdownMenuItem(
+                                value: 4.0,
+                                child: Text('4.0x (4x Super)'),
+                              ),
                             ],
-                            onChanged: (v) { if (v != null) vm.setSimpleEffectiveness(v); },
+                            onChanged: (v) {
+                              if (v != null) vm.setSimpleEffectiveness(v);
+                            },
                           ),
                         ),
                       ),
@@ -740,45 +1092,105 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
             color: isDark ? const Color(0xFF121212) : Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
-              side: BorderSide(color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE2E8F0), width: 1.2),
+              side: BorderSide(
+                color: isDark
+                    ? const Color(0xFF1E1E1E)
+                    : const Color(0xFFE2E8F0),
+                width: 1.2,
+              ),
             ),
             child: Padding(
               padding: const EdgeInsets.all(20.0),
               child: Column(
                 children: [
-                  const Text('CALCULATED RAW DAMAGE RANGE', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: Colors.grey, letterSpacing: 0.5)),
+                  const Text(
+                    'CALCULATED RAW DAMAGE RANGE',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 11,
+                      color: Colors.grey,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   Text(
                     '${rawMinDamage.toStringAsFixed(0)} – ${rawMaxDamage.toStringAsFixed(0)}',
-                    style: const TextStyle(fontSize: 38, fontWeight: FontWeight.w900, color: AppTheme.pokemonRed),
+                    style: const TextStyle(
+                      fontSize: 38,
+                      fontWeight: FontWeight.w900,
+                      color: AppTheme.pokemonRed,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   const Divider(),
                   const SizedBox(height: 8),
-                  const Text('TARGET HP BENCHMARK PERCENTAGES', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 10, color: Colors.grey)),
+                  const Text(
+                    'TARGET HP BENCHMARK PERCENTAGES',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 10,
+                      color: Colors.grey,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _hpBenchmark('100 HP Target', rawMinDamage.toDouble(), rawMaxDamage.toDouble(), 100),
-                      _hpBenchmark('200 HP Target', rawMinDamage.toDouble(), rawMaxDamage.toDouble(), 200),
-                      _hpBenchmark('300 HP Target', rawMinDamage.toDouble(), rawMaxDamage.toDouble(), 300),
+                      _hpBenchmark(
+                        '100 HP Target',
+                        rawMinDamage.toDouble(),
+                        rawMaxDamage.toDouble(),
+                        100,
+                      ),
+                      _hpBenchmark(
+                        '200 HP Target',
+                        rawMinDamage.toDouble(),
+                        rawMaxDamage.toDouble(),
+                        200,
+                      ),
+                      _hpBenchmark(
+                        '300 HP Target',
+                        rawMinDamage.toDouble(),
+                        rawMaxDamage.toDouble(),
+                        300,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
                   Wrap(
-                    spacing: 6, runSpacing: 4, alignment: WrapAlignment.center,
+                    spacing: 6,
+                    runSpacing: 4,
+                    alignment: WrapAlignment.center,
                     children: [
-                      if (state.simpleStab > 1.0) _modChip('STAB ×${state.simpleStab}', Colors.amber),
-                      if (simpleEffectiveness != 1.0) _modChip('Eff ×$simpleEffectiveness', simpleEffectiveness > 1.0 ? Colors.green : Colors.red),
-                      if (priorityBlockReason != null) _modChip('$priorityBlockReason blocks priority', Colors.redAccent),
-                      if (state.attackerHeldItem != 'None') _modChip(state.attackerHeldItem, Colors.purple),
-                      if (state.defenderHeldItem != 'None') _modChip('Def Item: ${state.defenderHeldItem}', Colors.blue),
-                      if (isCritical) _modChip('CRITICAL HIT ×1.5', Colors.redAccent),
-                      if (spreadMult != 1.0) _modChip('Spread ×0.75', Colors.indigo),
-                      if (state.isDoubleBattle) _modChip('Doubles', Colors.cyan),
-                      if (state.weather != 'none') _modChip('☁ ${state.weather}', Colors.teal),
-                      if (state.helpingHandActive) _modChip('Helping Hand ×1.5', Colors.orange),
+                      if (state.simpleStab > 1.0)
+                        _modChip('STAB ×${state.simpleStab}', Colors.amber),
+                      if (simpleEffectiveness != 1.0)
+                        _modChip(
+                          'Eff ×$simpleEffectiveness',
+                          simpleEffectiveness > 1.0 ? Colors.green : Colors.red,
+                        ),
+                      if (priorityBlockReason != null)
+                        _modChip(
+                          '$priorityBlockReason blocks priority',
+                          Colors.redAccent,
+                        ),
+                      if (state.attackerHeldItem != 'None')
+                        _modChip(state.attackerHeldItem, Colors.purple),
+                      if (state.defenderHeldItem != 'None')
+                        _modChip(
+                          'Def Item: ${state.defenderHeldItem}',
+                          Colors.blue,
+                        ),
+                      if (isCritical)
+                        _modChip('CRITICAL HIT ×1.5', Colors.redAccent),
+                      if (spreadMult != 1.0)
+                        _modChip('Spread ×0.75', Colors.indigo),
+                      if (state.isDoubleBattle)
+                        _modChip('Doubles', Colors.cyan),
+                      if (state.weather != 'none')
+                        _modChip('☁ ${state.weather}', Colors.teal),
+                      if (state.helpingHandActive)
+                        _modChip('Helping Hand ×1.5', Colors.orange),
                     ],
                   ),
                 ],
@@ -795,9 +1207,23 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     final maxP = (maxDmg / hp * 100).toStringAsFixed(1);
     return Column(
       children: [
-        Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 10,
+            color: Colors.grey,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         const SizedBox(height: 2),
-        Text('$minP% – $maxP%', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: AppTheme.pokemonRed)),
+        Text(
+          '$minP% – $maxP%',
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w900,
+            color: AppTheme.pokemonRed,
+          ),
+        ),
       ],
     );
   }
@@ -815,7 +1241,9 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     DamageCalculatorViewModel vm,
   ) {
     if (_dbDamagingMoves.isEmpty) {
-      return const Center(child: CircularProgressIndicator(color: AppTheme.pokemonRed));
+      return const Center(
+        child: CircularProgressIndicator(color: AppTheme.pokemonRed),
+      );
     }
 
     final bool isChampions = state.ruleset.isChampions;
@@ -833,12 +1261,22 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
       final natureMod = CombatUtils.getNatureMultiplier(nature, natureLabel);
       if (isChampions) {
         final sp = (attacker ? state.attackerSps : state.defenderSps)[key] ?? 0;
-        return StatCalculator.calculateChampionsStat(base: base, sp: sp, alignmentModifier: natureMod);
+        return StatCalculator.calculateChampionsStat(
+          base: base,
+          sp: sp,
+          alignmentModifier: natureMod,
+        );
       }
       final iv = (attacker ? state.attackerIvs : state.defenderIvs)[key] ?? 31;
       final ev = (attacker ? state.attackerEvs : state.defenderEvs)[key] ?? 0;
       final level = attacker ? state.attackerLevel : state.defenderLevel;
-      return StatCalculator.calculateOtherStat(base: base, iv: iv, ev: ev, level: level, natureModifier: natureMod);
+      return StatCalculator.calculateOtherStat(
+        base: base,
+        iv: iv,
+        ev: ev,
+        level: level,
+        natureModifier: natureMod,
+      );
     }
 
     final p1Moves = _dbDamagingMoves;
@@ -852,28 +1290,34 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
       activeMove = p1Moves.first;
     }
     // Guaranteed-crit moves override the UI toggle just like Showdown.
-    final bool isCritical = state.isCriticalHit || CombatUtils.alwaysCriticalHit(activeMove.name);
+    final bool isCritical =
+        state.isCriticalHit || CombatUtils.alwaysCriticalHit(activeMove.name);
 
-    final isSlowStartActive = state.attackerAbility?.toLowerCase() == 'slow start' &&
+    final isSlowStartActive =
+        state.attackerAbility?.toLowerCase() == 'slow start' &&
         state.attackerTurnsOnField < 5;
 
     // Resolve weights once for both the dynamic-power label and BattleEngine.
     final speciesDataset = ref.watch(speciesDatasetProvider).asData?.value;
-    final double attackerWeightKg = speciesDataset
+    final double attackerWeightKg =
+        speciesDataset
             ?.formFacts(p1.id, nationalDexNumber: p1.nationalDexNumber)
             ?.weightKg ??
         0.0;
-    final double defenderWeightKg = speciesDataset
+    final double defenderWeightKg =
+        speciesDataset
             ?.formFacts(p2.id, nationalDexNumber: p2.nationalDexNumber)
             ?.weightKg ??
         0.0;
     final initialBattleState = state.toBattleState();
-    final weightedBattleState = initialBattleState == null
-        ? null
-        : initialBattleState.copyWith(
-            attacker: initialBattleState.attacker.copyWith(weightKg: attackerWeightKg),
-            defender: initialBattleState.defender.copyWith(weightKg: defenderWeightKg),
-          );
+    final weightedBattleState = initialBattleState?.copyWith(
+      attacker: initialBattleState.attacker.copyWith(
+        weightKg: attackerWeightKg,
+      ),
+      defender: initialBattleState.defender.copyWith(
+        weightKg: defenderWeightKg,
+      ),
+    );
 
     int fallbackSpeed({required bool attacker}) {
       final ability = attacker ? state.attackerAbility : state.defenderAbility;
@@ -893,7 +1337,8 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
         multiplier *= 1.5;
       }
       if (attacker && isSlowStartActive) multiplier *= 0.5;
-      return (rawSpeed * multiplier *
+      return (rawSpeed *
+              multiplier *
               HeldItemsData.getSpeedMultiplier(
                 attacker ? state.attackerHeldItem : state.defenderHeldItem,
               ))
@@ -957,7 +1402,8 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
       attackerAbility: state.attackerAbility,
       defenderAbility: state.defenderAbility,
       moveName: activeMove.name,
-      defenderTeraActive: !state.ruleset.isChampions && state.defenderTeraActive,
+      defenderTeraActive:
+          !state.ruleset.isChampions && state.defenderTeraActive,
       defenderTeraType: state.defenderTeraType,
     );
 
@@ -992,20 +1438,43 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
           );
 
     Widget buildPokemonDuelCard(Pokemon p, bool isAttacker, String heldItem) {
-      final typeColor = CombatUtils.typeColors[p.type1.toLowerCase()] ?? Colors.grey;
+      final typeColor =
+          CombatUtils.typeColors[p.type1.toLowerCase()] ?? Colors.grey;
       final spd = isAttacker ? finalAttackerSpeed : finalDefenderSpeed;
-      final isTera = !state.ruleset.isChampions && (isAttacker ? state.attackerTeraActive : state.defenderTeraActive);
-      final teraT = isAttacker ? state.attackerTeraType : state.defenderTeraType;
+      final isTera =
+          !state.ruleset.isChampions &&
+          (isAttacker ? state.attackerTeraActive : state.defenderTeraActive);
+      final teraT = isAttacker
+          ? state.attackerTeraType
+          : state.defenderTeraType;
       final status = isAttacker ? state.attackerStatus : state.defenderStatus;
 
       return GestureDetector(
-        onTap: () => _showSetupEditorSheet(context, isAttacker, state, vm, p, pokemonList),
+        onTap: () => _showSetupEditorSheet(
+          context,
+          isAttacker,
+          state,
+          vm,
+          p,
+          pokemonList,
+        ),
         child: Container(
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF111111) : Colors.white,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: isTera ? Colors.purpleAccent : typeColor.withValues(alpha: 0.4), width: isTera ? 2.0 : 1.5),
-            boxShadow: [BoxShadow(color: typeColor.withValues(alpha: 0.08), blurRadius: 12, spreadRadius: 2)],
+            border: Border.all(
+              color: isTera
+                  ? Colors.purpleAccent
+                  : typeColor.withValues(alpha: 0.4),
+              width: isTera ? 2.0 : 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: typeColor.withValues(alpha: 0.08),
+                blurRadius: 12,
+                spreadRadius: 2,
+              ),
+            ],
           ),
           padding: const EdgeInsets.all(12),
           child: Column(
@@ -1015,45 +1484,109 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                 child: p.spriteUrl.isNotEmpty
                     ? PokemonSprite(
                         imageUrl: p.spriteUrl,
-                        fallbackUrl: PokemonSprite.homeArtworkUrl(p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id),
+                        fallbackUrl: PokemonSprite.homeArtworkUrl(
+                          p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id,
+                        ),
                         loadingIndicatorSize: 24,
                         loadingColor: AppTheme.pokemonRed,
                         errorIconSize: 48,
                         errorIconColor: typeColor.withValues(alpha: 0.4),
                       )
-                    : Icon(Icons.catching_pokemon, size: 48, color: typeColor.withValues(alpha: 0.4)),
+                    : Icon(
+                        Icons.catching_pokemon,
+                        size: 48,
+                        color: typeColor.withValues(alpha: 0.4),
+                      ),
               ),
               const SizedBox(height: 6),
-              Text(p.name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: isDark ? Colors.white : Colors.black), maxLines: 1, overflow: TextOverflow.ellipsis),
+              Text(
+                p.name,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  color: isDark ? Colors.white : Colors.black,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
               const SizedBox(height: 4),
-              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                _typeChip(p.type1),
-                if (p.type2 != null) ...[ const SizedBox(width: 4), _typeChip(p.type2!) ],
-              ]),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _typeChip(p.type1),
+                  if (p.type2 != null) ...[
+                    const SizedBox(width: 4),
+                    _typeChip(p.type2!),
+                  ],
+                ],
+              ),
               if (isTera && teraT != null) ...[
                 const SizedBox(height: 4),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(color: Colors.purple.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(4)),
-                  child: Text('TERA ${teraT.toUpperCase()}', style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.purpleAccent)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.purple.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    'TERA ${teraT.toUpperCase()}',
+                    style: const TextStyle(
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.purpleAccent,
+                    ),
+                  ),
                 ),
               ],
               if (status != 'none') ...[
                 const SizedBox(height: 4),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(4)),
-                  child: Text('STATUS: ${status.toUpperCase()}', style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.redAccent)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    'STATUS: ${status.toUpperCase()}',
+                    style: const TextStyle(
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.redAccent,
+                    ),
+                  ),
                 ),
               ],
               const SizedBox(height: 6),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(color: Colors.blue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-                child: Text('⚡ SPD $spd', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.blue)),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  '⚡ SPD $spd',
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue,
+                  ),
+                ),
               ),
               const SizedBox(height: 6),
-              const Text('Tap to Edit Setup', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppTheme.pokemonRed)),
+              const Text(
+                'Tap to Edit Setup',
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.pokemonRed,
+                ),
+              ),
             ],
           ),
         ),
@@ -1061,18 +1594,35 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, AppSpacing.topContentGap, AppSpacing.pagePadding, AppSpacing.bottomScrollPadding),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.pagePadding,
+        AppSpacing.topContentGap,
+        AppSpacing.pagePadding,
+        AppSpacing.bottomScrollPadding,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: Column(children: [
-                const Text('ATTACKER', style: TextStyle(fontWeight: FontWeight.w900, color: Colors.grey, fontSize: 9, letterSpacing: 1)),
-                const SizedBox(height: 6),
-                buildPokemonDuelCard(p1, true, state.attackerHeldItem),
-              ])),
+              Expanded(
+                child: Column(
+                  children: [
+                    const Text(
+                      'ATTACKER',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        color: Colors.grey,
+                        fontSize: 9,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    buildPokemonDuelCard(p1, true, state.attackerHeldItem),
+                  ],
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.only(top: 40),
                 child: Tooltip(
@@ -1087,17 +1637,33 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                       },
                       child: Container(
                         margin: const EdgeInsets.symmetric(horizontal: 4),
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.orange.withValues(alpha: 0.18),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.orangeAccent.withValues(alpha: 0.4)),
+                          border: Border.all(
+                            color: Colors.orangeAccent.withValues(alpha: 0.4),
+                          ),
                         ),
                         child: const Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.swap_horiz_rounded, size: 20, color: Colors.orangeAccent),
-                            Text('VS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.orangeAccent)),
+                            Icon(
+                              Icons.swap_horiz_rounded,
+                              size: 20,
+                              color: Colors.orangeAccent,
+                            ),
+                            Text(
+                              'VS',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.orangeAccent,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -1105,11 +1671,23 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                   ),
                 ),
               ),
-              Expanded(child: Column(children: [
-                const Text('DEFENDER', style: TextStyle(fontWeight: FontWeight.w900, color: Colors.grey, fontSize: 9, letterSpacing: 1)),
-                const SizedBox(height: 6),
-                buildPokemonDuelCard(p2, false, state.defenderHeldItem),
-              ])),
+              Expanded(
+                child: Column(
+                  children: [
+                    const Text(
+                      'DEFENDER',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        color: Colors.grey,
+                        fontSize: 9,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    buildPokemonDuelCard(p2, false, state.defenderHeldItem),
+                  ],
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -1118,21 +1696,42 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: p1Outspeeds ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
+              color: p1Outspeeds
+                  ? Colors.green.withValues(alpha: 0.1)
+                  : Colors.red.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: p1Outspeeds ? Colors.green.withValues(alpha: 0.3) : Colors.red.withValues(alpha: 0.3)),
+              border: Border.all(
+                color: p1Outspeeds
+                    ? Colors.green.withValues(alpha: 0.3)
+                    : Colors.red.withValues(alpha: 0.3),
+              ),
             ),
-            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Icon(p1Outspeeds ? Icons.bolt : Icons.directions_run, color: p1Outspeeds ? Colors.greenAccent : Colors.redAccent, size: 16),
-              const SizedBox(width: 6),
-              Expanded(child: Text(
-                p1Outspeeds
-                    ? '${p1.name} ($finalAttackerSpeed) outspeeds ${p2.name} ($finalDefenderSpeed)'
-                    : '${p2.name} ($finalDefenderSpeed) outspeeds ${p1.name} ($finalAttackerSpeed)',
-                style: TextStyle(fontWeight: FontWeight.bold, color: p1Outspeeds ? Colors.greenAccent : Colors.redAccent, fontSize: 11),
-                textAlign: TextAlign.center,
-              )),
-            ]),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  p1Outspeeds ? Icons.bolt : Icons.directions_run,
+                  color: p1Outspeeds ? Colors.greenAccent : Colors.redAccent,
+                  size: 16,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    p1Outspeeds
+                        ? '${p1.name} ($finalAttackerSpeed) outspeeds ${p2.name} ($finalDefenderSpeed)'
+                        : '${p2.name} ($finalDefenderSpeed) outspeeds ${p1.name} ($finalAttackerSpeed)',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: p1Outspeeds
+                          ? Colors.greenAccent
+                          : Colors.redAccent,
+                      fontSize: 11,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 12),
 
@@ -1146,39 +1745,77 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF121212) : Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: state.selectedMoveName != null ? AppTheme.pokemonRed.withValues(alpha: 0.5) : (isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE2E8F0)), width: 1.2),
+                border: Border.all(
+                  color: state.selectedMoveName != null
+                      ? AppTheme.pokemonRed.withValues(alpha: 0.5)
+                      : (isDark
+                            ? const Color(0xFF1E1E1E)
+                            : const Color(0xFFE2E8F0)),
+                  width: 1.2,
+                ),
               ),
-              child: Row(children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: (CombatUtils.typeColors[effectiveMoveType] ?? Colors.grey).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(effectiveMoveType.toUpperCase(), style: TextStyle(color: CombatUtils.typeColors[effectiveMoveType] ?? Colors.grey, fontSize: 9, fontWeight: FontWeight.bold)),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        activeMove.name,
-                        style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 13),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color:
+                          (CombatUtils.typeColors[effectiveMoveType] ??
+                                  Colors.grey)
+                              .withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      effectiveMoveType.toUpperCase(),
+                      style: TextStyle(
+                        color:
+                            CombatUtils.typeColors[effectiveMoveType] ??
+                            Colors.grey,
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
                       ),
-                      Text(
-                        'Priority ${activeMove.priority > 0 ? '+' : ''}${activeMove.priority} · '
-                        '${activeMove.isContact ? 'Contact' : 'Non-contact'}',
-                        style: const TextStyle(fontSize: 9, color: Colors.grey),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-                Text('BP: ${basePowerVal.toInt()}', style: const TextStyle(color: Colors.grey, fontSize: 11)),
-                const SizedBox(width: 4),
-                const Icon(Icons.search, color: AppTheme.pokemonRed, size: 18),
-              ]),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          activeMove.name,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: primaryColor,
+                            fontSize: 13,
+                          ),
+                        ),
+                        Text(
+                          'Priority ${activeMove.priority > 0 ? '+' : ''}${activeMove.priority} · '
+                          '${activeMove.isContact ? 'Contact' : 'Non-contact'}',
+                          style: const TextStyle(
+                            fontSize: 9,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    'BP: ${basePowerVal.toInt()}',
+                    style: const TextStyle(color: Colors.grey, fontSize: 11),
+                  ),
+                  const SizedBox(width: 4),
+                  const Icon(
+                    Icons.search,
+                    color: AppTheme.pokemonRed,
+                    size: 18,
+                  ),
+                ],
+              ),
             ),
           ),
 
@@ -1194,12 +1831,20 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.auto_fix_high_rounded, size: 14, color: Colors.tealAccent),
+                  const Icon(
+                    Icons.auto_fix_high_rounded,
+                    size: 14,
+                    color: Colors.tealAccent,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       dynamicBpNote,
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.tealAccent),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.tealAccent,
+                      ),
                     ),
                   ),
                 ],
@@ -1215,15 +1860,33 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
               decoration: BoxDecoration(
                 color: AppTheme.pokemonRed.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.pokemonRed.withValues(alpha: 0.3)),
+                border: Border.all(
+                  color: AppTheme.pokemonRed.withValues(alpha: 0.3),
+                ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    const Text('Multi-Hit Strikes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.pokemonRed)),
-                    Text('${state.moveHits} strikes (${(basePowerVal.toInt() * state.moveHits)} total BP)', style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                  ]),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Multi-Hit Strikes',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          color: AppTheme.pokemonRed,
+                        ),
+                      ),
+                      Text(
+                        '${state.moveHits} strikes (${(basePowerVal.toInt() * state.moveHits)} total BP)',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
                   Row(
                     children: [2, 3, 4, 5].map((h) {
                       final isSelected = state.moveHits == h;
@@ -1237,7 +1900,9 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                           labelStyle: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
-                            color: isSelected ? Colors.white : (isDark ? Colors.grey : Colors.black87),
+                            color: isSelected
+                                ? Colors.white
+                                : (isDark ? Colors.grey : Colors.black87),
                           ),
                           selectedColor: AppTheme.pokemonRed,
                         ),
@@ -1254,19 +1919,65 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(color: Colors.purple.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.purple.withValues(alpha: 0.3))),
+              decoration: BoxDecoration(
+                color: Colors.purple.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.purple.withValues(alpha: 0.3)),
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    const Text('Rage Fist Hits Taken', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.purpleAccent)),
-                    Text('+50 BP per hit taken (${basePowerVal.toInt()} BP)', style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                  ]),
-                  Row(children: [
-                    IconButton(icon: const Icon(Icons.remove_circle_outline, color: Colors.purpleAccent, size: 20), onPressed: state.rageFistHits > 0 ? () => vm.setRageFistHits(state.rageFistHits - 1) : null),
-                    Text('${state.rageFistHits}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                    IconButton(icon: const Icon(Icons.add_circle_outline, color: Colors.purpleAccent, size: 20), onPressed: state.rageFistHits < 6 ? () => vm.setRageFistHits(state.rageFistHits + 1) : null),
-                  ]),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Rage Fist Hits Taken',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          color: Colors.purpleAccent,
+                        ),
+                      ),
+                      Text(
+                        '+50 BP per hit taken (${basePowerVal.toInt()} BP)',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(
+                          Icons.remove_circle_outline,
+                          color: Colors.purpleAccent,
+                          size: 20,
+                        ),
+                        onPressed: state.rageFistHits > 0
+                            ? () => vm.setRageFistHits(state.rageFistHits - 1)
+                            : null,
+                      ),
+                      Text(
+                        '${state.rageFistHits}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.add_circle_outline,
+                          color: Colors.purpleAccent,
+                          size: 20,
+                        ),
+                        onPressed: state.rageFistHits < 6
+                            ? () => vm.setRageFistHits(state.rageFistHits + 1)
+                            : null,
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -1274,49 +1985,129 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(color: Colors.orange.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.orange.withValues(alpha: 0.3))),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Slow Start: ${isSlowStartActive ? 'ACTIVE — Attack & Speed halved' : 'ENDED — normal Attack & Speed'}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.orangeAccent)),
-                Slider(
-                  value: state.attackerTurnsOnField.toDouble(), min: 0, max: 5, divisions: 5,
-                  label: '${state.attackerTurnsOnField} completed turns',
-                  activeColor: Colors.orangeAccent,
-                  onChanged: (v) => vm.setAttackerTurnsOnField(v.round()),
-                ),
-                Text('${state.attackerTurnsOnField}/5 completed turns on field', style: const TextStyle(fontSize: 10, color: Colors.grey)),
-              ]),
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Slow Start: ${isSlowStartActive ? 'ACTIVE — Attack & Speed halved' : 'ENDED — normal Attack & Speed'}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      color: Colors.orangeAccent,
+                    ),
+                  ),
+                  Slider(
+                    value: state.attackerTurnsOnField.toDouble(),
+                    min: 0,
+                    max: 5,
+                    divisions: 5,
+                    label: '${state.attackerTurnsOnField} completed turns',
+                    activeColor: Colors.orangeAccent,
+                    onChanged: (v) => vm.setAttackerTurnsOnField(v.round()),
+                  ),
+                  Text(
+                    '${state.attackerTurnsOnField}/5 completed turns on field',
+                    style: const TextStyle(fontSize: 10, color: Colors.grey),
+                  ),
+                ],
+              ),
             ),
-          ] else if (activeMove.name.toLowerCase() == 'return' || activeMove.name.toLowerCase() == 'frustration') ...[
+          ] else if (activeMove.name.toLowerCase() == 'return' ||
+              activeMove.name.toLowerCase() == 'frustration') ...[
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(color: Colors.pink.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.pink.withValues(alpha: 0.3))),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                  Text('Friendship: ${state.attackerFriendship}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.pinkAccent)),
-                  Text('Base Power: ${basePowerVal.toInt()} BP', style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
-                ]),
-                Slider(
-                  value: state.attackerFriendship.toDouble(), min: 0, max: 255, divisions: 255, activeColor: Colors.pinkAccent,
-                  onChanged: (v) => vm.setAttackerFriendship(v.toInt()),
-                ),
-              ]),
+              decoration: BoxDecoration(
+                color: Colors.pink.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.pink.withValues(alpha: 0.3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Friendship: ${state.attackerFriendship}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          color: Colors.pinkAccent,
+                        ),
+                      ),
+                      Text(
+                        'Base Power: ${basePowerVal.toInt()} BP',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Slider(
+                    value: state.attackerFriendship.toDouble(),
+                    min: 0,
+                    max: 255,
+                    divisions: 255,
+                    activeColor: Colors.pinkAccent,
+                    onChanged: (v) => vm.setAttackerFriendship(v.toInt()),
+                  ),
+                ],
+              ),
             ),
-          ] else if (activeMove.name.toLowerCase() == 'eruption' || activeMove.name.toLowerCase() == 'water spout') ...[
+          ] else if (activeMove.name.toLowerCase() == 'eruption' ||
+              activeMove.name.toLowerCase() == 'water spout') ...[
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(color: Colors.deepOrange.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.deepOrange.withValues(alpha: 0.3))),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                  Text('Attacker HP: ${state.attackerHpPercent.toInt()}%', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.deepOrangeAccent)),
-                  Text('Base Power: ${basePowerVal.toInt()} BP', style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
-                ]),
-                Slider(
-                  value: state.attackerHpPercent.clamp(1.0, 100.0), min: 1, max: 100, divisions: 99, activeColor: Colors.deepOrangeAccent,
-                  onChanged: (v) => vm.setAttackerHpPercent(v),
+              decoration: BoxDecoration(
+                color: Colors.deepOrange.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.deepOrange.withValues(alpha: 0.3),
                 ),
-              ]),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Attacker HP: ${state.attackerHpPercent.toInt()}%',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          color: Colors.deepOrangeAccent,
+                        ),
+                      ),
+                      Text(
+                        'Base Power: ${basePowerVal.toInt()} BP',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Slider(
+                    value: state.attackerHpPercent.clamp(1.0, 100.0),
+                    min: 1,
+                    max: 100,
+                    divisions: 99,
+                    activeColor: Colors.deepOrangeAccent,
+                    onChanged: (v) => vm.setAttackerHpPercent(v),
+                  ),
+                ],
+              ),
             ),
           ],
           const SizedBox(height: 16),
@@ -1324,10 +2115,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
           // The normal duel tab has one authoritative engine result; the raw
           // sandbox keeps its separate calculation above.
           if (damageResult != null) ...[
-            DamageSummaryCard(
-              result: damageResult,
-              moveName: activeMove.name,
-            ),
+            DamageSummaryCard(result: damageResult, moveName: activeMove.name),
             const SizedBox(height: 8),
           ],
           if (abilityContextBadge != null) ...[
@@ -1347,74 +2135,168 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF121212) : Colors.white,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE2E8F0)),
+              border: Border.all(
+                color: isDark
+                    ? const Color(0xFF1E1E1E)
+                    : const Color(0xFFE2E8F0),
+              ),
             ),
-            child: Column(children: [
-              _buildSwitchListTile('⚔ Double Battle (Spread 0.75× / Screens 0.667×)', state.isDoubleBattle, vm.toggleDoubleBattle),
-              _buildSwitchListTile('💥 Critical Hit (1.5x, Ignores Defense Boosts)', state.isCriticalHit, vm.toggleCriticalHit),
-              _buildSwitchListTile('🛡 Defender used Protect / Detect', state.defenderProtected, vm.toggleDefenderProtected),
-              const Divider(),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                child: Row(
-                  children: [
-                    const Text('Weather: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: state.weather,
-                          dropdownColor: isDark ? const Color(0xFF121212) : Colors.white,
-                          isExpanded: true,
-                          style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 12),
-                          items: const [
-                            DropdownMenuItem(value: 'none', child: Text('No Weather (Normal)')),
-                            DropdownMenuItem(value: 'sunny', child: Text('Harsh Sunlight (Sunny)')),
-                            DropdownMenuItem(value: 'rainy', child: Text('Rainy Weather (Rain)')),
-                            DropdownMenuItem(value: 'sandstorm', child: Text('Sandstorm')),
-                            DropdownMenuItem(value: 'snow', child: Text('Snow / Hail')),
-                          ],
-                          onChanged: (w) => vm.setWeather(w ?? 'none'),
+            child: Column(
+              children: [
+                _buildSwitchListTile(
+                  '⚔ Double Battle (Spread 0.75× / Screens 0.667×)',
+                  state.isDoubleBattle,
+                  vm.toggleDoubleBattle,
+                ),
+                _buildSwitchListTile(
+                  '💥 Critical Hit (1.5x, Ignores Defense Boosts)',
+                  state.isCriticalHit,
+                  vm.toggleCriticalHit,
+                ),
+                _buildSwitchListTile(
+                  '🛡 Defender used Protect / Detect',
+                  state.defenderProtected,
+                  vm.toggleDefenderProtected,
+                ),
+                const Divider(),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  child: Row(
+                    children: [
+                      const Text(
+                        'Weather: ',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                child: Row(
-                  children: [
-                    const Text('Terrain: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: state.terrain,
-                          dropdownColor: isDark ? const Color(0xFF121212) : Colors.white,
-                          isExpanded: true,
-                          style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 12),
-                          items: const [
-                            DropdownMenuItem(value: 'none', child: Text('No Terrain')),
-                            DropdownMenuItem(value: 'electric', child: Text('Electric Terrain')),
-                            DropdownMenuItem(value: 'grassy', child: Text('Grassy Terrain')),
-                            DropdownMenuItem(value: 'psychic', child: Text('Psychic Terrain')),
-                            DropdownMenuItem(value: 'misty', child: Text('Misty Terrain')),
-                          ],
-                          onChanged: (t) => vm.setTerrain(t ?? 'none'),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: state.weather,
+                            dropdownColor: isDark
+                                ? const Color(0xFF121212)
+                                : Colors.white,
+                            isExpanded: true,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: primaryColor,
+                              fontSize: 12,
+                            ),
+                            items: const [
+                              DropdownMenuItem(
+                                value: 'none',
+                                child: Text('No Weather (Normal)'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'sunny',
+                                child: Text('Harsh Sunlight (Sunny)'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'rainy',
+                                child: Text('Rainy Weather (Rain)'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'sandstorm',
+                                child: Text('Sandstorm'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'snow',
+                                child: Text('Snow / Hail'),
+                              ),
+                            ],
+                            onChanged: (w) => vm.setWeather(w ?? 'none'),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const Divider(),
-              _buildSwitchListTile('Light Screen (Halves Sp. Atk)', state.lightScreenActive, vm.toggleLightScreen),
-              _buildSwitchListTile('Reflect (Halves Physical Atk)', state.reflectActive, vm.toggleReflect),
-              _buildSwitchListTile('Helping Hand (+50% damage)', state.helpingHandActive, vm.toggleHelpingHand),
-              _buildSwitchListTile('Trick Room Active', state.trickRoomActive, vm.toggleTrickRoom),
-            ]),
+                const Divider(),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  child: Row(
+                    children: [
+                      const Text(
+                        'Terrain: ',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: state.terrain,
+                            dropdownColor: isDark
+                                ? const Color(0xFF121212)
+                                : Colors.white,
+                            isExpanded: true,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: primaryColor,
+                              fontSize: 12,
+                            ),
+                            items: const [
+                              DropdownMenuItem(
+                                value: 'none',
+                                child: Text('No Terrain'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'electric',
+                                child: Text('Electric Terrain'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'grassy',
+                                child: Text('Grassy Terrain'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'psychic',
+                                child: Text('Psychic Terrain'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'misty',
+                                child: Text('Misty Terrain'),
+                              ),
+                            ],
+                            onChanged: (t) => vm.setTerrain(t ?? 'none'),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(),
+                _buildSwitchListTile(
+                  'Light Screen (Halves Sp. Atk)',
+                  state.lightScreenActive,
+                  vm.toggleLightScreen,
+                ),
+                _buildSwitchListTile(
+                  'Reflect (Halves Physical Atk)',
+                  state.reflectActive,
+                  vm.toggleReflect,
+                ),
+                _buildSwitchListTile(
+                  'Helping Hand (+50% damage)',
+                  state.helpingHandActive,
+                  vm.toggleHelpingHand,
+                ),
+                _buildSwitchListTile(
+                  'Trick Room Active',
+                  state.trickRoomActive,
+                  vm.toggleTrickRoom,
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -1425,16 +2307,37 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     final color = CombatUtils.typeColors[type.toLowerCase()] ?? Colors.grey;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),
-      child: Text(type.toUpperCase(), style: TextStyle(color: color, fontSize: 8, fontWeight: FontWeight.bold)),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        type.toUpperCase(),
+        style: TextStyle(
+          color: color,
+          fontSize: 8,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 
   Widget _modChip(String label, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(6), border: Border.all(color: color.withValues(alpha: 0.3))),
-      child: Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 
@@ -1443,7 +2346,12 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
       padding: const EdgeInsets.only(left: 4.0, bottom: 4.0),
       child: Text(
         label,
-        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey, letterSpacing: 0.5),
+        style: const TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w900,
+          color: Colors.grey,
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }
@@ -1454,17 +2362,27 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF121212) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE2E8F0), width: 1.2),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE2E8F0),
+          width: 1.2,
+        ),
       ),
       child: child,
     );
   }
 
-  Widget _buildSwitchListTile(String title, bool val, ValueChanged<bool> onChanged) {
+  Widget _buildSwitchListTile(
+    String title,
+    bool val,
+    ValueChanged<bool> onChanged,
+  ) {
     return Material(
       color: Colors.transparent,
       child: SwitchListTile(
-        title: Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+        title: Text(
+          title,
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+        ),
         value: val,
         activeThumbColor: AppTheme.pokemonRed,
         onChanged: onChanged,
@@ -1474,11 +2392,24 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
 
   // ── Searchable Pickers ───────────────────────────────────────────────────
 
-  void _showPokemonPicker(BuildContext context, List<Pokemon> list, bool isAttacker, DamageCalculatorViewModel vm) {
-    PokemonPickerDialog.show(context, list: list, isAttacker: isAttacker, vm: vm);
+  void _showPokemonPicker(
+    BuildContext context,
+    List<Pokemon> list,
+    bool isAttacker,
+    DamageCalculatorViewModel vm,
+  ) {
+    PokemonPickerDialog.show(
+      context,
+      list: list,
+      isAttacker: isAttacker,
+      vm: vm,
+    );
   }
 
-  Future<void> _showMovePicker(BuildContext context, DamageCalculatorViewModel vm) async {
+  Future<void> _showMovePicker(
+    BuildContext context,
+    DamageCalculatorViewModel vm,
+  ) async {
     final regulation = await ref.read(championsRegulationProvider.future);
     if (!mounted) return;
 
@@ -1487,11 +2418,18 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
       moves: _dbDamagingMoves,
       vm: vm,
       regulation: regulation,
-      useRegulationPp: ref.read(damageCalculatorViewModelProvider).ruleset.isChampions,
+      useRegulationPp: ref
+          .read(damageCalculatorViewModelProvider)
+          .ruleset
+          .isChampions,
     );
   }
 
-  void _showItemPicker(BuildContext context, bool isAttacker, DamageCalculatorViewModel vm) {
+  void _showItemPicker(
+    BuildContext context,
+    bool isAttacker,
+    DamageCalculatorViewModel vm,
+  ) {
     ItemPickerDialog.show(context, isAttacker: isAttacker, vm: vm);
   }
 
@@ -1521,50 +2459,111 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
         builder: (context, ref, _) {
           final currentState = ref.watch(damageCalculatorViewModelProvider);
           final isChampions = currentState.ruleset.isChampions;
-          final nature = isAttacker ? currentState.attackerNature : currentState.defenderNature;
-          final heldItem = isAttacker ? currentState.attackerHeldItem : currentState.defenderHeldItem;
-          final ivs = isAttacker ? currentState.attackerIvs : currentState.defenderIvs;
-          final evs = isAttacker ? currentState.attackerEvs : currentState.defenderEvs;
-          final sps = isAttacker ? currentState.attackerSps : currentState.defenderSps;
-          final stages = isAttacker ? currentState.attackerStages : currentState.defenderStages;
-          final isTeraActive = isAttacker ? currentState.attackerTeraActive : currentState.defenderTeraActive;
-          final teraType = (isAttacker ? currentState.attackerTeraType : currentState.defenderTeraType) ?? p.type1;
-          final status = isAttacker ? currentState.attackerStatus : currentState.defenderStatus;
+          final nature = isAttacker
+              ? currentState.attackerNature
+              : currentState.defenderNature;
+          final heldItem = isAttacker
+              ? currentState.attackerHeldItem
+              : currentState.defenderHeldItem;
+          final ivs = isAttacker
+              ? currentState.attackerIvs
+              : currentState.defenderIvs;
+          final evs = isAttacker
+              ? currentState.attackerEvs
+              : currentState.defenderEvs;
+          final sps = isAttacker
+              ? currentState.attackerSps
+              : currentState.defenderSps;
+          final stages = isAttacker
+              ? currentState.attackerStages
+              : currentState.defenderStages;
+          final isTeraActive = isAttacker
+              ? currentState.attackerTeraActive
+              : currentState.defenderTeraActive;
+          final teraType =
+              (isAttacker
+                  ? currentState.attackerTeraType
+                  : currentState.defenderTeraType) ??
+              p.type1;
+          final status = isAttacker
+              ? currentState.attackerStatus
+              : currentState.defenderStatus;
           // Champions uses its separate fixed Stat Point formula.
           final level = isChampions
               ? ChampionsRules.level
-              : (isAttacker ? currentState.attackerLevel : currentState.defenderLevel);
+              : (isAttacker
+                    ? currentState.attackerLevel
+                    : currentState.defenderLevel);
 
-          Widget buildStatRow(String label, String key, int baseVal, bool isHp) {
+          Widget buildStatRow(
+            String label,
+            String key,
+            int baseVal,
+            bool isHp,
+          ) {
             final ivVal = ivs[key] ?? 31;
             final evVal = evs[key] ?? 0;
             final spVal = sps[key] ?? 0;
             final stageVal = stages[key] ?? 0;
             final int finalStat = isChampions
                 ? (isHp
-                    ? StatCalculator.calculateChampionsHp(
-                        base: baseVal, sp: spVal,
-                        isShedinja: p.name.toLowerCase() == 'shedinja',
-                      )
-                    : StatCalculator.calculateChampionsStat(
-                        base: baseVal, sp: spVal,
-                        alignmentModifier: CombatUtils.getNatureMultiplier(nature, label),
-                      ))
+                      ? StatCalculator.calculateChampionsHp(
+                          base: baseVal,
+                          sp: spVal,
+                          isShedinja: p.name.toLowerCase() == 'shedinja',
+                        )
+                      : StatCalculator.calculateChampionsStat(
+                          base: baseVal,
+                          sp: spVal,
+                          alignmentModifier: CombatUtils.getNatureMultiplier(
+                            nature,
+                            label,
+                          ),
+                        ))
                 : (isHp
-                    ? StatCalculator.calculateHp(base: baseVal, iv: ivVal, ev: evVal, level: level)
-                    : StatCalculator.calculateOtherStat(
-                        base: baseVal, iv: ivVal, ev: evVal, level: level,
-                        natureModifier: CombatUtils.getNatureMultiplier(nature, label),
-                      ));
-            final double stageMult = isHp ? 1.0 : CombatUtils.getStageMultiplier(stageVal);
+                      ? StatCalculator.calculateHp(
+                          base: baseVal,
+                          iv: ivVal,
+                          ev: evVal,
+                          level: level,
+                        )
+                      : StatCalculator.calculateOtherStat(
+                          base: baseVal,
+                          iv: ivVal,
+                          ev: evVal,
+                          level: level,
+                          natureModifier: CombatUtils.getNatureMultiplier(
+                            nature,
+                            label,
+                          ),
+                        ));
+            final double stageMult = isHp
+                ? 1.0
+                : CombatUtils.getStageMultiplier(stageVal);
             final int finalStatWithStage = (finalStat * stageMult).toInt();
 
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Row(
                 children: [
-                  Expanded(flex: 2, child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                  Expanded(flex: 1, child: Text('$baseVal', style: const TextStyle(color: Colors.grey, fontSize: 12), textAlign: TextAlign.center)),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      label,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 1,
+                    child: Text(
+                      '$baseVal',
+                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                   Expanded(
                     flex: 2,
                     child: Padding(
@@ -1577,36 +2576,57 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                             ? Container(
                                 alignment: Alignment.center,
                                 decoration: BoxDecoration(
-                                  color: isDark ? const Color(0xFF161616) : const Color(0xFFE9EEF4),
+                                  color: isDark
+                                      ? const Color(0xFF161616)
+                                      : const Color(0xFFE9EEF4),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
                                   '${ChampionsRules.fixedIv}',
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey,
+                                  ),
                                 ),
                               )
                             : TextField(
-                          decoration: InputDecoration(
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            filled: true,
-                            fillColor: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF1F5F9),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide.none),
-                          ),
-                          style: TextStyle(color: primaryColor, fontSize: 12, fontWeight: FontWeight.bold),
-                          keyboardType: TextInputType.number,
-                          textAlign: TextAlign.center,
-                          controller: TextEditingController(text: '$ivVal')
-                            ..selection = TextSelection.fromPosition(TextPosition(offset: '$ivVal'.length)),
-                          onChanged: (val) {
-                            final parsed = int.tryParse(val) ?? 0;
-                            final clamped = parsed.clamp(0, 31);
-                            if (isAttacker) {
-                              vm.updateAttackerIv(key, clamped);
-                            } else {
-                              vm.updateDefenderIv(key, clamped);
-                            }
-                          },
-                        ),
+                                decoration: InputDecoration(
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  filled: true,
+                                  fillColor: isDark
+                                      ? const Color(0xFF1E1E1E)
+                                      : const Color(0xFFF1F5F9),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(6),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                ),
+                                style: TextStyle(
+                                  color: primaryColor,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                keyboardType: TextInputType.number,
+                                textAlign: TextAlign.center,
+                                controller:
+                                    TextEditingController(text: '$ivVal')
+                                      ..selection = TextSelection.fromPosition(
+                                        TextPosition(offset: '$ivVal'.length),
+                                      ),
+                                onChanged: (val) {
+                                  final parsed = int.tryParse(val) ?? 0;
+                                  final clamped = parsed.clamp(0, 31);
+                                  if (isAttacker) {
+                                    vm.updateAttackerIv(key, clamped);
+                                  } else {
+                                    vm.updateDefenderIv(key, clamped);
+                                  }
+                                },
+                              ),
                       ),
                     ),
                   ),
@@ -1618,17 +2638,36 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                         height: 32,
                         child: TextField(
                           decoration: InputDecoration(
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             filled: true,
-                            fillColor: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF1F5F9),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide.none),
+                            fillColor: isDark
+                                ? const Color(0xFF1E1E1E)
+                                : const Color(0xFFF1F5F9),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(6),
+                              borderSide: BorderSide.none,
+                            ),
                           ),
-                          style: TextStyle(color: primaryColor, fontSize: 12, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: primaryColor,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
                           keyboardType: TextInputType.number,
                           textAlign: TextAlign.center,
-                          controller: TextEditingController(text: isChampions ? '$spVal' : '$evVal')
-                            ..selection = TextSelection.fromPosition(
-                                TextPosition(offset: (isChampions ? '$spVal' : '$evVal').length)),
+                          controller:
+                              TextEditingController(
+                                  text: isChampions ? '$spVal' : '$evVal',
+                                )
+                                ..selection = TextSelection.fromPosition(
+                                  TextPosition(
+                                    offset: (isChampions ? '$spVal' : '$evVal')
+                                        .length,
+                                  ),
+                                ),
                           onChanged: (val) {
                             final parsed = int.tryParse(val) ?? 0;
                             if (isChampions) {
@@ -1655,24 +2694,44 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                   Expanded(
                     flex: 2,
                     child: isHp
-                        ? const Center(child: Text('-', style: TextStyle(color: Colors.grey)))
+                        ? const Center(
+                            child: Text(
+                              '-',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          )
                         : Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 4),
                             child: Container(
                               height: 32,
-                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                              ),
                               decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF1F5F9),
+                                color: isDark
+                                    ? const Color(0xFF1E1E1E)
+                                    : const Color(0xFFF1F5F9),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: DropdownButtonHideUnderline(
                                 child: DropdownButton<int>(
                                   value: stageVal,
-                                  dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                                  items: List.generate(13, (i) => i - 6).map((stage) {
+                                  dropdownColor: isDark
+                                      ? const Color(0xFF1E1E1E)
+                                      : Colors.white,
+                                  items: List.generate(13, (i) => i - 6).map((
+                                    stage,
+                                  ) {
                                     return DropdownMenuItem<int>(
                                       value: stage,
-                                      child: Text(stage >= 0 ? '+$stage' : '$stage', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: primaryColor)),
+                                      child: Text(
+                                        stage >= 0 ? '+$stage' : '$stage',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                          color: primaryColor,
+                                        ),
+                                      ),
                                     );
                                   }).toList(),
                                   onChanged: (v) {
@@ -1691,7 +2750,15 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                   ),
                   Expanded(
                     flex: 2,
-                    child: Text('$finalStatWithStage', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: AppTheme.pokemonRed), textAlign: TextAlign.right),
+                    child: Text(
+                      '$finalStatWithStage',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 13,
+                        color: AppTheme.pokemonRed,
+                      ),
+                      textAlign: TextAlign.right,
+                    ),
                   ),
                 ],
               ),
@@ -1699,9 +2766,14 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
           }
 
           return Dialog(
-            insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
+            insetPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 24,
+            ),
             backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+            ),
             child: ConstrainedBox(
               constraints: BoxConstraints(maxHeight: screenHeight * 0.85),
               child: Column(
@@ -1726,459 +2798,910 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                     child: ListView(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                       children: [
+                        // Header Row
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                if (p.spriteUrl.isNotEmpty)
+                                  SizedBox(
+                                    width: 36,
+                                    height: 36,
+                                    child: PokemonSprite(
+                                      imageUrl: p.spriteUrl,
+                                      fallbackUrl: PokemonSprite.homeArtworkUrl(
+                                        p.nationalDexNumber > 0
+                                            ? p.nationalDexNumber
+                                            : p.id,
+                                      ),
+                                      errorIconColor: Colors.grey,
+                                      errorIconSize: 24,
+                                    ),
+                                  ),
+                                const SizedBox(width: 8),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      isAttacker
+                                          ? 'ATTACKER SETUP'
+                                          : 'DEFENDER SETUP',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 10,
+                                        color: Colors.grey,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                    Text(
+                                      p.name,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            ElevatedButton.icon(
+                              icon: const Icon(Icons.swap_horiz, size: 14),
+                              label: const Text(
+                                'Change Pokémon',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                elevation: 0,
+                                backgroundColor: AppTheme.pokemonRed,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              onPressed: () {
+                                Navigator.pop(ctx);
+                                _showPokemonPicker(
+                                  context,
+                                  pokemonList,
+                                  isAttacker,
+                                  vm,
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                        const Divider(height: 24),
 
-                // Header Row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        if (p.spriteUrl.isNotEmpty)
-                          SizedBox(
-                            width: 36,
-                            height: 36,
-                            child: PokemonSprite(
-                              imageUrl: p.spriteUrl,
-                              fallbackUrl: PokemonSprite.homeArtworkUrl(p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id),
-                              errorIconColor: Colors.grey,
-                              errorIconSize: 24,
+                        if (isChampions) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.deepPurpleAccent.withValues(
+                                alpha: 0.08,
+                              ),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: Colors.deepPurpleAccent.withValues(
+                                  alpha: 0.25,
+                                ),
+                              ),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(
+                                  Icons.emoji_events_rounded,
+                                  size: 16,
+                                  color: Colors.deepPurpleAccent,
+                                ),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Pokémon Champions — 66 Stat Points in total, max 32 per stat, using Champions stat formulas.',
+                                    style: TextStyle(
+                                      fontSize: 10.5,
+                                      height: 1.35,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        const SizedBox(width: 8),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(isAttacker ? 'ATTACKER SETUP' : 'DEFENDER SETUP', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 10, color: Colors.grey, letterSpacing: 0.5)),
-                            Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                          ],
-                        ),
-                      ],
-                    ),
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.swap_horiz, size: 14),
-                      label: const Text('Change Pokémon', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                      style: ElevatedButton.styleFrom(
-                        elevation: 0,
-                        backgroundColor: AppTheme.pokemonRed,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                      onPressed: () {
-                        Navigator.pop(ctx);
-                        _showPokemonPicker(context, pokemonList, isAttacker, vm);
-                      },
-                    ),
-                  ],
-                ),
-                const Divider(height: 24),
+                          const SizedBox(height: 12),
+                        ],
 
-                if (isChampions) ...[
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.deepPurpleAccent.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.deepPurpleAccent.withValues(alpha: 0.25)),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.emoji_events_rounded, size: 16, color: Colors.deepPurpleAccent),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Pokémon Champions — 66 Stat Points in total, max 32 per stat, using Champions stat formulas.',
-                            style: TextStyle(fontSize: 10.5, height: 1.35, fontWeight: FontWeight.w600, color: Colors.grey),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-
-                // Terastallization Card (Mainline ruleset only — Pokémon Champions does not have Tera)
-                if (!currentState.ruleset.isChampions) ...[
-                  Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF141414) : const Color(0xFFF3F4F6),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
-                  ),
-                  child: Column(
-                    children: [
-                      SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Row(
-                          children: [
-                            const Text('💎 Terastallize (Tera Active)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                            if (isTeraActive) ...[
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(color: (CombatUtils.typeColors[teraType.toLowerCase()] ?? Colors.purple).withValues(alpha: 0.2), borderRadius: BorderRadius.circular(4)),
-                                child: Text(teraType.toUpperCase(), style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: CombatUtils.typeColors[teraType.toLowerCase()] ?? Colors.purple)),
+                        // Terastallization Card (Mainline ruleset only — Pokémon Champions does not have Tera)
+                        if (!currentState.ruleset.isChampions) ...[
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? const Color(0xFF141414)
+                                  : const Color(0xFFF3F4F6),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: isDark
+                                    ? const Color(0xFF222222)
+                                    : const Color(0xFFE5E7EB),
                               ),
-                            ],
-                          ],
-                        ),
-                        subtitle: const Text('Applies Tera STAB (Attacker) or pure Tera typing (Defender)', style: TextStyle(fontSize: 10, color: Colors.grey)),
-                        value: isTeraActive,
-                        activeThumbColor: AppTheme.pokemonRed,
-                        onChanged: (val) {
-                          if (isAttacker) {
-                            vm.toggleAttackerTera(val);
-                          } else {
-                            vm.toggleDefenderTera(val);
-                          }
-                        },
-                      ),
-                      if (isTeraActive) ...[
-                        const SizedBox(height: 8),
+                            ),
+                            child: Column(
+                              children: [
+                                SwitchListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: Row(
+                                    children: [
+                                      const Text(
+                                        '💎 Terastallize (Tera Active)',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                      if (isTeraActive) ...[
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                            vertical: 2,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color:
+                                                (CombatUtils.typeColors[teraType
+                                                            .toLowerCase()] ??
+                                                        Colors.purple)
+                                                    .withValues(alpha: 0.2),
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            teraType.toUpperCase(),
+                                            style: TextStyle(
+                                              fontSize: 9,
+                                              fontWeight: FontWeight.bold,
+                                              color:
+                                                  CombatUtils
+                                                      .typeColors[teraType
+                                                      .toLowerCase()] ??
+                                                  Colors.purple,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                  subtitle: const Text(
+                                    'Applies Tera STAB (Attacker) or pure Tera typing (Defender)',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                  value: isTeraActive,
+                                  activeThumbColor: AppTheme.pokemonRed,
+                                  onChanged: (val) {
+                                    if (isAttacker) {
+                                      vm.toggleAttackerTera(val);
+                                    } else {
+                                      vm.toggleDefenderTera(val);
+                                    }
+                                  },
+                                ),
+                                if (isTeraActive) ...[
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      const Text(
+                                        'Tera Type: ',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: isDark
+                                                ? const Color(0xFF1E1E1E)
+                                                : Colors.white,
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                          ),
+                                          child: DropdownButtonHideUnderline(
+                                            child: DropdownButton<String>(
+                                              value:
+                                                  CombatUtils.allTypes.contains(
+                                                    teraType.toLowerCase(),
+                                                  )
+                                                  ? teraType.toLowerCase()
+                                                  : CombatUtils.allTypes.first,
+                                              isExpanded: true,
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: primaryColor,
+                                                fontSize: 12,
+                                              ),
+                                              items: CombatUtils.allTypes
+                                                  .map(
+                                                    (t) => DropdownMenuItem(
+                                                      value: t,
+                                                      child: Text(
+                                                        t.toUpperCase(),
+                                                      ),
+                                                    ),
+                                                  )
+                                                  .toList(),
+                                              onChanged: (t) {
+                                                if (t != null) {
+                                                  if (isAttacker) {
+                                                    vm.setAttackerTeraType(t);
+                                                  } else {
+                                                    vm.setDefenderTeraType(t);
+                                                  }
+                                                }
+                                              },
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+
+                        // Status Condition & Held Item
                         Row(
                           children: [
-                            const Text('Tera Type: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'STATUS CONDITION',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w900,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isDark
+                                          ? const Color(0xFF141414)
+                                          : const Color(0xFFF3F4F6),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: DropdownButtonHideUnderline(
+                                      child: DropdownButton<String>(
+                                        value: status,
+                                        isExpanded: true,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: primaryColor,
+                                          fontSize: 11,
+                                        ),
+                                        items: const [
+                                          DropdownMenuItem(
+                                            value: 'none',
+                                            child: Text('Healthy (None)'),
+                                          ),
+                                          DropdownMenuItem(
+                                            value: 'burn',
+                                            child: Text('🔥 Burned (BRN)'),
+                                          ),
+                                          DropdownMenuItem(
+                                            value: 'paralysis',
+                                            child: Text('⚡ Paralyzed (PAR)'),
+                                          ),
+                                          DropdownMenuItem(
+                                            value: 'poison',
+                                            child: Text('☠️ Poisoned (PSN)'),
+                                          ),
+                                          DropdownMenuItem(
+                                            value: 'toxic',
+                                            child: Text('☣️ Badly Poisoned'),
+                                          ),
+                                          DropdownMenuItem(
+                                            value: 'sleep',
+                                            child: Text('💤 Asleep (SLP)'),
+                                          ),
+                                          DropdownMenuItem(
+                                            value: 'freeze',
+                                            child: Text('🧊 Frozen (FRZ)'),
+                                          ),
+                                        ],
+                                        onChanged: (st) {
+                                          if (st != null) {
+                                            if (isAttacker) {
+                                              vm.setAttackerStatus(st);
+                                            } else {
+                                              vm.setDefenderStatus(st);
+                                            }
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8),
-                                decoration: BoxDecoration(color: isDark ? const Color(0xFF1E1E1E) : Colors.white, borderRadius: BorderRadius.circular(8)),
-                                child: DropdownButtonHideUnderline(
-                                  child: DropdownButton<String>(
-                                    value: CombatUtils.allTypes.contains(teraType.toLowerCase()) ? teraType.toLowerCase() : CombatUtils.allTypes.first,
-                                    isExpanded: true,
-                                    style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 12),
-                                    items: CombatUtils.allTypes.map((t) => DropdownMenuItem(value: t, child: Text(t.toUpperCase()))).toList(),
-                                    onChanged: (t) {
-                                      if (t != null) {
-                                        if (isAttacker) {
-                                          vm.setAttackerTeraType(t);
-                                        } else {
-                                          vm.setDefenderTeraType(t);
-                                        }
-                                      }
-                                    },
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'HELD ITEM (TAP TO SEARCH)',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w900,
+                                      color: Colors.grey,
+                                    ),
                                   ),
-                                ),
+                                  const SizedBox(height: 4),
+                                  GestureDetector(
+                                    onTap: () => _showItemPicker(
+                                      context,
+                                      isAttacker,
+                                      vm,
+                                    ),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 10,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: isDark
+                                            ? const Color(0xFF141414)
+                                            : const Color(0xFFF3F4F6),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.backpack_outlined,
+                                            size: 16,
+                                            color: AppTheme.pokemonRed,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              heldItem,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 12,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
                         ),
-                      ],
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-              ],
+                        const SizedBox(height: 12),
 
-                // Status Condition & Held Item
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('STATUS CONDITION', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            decoration: BoxDecoration(color: isDark ? const Color(0xFF141414) : const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(12)),
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                value: status,
-                                isExpanded: true,
-                                style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 11),
-                                items: const [
-                                  DropdownMenuItem(value: 'none', child: Text('Healthy (None)')),
-                                  DropdownMenuItem(value: 'burn', child: Text('🔥 Burned (BRN)')),
-                                  DropdownMenuItem(value: 'paralysis', child: Text('⚡ Paralyzed (PAR)')),
-                                  DropdownMenuItem(value: 'poison', child: Text('☠️ Poisoned (PSN)')),
-                                  DropdownMenuItem(value: 'toxic', child: Text('☣️ Badly Poisoned')),
-                                  DropdownMenuItem(value: 'sleep', child: Text('💤 Asleep (SLP)')),
-                                  DropdownMenuItem(value: 'freeze', child: Text('🧊 Frozen (FRZ)')),
+                        // Ability & Nature
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'ABILITY',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w900,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  FutureBuilder<List<Map<String, dynamic>>>(
+                                    // Base-species abilities fill in for forms that
+                                    // have no released Champions ability yet.
+                                    future: ref
+                                        .read(pokemonRepositoryProvider)
+                                        .getAbilitiesWithFallback(p.id),
+                                    builder: (context, snapshot) {
+                                      final abilitiesList = snapshot.data ?? [];
+                                      if (abilitiesList.isEmpty) {
+                                        return Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 10,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: isDark
+                                                ? const Color(0xFF141414)
+                                                : const Color(0xFFF3F4F6),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                          child: const Text(
+                                            'Default Ability',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                      String abilityNameOf(
+                                        Map<String, dynamic> a,
+                                      ) => (a['name'] ?? '') as String;
+                                      final selectedAbility = isAttacker
+                                          ? currentState.attackerAbility
+                                          : currentState.defenderAbility;
+                                      final currentAbility =
+                                          (selectedAbility != null &&
+                                              abilitiesList.any(
+                                                (a) =>
+                                                    abilityNameOf(
+                                                      a,
+                                                    ).toLowerCase() ==
+                                                    selectedAbility
+                                                        .toLowerCase(),
+                                              ))
+                                          ? abilityNameOf(
+                                              abilitiesList.firstWhere(
+                                                (a) =>
+                                                    abilityNameOf(
+                                                      a,
+                                                    ).toLowerCase() ==
+                                                    selectedAbility
+                                                        .toLowerCase(),
+                                              ),
+                                            )
+                                          : abilityNameOf(abilitiesList.first);
+
+                                      return Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: isDark
+                                              ? const Color(0xFF141414)
+                                              : const Color(0xFFF3F4F6),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        child: DropdownButtonHideUnderline(
+                                          child: DropdownButton<String>(
+                                            value: currentAbility,
+                                            isExpanded: true,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: primaryColor,
+                                              fontSize: 11,
+                                            ),
+                                            items: abilitiesList.map((a) {
+                                              final name = abilityNameOf(a);
+                                              final label =
+                                                  (a['isHidden'] == true)
+                                                  ? '$name (Hidden)'
+                                                  : name;
+                                              return DropdownMenuItem<String>(
+                                                value: name,
+                                                child: Text(
+                                                  label,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              );
+                                            }).toList(),
+                                            onChanged: (ab) {
+                                              if (ab != null) {
+                                                if (isAttacker) {
+                                                  vm.setAttackerAbility(ab);
+                                                } else {
+                                                  vm.setDefenderAbility(ab);
+                                                }
+                                              }
+                                            },
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
                                 ],
-                                onChanged: (st) {
-                                  if (st != null) {
-                                    if (isAttacker) {
-                                      vm.setAttackerStatus(st);
-                                    } else {
-                                      vm.setDefenderStatus(st);
-                                    }
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    isChampions
+                                        ? 'STAT ALIGNMENT'
+                                        : 'NATURE (STAT DIRECTS)',
+                                    style: const TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w900,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isDark
+                                          ? const Color(0xFF141414)
+                                          : const Color(0xFFF3F4F6),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: DropdownButtonHideUnderline(
+                                      child: DropdownButton<String>(
+                                        value:
+                                            (isChampions
+                                                    ? championsAlignmentNames
+                                                    : natureFormattedNames)
+                                                .containsKey(
+                                                  nature.toLowerCase(),
+                                                )
+                                            ? nature.toLowerCase()
+                                            : (isChampions
+                                                  ? 'serious'
+                                                  : 'adamant'),
+                                        isExpanded: true,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: primaryColor,
+                                          fontSize: 11,
+                                        ),
+                                        items:
+                                            (isChampions
+                                                    ? championsAlignmentNames
+                                                    : natureFormattedNames)
+                                                .entries
+                                                .map(
+                                                  (e) =>
+                                                      DropdownMenuItem<String>(
+                                                        value: e.key,
+                                                        child: Text(
+                                                          e.value,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                        ),
+                                                      ),
+                                                )
+                                                .toList(),
+                                        onChanged: (n) {
+                                          if (n != null) {
+                                            if (isAttacker) {
+                                              vm.updateAttackerNature(n);
+                                            } else {
+                                              vm.updateDefenderNature(n);
+                                            }
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Level Slider — Champions battles are always level 50.
+                        if (isChampions)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? const Color(0xFF141414)
+                                  : const Color(0xFFF3F4F6),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.deepPurpleAccent.withValues(
+                                  alpha: 0.25,
+                                ),
+                              ),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(
+                                  Icons.lock_outline_rounded,
+                                  size: 14,
+                                  color: Colors.deepPurpleAccent,
+                                ),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'LEVEL: 50 — fixed for all Pokémon Champions battles',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'LEVEL: $level',
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              Slider(
+                                value: level.toDouble(),
+                                min: 1,
+                                max: 100,
+                                divisions: 99,
+                                activeColor: AppTheme.pokemonRed,
+                                onChanged: (val) {
+                                  if (isAttacker) {
+                                    vm.updateAttackerLevel(val.toInt());
+                                  } else {
+                                    vm.updateDefenderLevel(val.toInt());
                                   }
                                 },
                               ),
-                            ),
+                            ],
                           ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('HELD ITEM (TAP TO SEARCH)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
-                          const SizedBox(height: 4),
-                          GestureDetector(
-                            onTap: () => _showItemPicker(context, isAttacker, vm),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                              decoration: BoxDecoration(color: isDark ? const Color(0xFF141414) : const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(12)),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.backpack_outlined, size: 16, color: AppTheme.pokemonRed),
-                                  const SizedBox(width: 8),
-                                  Expanded(child: Text(heldItem, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12), overflow: TextOverflow.ellipsis)),
-                                ],
+                        const SizedBox(height: 16),
+
+                        // EVs & IVs (mainline) or Stat Point (Champions) editor table
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              isChampions
+                                  ? 'STATS, SP & BOOSTS'
+                                  : 'STATS, EVS, IVS & BOOSTS',
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.grey,
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-
-                // Ability & Nature
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('ABILITY', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
-                          const SizedBox(height: 4),
-                          FutureBuilder<List<Map<String, dynamic>>>(
-                            // Base-species abilities fill in for forms that
-                            // have no released Champions ability yet.
-                            future: ref.read(pokemonRepositoryProvider).getAbilitiesWithFallback(p.id),
-                            builder: (context, snapshot) {
-                              final abilitiesList = snapshot.data ?? [];
-                              if (abilitiesList.isEmpty) {
-                                return Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                  decoration: BoxDecoration(color: isDark ? const Color(0xFF141414) : const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(12)),
-                                  child: const Text('Default Ability', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
-                                );
-                              }
-                              String abilityNameOf(Map<String, dynamic> a) => (a['name'] ?? '') as String;
-                              final selectedAbility = isAttacker ? currentState.attackerAbility : currentState.defenderAbility;
-                              final currentAbility = (selectedAbility != null && abilitiesList.any((a) => abilityNameOf(a).toLowerCase() == selectedAbility.toLowerCase()))
-                                  ? abilityNameOf(abilitiesList.firstWhere((a) => abilityNameOf(a).toLowerCase() == selectedAbility.toLowerCase()))
-                                  : abilityNameOf(abilitiesList.first);
-
-                              return Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8),
-                                decoration: BoxDecoration(color: isDark ? const Color(0xFF141414) : const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(12)),
-                                child: DropdownButtonHideUnderline(
-                                  child: DropdownButton<String>(
-                                    value: currentAbility,
-                                    isExpanded: true,
-                                    style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 11),
-                                    items: abilitiesList.map((a) {
-                                      final name = abilityNameOf(a);
-                                      final label = (a['isHidden'] == true) ? '$name (Hidden)' : name;
-                                      return DropdownMenuItem<String>(value: name, child: Text(label, overflow: TextOverflow.ellipsis));
-                                    }).toList(),
-                                    onChanged: (ab) {
-                                      if (ab != null) {
+                            if (isChampions)
+                              Text(
+                                '${ChampionsRules.remainingStatPoints(sps)} / ${ChampionsRules.totalStatPoints} SP remaining',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w900,
+                                  color:
+                                      ChampionsRules.remainingStatPoints(sps) ==
+                                          0
+                                      ? Colors.deepPurpleAccent
+                                      : Colors.grey,
+                                ),
+                              )
+                            else
+                              Row(
+                                children: [
+                                  TextButton(
+                                    onPressed: () {
+                                      final keys = [
+                                        'hp',
+                                        'atk',
+                                        'def',
+                                        'spa',
+                                        'spd',
+                                        'spe',
+                                      ];
+                                      for (final k in keys) {
                                         if (isAttacker) {
-                                          vm.setAttackerAbility(ab);
+                                          vm.updateAttackerEv(
+                                            k,
+                                            k == 'hp' || k == 'atk'
+                                                ? 252
+                                                : (k == 'spe' ? 4 : 0),
+                                          );
                                         } else {
-                                          vm.setDefenderAbility(ab);
+                                          vm.updateDefenderEv(
+                                            k,
+                                            k == 'hp' || k == 'def'
+                                                ? 252
+                                                : (k == 'spd' ? 4 : 0),
+                                          );
                                         }
                                       }
                                     },
+                                    child: const Text(
+                                      '252/252 Preset',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppTheme.pokemonRed,
+                                      ),
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      final keys = [
+                                        'hp',
+                                        'atk',
+                                        'def',
+                                        'spa',
+                                        'spd',
+                                        'spe',
+                                      ];
+                                      for (final k in keys) {
+                                        if (isAttacker) {
+                                          vm.updateAttackerIv(k, 31);
+                                        } else {
+                                          vm.updateDefenderIv(k, 31);
+                                        }
+                                      }
+                                    },
+                                    child: const Text(
+                                      'Max IVs',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                          ],
+                        ),
+                        if (isChampions) ...[
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: [
+                              for (final preset in ChampionsStatPreset.presets)
+                                ActionChip(
+                                  label: Text(
+                                    preset.label,
+                                    style: const TextStyle(
+                                      fontSize: 9.5,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  visualDensity: VisualDensity.compact,
+                                  backgroundColor: isDark
+                                      ? const Color(0xFF1A1A1A)
+                                      : const Color(0xFFEDF2F7),
+                                  side: BorderSide(
+                                    color: Colors.deepPurpleAccent.withValues(
+                                      alpha: 0.25,
+                                    ),
+                                  ),
+                                  onPressed: () => vm.applyChampionsPreset(
+                                    isAttacker: isAttacker,
+                                    preset: preset,
                                   ),
                                 ),
-                              );
-                            },
+                            ],
                           ),
                         ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            isChampions ? 'STAT ALIGNMENT' : 'NATURE (STAT DIRECTS)',
-                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey),
-                          ),
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            decoration: BoxDecoration(color: isDark ? const Color(0xFF141414) : const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(12)),
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                value: (isChampions ? championsAlignmentNames : natureFormattedNames)
-                                        .containsKey(nature.toLowerCase())
-                                    ? nature.toLowerCase()
-                                    : (isChampions ? 'serious' : 'adamant'),
-                                isExpanded: true,
-                                style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 11),
-                                items: (isChampions ? championsAlignmentNames : natureFormattedNames)
-                                    .entries
-                                    .map((e) => DropdownMenuItem<String>(value: e.key, child: Text(e.value, overflow: TextOverflow.ellipsis)))
-                                    .toList(),
-                                onChanged: (n) {
-                                  if (n != null) {
-                                    if (isAttacker) {
-                                      vm.updateAttackerNature(n);
-                                    } else {
-                                      vm.updateDefenderNature(n);
-                                    }
-                                  }
-                                },
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Expanded(
+                              flex: 2,
+                              child: Text(
+                                'STAT',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.grey,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-
-                // Level Slider — Champions battles are always level 50.
-                if (isChampions)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF141414) : const Color(0xFFF3F4F6),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.deepPurpleAccent.withValues(alpha: 0.25)),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.lock_outline_rounded, size: 14, color: Colors.deepPurpleAccent),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'LEVEL: 50 — fixed for all Pokémon Champions battles',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey),
-                          ),
+                            const Expanded(
+                              flex: 1,
+                              child: Text(
+                                'BASE',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.grey,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            const Expanded(
+                              flex: 2,
+                              child: Text(
+                                'IV',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.grey,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                isChampions ? 'SP' : 'EV',
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.grey,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            const Expanded(
+                              flex: 2,
+                              child: Text(
+                                'BOOST',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.grey,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            const Expanded(
+                              flex: 2,
+                              child: Text(
+                                'FINAL',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.grey,
+                                ),
+                                textAlign: TextAlign.right,
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  )
-                else
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('LEVEL: $level', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
-                      Slider(
-                        value: level.toDouble(), min: 1, max: 100, divisions: 99,
-                        activeColor: AppTheme.pokemonRed,
-                        onChanged: (val) {
-                          if (isAttacker) {
-                            vm.updateAttackerLevel(val.toInt());
-                          } else {
-                            vm.updateDefenderLevel(val.toInt());
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                const SizedBox(height: 16),
-
-                // EVs & IVs (mainline) or Stat Point (Champions) editor table
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      isChampions ? 'STATS, SP & BOOSTS' : 'STATS, EVS, IVS & BOOSTS',
-                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey),
-                    ),
-                    if (isChampions)
-                      Text(
-                        '${ChampionsRules.remainingStatPoints(sps)} / ${ChampionsRules.totalStatPoints} SP remaining',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w900,
-                          color: ChampionsRules.remainingStatPoints(sps) == 0
-                              ? Colors.deepPurpleAccent
-                              : Colors.grey,
-                        ),
-                      )
-                    else
-                      Row(
-                        children: [
-                          TextButton(
-                            onPressed: () {
-                              final keys = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
-                              for (final k in keys) {
-                                if (isAttacker) {
-                                  vm.updateAttackerEv(k, k == 'hp' || k == 'atk' ? 252 : (k == 'spe' ? 4 : 0));
-                                } else {
-                                  vm.updateDefenderEv(k, k == 'hp' || k == 'def' ? 252 : (k == 'spd' ? 4 : 0));
-                                }
-                              }
-                            },
-                            child: const Text('252/252 Preset', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.pokemonRed)),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              final keys = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
-                              for (final k in keys) {
-                                if (isAttacker) {
-                                  vm.updateAttackerIv(k, 31);
-                                } else {
-                                  vm.updateDefenderIv(k, 31);
-                                }
-                              }
-                            },
-                            child: const Text('Max IVs', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                          ),
-                        ],
-                      ),
-                  ],
-                ),
-                if (isChampions) ...[
-                  const SizedBox(height: 6),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: [
-                      for (final preset in ChampionsStatPreset.presets)
-                        ActionChip(
-                          label: Text(preset.label, style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold)),
-                          visualDensity: VisualDensity.compact,
-                          backgroundColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFEDF2F7),
-                          side: BorderSide(color: Colors.deepPurpleAccent.withValues(alpha: 0.25)),
-                          onPressed: () => vm.applyChampionsPreset(isAttacker: isAttacker, preset: preset),
-                        ),
-                    ],
-                  ),
-                ],
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const Expanded(flex: 2, child: Text('STAT', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey))),
-                    const Expanded(flex: 1, child: Text('BASE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey), textAlign: TextAlign.center)),
-                    const Expanded(flex: 2, child: Text('IV', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey), textAlign: TextAlign.center)),
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        isChampions ? 'SP' : 'EV',
-                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    const Expanded(flex: 2, child: Text('BOOST', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey), textAlign: TextAlign.center)),
-                    const Expanded(flex: 2, child: Text('FINAL', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey), textAlign: TextAlign.right)),
-                  ],
-                ),
-                const Divider(),
-                buildStatRow('HP', 'hp', p.baseHp, true),
-                buildStatRow('Attack', 'atk', p.baseAtk, false),
-                buildStatRow('Defense', 'def', p.baseDef, false),
-                buildStatRow('Sp. Atk', 'spa', p.baseSpAtk, false),
-                buildStatRow('Sp. Def', 'spd', p.baseSpDef, false),
-                buildStatRow('Speed', 'spe', p.baseSpd, false),
+                        const Divider(),
+                        buildStatRow('HP', 'hp', p.baseHp, true),
+                        buildStatRow('Attack', 'atk', p.baseAtk, false),
+                        buildStatRow('Defense', 'def', p.baseDef, false),
+                        buildStatRow('Sp. Atk', 'spa', p.baseSpAtk, false),
+                        buildStatRow('Sp. Def', 'spd', p.baseSpDef, false),
+                        buildStatRow('Speed', 'spe', p.baseSpd, false),
                       ],
                     ),
                   ),
@@ -2189,7 +3712,10 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
         },
       ),
       transitionBuilder: (context, animation, secondaryAnimation, child) {
-        final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+        );
         return FadeTransition(
           opacity: curved,
           child: ScaleTransition(

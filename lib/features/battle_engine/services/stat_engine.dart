@@ -86,7 +86,10 @@ class StatEngine {
   }
 
   /// Compute full raw build stats for a Pokémon state.
-  static ComparisonStats computeRawStats(PokemonState state, BattleRuleset ruleset) {
+  static ComparisonStats computeRawStats(
+    PokemonState state,
+    BattleRuleset ruleset,
+  ) {
     final entry = _toComparisonEntry(state);
     return StatModifier.computeRawStats(entry, ruleset);
   }

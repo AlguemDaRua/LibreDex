@@ -23,7 +23,8 @@ class AbilityDetailScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<AbilityDetailScreen> createState() => _AbilityDetailScreenState();
+  ConsumerState<AbilityDetailScreen> createState() =>
+      _AbilityDetailScreenState();
 }
 
 class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
@@ -34,7 +35,8 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
   Ability? _abilityDetails;
 
   // Learnset / Ability filters (Multi-select)
-  final TextEditingController _pokemonSearchController = TextEditingController();
+  final TextEditingController _pokemonSearchController =
+      TextEditingController();
   String _pokemonQuery = '';
   final Set<String> _selectedTypes = {};
   final Set<int> _selectedGens = {};
@@ -62,20 +64,28 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
     final q = _pokemonQuery.trim().toLowerCase();
     return _pokemons.where((row) {
       final p = row['pokemon'] as Pokemon;
-      final text = '${p.name} ${p.form} ${p.type1} ${p.type2 ?? ''}'.toLowerCase();
+      final text = '${p.name} ${p.form} ${p.type1} ${p.type2 ?? ''}'
+          .toLowerCase();
 
       final matchesQuery = q.isEmpty || text.contains(q);
-      final matchesType = _selectedTypes.isEmpty ||
+      final matchesType =
+          _selectedTypes.isEmpty ||
           _selectedTypes.contains(p.type1.toLowerCase()) ||
           (p.type2 != null && _selectedTypes.contains(p.type2!.toLowerCase()));
-      final matchesGen = _selectedGens.isEmpty || _selectedGens.contains(p.generation);
+      final matchesGen =
+          _selectedGens.isEmpty || _selectedGens.contains(p.generation);
 
       bool matchesForm = true;
       if (_selectedForms.isNotEmpty) {
         final f = p.form.toLowerCase();
         matchesForm = _selectedForms.any((sf) {
           if (sf == 'Mega') return f.contains('mega') || p.isLegendsZA;
-          if (sf == 'Regional') return f.contains('alolan') || f.contains('galarian') || f.contains('hisuian') || f.contains('paldean');
+          if (sf == 'Regional') {
+            return f.contains('alolan') ||
+                f.contains('galarian') ||
+                f.contains('hisuian') ||
+                f.contains('paldean');
+          }
           if (sf == 'Standard') return f == 'normal' || f.isEmpty;
           return false;
         });
@@ -101,7 +111,9 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
       final db = ref.read(databaseProvider);
 
       // Fetch ability details
-      _abilityDetails = await (db.select(db.abilityTable)..where((tbl) => tbl.id.equals(widget.abilityId))).getSingleOrNull();
+      _abilityDetails = await (db.select(
+        db.abilityTable,
+      )..where((tbl) => tbl.id.equals(widget.abilityId))).getSingleOrNull();
       if (_abilityDetails == null) {
         throw Exception('Ability reference not found in local database.');
       }
@@ -131,7 +143,8 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
   void _copyAbilityDetailsToClipboard() {
     if (_abilityDetails == null) return;
     final a = _abilityDetails!;
-    final text = 'ABILITY: ${a.name.toUpperCase()}\n'
+    final text =
+        'ABILITY: ${a.name.toUpperCase()}\n'
         'Introduced in: ${a.introducedIn} | Source: ${a.sourceGames}\n'
         '${a.description}';
     Clipboard.setData(ClipboardData(text: text));
@@ -144,7 +157,8 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
   void _shareAbilityInfo() {
     if (_abilityDetails == null) return;
     final a = _abilityDetails!;
-    final text = 'Check out the ${a.name} ability in LibreDex!\n${a.description}';
+    final text =
+        'Check out the ${a.name} ability in LibreDex!\n${a.description}';
     Clipboard.setData(ClipboardData(text: text));
     HapticFeedback.lightImpact();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -163,7 +177,11 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
       appBar: AppBar(
         title: Text(
           widget.abilityName.toUpperCase(),
-          style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1, color: primaryColor),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1,
+            color: primaryColor,
+          ),
         ),
         iconTheme: IconThemeData(color: primaryColor),
         backgroundColor: Colors.transparent,
@@ -187,243 +205,326 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
         top: false,
         bottom: true,
         child: _isLoading
-            ? const Center(child: CircularProgressIndicator(color: AppTheme.pokemonRed))
+            ? const Center(
+                child: CircularProgressIndicator(color: AppTheme.pokemonRed),
+              )
             : _hasError
-                ? _buildErrorState()
-                : CustomScrollView(
-                    physics: const BouncingScrollPhysics(),
-                  slivers: [
-                    // Ability Header Card (Scrolls away cleanly!)
-                    if (_abilityDetails != null)
-                      SliverToBoxAdapter(
-                        child: _buildAbilityHeaderCard(isDark, regulation),
-                      ),
-
-                    // Section Title: Pokémon with this ability
+            ? _buildErrorState()
+            : CustomScrollView(
+                physics: const BouncingScrollPhysics(),
+                slivers: [
+                  // Ability Header Card (Scrolls away cleanly!)
+                  if (_abilityDetails != null)
                     SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: 16, right: 16, top: 12, bottom: 4),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(Icons.catching_pokemon_outlined,
-                                    size: 20, color: AppTheme.pokemonRed.withValues(alpha: 0.8)),
-                                const SizedBox(width: 8),
-                                const Text(
-                                  'POKÉMON WITH THIS ABILITY',
-                                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey, fontSize: 12),
+                      child: _buildAbilityHeaderCard(isDark, regulation),
+                    ),
+
+                  // Section Title: Pokémon with this ability
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                        left: 16,
+                        right: 16,
+                        top: 12,
+                        bottom: 4,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.catching_pokemon_outlined,
+                                size: 20,
+                                color: AppTheme.pokemonRed.withValues(
+                                  alpha: 0.8,
                                 ),
-                              ],
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'POKÉMON WITH THIS ABILITY',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            '${_visiblePokemons.length} matches',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                              color: Colors.grey,
                             ),
-                            Text(
-                              '${_visiblePokemons.length} matches',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Sticky Search & Multi-Filter Bar
+                  SliverPersistentHeader(
+                    pinned: true,
+                    delegate: _AbilityFilterHeaderDelegate(
+                      child: Container(
+                        color: isDark ? Colors.black : const Color(0xFFF9FAFB),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 4,
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            TextField(
+                              controller: _pokemonSearchController,
+                              onChanged: (value) =>
+                                  setState(() => _pokemonQuery = value),
+                              decoration: InputDecoration(
+                                hintText:
+                                    'Filter Pokémon by name, form or type...',
+                                prefixIcon: const Icon(
+                                  Icons.search_rounded,
+                                  color: AppTheme.pokemonRed,
+                                ),
+                                suffixIcon: _pokemonQuery.isEmpty
+                                    ? null
+                                    : IconButton(
+                                        icon: const Icon(Icons.clear),
+                                        onPressed: () {
+                                          _pokemonSearchController.clear();
+                                          setState(() => _pokemonQuery = '');
+                                        },
+                                      ),
+                                isDense: true,
+                              ),
                             ),
+                            const SizedBox(height: 6),
+                            _buildFilterChipsRow(),
                           ],
                         ),
                       ),
                     ),
+                  ),
 
-                    // Sticky Search & Multi-Filter Bar
-                    SliverPersistentHeader(
-                      pinned: true,
-                      delegate: _AbilityFilterHeaderDelegate(
-                        child: Container(
-                          color: isDark ? Colors.black : const Color(0xFFF9FAFB),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              TextField(
-                                controller: _pokemonSearchController,
-                                onChanged: (value) => setState(() => _pokemonQuery = value),
-                                decoration: InputDecoration(
-                                  hintText: 'Filter Pokémon by name, form or type...',
-                                  prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.pokemonRed),
-                                  suffixIcon: _pokemonQuery.isEmpty
-                                      ? null
-                                      : IconButton(
-                                          icon: const Icon(Icons.clear),
-                                          onPressed: () {
-                                            _pokemonSearchController.clear();
-                                            setState(() => _pokemonQuery = '');
-                                          },
-                                        ),
-                                  isDense: true,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              _buildFilterChipsRow(),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    // List of Pokémon
-                    _visiblePokemons.isEmpty
-                        ? SliverFillRemaining(
-                            hasScrollBody: false,
-                            child: Center(
-                              child: Text(
-                                'No Pokémon match this filter.',
-                                style: TextStyle(color: isDark ? Colors.grey[500] : Colors.grey[600]),
+                  // List of Pokémon
+                  _visiblePokemons.isEmpty
+                      ? SliverFillRemaining(
+                          hasScrollBody: false,
+                          child: Center(
+                            child: Text(
+                              'No Pokémon match this filter.',
+                              style: TextStyle(
+                                color: isDark
+                                    ? Colors.grey[500]
+                                    : Colors.grey[600],
                               ),
                             ),
-                          )
-                        : SliverList(
-                            delegate: SliverChildBuilderDelegate(
-                              (context, index) {
-                                final item = _visiblePokemons[index];
-                                final Pokemon p = item['pokemon'];
-                                final bool isHidden = item['isHidden'] ?? false;
-                                final typeColor = _getTypeColor(p.type1);
+                          ),
+                        )
+                      : SliverList(
+                          delegate: SliverChildBuilderDelegate((
+                            context,
+                            index,
+                          ) {
+                            final item = _visiblePokemons[index];
+                            final Pokemon p = item['pokemon'];
+                            final bool isHidden = item['isHidden'] ?? false;
+                            final typeColor = _getTypeColor(p.type1);
 
-                                return Card(
-                                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                                  elevation: 0,
-                                  color: isDark ? const Color(0xFF121212) : Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                    side: BorderSide(
-                                        color: isDark ? const Color(0xFF1C1C1C) : const Color(0xFFE2E8F0)),
-                                  ),
-                                  child: InkWell(
-                                    borderRadius: BorderRadius.circular(16),
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) => PokemonDetailScreen(forms: [p])),
-                                      );
-                                    },
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(12),
-                                      child: Row(
-                                        children: [
-                                          Hero(
-                                            tag: 'ability_${widget.abilityId}_pokemon_${p.id}',
-                                            child: SizedBox(
-                                              width: 54,
-                                              height: 54,
-                                              child: p.spriteUrl.isNotEmpty
-                                                  ? PokemonSprite(
-                                                      imageUrl: p.spriteUrl,
-                                                      fallbackUrl: PokemonSprite.homeArtworkUrl(
-                                                          p.nationalDexNumber > 0
-                                                              ? p.nationalDexNumber
-                                                              : p.id),
-                                                      loadingIndicatorSize: 20,
-                                                      errorIconColor: typeColor.withValues(alpha: 0.3),
-                                                      errorIconSize: 24,
-                                                    )
-                                                  : Icon(Icons.catching_pokemon,
-                                                      color: typeColor.withValues(alpha: 0.3)),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 14),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Row(
-                                                  children: [
-                                                    Text(
-                                                      '#${p.nationalDexNumber > 0 ? p.nationalDexNumber.toString().padLeft(3, '0') : p.id}',
-                                                      style: TextStyle(
-                                                        fontSize: 11,
-                                                        fontWeight: FontWeight.bold,
-                                                        color: isDark ? Colors.grey[500] : Colors.grey[600],
+                            return Card(
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 6,
+                              ),
+                              elevation: 0,
+                              color: isDark
+                                  ? const Color(0xFF121212)
+                                  : Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                side: BorderSide(
+                                  color: isDark
+                                      ? const Color(0xFF1C1C1C)
+                                      : const Color(0xFFE2E8F0),
+                                ),
+                              ),
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(16),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          PokemonDetailScreen(forms: [p]),
+                                    ),
+                                  );
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Row(
+                                    children: [
+                                      Hero(
+                                        tag:
+                                            'ability_${widget.abilityId}_pokemon_${p.id}',
+                                        child: SizedBox(
+                                          width: 54,
+                                          height: 54,
+                                          child: p.spriteUrl.isNotEmpty
+                                              ? PokemonSprite(
+                                                  imageUrl: p.spriteUrl,
+                                                  fallbackUrl:
+                                                      PokemonSprite.homeArtworkUrl(
+                                                        p.nationalDexNumber > 0
+                                                            ? p.nationalDexNumber
+                                                            : p.id,
                                                       ),
-                                                    ),
-                                                    const SizedBox(width: 6),
-                                                    Expanded(
-                                                      child: Text(
-                                                        p.name,
-                                                        style: const TextStyle(
-                                                          fontWeight: FontWeight.bold,
-                                                          fontSize: 15,
-                                                        ),
-                                                        maxLines: 1,
-                                                        overflow: TextOverflow.ellipsis,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                                if (p.form.isNotEmpty && p.form != 'normal')
-                                                  Text(
-                                                    p.form.toUpperCase(),
-                                                    style: TextStyle(
-                                                      fontSize: 10,
-                                                      fontWeight: FontWeight.w600,
-                                                      color: isDark ? Colors.grey[400] : Colors.grey[600],
-                                                    ),
+                                                  loadingIndicatorSize: 20,
+                                                  errorIconColor: typeColor
+                                                      .withValues(alpha: 0.3),
+                                                  errorIconSize: 24,
+                                                )
+                                              : Icon(
+                                                  Icons.catching_pokemon,
+                                                  color: typeColor.withValues(
+                                                    alpha: 0.3,
                                                   ),
-                                                const SizedBox(height: 4),
-                                                Row(
-                                                  children: [
-                                                    _buildTypeBadge(p.type1),
-                                                    if (p.type2 != null) ...[
-                                                      const SizedBox(width: 4),
-                                                      _buildTypeBadge(p.type2!),
-                                                    ],
-                                                  ],
+                                                ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 14),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  '#${p.nationalDexNumber > 0 ? p.nationalDexNumber.toString().padLeft(3, '0') : p.id}',
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: isDark
+                                                        ? Colors.grey[500]
+                                                        : Colors.grey[600],
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 6),
+                                                Expanded(
+                                                  child: Text(
+                                                    p.name,
+                                                    style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 15,
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
                                                 ),
                                               ],
                                             ),
+                                            if (p.form.isNotEmpty &&
+                                                p.form != 'normal')
+                                              Text(
+                                                p.form.toUpperCase(),
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: isDark
+                                                      ? Colors.grey[400]
+                                                      : Colors.grey[600],
+                                                ),
+                                              ),
+                                            const SizedBox(height: 4),
+                                            Row(
+                                              children: [
+                                                _buildTypeBadge(p.type1),
+                                                if (p.type2 != null) ...[
+                                                  const SizedBox(width: 4),
+                                                  _buildTypeBadge(p.type2!),
+                                                ],
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      if (isHidden)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
                                           ),
-                                          if (isHidden)
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                              decoration: BoxDecoration(
-                                                color: Colors.purple.withValues(alpha: 0.15),
-                                                borderRadius: BorderRadius.circular(6),
-                                                border: Border.all(color: Colors.purple.withValues(alpha: 0.3)),
-                                              ),
-                                              child: const Text(
-                                                'HIDDEN',
-                                                style: TextStyle(
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.purple,
-                                                ),
-                                              ),
-                                            )
-                                          else
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                              decoration: BoxDecoration(
-                                                color: Colors.blue.withValues(alpha: 0.1),
-                                                borderRadius: BorderRadius.circular(6),
-                                                border: Border.all(color: Colors.blue.withValues(alpha: 0.25)),
-                                              ),
-                                              child: const Text(
-                                                'STANDARD',
-                                                style: TextStyle(
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.blue,
-                                                ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.purple.withValues(
+                                              alpha: 0.15,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
+                                            border: Border.all(
+                                              color: Colors.purple.withValues(
+                                                alpha: 0.3,
                                               ),
                                             ),
-                                        ],
-                                      ),
-                                    ),
+                                          ),
+                                          child: const Text(
+                                            'HIDDEN',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.purple,
+                                            ),
+                                          ),
+                                        )
+                                      else
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.blue.withValues(
+                                              alpha: 0.1,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
+                                            border: Border.all(
+                                              color: Colors.blue.withValues(
+                                                alpha: 0.25,
+                                              ),
+                                            ),
+                                          ),
+                                          child: const Text(
+                                            'STANDARD',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.blue,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
                                   ),
-                                );
-                              },
-                              childCount: _visiblePokemons.length,
-                            ),
-                          ),
-                  ],
-                ),
+                                ),
+                              ),
+                            );
+                          }, childCount: _visiblePokemons.length),
+                        ),
+                ],
+              ),
       ),
     );
   }
 
-  Widget _buildAbilityHeaderCard(bool isDark, ChampionsRegulationCatalog? regulation) {
+  Widget _buildAbilityHeaderCard(
+    bool isDark,
+    ChampionsRegulationCatalog? regulation,
+  ) {
     final ability = _abilityDetails!;
     final mCEffect = regulation?.abilityDescriptionFor(ability.id);
     final isMCAvailable = regulation?.isAbilityAvailable(ability.id) ?? false;
@@ -436,7 +537,9 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF121212) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -446,21 +549,39 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
               AbilityEffectIcon(effectTags: ability.effectTagsList, size: 20),
               const SizedBox(width: 8),
               const Expanded(
-                child: Text('ABILITY EFFECT', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
+                child: Text(
+                  'ABILITY EFFECT',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey,
+                  ),
+                ),
               ),
               if (isMCAvailable)
                 const ContentBadge.mC(tooltip: 'Available in Regulation M-C'),
               if (isNewInMC) ...[
                 const SizedBox(width: 5),
-                const ContentBadge.mC(isNew: true, tooltip: 'Newly added to Regulation M-C'),
+                const ContentBadge.mC(
+                  isNew: true,
+                  tooltip: 'Newly added to Regulation M-C',
+                ),
               ],
               if (ability.isChampionsAbility) ...[
                 const SizedBox(width: 5),
-                const ContentBadge(label: 'CHAMP', color: Colors.orangeAccent, tooltip: 'Champions-origin ability'),
+                const ContentBadge(
+                  label: 'CHAMP',
+                  color: Colors.orangeAccent,
+                  tooltip: 'Champions-origin ability',
+                ),
               ],
               if (ability.isLegendsZAAbility) ...[
                 const SizedBox(width: 5),
-                const ContentBadge(label: 'LZA', color: Colors.purpleAccent, tooltip: 'Legends: Z-A-origin ability'),
+                const ContentBadge(
+                  label: 'LZA',
+                  color: Colors.purpleAccent,
+                  tooltip: 'Legends: Z-A-origin ability',
+                ),
               ],
             ],
           ),
@@ -477,16 +598,27 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
             const SizedBox(height: 16),
             Row(
               children: [
-                const Icon(Icons.emoji_events_rounded, size: 17, color: Colors.deepPurpleAccent),
+                const Icon(
+                  Icons.emoji_events_rounded,
+                  size: 17,
+                  color: Colors.deepPurpleAccent,
+                ),
                 const SizedBox(width: 6),
                 const Expanded(
                   child: Text(
                     'REGULATION M-C EFFECT',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.deepPurpleAccent),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.deepPurpleAccent,
+                    ),
                   ),
                 ),
                 if (isNewInMC)
-                  const ContentBadge.mC(isNew: true, tooltip: 'Newly added to Regulation M-C'),
+                  const ContentBadge.mC(
+                    isNew: true,
+                    tooltip: 'Newly added to Regulation M-C',
+                  ),
               ],
             ),
             const SizedBox(height: 6),
@@ -504,14 +636,34 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
             spacing: 6,
             runSpacing: 6,
             children: [
-              _buildPropertyBadge('Introduced: ${ability.introducedInLabel}', Colors.blue, icon: Icons.history),
-              _buildPropertyBadge('Games: ${ability.sourceGames}', Colors.grey, icon: Icons.sports_esports),
+              _buildPropertyBadge(
+                'Introduced: ${ability.introducedInLabel}',
+                Colors.blue,
+                icon: Icons.history,
+              ),
+              _buildPropertyBadge(
+                'Games: ${ability.sourceGames}',
+                Colors.grey,
+                icon: Icons.sports_esports,
+              ),
               if (ability.isChampionsAbility)
-                _buildPropertyBadge('Champions-origin ability', Colors.amber, icon: Icons.emoji_events),
+                _buildPropertyBadge(
+                  'Champions-origin ability',
+                  Colors.amber,
+                  icon: Icons.emoji_events,
+                ),
               if (ability.isLegendsZAAbility)
-                _buildPropertyBadge('Legends: Z-A origin', Colors.purple, icon: Icons.auto_awesome),
+                _buildPropertyBadge(
+                  'Legends: Z-A origin',
+                  Colors.purple,
+                  icon: Icons.auto_awesome,
+                ),
               if (isMCAvailable)
-                _buildPropertyBadge('Available in M-C', Colors.deepPurpleAccent, icon: Icons.verified_rounded),
+                _buildPropertyBadge(
+                  'Available in M-C',
+                  Colors.deepPurpleAccent,
+                  icon: Icons.verified_rounded,
+                ),
             ],
           ),
         ],
@@ -520,7 +672,10 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
   }
 
   Widget _buildFilterChipsRow() {
-    final hasActiveFilter = _selectedTypes.isNotEmpty || _selectedGens.isNotEmpty || _selectedForms.isNotEmpty;
+    final hasActiveFilter =
+        _selectedTypes.isNotEmpty ||
+        _selectedGens.isNotEmpty ||
+        _selectedForms.isNotEmpty;
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -561,11 +716,16 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
               },
               borderRadius: BorderRadius.circular(20),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: AppTheme.pokemonRed.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppTheme.pokemonRed.withValues(alpha: 0.4)),
+                  border: Border.all(
+                    color: AppTheme.pokemonRed.withValues(alpha: 0.4),
+                  ),
                 ),
                 child: const Row(
                   children: [
@@ -596,7 +756,9 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: isDark ? const Color(0xFF141414) : Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (ctx) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
@@ -611,14 +773,24 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
                     children: [
                       const Text(
                         'FILTER BY ELEMENTAL TYPE',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 0.5),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                       TextButton(
                         onPressed: () {
                           setSheetState(() => _selectedTypes.clear());
                           setState(() {});
                         },
-                        child: const Text('Reset', style: TextStyle(color: AppTheme.pokemonRed, fontSize: 12)),
+                        child: const Text(
+                          'Reset',
+                          style: TextStyle(
+                            color: AppTheme.pokemonRed,
+                            fontSize: 12,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -637,10 +809,14 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
                         labelStyle: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
-                          color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                          color: isSelected
+                              ? Colors.white
+                              : (isDark ? Colors.white70 : Colors.black87),
                         ),
                         selectedColor: typeColor,
-                        backgroundColor: isDark ? const Color(0xFF222222) : const Color(0xFFF3F4F6),
+                        backgroundColor: isDark
+                            ? const Color(0xFF222222)
+                            : const Color(0xFFF3F4F6),
                         checkmarkColor: Colors.white,
                         onSelected: (val) {
                           setSheetState(() {
@@ -662,10 +838,15 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.pokemonRed,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       onPressed: () => Navigator.pop(ctx),
-                      child: const Text('Apply Filter', style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        'Apply Filter',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ],
@@ -684,7 +865,9 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: isDark ? const Color(0xFF141414) : Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (ctx) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
@@ -699,14 +882,24 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
                     children: [
                       const Text(
                         'FILTER BY GENERATION',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 0.5),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                       TextButton(
                         onPressed: () {
                           setSheetState(() => _selectedGens.clear());
                           setState(() {});
                         },
-                        child: const Text('Reset', style: TextStyle(color: AppTheme.pokemonRed, fontSize: 12)),
+                        child: const Text(
+                          'Reset',
+                          style: TextStyle(
+                            color: AppTheme.pokemonRed,
+                            fontSize: 12,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -723,10 +916,14 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
                         labelStyle: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
-                          color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                          color: isSelected
+                              ? Colors.white
+                              : (isDark ? Colors.white70 : Colors.black87),
                         ),
                         selectedColor: AppTheme.pokemonRed,
-                        backgroundColor: isDark ? const Color(0xFF222222) : const Color(0xFFF3F4F6),
+                        backgroundColor: isDark
+                            ? const Color(0xFF222222)
+                            : const Color(0xFFF3F4F6),
                         checkmarkColor: Colors.white,
                         onSelected: (val) {
                           setSheetState(() {
@@ -748,10 +945,15 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.pokemonRed,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       onPressed: () => Navigator.pop(ctx),
-                      child: const Text('Apply Filter', style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        'Apply Filter',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ],
@@ -770,7 +972,9 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: isDark ? const Color(0xFF141414) : Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (ctx) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
@@ -785,14 +989,24 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
                     children: [
                       const Text(
                         'FILTER BY FORM CATEGORY',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 0.5),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                       TextButton(
                         onPressed: () {
                           setSheetState(() => _selectedForms.clear());
                           setState(() {});
                         },
-                        child: const Text('Reset', style: TextStyle(color: AppTheme.pokemonRed, fontSize: 12)),
+                        child: const Text(
+                          'Reset',
+                          style: TextStyle(
+                            color: AppTheme.pokemonRed,
+                            fontSize: 12,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -809,10 +1023,14 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
                         labelStyle: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
-                          color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                          color: isSelected
+                              ? Colors.white
+                              : (isDark ? Colors.white70 : Colors.black87),
                         ),
                         selectedColor: AppTheme.pokemonRed,
-                        backgroundColor: isDark ? const Color(0xFF222222) : const Color(0xFFF3F4F6),
+                        backgroundColor: isDark
+                            ? const Color(0xFF222222)
+                            : const Color(0xFFF3F4F6),
                         checkmarkColor: Colors.white,
                         onSelected: (val) {
                           setSheetState(() {
@@ -834,10 +1052,15 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.pokemonRed,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       onPressed: () => Navigator.pop(ctx),
-                      child: const Text('Apply Filter', style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        'Apply Filter',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ],
@@ -866,7 +1089,9 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
               : (isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6)),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isActive ? AppTheme.pokemonRed : (isDark ? const Color(0xFF333333) : const Color(0xFFE5E7EB)),
+            color: isActive
+                ? AppTheme.pokemonRed
+                : (isDark ? const Color(0xFF333333) : const Color(0xFFE5E7EB)),
           ),
         ),
         child: Row(
@@ -904,7 +1129,11 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
       ),
       child: Text(
         label,
-        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color),
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          color: color,
+        ),
       ),
     );
   }
@@ -926,7 +1155,11 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
           ],
           Text(
             label,
-            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color),
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
           ),
         ],
       ),
@@ -943,7 +1176,11 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
       ),
       child: Text(
         type.toUpperCase(),
-        style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: color),
+        style: TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.bold,
+          color: color,
+        ),
       ),
     );
   }
@@ -955,18 +1192,29 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline_rounded, size: 48, color: Colors.redAccent),
+            const Icon(
+              Icons.error_outline_rounded,
+              size: 48,
+              color: Colors.redAccent,
+            ),
             const SizedBox(height: 16),
             Text(
-              _errorMessage.isNotEmpty ? _errorMessage : 'Ability details could not be loaded.',
+              _errorMessage.isNotEmpty
+                  ? _errorMessage
+                  : 'Ability details could not be loaded.',
               style: const TextStyle(fontSize: 14),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _fetchData,
-              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.pokemonRed),
-              child: const Text('Try Again', style: TextStyle(color: Colors.white)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.pokemonRed,
+              ),
+              child: const Text(
+                'Try Again',
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           ],
         ),
@@ -981,8 +1229,12 @@ class _AbilityFilterHeaderDelegate extends SliverPersistentHeaderDelegate {
   _AbilityFilterHeaderDelegate({required this.child});
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return child;
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return SizedBox.expand(child: child);
   }
 
   @override

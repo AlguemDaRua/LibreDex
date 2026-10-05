@@ -47,7 +47,10 @@ String learnMethodLabel(String raw) {
       return raw
           .split(RegExp('[-_ ]+'))
           .where((part) => part.isNotEmpty)
-          .map((part) => '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}')
+          .map(
+            (part) =>
+                '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}',
+          )
           .join(' ');
   }
 }

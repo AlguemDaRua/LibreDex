@@ -55,10 +55,12 @@ class PokemonDetailScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<PokemonDetailScreen> createState() => _PokemonDetailScreenState();
+  ConsumerState<PokemonDetailScreen> createState() =>
+      _PokemonDetailScreenState();
 }
 
-class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with SingleTickerProviderStateMixin {
+class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late int _selectedFormIndex;
   var _isSavingArtwork = false;
@@ -70,7 +72,10 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
   void initState() {
     super.initState();
     if (widget.forms.isNotEmpty) {
-      _selectedFormIndex = widget.initialFormIndex.clamp(0, widget.forms.length - 1);
+      _selectedFormIndex = widget.initialFormIndex.clamp(
+        0,
+        widget.forms.length - 1,
+      );
     } else {
       _selectedFormIndex = 0;
     }
@@ -83,7 +88,8 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
 
   void _checkArtworkDownloaded() async {
     if (widget.forms.isEmpty) return;
-    final isDownloaded = await OfflineArtworkStore.instance.isPokemonArtworkDownloaded(_activePokemon);
+    final isDownloaded = await OfflineArtworkStore.instance
+        .isPokemonArtworkDownloaded(_activePokemon);
     if (mounted) {
       setState(() => _isArtworkDownloaded = isDownloaded);
     }
@@ -103,7 +109,9 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
   }
 
   Future<void> _addActivePokemonToTeam() async {
-    final added = await ref.read(teamBuilderProvider.notifier).addPokemon(_activePokemon.id);
+    final added = await ref
+        .read(teamBuilderProvider.notifier)
+        .addPokemon(_activePokemon.id);
     if (!mounted) return;
     HapticFeedback.lightImpact();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -133,7 +141,10 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
         try {
           await store.downloadArtwork(
             sourceUrl: url,
-            remoteUrl: DeepSyncController.resolveUrl(url, SpriteQuality.standard),
+            remoteUrl: DeepSyncController.resolveUrl(
+              url,
+              SpriteQuality.standard,
+            ),
             quality: SpriteQuality.standard.name,
           );
         } catch (_) {
@@ -172,7 +183,10 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
           children: [
             Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
             SizedBox(width: 8),
-            Text('Delete Offline Artwork?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+            Text(
+              'Delete Offline Artwork?',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+            ),
           ],
         ),
         content: Text(
@@ -182,16 +196,24 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
+            ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.redAccent,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
-            child: const Text('Delete', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Delete',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
@@ -204,7 +226,11 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
       _checkArtworkDownloaded();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Offline artwork for ${_activePokemon.name} deleted.')),
+          SnackBar(
+            content: Text(
+              'Offline artwork for ${_activePokemon.name} deleted.',
+            ),
+          ),
         );
       }
     }
@@ -221,7 +247,9 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? Colors.white : Colors.black;
-    final dexNumber = _activePokemon.nationalDexNumber > 0 ? _activePokemon.nationalDexNumber : _activePokemon.id;
+    final dexNumber = _activePokemon.nationalDexNumber > 0
+        ? _activePokemon.nationalDexNumber
+        : _activePokemon.id;
     final isFavorite = ref.watch(favoritePokemonProvider).contains(dexNumber);
 
     return Scaffold(
@@ -229,7 +257,12 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
       appBar: AppBar(
         title: Text(
           '#${_activePokemon.nationalDexNumber > 0 ? _activePokemon.nationalDexNumber.toString().padLeft(3, '0') : _activePokemon.id.toString().padLeft(3, '0')} ${_activePokemon.name.toUpperCase()}',
-          style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1, color: primaryColor, fontSize: 18),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1,
+            color: primaryColor,
+            fontSize: 18,
+          ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -242,22 +275,29 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                 ? const SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2.5, valueColor: AlwaysStoppedAnimation(AppTheme.pokemonRed)),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor: AlwaysStoppedAnimation(AppTheme.pokemonRed),
+                    ),
                   )
                 : Icon(
                     _isArtworkDownloaded
                         ? Icons.check_circle_rounded
                         : Icons.download_for_offline_outlined,
-                    color: _isArtworkDownloaded ? Colors.greenAccent : primaryColor,
+                    color: _isArtworkDownloaded
+                        ? Colors.greenAccent
+                        : primaryColor,
                   ),
             tooltip: _isSavingArtwork
                 ? 'Downloading artwork...'
                 : _isArtworkDownloaded
-                    ? 'Artwork downloaded (tap to delete)'
-                    : 'Download this artwork for offline use',
+                ? 'Artwork downloaded (tap to delete)'
+                : 'Download this artwork for offline use',
             onPressed: _isSavingArtwork
                 ? null
-                : (_isArtworkDownloaded ? _confirmDeleteArtwork : _downloadActiveArtwork),
+                : (_isArtworkDownloaded
+                      ? _confirmDeleteArtwork
+                      : _downloadActiveArtwork),
           ),
           IconButton(
             icon: const Icon(Icons.group_add_rounded),
@@ -266,7 +306,9 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
             onPressed: () => _addActivePokemonToTeam(),
           ),
           IconButton(
-            icon: Icon(isFavorite ? Icons.star_rounded : Icons.star_border_rounded),
+            icon: Icon(
+              isFavorite ? Icons.star_rounded : Icons.star_border_rounded,
+            ),
             color: isFavorite ? Colors.amber : primaryColor,
             tooltip: isFavorite ? 'Remove favorite' : 'Add favorite',
             onPressed: () {
@@ -282,10 +324,15 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
             indicatorColor: AppTheme.pokemonRed,
             labelColor: primaryColor,
             unselectedLabelColor: Colors.grey,
-            dividerColor: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB),
+            dividerColor: isDark
+                ? const Color(0xFF1E1E1E)
+                : const Color(0xFFE5E7EB),
             tabs: const [
               Tab(text: 'GENERAL', icon: Icon(Icons.info_outline, size: 20)),
-              Tab(text: 'STATS', icon: Icon(Icons.analytics_outlined, size: 20)),
+              Tab(
+                text: 'STATS',
+                icon: Icon(Icons.analytics_outlined, size: 20),
+              ),
               Tab(text: 'MOVES', icon: Icon(Icons.flash_on_outlined, size: 20)),
             ],
           ),
@@ -302,7 +349,10 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                 color: isDark ? Colors.black : const Color(0xFFF9FAFB),
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
                   itemCount: widget.forms.length,
                   itemBuilder: (context, index) {
                     final p = widget.forms[index];
@@ -320,11 +370,24 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                       },
                       child: Container(
                         margin: const EdgeInsets.only(right: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          color: isSelected ? AppTheme.pokemonRed : (isDark ? const Color(0xFF1A1A1A) : const Color(0xFFE5E5E5)),
+                          color: isSelected
+                              ? AppTheme.pokemonRed
+                              : (isDark
+                                    ? const Color(0xFF1A1A1A)
+                                    : const Color(0xFFE5E5E5)),
                           borderRadius: BorderRadius.circular(20),
-                          border: isSelected ? null : Border.all(color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFD1D5DB)),
+                          border: isSelected
+                              ? null
+                              : Border.all(
+                                  color: isDark
+                                      ? const Color(0xFF2A2A2A)
+                                      : const Color(0xFFD1D5DB),
+                                ),
                         ),
                         child: Center(
                           child: Text(
@@ -349,12 +412,8 @@ class _PokemonDetailScreenState extends ConsumerState<PokemonDetailScreen> with 
                     activePokemon: _activePokemon,
                     forms: widget.forms,
                   ),
-                  PokemonDetailStatsTab(
-                    activePokemon: _activePokemon,
-                  ),
-                  PokemonDetailMovesTab(
-                    activePokemon: _activePokemon,
-                  ),
+                  PokemonDetailStatsTab(activePokemon: _activePokemon),
+                  PokemonDetailMovesTab(activePokemon: _activePokemon),
                 ],
               ),
             ),

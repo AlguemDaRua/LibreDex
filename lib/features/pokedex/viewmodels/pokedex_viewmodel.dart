@@ -28,5 +28,5 @@ class PokedexSyncNotifier extends AsyncNotifier<void> {
 
 final pokedexSyncNotifierProvider =
     AsyncNotifierProvider.autoDispose<PokedexSyncNotifier, void>(() {
-  return PokedexSyncNotifier();
-});
+      return PokedexSyncNotifier();
+    });

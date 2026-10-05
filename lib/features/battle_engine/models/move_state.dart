@@ -7,6 +7,7 @@ class MoveState {
   final int basePower;
   final String damageClass; // 'physical', 'special', 'status'
   final int hits;
+
   /// Catalog action order; the damage engine carries it but does not simulate turns.
   final int priority;
   final bool isCritical;

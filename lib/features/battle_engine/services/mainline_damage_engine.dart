@@ -20,7 +20,10 @@ class MainlineDamageEngine {
       state.attacker,
       state.ruleset,
       isCriticalAttacker: state.move.isCritical,
-      additionallyIgnoreNegativeStages: state.move.isCritical && moveName == 'body press' ? const {'def'} : const {},
+      additionallyIgnoreNegativeStages:
+          state.move.isCritical && moveName == 'body press'
+          ? const {'def'}
+          : const {},
       weather: state.field.weather,
       terrain: state.field.terrain,
     );
@@ -28,7 +31,10 @@ class MainlineDamageEngine {
       state.defender,
       state.ruleset,
       isCriticalDefender: state.move.isCritical,
-      additionallyIgnoreNegativeStages: state.move.isCritical && moveName == 'foul play' ? const {'atk'} : const {},
+      additionallyIgnoreNegativeStages:
+          state.move.isCritical && moveName == 'foul play'
+          ? const {'atk'}
+          : const {},
       weather: state.field.weather,
       terrain: state.field.terrain,
     );
@@ -45,7 +51,9 @@ class MainlineDamageEngine {
       pipe.effectiveBasePower,
       hitCount: state.move.hits,
     );
-    final hasParentalBond = state.attacker.ability?.toLowerCase() == 'parental bond' && hitBasePowers.length == 1;
+    final hasParentalBond =
+        state.attacker.ability?.toLowerCase() == 'parental bond' &&
+        hitBasePowers.length == 1;
 
     final DamageRange range;
     if (hitBasePowers.length > 1 || hasParentalBond) {

@@ -4,7 +4,9 @@ import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/features/pokedex/widgets/random_roll_overlay.dart';
 
 void main() {
-  testWidgets('RandomRollOverlay renders and completes roll sequence', (tester) async {
+  testWidgets('RandomRollOverlay renders and completes roll sequence', (
+    tester,
+  ) async {
     const candidate = Pokemon(
       id: 25,
       name: 'Pikachu',

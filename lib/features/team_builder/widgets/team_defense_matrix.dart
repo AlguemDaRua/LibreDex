@@ -8,12 +8,10 @@ import 'package:libredex/features/pokedex/models/type_efficiency_calculator.dart
 class TeamDefenseMatrix extends StatelessWidget {
   final List<Pokemon?> team;
 
-  const TeamDefenseMatrix({
-    super.key,
-    required this.team,
-  });
+  const TeamDefenseMatrix({super.key, required this.team});
 
-  Color _getTypeColor(String type) => CombatUtils.typeColors[type.toLowerCase()] ?? Colors.grey;
+  Color _getTypeColor(String type) =>
+      CombatUtils.typeColors[type.toLowerCase()] ?? Colors.grey;
 
   @override
   Widget build(BuildContext context) {
@@ -27,12 +25,18 @@ class TeamDefenseMatrix extends StatelessWidget {
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF121212) : Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
+          border: Border.all(
+            color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB),
+          ),
         ),
         child: const Center(
           child: Text(
             'Add Pokémon to your team to inspect defensive type coverage.',
-            style: TextStyle(color: Colors.grey, fontSize: 13, fontStyle: FontStyle.italic),
+            style: TextStyle(
+              color: Colors.grey,
+              fontSize: 13,
+              fontStyle: FontStyle.italic,
+            ),
           ),
         ),
       );
@@ -40,9 +44,24 @@ class TeamDefenseMatrix extends StatelessWidget {
 
     // Calculate team defense stats for all 18 types
     final allTypes = [
-      'normal', 'fire', 'water', 'electric', 'grass', 'ice',
-      'fighting', 'poison', 'ground', 'flying', 'psychic', 'bug',
-      'rock', 'ghost', 'dragon', 'dark', 'steel', 'fairy',
+      'normal',
+      'fire',
+      'water',
+      'electric',
+      'grass',
+      'ice',
+      'fighting',
+      'poison',
+      'ground',
+      'flying',
+      'psychic',
+      'bug',
+      'rock',
+      'ghost',
+      'dragon',
+      'dark',
+      'steel',
+      'fairy',
     ];
 
     final Map<String, int> weakCounts = {for (var t in allTypes) t: 0};
@@ -50,7 +69,10 @@ class TeamDefenseMatrix extends StatelessWidget {
     final Map<String, int> immuneCounts = {for (var t in allTypes) t: 0};
 
     for (final pokemon in activePokemonList) {
-      final effs = TypeEfficiencyCalculator.getCombinedEffectiveness(pokemon.type1, pokemon.type2);
+      final effs = TypeEfficiencyCalculator.getCombinedEffectiveness(
+        pokemon.type1,
+        pokemon.type2,
+      );
       effs.forEach((type, mult) {
         final t = type.toLowerCase();
         if (mult > 1.0) {
@@ -63,7 +85,10 @@ class TeamDefenseMatrix extends StatelessWidget {
       });
     }
 
-    final vulnerableTypes = weakCounts.entries.where((e) => e.value >= 3).map((e) => e.key).toList();
+    final vulnerableTypes = weakCounts.entries
+        .where((e) => e.value >= 3)
+        .map((e) => e.key)
+        .toList();
 
     return Container(
       width: double.infinity,
@@ -71,10 +96,18 @@ class TeamDefenseMatrix extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF121212) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
-        boxShadow: isDark ? [] : [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
-        ],
+        border: Border.all(
+          color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB),
+        ),
+        boxShadow: isDark
+            ? []
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,17 +122,26 @@ class TeamDefenseMatrix extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6),
+                  color: isDark
+                      ? const Color(0xFF1E1E1E)
+                      : const Color(0xFFF3F4F6),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   '${activePokemonList.length}/6 Members',
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey,
+                  ),
                 ),
               ),
             ],
           ),
-          Divider(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB), height: 24),
+          Divider(
+            color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB),
+            height: 24,
+          ),
 
           if (vulnerableTypes.isNotEmpty) ...[
             Container(
@@ -107,11 +149,17 @@ class TeamDefenseMatrix extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.red.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.redAccent.withValues(alpha: 0.4)),
+                border: Border.all(
+                  color: Colors.redAccent.withValues(alpha: 0.4),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 20),
+                  const Icon(
+                    Icons.warning_amber_rounded,
+                    color: Colors.redAccent,
+                    size: 20,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
@@ -155,7 +203,9 @@ class TeamDefenseMatrix extends StatelessWidget {
                       : color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color: isHighRisk ? Colors.redAccent : color.withValues(alpha: 0.4),
+                    color: isHighRisk
+                        ? Colors.redAccent
+                        : color.withValues(alpha: 0.4),
                     width: isHighRisk ? 1.5 : 1.0,
                   ),
                 ),
@@ -164,20 +214,48 @@ class TeamDefenseMatrix extends StatelessWidget {
                   children: [
                     Text(
                       type.toUpperCase(),
-                      style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: color,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         if (weak > 0)
-                          Text('-$weak ', style: const TextStyle(color: Colors.redAccent, fontSize: 10, fontWeight: FontWeight.bold)),
+                          Text(
+                            '-$weak ',
+                            style: const TextStyle(
+                              color: Colors.redAccent,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         if (resist > 0)
-                          Text('+$resist ', style: const TextStyle(color: Colors.greenAccent, fontSize: 10, fontWeight: FontWeight.bold)),
+                          Text(
+                            '+$resist ',
+                            style: const TextStyle(
+                              color: Colors.greenAccent,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         if (immune > 0)
-                          Text('🛡$immune', style: const TextStyle(color: Colors.blueAccent, fontSize: 10, fontWeight: FontWeight.bold)),
+                          Text(
+                            '🛡$immune',
+                            style: const TextStyle(
+                              color: Colors.blueAccent,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         if (weak == 0 && resist == 0 && immune == 0)
-                          const Text('•', style: TextStyle(color: Colors.grey, fontSize: 10)),
+                          const Text(
+                            '•',
+                            style: TextStyle(color: Colors.grey, fontSize: 10),
+                          ),
                       ],
                     ),
                   ],

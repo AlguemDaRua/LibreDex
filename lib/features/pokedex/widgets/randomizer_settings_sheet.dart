@@ -9,12 +9,12 @@ import 'package:libredex/features/pokedex/viewmodels/randomizer_settings_provide
 class RandomizerSettingsSheet extends ConsumerStatefulWidget {
   final VoidCallback onRollPressed;
 
-  const RandomizerSettingsSheet({
-    super.key,
-    required this.onRollPressed,
-  });
+  const RandomizerSettingsSheet({super.key, required this.onRollPressed});
 
-  static Future<void> show(BuildContext context, {required VoidCallback onRollPressed}) {
+  static Future<void> show(
+    BuildContext context, {
+    required VoidCallback onRollPressed,
+  }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return showModalBottomSheet(
       context: context,
@@ -28,10 +28,12 @@ class RandomizerSettingsSheet extends ConsumerStatefulWidget {
   }
 
   @override
-  ConsumerState<RandomizerSettingsSheet> createState() => _RandomizerSettingsSheetState();
+  ConsumerState<RandomizerSettingsSheet> createState() =>
+      _RandomizerSettingsSheetState();
 }
 
-class _RandomizerSettingsSheetState extends ConsumerState<RandomizerSettingsSheet> {
+class _RandomizerSettingsSheetState
+    extends ConsumerState<RandomizerSettingsSheet> {
   late RandomPoolMode _poolMode;
   late Set<String> _selectedTypes;
   late Set<int> _selectedGens;
@@ -99,7 +101,9 @@ class _RandomizerSettingsSheetState extends ConsumerState<RandomizerSettingsShee
               width: 38,
               height: 4.5,
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF333333) : const Color(0xFFD1D5DB),
+                color: isDark
+                    ? const Color(0xFF333333)
+                    : const Color(0xFFD1D5DB),
                 borderRadius: BorderRadius.circular(3),
               ),
             ),
@@ -113,7 +117,11 @@ class _RandomizerSettingsSheetState extends ConsumerState<RandomizerSettingsShee
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.casino_outlined, color: AppTheme.pokemonRed, size: 26),
+                      const Icon(
+                        Icons.casino_outlined,
+                        color: AppTheme.pokemonRed,
+                        size: 26,
+                      ),
                       const SizedBox(width: 10),
                       Text(
                         'Random Parameters',
@@ -127,10 +135,18 @@ class _RandomizerSettingsSheetState extends ConsumerState<RandomizerSettingsShee
                   ),
                   TextButton.icon(
                     onPressed: _reset,
-                    icon: const Icon(Icons.refresh_rounded, size: 16, color: Colors.grey),
+                    icon: const Icon(
+                      Icons.refresh_rounded,
+                      size: 16,
+                      color: Colors.grey,
+                    ),
                     label: const Text(
                       'Reset',
-                      style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 13),
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                 ],
@@ -142,20 +158,31 @@ class _RandomizerSettingsSheetState extends ConsumerState<RandomizerSettingsShee
             Expanded(
               child: ListView(
                 controller: scrollController,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 8,
+                ),
                 children: [
                   // Quick Random Toggle
                   Container(
                     margin: const EdgeInsets.only(bottom: 18),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF1F5F9),
+                      color: isDark
+                          ? const Color(0xFF1E1E1E)
+                          : const Color(0xFFF1F5F9),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: isDark ? const Color(0xFF2B2B2B) : const Color(0xFFE2E8F0)),
+                      border: Border.all(
+                        color: isDark
+                            ? const Color(0xFF2B2B2B)
+                            : const Color(0xFFE2E8F0),
+                      ),
                     ),
                     child: SwitchListTile(
                       value: _instantRollOnTap,
                       activeTrackColor: AppTheme.pokemonRed,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                       title: Text(
                         'Instant Roll on Tap',
                         style: TextStyle(
@@ -170,7 +197,9 @@ class _RandomizerSettingsSheetState extends ConsumerState<RandomizerSettingsShee
                       ),
                       secondary: Icon(
                         Icons.bolt_rounded,
-                        color: _instantRollOnTap ? AppTheme.pokemonRed : Colors.grey,
+                        color: _instantRollOnTap
+                            ? AppTheme.pokemonRed
+                            : Colors.grey,
                       ),
                       onChanged: (val) {
                         HapticFeedback.selectionClick();
@@ -182,37 +211,51 @@ class _RandomizerSettingsSheetState extends ConsumerState<RandomizerSettingsShee
                   // Pool Mode Choice
                   const Text(
                     'RANDOM POOL SOURCE',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey,
+                      letterSpacing: 1,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF1F5F9),
+                      color: isDark
+                          ? const Color(0xFF1E1E1E)
+                          : const Color(0xFFF1F5F9),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: isDark ? const Color(0xFF2B2B2B) : const Color(0xFFE2E8F0)),
+                      border: Border.all(
+                        color: isDark
+                            ? const Color(0xFF2B2B2B)
+                            : const Color(0xFFE2E8F0),
+                      ),
                     ),
                     child: Column(
                       children: [
                         _buildModeOption(
                           mode: RandomPoolMode.all,
                           title: 'Everything',
-                          subtitle: 'Pick completely randomly from all 1000+ Pokémon',
+                          subtitle:
+                              'Pick completely randomly from all 1000+ Pokémon',
                           icon: Icons.public_rounded,
                           isDark: isDark,
                         ),
                         _buildModeOption(
                           mode: RandomPoolMode.activeFilters,
                           title: 'Active Dex Search & Filters',
-                          subtitle: 'Pick only from current Pokédex search/type filters',
+                          subtitle:
+                              'Pick only from current Pokédex search/type filters',
                           icon: Icons.filter_alt_outlined,
                           isDark: isDark,
                         ),
                         _buildModeOption(
                           mode: RandomPoolMode.custom,
                           title: 'Custom Criteria Rules',
-                          subtitle: 'Specify custom Type, Gen, and BST boundaries below',
+                          subtitle:
+                              'Specify custom Type, Gen, and BST boundaries below',
                           icon: Icons.tune_rounded,
                           isDark: isDark,
                         ),
@@ -225,7 +268,12 @@ class _RandomizerSettingsSheetState extends ConsumerState<RandomizerSettingsShee
                     const SizedBox(height: 24),
                     const Text(
                       'TYPES',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey,
+                        letterSpacing: 1,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Wrap(
@@ -240,16 +288,28 @@ class _RandomizerSettingsSheetState extends ConsumerState<RandomizerSettingsShee
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
-                              color: isSelected ? Colors.white : (isDark ? Colors.grey[300] : Colors.grey[800]),
+                              color: isSelected
+                                  ? Colors.white
+                                  : (isDark
+                                        ? Colors.grey[300]
+                                        : Colors.grey[800]),
                             ),
                           ),
                           selected: isSelected,
                           selectedColor: typeColor,
-                          backgroundColor: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF1F5F9),
+                          backgroundColor: isDark
+                              ? const Color(0xFF1E1E1E)
+                              : const Color(0xFFF1F5F9),
                           side: BorderSide(
-                            color: isSelected ? typeColor : (isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE2E8F0)),
+                            color: isSelected
+                                ? typeColor
+                                : (isDark
+                                      ? const Color(0xFF2A2A2A)
+                                      : const Color(0xFFE2E8F0)),
                           ),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           onSelected: (val) {
                             HapticFeedback.selectionClick();
                             setState(() {
@@ -267,7 +327,12 @@ class _RandomizerSettingsSheetState extends ConsumerState<RandomizerSettingsShee
                     const SizedBox(height: 24),
                     const Text(
                       'GENERATIONS',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey,
+                        letterSpacing: 1,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Wrap(
@@ -280,13 +345,21 @@ class _RandomizerSettingsSheetState extends ConsumerState<RandomizerSettingsShee
                           label: Text('Gen $gen'),
                           selected: isSelected,
                           selectedColor: AppTheme.pokemonRed,
-                          backgroundColor: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF1F5F9),
+                          backgroundColor: isDark
+                              ? const Color(0xFF1E1E1E)
+                              : const Color(0xFFF1F5F9),
                           labelStyle: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: isSelected ? Colors.white : (isDark ? Colors.grey[300] : Colors.grey[800]),
+                            color: isSelected
+                                ? Colors.white
+                                : (isDark
+                                      ? Colors.grey[300]
+                                      : Colors.grey[800]),
                           ),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           onSelected: (val) {
                             HapticFeedback.selectionClick();
                             setState(() {
@@ -307,11 +380,20 @@ class _RandomizerSettingsSheetState extends ConsumerState<RandomizerSettingsShee
                       children: [
                         const Text(
                           'BASE STAT TOTAL (BST)',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey,
+                            letterSpacing: 1,
+                          ),
                         ),
                         Text(
                           '${_minBst.round()} - ${_maxBst.round()}',
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.pokemonRed),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.pokemonRed,
+                          ),
                         ),
                       ],
                     ),
@@ -321,8 +403,13 @@ class _RandomizerSettingsSheetState extends ConsumerState<RandomizerSettingsShee
                       max: 780,
                       divisions: 60,
                       activeColor: AppTheme.pokemonRed,
-                      inactiveColor: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE2E8F0),
-                      labels: RangeLabels('${_minBst.round()}', '${_maxBst.round()}'),
+                      inactiveColor: isDark
+                          ? const Color(0xFF2A2A2A)
+                          : const Color(0xFFE2E8F0),
+                      labels: RangeLabels(
+                        '${_minBst.round()}',
+                        '${_maxBst.round()}',
+                      ),
                       onChanged: (values) {
                         setState(() {
                           _minBst = values.start;
@@ -334,7 +421,9 @@ class _RandomizerSettingsSheetState extends ConsumerState<RandomizerSettingsShee
                       contentPadding: EdgeInsets.zero,
                       secondary: Icon(
                         Icons.verified_outlined,
-                        color: _fullyEvolvedOnly ? AppTheme.pokemonRed : Colors.grey,
+                        color: _fullyEvolvedOnly
+                            ? AppTheme.pokemonRed
+                            : Colors.grey,
                       ),
                       title: const Text('Fully evolved only'),
                       subtitle: const Text(
@@ -367,7 +456,9 @@ class _RandomizerSettingsSheetState extends ConsumerState<RandomizerSettingsShee
                       backgroundColor: AppTheme.pokemonRed,
                       foregroundColor: Colors.white,
                       elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
                     onPressed: () {
                       _saveAndApply();
@@ -377,7 +468,11 @@ class _RandomizerSettingsSheetState extends ConsumerState<RandomizerSettingsShee
                     icon: const Icon(Icons.casino_rounded, size: 22),
                     label: const Text(
                       'ROLL RANDOM POKÉMON',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: 0.5),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ),
                 ),
@@ -433,7 +528,9 @@ class _RandomizerSettingsSheetState extends ConsumerState<RandomizerSettingsShee
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
-                      color: isSelected ? AppTheme.pokemonRed : (isDark ? Colors.white : Colors.black),
+                      color: isSelected
+                          ? AppTheme.pokemonRed
+                          : (isDark ? Colors.white : Colors.black),
                     ),
                   ),
                   const SizedBox(height: 2),

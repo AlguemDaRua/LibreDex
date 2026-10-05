@@ -8,33 +8,40 @@ void main() {
   late List<ItemDexEntry> items;
 
   setUpAll(() {
-    final rows = jsonDecode(File('assets/data/items.json').readAsStringSync())
-        as List<dynamic>;
+    final rows =
+        jsonDecode(File('assets/data/items.json').readAsStringSync())
+            as List<dynamic>;
     items = rows
         .map((row) => ItemDexEntry.fromJson(row as Map<String, dynamic>))
         .toList();
   });
 
-  test('Mega Stone rows keep Legends: Z-A provenance separate from Champions', () {
-    final absolite = items.singleWhere((item) => item.id == 2265);
-    expect(absolite.isChampionsItem, isFalse);
-    expect(absolite.isEvolutionItem, isTrue);
-    expect(absolite.isHeldItem, isTrue);
-    expect(absolite.isLegendsZAItem, isTrue);
-    expect(absolite.shortEffect, contains('Mega Evolve'));
-  });
+  test(
+    'Mega Stone rows keep Legends: Z-A provenance separate from Champions',
+    () {
+      final absolite = items.singleWhere((item) => item.id == 2265);
+      expect(absolite.isChampionsItem, isFalse);
+      expect(absolite.isEvolutionItem, isTrue);
+      expect(absolite.isHeldItem, isTrue);
+      expect(absolite.isLegendsZAItem, isTrue);
+      expect(absolite.shortEffect, contains('Mega Evolve'));
+    },
+  );
 
-  test('Roseli Berry stub is retained as a generation-aware canonical alias', () {
-    final canonical = items.singleWhere((item) => item.id == 723);
-    final alias = items.singleWhere((item) => item.id == 2279);
+  test(
+    'Roseli Berry stub is retained as a generation-aware canonical alias',
+    () {
+      final canonical = items.singleWhere((item) => item.id == 723);
+      final alias = items.singleWhere((item) => item.id == 2279);
 
-    expect(canonical.generation, 6);
-    expect(alias.aliasOf, 723);
-    expect(alias.isAlias, isTrue);
-    expect(alias.generation, canonical.generation);
-    expect(alias.isHeldItem, isTrue);
-    expect(alias.shortEffect, contains('Fairy-type'));
-  });
+      expect(canonical.generation, 6);
+      expect(alias.aliasOf, 723);
+      expect(alias.isAlias, isTrue);
+      expect(alias.generation, canonical.generation);
+      expect(alias.isHeldItem, isTrue);
+      expect(alias.shortEffect, contains('Fairy-type'));
+    },
+  );
 
   test('Champions item provenance comes from tags, not numeric IDs', () {
     final highIdWithoutOrigin = ItemDexEntry(

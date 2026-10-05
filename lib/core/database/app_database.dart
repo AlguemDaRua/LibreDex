@@ -76,8 +76,10 @@ class MoveTable extends Table {
   BoolColumn get isStatusMove => boolean().withDefault(Constant(false))();
   BoolColumn get isDamagingMove => boolean().withDefault(Constant(false))();
   BoolColumn get isSignatureMove => boolean().withDefault(Constant(false))();
+
   /// Explicit source metadata from the move asset; do not infer origin from IDs or names.
   BoolColumn get isDLCMove => boolean().withDefault(Constant(false))();
+
   /// In particular, local Shadow moves use IDs 10001 through 10018.
   BoolColumn get isChampionsMove => boolean().withDefault(Constant(false))();
   BoolColumn get isLegendsZAMove => boolean().withDefault(Constant(false))();
@@ -111,9 +113,12 @@ class AbilityTable extends Table {
 /// Junction Table for Pokémon <-> Moves Many-to-Many Relationship.
 @DataClassName('PokemonMove')
 class PokemonMovesTable extends Table {
-  IntColumn get pokemonId => integer().references(PokemonTable, #id, onDelete: KeyAction.cascade)();
-  IntColumn get moveId => integer().references(MoveTable, #id, onDelete: KeyAction.cascade)();
-  TextColumn get learnMethod => text()(); // PokéAPI ids, e.g. level-up, machine, egg, tutor
+  IntColumn get pokemonId =>
+      integer().references(PokemonTable, #id, onDelete: KeyAction.cascade)();
+  IntColumn get moveId =>
+      integer().references(MoveTable, #id, onDelete: KeyAction.cascade)();
+  TextColumn get learnMethod =>
+      text()(); // PokéAPI ids, e.g. level-up, machine, egg, tutor
   IntColumn get levelLearned => integer().nullable()();
 
   @override
@@ -123,8 +128,10 @@ class PokemonMovesTable extends Table {
 /// Junction Table for Pokémon <-> Abilities Many-to-Many Relationship.
 @DataClassName('PokemonAbility')
 class PokemonAbilitiesTable extends Table {
-  IntColumn get pokemonId => integer().references(PokemonTable, #id, onDelete: KeyAction.cascade)();
-  IntColumn get abilityId => integer().references(AbilityTable, #id, onDelete: KeyAction.cascade)();
+  IntColumn get pokemonId =>
+      integer().references(PokemonTable, #id, onDelete: KeyAction.cascade)();
+  IntColumn get abilityId =>
+      integer().references(AbilityTable, #id, onDelete: KeyAction.cascade)();
   BoolColumn get isHidden => boolean()();
 
   @override
@@ -149,13 +156,15 @@ class PokemonMoveWithDetails {
 
 /// The local Drift SQLite database setup.
 /// Handles asynchronous connections, automated migrations and foreign key constraints.
-@DriftDatabase(tables: [
-  PokemonTable,
-  MoveTable,
-  AbilityTable,
-  PokemonMovesTable,
-  PokemonAbilitiesTable,
-])
+@DriftDatabase(
+  tables: [
+    PokemonTable,
+    MoveTable,
+    AbilityTable,
+    PokemonMovesTable,
+    PokemonAbilitiesTable,
+  ],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
@@ -292,7 +301,10 @@ class AppDatabase extends _$AppDatabase {
   /// Watch relational Abilities of a specific Pokémon using JOIN returning Map objects.
   Stream<List<Map<String, dynamic>>> watchPokemonAbilities(int pokemonId) {
     final query = select(pokemonAbilitiesTable).join([
-      innerJoin(abilityTable, abilityTable.id.equalsExp(pokemonAbilitiesTable.abilityId)),
+      innerJoin(
+        abilityTable,
+        abilityTable.id.equalsExp(pokemonAbilitiesTable.abilityId),
+      ),
     ])..where(pokemonAbilitiesTable.pokemonId.equals(pokemonId));
 
     return query.watch().map((rows) {
@@ -336,9 +348,14 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// Fetch relational Abilities of a specific Pokémon using JOIN.
-  Future<List<PokemonAbilityWithDetails>> getPokemonAbilities(int pokemonId) async {
+  Future<List<PokemonAbilityWithDetails>> getPokemonAbilities(
+    int pokemonId,
+  ) async {
     final query = select(pokemonAbilitiesTable).join([
-      innerJoin(abilityTable, abilityTable.id.equalsExp(pokemonAbilitiesTable.abilityId)),
+      innerJoin(
+        abilityTable,
+        abilityTable.id.equalsExp(pokemonAbilitiesTable.abilityId),
+      ),
     ])..where(pokemonAbilitiesTable.pokemonId.equals(pokemonId));
 
     final rows = await query.get();
@@ -366,7 +383,10 @@ class AppDatabase extends _$AppDatabase {
   /// Fetch all Pokémons that can learn a specific Move, along with how they learn it.
   Future<List<Map<String, dynamic>>> getPokemonsForMove(int moveId) async {
     final query = select(pokemonMovesTable).join([
-      innerJoin(pokemonTable, pokemonTable.id.equalsExp(pokemonMovesTable.pokemonId)),
+      innerJoin(
+        pokemonTable,
+        pokemonTable.id.equalsExp(pokemonMovesTable.pokemonId),
+      ),
     ])..where(pokemonMovesTable.moveId.equals(moveId));
 
     final rows = await query.get();
@@ -382,19 +402,21 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// Fetch all Pokémons that can have a specific Ability.
-  Future<List<Map<String, dynamic>>> getPokemonsForAbility(int abilityId) async {
+  Future<List<Map<String, dynamic>>> getPokemonsForAbility(
+    int abilityId,
+  ) async {
     final query = select(pokemonAbilitiesTable).join([
-      innerJoin(pokemonTable, pokemonTable.id.equalsExp(pokemonAbilitiesTable.pokemonId)),
+      innerJoin(
+        pokemonTable,
+        pokemonTable.id.equalsExp(pokemonAbilitiesTable.pokemonId),
+      ),
     ])..where(pokemonAbilitiesTable.abilityId.equals(abilityId));
 
     final rows = await query.get();
     return rows.map((row) {
       final junction = row.readTable(pokemonAbilitiesTable);
       final pokemon = row.readTable(pokemonTable);
-      return {
-        'pokemon': pokemon,
-        'isHidden': junction.isHidden,
-      };
+      return {'pokemon': pokemon, 'isHidden': junction.isHidden};
     }).toList();
   }
 }

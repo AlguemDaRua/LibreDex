@@ -13,7 +13,8 @@ Future<void> switchThemeWithWavy({
   Offset? origin,
 }) async {
   final scope = ThemeTransitionScope.maybeOf(context);
-  final tapPosition = origin ??
+  final tapPosition =
+      origin ??
       () {
         final box = context.findRenderObject() as RenderBox?;
         if (box != null && box.hasSize) {
@@ -45,5 +46,10 @@ Future<void> cycleThemeWithWavy(
     ThemeMode.dark => ThemeMode.light,
     ThemeMode.light => ThemeMode.system,
   };
-  await switchThemeWithWavy(context: context, ref: ref, mode: next, origin: origin);
+  await switchThemeWithWavy(
+    context: context,
+    ref: ref,
+    mode: next,
+    origin: origin,
+  );
 }

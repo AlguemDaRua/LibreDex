@@ -25,10 +25,10 @@ class BattleDataManifest {
 
   /// Returns full manifest details map.
   static Map<String, String> get details => {
-        'Engine Version': engineVersion,
-        'Showdown Pin': showdownVersionPin,
-        'Champions Version': championsRulesetVersion,
-        'Release Date': releaseDate,
-        'Offline Capable': 'Yes',
-      };
+    'Engine Version': engineVersion,
+    'Showdown Pin': showdownVersionPin,
+    'Champions Version': championsRulesetVersion,
+    'Release Date': releaseDate,
+    'Offline Capable': 'Yes',
+  };
 }

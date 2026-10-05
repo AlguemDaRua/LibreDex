@@ -30,8 +30,8 @@ extension PokemonPropertiesExtension on Pokemon {
       evolutionMethodsList.isEmpty ? 'None' : evolutionMethodsList.first;
 
   bool hasEvolutionMethod(String method) => evolutionMethodsList.any(
-        (candidate) => candidate.toLowerCase() == method.toLowerCase(),
-      );
+    (candidate) => candidate.toLowerCase() == method.toLowerCase(),
+  );
 
   /// Parses the source-backed, comma-separated egg groups without guessing.
   List<String> get eggGroupsList => (eggGroups ?? '')

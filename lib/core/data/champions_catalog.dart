@@ -10,7 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 final championsCatalogProvider = FutureProvider<ChampionsCatalog>((ref) async {
   try {
     final raw = await rootBundle.loadString('assets/data/forms_extra.json');
-    return compute(_decodeCatalog, raw);
+    return await compute(_decodeCatalog, raw);
   } catch (_) {
     // The overlay is additive: without it the app behaves exactly as before.
     return ChampionsCatalog.empty();
@@ -49,13 +49,15 @@ class ChampionsFormInfo {
 
   factory ChampionsFormInfo.fromJson(Map<String, dynamic> json) {
     final flags = <String>{
-      for (final f in (json['flags'] as List<dynamic>? ?? const [])) '$f'.toLowerCase(),
+      for (final f in (json['flags'] as List<dynamic>? ?? const []))
+        '$f'.toLowerCase(),
     };
     // Ability *ids* are seeded into the database; the catalog only keeps a
     // readable echo for search. Bundled abilities resolve by id, the six new
     // Champions abilities resolve through the overlay's extraAbilities too.
     final abilityNames = <String>[
-      for (final a in (json['abilityNames'] as List<dynamic>? ?? const [])) '$a',
+      for (final a in (json['abilityNames'] as List<dynamic>? ?? const []))
+        '$a',
     ];
 
     final aliases = <String>[
@@ -79,7 +81,8 @@ class ChampionsFormInfo {
 
   bool get isMega => flags.contains('mega');
   bool get isChampions => flags.contains('champions');
-  bool get isLegendsZa => flags.contains('legendsza') || flags.contains('legendsz-a');
+  bool get isLegendsZa =>
+      flags.contains('legendsza') || flags.contains('legendsz-a');
   bool get isProvisional => flags.contains('provisional');
 
   /// True when every token of [query] appears somewhere in this form's
@@ -96,7 +99,9 @@ class ChampionsFormInfo {
 /// Read-only view over the overlay, with O(1) flag lookups for filters.
 class ChampionsCatalog {
   final List<ChampionsFormInfo> forms;
-  late final Map<int, ChampionsFormInfo> _byId = {for (final f in forms) f.id: f};
+  late final Map<int, ChampionsFormInfo> _byId = {
+    for (final f in forms) f.id: f,
+  };
 
   ChampionsCatalog(this.forms);
 

@@ -19,7 +19,8 @@ class ThemeTransitionScope extends InheritedWidget {
   final Future<void> Function({
     required Offset origin,
     required FutureOr<void> Function() applyTheme,
-  }) transitionTo;
+  })
+  transitionTo;
 
   static ThemeTransitionScope? maybeOf(BuildContext context) {
     return context.dependOnInheritedWidgetOfExactType<ThemeTransitionScope>();
@@ -37,10 +38,7 @@ class ThemeTransitionScope extends InheritedWidget {
 /// spreads outward. Capturing once keeps scrolling and normal app rendering
 /// inexpensive; only the short transition redraws a single image and path.
 class WavyThemeTransition extends StatefulWidget {
-  const WavyThemeTransition({
-    super.key,
-    required this.child,
-  });
+  const WavyThemeTransition({super.key, required this.child});
 
   final Widget child;
 
@@ -60,12 +58,13 @@ class _WavyThemeTransitionState extends State<WavyThemeTransition>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1150),
-    )..addStatusListener((status) {
-        if (status == AnimationStatus.completed) _releaseFrame();
-      });
+    _controller =
+        AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 1150),
+        )..addStatusListener((status) {
+          if (status == AnimationStatus.completed) _releaseFrame();
+        });
   }
 
   /// Captures the current page, applies the requested theme, then reveals the
@@ -74,7 +73,8 @@ class _WavyThemeTransitionState extends State<WavyThemeTransition>
     required Offset origin,
     required FutureOr<void> Function() applyTheme,
   }) async {
-    final reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    final reduceMotion =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     if (reduceMotion || _isCapturing || _controller.isAnimating) {
       await Future<void>.sync(applyTheme);
       return;
@@ -144,10 +144,7 @@ class _WavyThemeTransitionState extends State<WavyThemeTransition>
       child: Stack(
         fit: StackFit.expand,
         children: [
-          RepaintBoundary(
-            key: _captureKey,
-            child: widget.child,
-          ),
+          RepaintBoundary(key: _captureKey, child: widget.child),
           IgnorePointer(
             child: AnimatedBuilder(
               animation: _controller,
@@ -158,7 +155,9 @@ class _WavyThemeTransitionState extends State<WavyThemeTransition>
                 }
 
                 // Dramatic curve: fast explosive burst expanding into smooth fluid fill
-                final curvedValue = Curves.fastOutSlowIn.transform(_controller.value);
+                final curvedValue = Curves.fastOutSlowIn.transform(
+                  _controller.value,
+                );
 
                 return RepaintBoundary(
                   child: CustomPaint(
@@ -203,7 +202,12 @@ class _WavyThemeRevealPainter extends CustomPainter {
     final reveal = _buildRevealPath(size);
 
     canvas.saveLayer(bounds, Paint());
-    canvas.drawImageRect(frame, source, bounds, Paint()..filterQuality = FilterQuality.medium);
+    canvas.drawImageRect(
+      frame,
+      source,
+      bounds,
+      Paint()..filterQuality = FilterQuality.medium,
+    );
 
     final clearPaint = Paint()..blendMode = BlendMode.clear;
     canvas.drawPath(reveal, clearPaint);
@@ -215,7 +219,9 @@ class _WavyThemeRevealPainter extends CustomPainter {
       canvas.drawPath(
         reveal,
         Paint()
-          ..color = const Color(0xFFE3350D).withValues(alpha: 0.45 * edgeOpacity)
+          ..color = const Color(
+            0xFFE3350D,
+          ).withValues(alpha: 0.45 * edgeOpacity)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 14.0
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
@@ -225,7 +231,9 @@ class _WavyThemeRevealPainter extends CustomPainter {
       canvas.drawPath(
         reveal,
         Paint()
-          ..color = const Color(0xFF30A7D7).withValues(alpha: 0.35 * edgeOpacity)
+          ..color = const Color(
+            0xFF30A7D7,
+          ).withValues(alpha: 0.35 * edgeOpacity)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 6.0,
       );
@@ -246,8 +254,9 @@ class _WavyThemeRevealPainter extends CustomPainter {
     const samples = 220;
     final coverRadius = _coverRadius(size);
     final baseRadius = math.max(1.0, coverRadius * progress).toDouble();
-    final waveAmplitude =
-        math.min(size.shortestSide * 0.08, baseRadius * 0.40).toDouble();
+    final waveAmplitude = math
+        .min(size.shortestSide * 0.08, baseRadius * 0.40)
+        .toDouble();
     final path = Path();
 
     for (var index = 0; index <= samples; index++) {
@@ -256,7 +265,9 @@ class _WavyThemeRevealPainter extends CustomPainter {
           math.sin(angle * 6 - progress * math.pi * 4.2) * 0.70 +
           math.sin(angle * 11 + progress * math.pi * 2.8) * 0.30 +
           math.cos(angle * 18 - progress * math.pi * 1.8) * 0.15;
-      final radius = math.max(0.0, baseRadius + ripple * waveAmplitude).toDouble();
+      final radius = math
+          .max(0.0, baseRadius + ripple * waveAmplitude)
+          .toDouble();
       final point = origin + Offset(math.cos(angle), math.sin(angle)) * radius;
       if (index == 0) {
         path.moveTo(point.dx, point.dy);
@@ -279,13 +290,11 @@ class _WavyThemeRevealPainter extends CustomPainter {
 
     for (var index = 0; index < 12; index++) {
       final angle = -0.8 + index * (math.pi * 2 / 12) + progress * 0.60;
-      final double drift =
-          (index.isEven ? 1.2 : -1.2) * (9.0 + index * 2.2);
+      final double drift = (index.isEven ? 1.2 : -1.2) * (9.0 + index * 2.2);
       final double distance = baseRadius + drift + maxWispRadius;
       final center =
           origin + Offset(math.cos(angle), math.sin(angle)) * distance;
-      final double radius =
-          maxWispRadius * (0.50 + (index % 4) * 0.18);
+      final double radius = maxWispRadius * (0.50 + (index % 4) * 0.18);
       canvas.drawCircle(center, radius, clearPaint);
     }
   }

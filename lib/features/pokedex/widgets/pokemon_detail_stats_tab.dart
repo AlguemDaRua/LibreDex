@@ -14,10 +14,7 @@ import 'package:libredex/features/pokedex/views/pokemon_detail_screen.dart';
 class PokemonDetailStatsTab extends ConsumerWidget {
   final Pokemon activePokemon;
 
-  const PokemonDetailStatsTab({
-    super.key,
-    required this.activePokemon,
-  });
+  const PokemonDetailStatsTab({super.key, required this.activePokemon});
 
   void _showItemPickerForStats(BuildContext context, StatsCalculator notifier) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -35,11 +32,18 @@ class PokemonDetailStatsTab extends ConsumerWidget {
             }).toList();
 
             return Dialog(
-              insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+              insetPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 24,
+              ),
               backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
               child: ConstrainedBox(
-                constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.75),
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.75,
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -48,7 +52,13 @@ class PokemonDetailStatsTab extends ConsumerWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Select Held Item', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          const Text(
+                            'Select Held Item',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
                           IconButton(
                             icon: const Icon(Icons.close_rounded, size: 20),
                             onPressed: () => Navigator.pop(ctx),
@@ -57,17 +67,32 @@ class PokemonDetailStatsTab extends ConsumerWidget {
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
+                      ),
                       child: TextField(
                         autofocus: true,
                         onChanged: (v) => setDialogState(() => query = v),
                         decoration: InputDecoration(
                           hintText: 'Search held items...',
-                          prefixIcon: const Icon(Icons.search, color: AppTheme.pokemonRed, size: 20),
+                          prefixIcon: const Icon(
+                            Icons.search,
+                            color: AppTheme.pokemonRed,
+                            size: 20,
+                          ),
                           filled: true,
-                          fillColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF3F4F6),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                          fillColor: isDark
+                              ? const Color(0xFF1A1A1A)
+                              : const Color(0xFFF3F4F6),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
                         ),
                       ),
                     ),
@@ -80,8 +105,20 @@ class PokemonDetailStatsTab extends ConsumerWidget {
                           final item = items[i];
                           return ListTile(
                             dense: true,
-                            title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                            subtitle: Text(item.description, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                            title: Text(
+                              item.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                            subtitle: Text(
+                              item.description,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: Colors.grey,
+                              ),
+                            ),
                             onTap: () {
                               notifier.updateHeldItem(item.name);
                               Navigator.pop(ctx);
@@ -126,10 +163,20 @@ class PokemonDetailStatsTab extends ConsumerWidget {
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF121212) : Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
-              boxShadow: isDark ? [] : [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
-              ],
+              border: Border.all(
+                color: isDark
+                    ? const Color(0xFF222222)
+                    : const Color(0xFFE5E7EB),
+              ),
+              boxShadow: isDark
+                  ? []
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
             ),
             child: Column(
               children: [
@@ -142,19 +189,27 @@ class PokemonDetailStatsTab extends ConsumerWidget {
                         children: [
                           Text(
                             'Level: ${statsState.level}',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: primaryColor),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              color: primaryColor,
+                            ),
                           ),
                           SliderTheme(
                             data: SliderTheme.of(context).copyWith(
                               trackHeight: 2,
-                              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                              thumbShape: const RoundSliderThumbShape(
+                                enabledThumbRadius: 6,
+                              ),
                             ),
                             child: Slider(
                               value: statsState.level.toDouble(),
                               min: 1,
                               max: 100,
                               activeColor: AppTheme.pokemonRed,
-                              inactiveColor: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE5E5E5),
+                              inactiveColor: isDark
+                                  ? const Color(0xFF2A2A2A)
+                                  : const Color(0xFFE5E5E5),
                               onChanged: (val) {
                                 HapticFeedback.selectionClick();
                                 statsNotifier.updateLevel(val.toInt());
@@ -168,14 +223,23 @@ class PokemonDetailStatsTab extends ConsumerWidget {
                     Expanded(
                       flex: 3,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: remainingEvs == 0
                               ? Colors.green.withValues(alpha: 0.1)
-                              : isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6),
+                              : isDark
+                              ? const Color(0xFF1E1E1E)
+                              : const Color(0xFFF3F4F6),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: remainingEvs == 0 ? Colors.green : isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE5E7EB),
+                            color: remainingEvs == 0
+                                ? Colors.green
+                                : isDark
+                                ? const Color(0xFF2A2A2A)
+                                : const Color(0xFFE5E7EB),
                             width: 1.2,
                           ),
                         ),
@@ -183,13 +247,19 @@ class PokemonDetailStatsTab extends ConsumerWidget {
                           children: [
                             const Text(
                               'Remaining EVs',
-                              style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             const SizedBox(height: 2),
                             Text(
                               '$remainingEvs / 508',
                               style: TextStyle(
-                                color: remainingEvs == 0 ? Colors.greenAccent : primaryColor,
+                                color: remainingEvs == 0
+                                    ? Colors.greenAccent
+                                    : primaryColor,
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -207,22 +277,37 @@ class PokemonDetailStatsTab extends ConsumerWidget {
                   children: [
                     const Text(
                       'Nature',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                        color: Colors.grey,
+                      ),
                     ),
                     const SizedBox(height: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF9FAFB),
+                        color: isDark
+                            ? const Color(0xFF1E1E1E)
+                            : const Color(0xFFF9FAFB),
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE5E7EB)),
+                        border: Border.all(
+                          color: isDark
+                              ? const Color(0xFF2D2D2D)
+                              : const Color(0xFFE5E7EB),
+                        ),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
                           value: statsState.nature,
-                          dropdownColor: isDark ? const Color(0xFF121212) : Colors.white,
+                          dropdownColor: isDark
+                              ? const Color(0xFF121212)
+                              : Colors.white,
                           isExpanded: true,
-                          icon: Icon(Icons.keyboard_arrow_down, color: primaryColor),
+                          icon: Icon(
+                            Icons.keyboard_arrow_down,
+                            color: primaryColor,
+                          ),
                           items: alphabeticalNatures.keys.map((natureKey) {
                             final nature = alphabeticalNatures[natureKey]!;
                             final String name = nature['name'];
@@ -235,13 +320,27 @@ class PokemonDetailStatsTab extends ConsumerWidget {
                             return DropdownMenuItem<String>(
                               value: natureKey,
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(name, style: TextStyle(color: primaryColor, fontSize: 14)),
-                                  Text(detailText, style: TextStyle(
-                                    color: up != null ? (isDark ? Colors.tealAccent : const Color(0xFF0F766E)) : Colors.grey,
-                                    fontSize: 11,
-                                  )),
+                                  Text(
+                                    name,
+                                    style: TextStyle(
+                                      color: primaryColor,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  Text(
+                                    detailText,
+                                    style: TextStyle(
+                                      color: up != null
+                                          ? (isDark
+                                                ? Colors.tealAccent
+                                                : const Color(0xFF0F766E))
+                                          : Colors.grey,
+                                      fontSize: 11,
+                                    ),
+                                  ),
                                 ],
                               ),
                             );
@@ -261,33 +360,51 @@ class PokemonDetailStatsTab extends ConsumerWidget {
                   children: [
                     const Text(
                       'Held Item',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                        color: Colors.grey,
+                      ),
                     ),
                     const SizedBox(height: 6),
                     GestureDetector(
-                      onTap: () => _showItemPickerForStats(context, statsNotifier),
+                      onTap: () =>
+                          _showItemPickerForStats(context, statsNotifier),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF9FAFB),
+                          color: isDark
+                              ? const Color(0xFF1E1E1E)
+                              : const Color(0xFFF9FAFB),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
                             color: statsState.heldItem != 'None'
                                 ? AppTheme.pokemonRed.withValues(alpha: 0.5)
-                                : (isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE5E7EB)),
+                                : (isDark
+                                      ? const Color(0xFF2D2D2D)
+                                      : const Color(0xFFE5E7EB)),
                           ),
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.backpack_outlined,
-                                size: 16,
-                                color: statsState.heldItem != 'None' ? AppTheme.pokemonRed : Colors.grey),
+                            Icon(
+                              Icons.backpack_outlined,
+                              size: 16,
+                              color: statsState.heldItem != 'None'
+                                  ? AppTheme.pokemonRed
+                                  : Colors.grey,
+                            ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 statsState.heldItem,
                                 style: TextStyle(
-                                  color: statsState.heldItem != 'None' ? primaryColor : Colors.grey,
+                                  color: statsState.heldItem != 'None'
+                                      ? primaryColor
+                                      : Colors.grey,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 13,
                                 ),
@@ -295,11 +412,20 @@ class PokemonDetailStatsTab extends ConsumerWidget {
                             ),
                             if (statsState.heldItem != 'None')
                               GestureDetector(
-                                onTap: () => statsNotifier.updateHeldItem('None'),
-                                child: const Icon(Icons.close, size: 16, color: Colors.grey),
+                                onTap: () =>
+                                    statsNotifier.updateHeldItem('None'),
+                                child: const Icon(
+                                  Icons.close,
+                                  size: 16,
+                                  color: Colors.grey,
+                                ),
                               )
                             else
-                              const Icon(Icons.keyboard_arrow_down, color: Colors.grey, size: 18),
+                              const Icon(
+                                Icons.keyboard_arrow_down,
+                                color: Colors.grey,
+                                size: 18,
+                              ),
                           ],
                         ),
                       ),
@@ -307,8 +433,15 @@ class PokemonDetailStatsTab extends ConsumerWidget {
                     if (statsState.heldItem != 'None') ...[
                       const SizedBox(height: 4),
                       Text(
-                        HeldItemsData.findByName(statsState.heldItem)?.description ?? '',
-                        style: const TextStyle(color: Colors.grey, fontSize: 10, fontStyle: FontStyle.italic),
+                        HeldItemsData.findByName(
+                              statsState.heldItem,
+                            )?.description ??
+                            '',
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 10,
+                          fontStyle: FontStyle.italic,
+                        ),
                       ),
                     ],
                   ],
@@ -351,8 +484,10 @@ class PokemonDetailStatsTab extends ConsumerWidget {
                 statColor: const Color(0xFFF87171),
                 statKey: 'atk',
                 notifier: statsNotifier,
-                upIndicator: alphabeticalNatures[statsState.nature]?['up'] == 'Attack',
-                downIndicator: alphabeticalNatures[statsState.nature]?['down'] == 'Attack',
+                upIndicator:
+                    alphabeticalNatures[statsState.nature]?['up'] == 'Attack',
+                downIndicator:
+                    alphabeticalNatures[statsState.nature]?['down'] == 'Attack',
               ),
               _buildCompetiveStatRow(
                 context: context,
@@ -364,8 +499,11 @@ class PokemonDetailStatsTab extends ConsumerWidget {
                 statColor: const Color(0xFFFBBF24),
                 statKey: 'def',
                 notifier: statsNotifier,
-                upIndicator: alphabeticalNatures[statsState.nature]?['up'] == 'Defense',
-                downIndicator: alphabeticalNatures[statsState.nature]?['down'] == 'Defense',
+                upIndicator:
+                    alphabeticalNatures[statsState.nature]?['up'] == 'Defense',
+                downIndicator:
+                    alphabeticalNatures[statsState.nature]?['down'] ==
+                    'Defense',
               ),
               _buildCompetiveStatRow(
                 context: context,
@@ -377,8 +515,11 @@ class PokemonDetailStatsTab extends ConsumerWidget {
                 statColor: const Color(0xFF818CF8),
                 statKey: 'spa',
                 notifier: statsNotifier,
-                upIndicator: alphabeticalNatures[statsState.nature]?['up'] == 'Sp. Atk',
-                downIndicator: alphabeticalNatures[statsState.nature]?['down'] == 'Sp. Atk',
+                upIndicator:
+                    alphabeticalNatures[statsState.nature]?['up'] == 'Sp. Atk',
+                downIndicator:
+                    alphabeticalNatures[statsState.nature]?['down'] ==
+                    'Sp. Atk',
               ),
               _buildCompetiveStatRow(
                 context: context,
@@ -390,8 +531,11 @@ class PokemonDetailStatsTab extends ConsumerWidget {
                 statColor: const Color(0xFF34D399),
                 statKey: 'spd',
                 notifier: statsNotifier,
-                upIndicator: alphabeticalNatures[statsState.nature]?['up'] == 'Sp. Def',
-                downIndicator: alphabeticalNatures[statsState.nature]?['down'] == 'Sp. Def',
+                upIndicator:
+                    alphabeticalNatures[statsState.nature]?['up'] == 'Sp. Def',
+                downIndicator:
+                    alphabeticalNatures[statsState.nature]?['down'] ==
+                    'Sp. Def',
               ),
               _buildCompetiveStatRow(
                 context: context,
@@ -403,8 +547,10 @@ class PokemonDetailStatsTab extends ConsumerWidget {
                 statColor: const Color(0xFFF472B6),
                 statKey: 'spe',
                 notifier: statsNotifier,
-                upIndicator: alphabeticalNatures[statsState.nature]?['up'] == 'Speed',
-                downIndicator: alphabeticalNatures[statsState.nature]?['down'] == 'Speed',
+                upIndicator:
+                    alphabeticalNatures[statsState.nature]?['up'] == 'Speed',
+                downIndicator:
+                    alphabeticalNatures[statsState.nature]?['down'] == 'Speed',
               ),
             ],
           ),
@@ -438,11 +584,29 @@ class PokemonDetailStatsTab extends ConsumerWidget {
             fontSize: 13,
             color: upIndicator
                 ? (isDark ? Colors.tealAccent : const Color(0xFF0F766E))
-                : downIndicator ? (isDark ? Colors.redAccent : const Color(0xFFBE123C)) : primaryColor,
+                : downIndicator
+                ? (isDark ? Colors.redAccent : const Color(0xFFBE123C))
+                : primaryColor,
           ),
         ),
-        if (upIndicator) Text(' ▲', style: TextStyle(color: isDark ? Colors.tealAccent : const Color(0xFF0F766E), fontSize: 10, fontWeight: FontWeight.bold)),
-        if (downIndicator) Text(' ▼', style: TextStyle(color: isDark ? Colors.redAccent : const Color(0xFFBE123C), fontSize: 10, fontWeight: FontWeight.bold)),
+        if (upIndicator)
+          Text(
+            ' ▲',
+            style: TextStyle(
+              color: isDark ? Colors.tealAccent : const Color(0xFF0F766E),
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        if (downIndicator)
+          Text(
+            ' ▼',
+            style: TextStyle(
+              color: isDark ? Colors.redAccent : const Color(0xFFBE123C),
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
       ],
     );
 
@@ -451,7 +615,9 @@ class PokemonDetailStatsTab extends ConsumerWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF121212) : Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB),
+        ),
       ),
       child: ExpansionTile(
         collapsedBackgroundColor: Colors.transparent,
@@ -469,7 +635,11 @@ class PokemonDetailStatsTab extends ConsumerWidget {
                   const SizedBox(height: 2),
                   Text(
                     'Base: $baseValue',
-                    style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ],
               ),
@@ -483,10 +653,16 @@ class PokemonDetailStatsTab extends ConsumerWidget {
                   height: 10,
                   child: Stack(
                     children: [
-                      Container(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
+                      Container(
+                        color: isDark
+                            ? const Color(0xFF222222)
+                            : const Color(0xFFE5E7EB),
+                      ),
                       FractionallySizedBox(
                         widthFactor: (baseValue / 255).clamp(0.01, 1.0),
-                        child: Container(color: statColor.withValues(alpha: 0.4)),
+                        child: Container(
+                          color: statColor.withValues(alpha: 0.4),
+                        ),
                       ),
                       FractionallySizedBox(
                         widthFactor: (finalValue / 504).clamp(0.01, 1.0),
@@ -504,14 +680,22 @@ class PokemonDetailStatsTab extends ConsumerWidget {
               child: Text(
                 '$finalValue',
                 textAlign: TextAlign.right,
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: primaryColor),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                  color: primaryColor,
+                ),
               ),
             ),
           ],
         ),
         children: [
           Padding(
-            padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 12.0),
+            padding: const EdgeInsets.only(
+              left: 16.0,
+              right: 16.0,
+              bottom: 12.0,
+            ),
             child: Column(
               children: [
                 const Divider(color: Color(0xFF2D2D2D), height: 12),
@@ -519,7 +703,14 @@ class PokemonDetailStatsTab extends ConsumerWidget {
                   children: [
                     const SizedBox(
                       width: 40,
-                      child: Text('IV:', style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold)),
+                      child: Text(
+                        'IV:',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                     Expanded(
                       child: Slider(
@@ -528,7 +719,9 @@ class PokemonDetailStatsTab extends ConsumerWidget {
                         max: 31,
                         divisions: 31,
                         activeColor: isDark ? Colors.white : Colors.black87,
-                        inactiveColor: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE5E7EB),
+                        inactiveColor: isDark
+                            ? const Color(0xFF2D2D2D)
+                            : const Color(0xFFE5E7EB),
                         onChanged: (val) {
                           HapticFeedback.selectionClick();
                           notifier.updateIv(statKey, val.toInt());
@@ -538,14 +731,23 @@ class PokemonDetailStatsTab extends ConsumerWidget {
                     SizedBox(
                       width: 40,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6),
+                          color: isDark
+                              ? const Color(0xFF1E1E1E)
+                              : const Color(0xFFF3F4F6),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           '$ivValue',
-                          style: TextStyle(color: primaryColor, fontSize: 11, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: primaryColor,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -556,7 +758,14 @@ class PokemonDetailStatsTab extends ConsumerWidget {
                   children: [
                     const SizedBox(
                       width: 40,
-                      child: Text('EV:', style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold)),
+                      child: Text(
+                        'EV:',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                     Expanded(
                       child: Slider(
@@ -565,7 +774,9 @@ class PokemonDetailStatsTab extends ConsumerWidget {
                         max: 252,
                         divisions: 63,
                         activeColor: statColor,
-                        inactiveColor: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE5E7EB),
+                        inactiveColor: isDark
+                            ? const Color(0xFF2D2D2D)
+                            : const Color(0xFFE5E7EB),
                         onChanged: (val) {
                           HapticFeedback.selectionClick();
                           notifier.updateEv(statKey, val.toInt());
@@ -575,14 +786,21 @@ class PokemonDetailStatsTab extends ConsumerWidget {
                     SizedBox(
                       width: 40,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: statColor.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           '$evValue',
-                          style: TextStyle(color: statColor, fontSize: 11, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: statColor,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
                           textAlign: TextAlign.center,
                         ),
                       ),

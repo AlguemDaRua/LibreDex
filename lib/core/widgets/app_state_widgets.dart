@@ -32,9 +32,13 @@ class AppEmptyState extends StatelessWidget {
               width: 76,
               height: 76,
               decoration: BoxDecoration(
-                color: AppTheme.pokemonRed.withValues(alpha: isDark ? 0.18 : 0.10),
+                color: AppTheme.pokemonRed.withValues(
+                  alpha: isDark ? 0.18 : 0.10,
+                ),
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: AppTheme.pokemonRed.withValues(alpha: 0.22)),
+                border: Border.all(
+                  color: AppTheme.pokemonRed.withValues(alpha: 0.22),
+                ),
               ),
               child: Icon(icon, color: AppTheme.pokemonRed, size: 36),
             ),
@@ -42,7 +46,11 @@ class AppEmptyState extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.w900),
+              style: TextStyle(
+                color: color,
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+              ),
             ),
             const SizedBox(height: 8),
             Text(

@@ -41,7 +41,11 @@ class ActiveFilterSummary extends StatelessWidget {
           children: [
             Text(
               item.label,
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: chipColor),
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: chipColor,
+              ),
             ),
             const SizedBox(width: 2),
             GestureDetector(
@@ -49,7 +53,11 @@ class ActiveFilterSummary extends StatelessWidget {
                 HapticFeedback.selectionClick();
                 item.onDeleted();
               },
-              child: Icon(Icons.cancel_rounded, size: 16, color: chipColor.withValues(alpha: 0.7)),
+              child: Icon(
+                Icons.cancel_rounded,
+                size: 16,
+                color: chipColor.withValues(alpha: 0.7),
+              ),
             ),
           ],
         ),
@@ -76,7 +84,11 @@ class ActiveFilterSummary extends StatelessWidget {
               SizedBox(width: 4),
               Text(
                 'Clear All',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.redAccent),
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.redAccent,
+                ),
               ),
             ],
           ),

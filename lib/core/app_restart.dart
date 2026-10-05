@@ -2,10 +2,7 @@ import 'package:flutter/widgets.dart';
 
 /// Recreates a keyed app subtree after intentionally deleting local data.
 class AppRestart extends StatefulWidget {
-  const AppRestart({
-    super.key,
-    required this.child,
-  });
+  const AppRestart({super.key, required this.child});
 
   final Widget child;
 
@@ -24,9 +21,6 @@ class _AppRestartState extends State<AppRestart> {
 
   @override
   Widget build(BuildContext context) {
-    return KeyedSubtree(
-      key: ValueKey(_generation),
-      child: widget.child,
-    );
+    return KeyedSubtree(key: ValueKey(_generation), child: widget.child);
   }
 }

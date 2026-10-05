@@ -5345,10 +5345,8 @@ class $$PokemonTableTableAnnotationComposer
   GeneratedColumn<String> get eggGroups =>
       $composableBuilder(column: $table.eggGroups, builder: (column) => column);
 
-  GeneratedColumn<bool> get isBaby => $composableBuilder(
-    column: $table.isBaby,
-    builder: (column) => column,
-  );
+  GeneratedColumn<bool> get isBaby =>
+      $composableBuilder(column: $table.isBaby, builder: (column) => column);
 
   GeneratedColumn<bool> get hasEvolution => $composableBuilder(
     column: $table.hasEvolution,

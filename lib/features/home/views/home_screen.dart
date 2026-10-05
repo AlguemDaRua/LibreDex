@@ -45,7 +45,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _maybePromptForArtwork());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _maybePromptForArtwork(),
+    );
   }
 
   Future<void> _maybePromptForArtwork() async {
@@ -124,9 +126,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   NavigationRail(
                     selectedIndex: barIndex,
                     onDestinationSelected: _onRailTapped,
-                    backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
+                    backgroundColor: isDark
+                        ? const Color(0xFF121212)
+                        : Colors.white,
                     indicatorColor: AppTheme.pokemonRed.withValues(alpha: 0.18),
-                    selectedIconTheme: const IconThemeData(color: AppTheme.pokemonRed),
+                    selectedIconTheme: const IconThemeData(
+                      color: AppTheme.pokemonRed,
+                    ),
                     unselectedIconTheme: IconThemeData(
                       color: isDark ? Colors.grey[500] : Colors.grey[600],
                     ),
@@ -157,17 +163,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       children: [
                         const _DownloadBanner(),
                         Expanded(
-                          child: AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 180),
-                            switchInCurve: Curves.easeOut,
-                            switchOutCurve: Curves.easeIn,
-                            child: IndexedStack(
-                              key: ValueKey<int>(currentIndex),
-                              index: currentIndex,
-                              children: List.generate(
-                                AppSection.values.length,
-                                (i) => _visitedIndices.contains(i) ? _buildSection(i) : const SizedBox.shrink(),
-                              ),
+                          child: IndexedStack(
+                            index: currentIndex,
+                            children: List.generate(
+                              AppSection.values.length,
+                              (i) => _visitedIndices.contains(i)
+                                  ? _buildSection(i)
+                                  : const SizedBox.shrink(),
                             ),
                           ),
                         ),
@@ -185,17 +187,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               children: [
                 const _DownloadBanner(),
                 Expanded(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 180),
-                    switchInCurve: Curves.easeOut,
-                    switchOutCurve: Curves.easeIn,
-                    child: IndexedStack(
-                      key: ValueKey<int>(currentIndex),
-                      index: currentIndex,
-                      children: List.generate(
-                        AppSection.values.length,
-                        (i) => _visitedIndices.contains(i) ? _buildSection(i) : const SizedBox.shrink(),
-                      ),
+                  child: IndexedStack(
+                    index: currentIndex,
+                    children: List.generate(
+                      AppSection.values.length,
+                      (i) => _visitedIndices.contains(i)
+                          ? _buildSection(i)
+                          : const SizedBox.shrink(),
                     ),
                   ),
                 ),
@@ -261,9 +259,13 @@ class _DownloadBanner extends ConsumerWidget {
               Row(
                 children: [
                   Icon(
-                    hasFailed ? Icons.cloud_off_rounded : Icons.cloud_download_rounded,
+                    hasFailed
+                        ? Icons.cloud_off_rounded
+                        : Icons.cloud_download_rounded,
                     size: 18,
-                    color: hasFailed ? Colors.orangeAccent : AppTheme.pokemonRed,
+                    color: hasFailed
+                        ? Colors.orangeAccent
+                        : AppTheme.pokemonRed,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -271,12 +273,14 @@ class _DownloadBanner extends ConsumerWidget {
                       hasFailed
                           ? 'Artwork download paused'
                           : sync.status == DownloadStatus.paused
-                              ? 'Download paused'
-                              : 'Downloading artwork for offline use',
+                          ? 'Download paused'
+                          : 'Downloading artwork for offline use',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 13,
-                        color: hasFailed ? Colors.orangeAccent : AppTheme.pokemonRed,
+                        color: hasFailed
+                            ? Colors.orangeAccent
+                            : AppTheme.pokemonRed,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -285,16 +289,29 @@ class _DownloadBanner extends ConsumerWidget {
                   if (!hasFailed)
                     Text(
                       '${sync.completed}/${sync.total}',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
                     ),
                   if (sync.status == DownloadStatus.running)
-                    _BannerAction(icon: Icons.pause_rounded, tooltip: 'Pause', onPressed: controller.pause),
+                    _BannerAction(
+                      icon: Icons.pause_rounded,
+                      tooltip: 'Pause',
+                      onPressed: controller.pause,
+                    ),
                   if (sync.status == DownloadStatus.paused)
-                    _BannerAction(icon: Icons.play_arrow_rounded, tooltip: 'Resume', onPressed: controller.resume),
+                    _BannerAction(
+                      icon: Icons.play_arrow_rounded,
+                      tooltip: 'Resume',
+                      onPressed: controller.resume,
+                    ),
                   _BannerAction(
                     icon: Icons.close_rounded,
                     tooltip: hasFailed ? 'Dismiss' : 'Cancel download',
-                    onPressed: hasFailed ? controller.acknowledge : controller.cancel,
+                    onPressed: hasFailed
+                        ? controller.acknowledge
+                        : controller.cancel,
                   ),
                 ],
               ),
@@ -305,15 +322,25 @@ class _DownloadBanner extends ConsumerWidget {
                   child: LinearProgressIndicator(
                     value: sync.progress,
                     minHeight: 5,
-                    backgroundColor: isDark ? const Color(0xFF262626) : const Color(0xFFE5E7EB),
-                    valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.pokemonRed),
+                    backgroundColor: isDark
+                        ? const Color(0xFF262626)
+                        : const Color(0xFFE5E7EB),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      AppTheme.pokemonRed,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 6),
               ],
               Text(
-                hasFailed ? (sync.errorMessage ?? 'Download interrupted.') : '${(sync.progress * 100).toStringAsFixed(0)}% · ${sync.currentLabel}',
-                style: TextStyle(fontSize: 11, height: 1.3, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+                hasFailed
+                    ? (sync.errorMessage ?? 'Download interrupted.')
+                    : '${(sync.progress * 100).toStringAsFixed(0)}% · ${sync.currentLabel}',
+                style: TextStyle(
+                  fontSize: 11,
+                  height: 1.3,
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -329,7 +356,11 @@ class _BannerAction extends StatelessWidget {
   final IconData icon;
   final String tooltip;
   final VoidCallback onPressed;
-  const _BannerAction({required this.icon, required this.tooltip, required this.onPressed});
+  const _BannerAction({
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+  });
   @override
   Widget build(BuildContext context) {
     return IconButton(

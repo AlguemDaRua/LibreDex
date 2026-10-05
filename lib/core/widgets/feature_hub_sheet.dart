@@ -42,254 +42,257 @@ class FeatureHubSheet extends ConsumerWidget {
             ),
           ],
         ),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Top Drag Handle
-            const SizedBox(height: 12),
-            Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: isDark ? Colors.grey[800] : Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Top Drag Handle
+              const SizedBox(height: 12),
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.grey[800] : Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            // Header
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppTheme.pokemonRed.withValues(alpha: 0.12),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.apps_rounded,
-                      color: AppTheme.pokemonRed,
-                      size: 22,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'LibreDex Hub',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: -0.3,
-                          ),
-                        ),
-                        SizedBox(height: 2),
-                        Text(
-                          'All Pokémon tools in one place',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Theme Quick Switcher — reveals outward from exact button touch origin
-                  Builder(
-                    builder: (btnContext) {
-                      Offset? lastTapPos;
-                      return GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTapDown: (details) {
-                          lastTapPos = details.globalPosition;
-                        },
-                        child: IconButton(
-                          icon: Icon(
-                            currentTheme == ThemeMode.dark
-                                ? Icons.dark_mode_rounded
-                                : currentTheme == ThemeMode.light
-                                    ? Icons.light_mode_rounded
-                                    : Icons.brightness_auto_rounded,
-                            size: 20,
-                            color: AppTheme.pokemonRed,
-                          ),
-                          tooltip: 'Toggle Theme',
-                          onPressed: () async {
-                            final box = btnContext.findRenderObject() as RenderBox?;
-                            final buttonCenter = box != null && box.hasSize
-                                ? box.localToGlobal(box.size.center(Offset.zero))
-                                : null;
-                            await cycleThemeWithWavy(
-                              btnContext,
-                              ref,
-                              origin: lastTapPos ?? buttonCenter,
-                            );
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-            const Divider(height: 1),
-
-            // Scrollable Content
-            Flexible(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              // Header
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
                   children: [
-                    // CHAMPIONS REGULATION SECTION
-                    _buildSectionHeader('POKÉMON CHAMPIONS · REGULATION M-C'),
-                    const SizedBox(height: 10),
-                    _buildRegulationOverviewCard(regulation, isDark),
-                    const SizedBox(height: 12),
-                    GridView.count(
-                      crossAxisCount: 2,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      mainAxisSpacing: 10,
-                      crossAxisSpacing: 10,
-                      childAspectRatio: 2.3,
-                      children: [
-                        _buildHubTile(
-                          context: context,
-                          ref: ref,
-                          section: AppSection.pokedex,
-                          subtitle: 'Roster eligibility & new Pokémon',
-                          color: const Color(0xFFE3350D),
-                        ),
-                        _buildHubTile(
-                          context: context,
-                          ref: ref,
-                          section: AppSection.movedex,
-                          subtitle: 'M-C moves, PP & patch notes',
-                          color: const Color(0xFFF7D02C),
-                        ),
-                        _buildHubTile(
-                          context: context,
-                          ref: ref,
-                          section: AppSection.abilitydex,
-                          subtitle: 'Eligible abilities & effects',
-                          color: const Color(0xFFA78BFA),
-                        ),
-                        _buildHubTile(
-                          context: context,
-                          ref: ref,
-                          section: AppSection.itemdex,
-                          subtitle: 'M-C held items & artwork',
-                          color: const Color(0xFF34D399),
-                        ),
-                      ],
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppTheme.pokemonRed.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.apps_rounded,
+                        color: AppTheme.pokemonRed,
+                        size: 22,
+                      ),
                     ),
-
-                    const SizedBox(height: 20),
-
-                    // REFERENCE DATABASES SECTION
-                    _buildSectionHeader('REFERENCE DATABASES'),
-                    const SizedBox(height: 10),
-                    GridView.count(
-                      crossAxisCount: 2,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      mainAxisSpacing: 10,
-                      crossAxisSpacing: 10,
-                      childAspectRatio: 2.3,
-                      children: [
-                        _buildHubTile(
-                          context: context,
-                          ref: ref,
-                          section: AppSection.naturedex,
-                          subtitle: 'Natures & stat modifiers',
-                          color: const Color(0xFFF59E0B),
-                        ),
-                        _buildHubTile(
-                          context: context,
-                          ref: ref,
-                          section: AppSection.typeChart,
-                          subtitle: 'Type strengths & weaknesses',
-                          color: const Color(0xFF60A5FA),
-                        ),
-                      ],
+                    const SizedBox(width: 14),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'LibreDex Hub',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'All Pokémon tools in one place',
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                        ],
+                      ),
                     ),
-
-                    const SizedBox(height: 20),
-
-                    // COMPETITIVE TOOLS SECTION
-                    _buildSectionHeader('TEAM & BATTLE TOOLS'),
-                    const SizedBox(height: 10),
-                    GridView.count(
-                      crossAxisCount: 2,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      mainAxisSpacing: 10,
-                      crossAxisSpacing: 10,
-                      childAspectRatio: 2.3,
-                      children: [
-                        _buildHubTile(
-                          context: context,
-                          ref: ref,
-                          section: AppSection.teamBuilder,
-                          subtitle: 'Build & export teams',
-                          color: const Color(0xFFEC4899),
-                        ),
-                        _buildHubTile(
-                          context: context,
-                          ref: ref,
-                          section: AppSection.calculator,
-                          subtitle: 'Mainline & Champions damage',
-                          color: const Color(0xFF10B981),
-                        ),
-                        _buildHubTile(
-                          context: context,
-                          ref: ref,
-                          section: AppSection.statCompare,
-                          subtitle: 'Side-by-side base stats',
-                          color: const Color(0xFF8B5CF6),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    _buildSectionHeader('APP & PREFERENCES'),
-                    const SizedBox(height: 10),
-                    GridView.count(
-                      crossAxisCount: 2,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      mainAxisSpacing: 10,
-                      crossAxisSpacing: 10,
-                      childAspectRatio: 2.3,
-                      children: [
-                        _buildHubTile(
-                          context: context,
-                          ref: ref,
-                          section: AppSection.settings,
-                          subtitle: 'Artwork, theme & app options',
-                          color: const Color(0xFF6B7280),
-                        ),
-                      ],
+                    // Theme Quick Switcher — reveals outward from exact button touch origin
+                    Builder(
+                      builder: (btnContext) {
+                        Offset? lastTapPos;
+                        return GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTapDown: (details) {
+                            lastTapPos = details.globalPosition;
+                          },
+                          child: IconButton(
+                            icon: Icon(
+                              currentTheme == ThemeMode.dark
+                                  ? Icons.dark_mode_rounded
+                                  : currentTheme == ThemeMode.light
+                                  ? Icons.light_mode_rounded
+                                  : Icons.brightness_auto_rounded,
+                              size: 20,
+                              color: AppTheme.pokemonRed,
+                            ),
+                            tooltip: 'Toggle Theme',
+                            onPressed: () async {
+                              final box =
+                                  btnContext.findRenderObject() as RenderBox?;
+                              final buttonCenter = box != null && box.hasSize
+                                  ? box.localToGlobal(
+                                      box.size.center(Offset.zero),
+                                    )
+                                  : null;
+                              await cycleThemeWithWavy(
+                                btnContext,
+                                ref,
+                                origin: lastTapPos ?? buttonCenter,
+                              );
+                            },
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
               ),
-            ),
-          ],
+
+              const SizedBox(height: 16),
+              const Divider(height: 1),
+
+              // Scrollable Content
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // CHAMPIONS REGULATION SECTION
+                      _buildSectionHeader('POKÉMON CHAMPIONS · REGULATION M-C'),
+                      const SizedBox(height: 10),
+                      _buildRegulationOverviewCard(regulation, isDark),
+                      const SizedBox(height: 12),
+                      GridView.count(
+                        crossAxisCount: 2,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        mainAxisSpacing: 10,
+                        crossAxisSpacing: 10,
+                        childAspectRatio: 2.3,
+                        children: [
+                          _buildHubTile(
+                            context: context,
+                            ref: ref,
+                            section: AppSection.pokedex,
+                            subtitle: 'Roster eligibility & new Pokémon',
+                            color: const Color(0xFFE3350D),
+                          ),
+                          _buildHubTile(
+                            context: context,
+                            ref: ref,
+                            section: AppSection.movedex,
+                            subtitle: 'M-C moves, PP & patch notes',
+                            color: const Color(0xFFF7D02C),
+                          ),
+                          _buildHubTile(
+                            context: context,
+                            ref: ref,
+                            section: AppSection.abilitydex,
+                            subtitle: 'Eligible abilities & effects',
+                            color: const Color(0xFFA78BFA),
+                          ),
+                          _buildHubTile(
+                            context: context,
+                            ref: ref,
+                            section: AppSection.itemdex,
+                            subtitle: 'M-C held items & artwork',
+                            color: const Color(0xFF34D399),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // REFERENCE DATABASES SECTION
+                      _buildSectionHeader('REFERENCE DATABASES'),
+                      const SizedBox(height: 10),
+                      GridView.count(
+                        crossAxisCount: 2,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        mainAxisSpacing: 10,
+                        crossAxisSpacing: 10,
+                        childAspectRatio: 2.3,
+                        children: [
+                          _buildHubTile(
+                            context: context,
+                            ref: ref,
+                            section: AppSection.naturedex,
+                            subtitle: 'Natures & stat modifiers',
+                            color: const Color(0xFFF59E0B),
+                          ),
+                          _buildHubTile(
+                            context: context,
+                            ref: ref,
+                            section: AppSection.typeChart,
+                            subtitle: 'Type strengths & weaknesses',
+                            color: const Color(0xFF60A5FA),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // COMPETITIVE TOOLS SECTION
+                      _buildSectionHeader('TEAM & BATTLE TOOLS'),
+                      const SizedBox(height: 10),
+                      GridView.count(
+                        crossAxisCount: 2,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        mainAxisSpacing: 10,
+                        crossAxisSpacing: 10,
+                        childAspectRatio: 2.3,
+                        children: [
+                          _buildHubTile(
+                            context: context,
+                            ref: ref,
+                            section: AppSection.teamBuilder,
+                            subtitle: 'Build & export teams',
+                            color: const Color(0xFFEC4899),
+                          ),
+                          _buildHubTile(
+                            context: context,
+                            ref: ref,
+                            section: AppSection.calculator,
+                            subtitle: 'Mainline & Champions damage',
+                            color: const Color(0xFF10B981),
+                          ),
+                          _buildHubTile(
+                            context: context,
+                            ref: ref,
+                            section: AppSection.statCompare,
+                            subtitle: 'Side-by-side base stats',
+                            color: const Color(0xFF8B5CF6),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      _buildSectionHeader('APP & PREFERENCES'),
+                      const SizedBox(height: 10),
+                      GridView.count(
+                        crossAxisCount: 2,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        mainAxisSpacing: 10,
+                        crossAxisSpacing: 10,
+                        childAspectRatio: 2.3,
+                        children: [
+                          _buildHubTile(
+                            context: context,
+                            ref: ref,
+                            section: AppSection.settings,
+                            subtitle: 'Artwork, theme & app options',
+                            color: const Color(0xFF6B7280),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
+    );
   }
 
   Widget _buildSectionHeader(String title) {
@@ -338,7 +341,11 @@ class FeatureHubSheet extends ConsumerWidget {
                   color: accent.withValues(alpha: 0.16),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.emoji_events_rounded, color: accent, size: 21),
+                child: const Icon(
+                  Icons.emoji_events_rounded,
+                  color: accent,
+                  size: 21,
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -346,7 +353,8 @@ class FeatureHubSheet extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      regulation?.regulationName ?? 'Pokémon Champions Regulation M-C',
+                      regulation?.regulationName ??
+                          'Pokémon Champions Regulation M-C',
                       style: TextStyle(
                         color: isDark ? Colors.white : const Color(0xFF211A31),
                         fontSize: 14,
@@ -402,7 +410,11 @@ class FeatureHubSheet extends ConsumerWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.calendar_month_rounded, color: accent, size: 14),
+                const Icon(
+                  Icons.calendar_month_rounded,
+                  color: accent,
+                  size: 14,
+                ),
                 const SizedBox(width: 5),
                 Expanded(
                   child: Text(
@@ -422,13 +434,19 @@ class FeatureHubSheet extends ConsumerWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.system_update_rounded, color: accent, size: 14),
+                const Icon(
+                  Icons.system_update_rounded,
+                  color: accent,
+                  size: 14,
+                ),
                 const SizedBox(width: 5),
                 Expanded(
                   child: Text(
                     regulation!.patchSummary,
                     style: TextStyle(
-                      color: isDark ? Colors.grey[300] : const Color(0xFF4B4655),
+                      color: isDark
+                          ? Colors.grey[300]
+                          : const Color(0xFF4B4655),
                       fontSize: 10,
                       height: 1.3,
                     ),
@@ -529,7 +547,9 @@ class FeatureHubSheet extends ConsumerWidget {
             border: Border.all(
               color: isSelected
                   ? color
-                  : (isDark ? const Color(0xFF262626) : const Color(0xFFE5E7EB)),
+                  : (isDark
+                        ? const Color(0xFF262626)
+                        : const Color(0xFFE5E7EB)),
               width: isSelected ? 1.5 : 1,
             ),
           ),

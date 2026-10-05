@@ -6,8 +6,6 @@
 /// This file must not import Flutter.
 library;
 
-
-
 import 'package:libredex/core/utils/pokemon_properties.dart';
 import 'package:libredex/features/calculator/models/battle_ruleset.dart';
 import 'package:libredex/features/calculator/utils/combat_utils.dart';
@@ -64,8 +62,12 @@ class ComparisonStats {
 
   /// Base Stat Total from the Pokémon's species data.
   int get bst =>
-      hp.rawStat + attack.rawStat + defense.rawStat +
-      spAtk.rawStat + spDef.rawStat + speed.rawStat;
+      hp.rawStat +
+      attack.rawStat +
+      defense.rawStat +
+      spAtk.rawStat +
+      spDef.rawStat +
+      speed.rawStat;
 
   /// Physical bulk = HP × Defense (effective).
   int get physicalBulk => hp.effectiveStat * defense.effectiveStat;
@@ -92,7 +94,6 @@ class ComparisonStats {
 class StatModifier {
   StatModifier._();
 
-
   /// Compute raw build stats (no stages, weather, status, or temporary effects).
   static ComparisonStats computeRawStats(
     ComparisonEntry entry,
@@ -100,8 +101,12 @@ class StatModifier {
   ) {
     final p = entry.pokemon;
     final bases = {
-      'hp': p.baseHp, 'atk': p.baseAtk, 'def': p.baseDef,
-      'spa': p.baseSpAtk, 'spd': p.baseSpDef, 'spe': p.baseSpd,
+      'hp': p.baseHp,
+      'atk': p.baseAtk,
+      'def': p.baseDef,
+      'spa': p.baseSpAtk,
+      'spd': p.baseSpDef,
+      'spe': p.baseSpd,
     };
 
     final isChampions = ruleset.isChampions;
@@ -111,12 +116,17 @@ class StatModifier {
     int rawHp;
     if (isChampions) {
       rawHp = StatCalculator.calculateChampionsHp(
-        base: bases['hp']!, sp: entry.sps['hp'] ?? 0, isShedinja: isShedinja,
+        base: bases['hp']!,
+        sp: entry.sps['hp'] ?? 0,
+        isShedinja: isShedinja,
       );
     } else {
       rawHp = StatCalculator.calculateHp(
-        base: bases['hp']!, iv: entry.ivs['hp'] ?? 31,
-        ev: entry.evs['hp'] ?? 0, level: entry.level, isShedinja: isShedinja,
+        base: bases['hp']!,
+        iv: entry.ivs['hp'] ?? 31,
+        ev: entry.evs['hp'] ?? 0,
+        level: entry.level,
+        isShedinja: isShedinja,
       );
     }
 
@@ -126,17 +136,25 @@ class StatModifier {
 
     for (final key in ['atk', 'def', 'spa', 'spd', 'spe']) {
       final statLabel = _statKeyToLabel(key);
-      final natureMod = CombatUtils.getNatureMultiplier(entry.nature, statLabel);
+      final natureMod = CombatUtils.getNatureMultiplier(
+        entry.nature,
+        statLabel,
+      );
 
       int raw;
       if (isChampions) {
         raw = StatCalculator.calculateChampionsStat(
-          base: bases[key]!, sp: entry.sps[key] ?? 0, alignmentModifier: natureMod,
+          base: bases[key]!,
+          sp: entry.sps[key] ?? 0,
+          alignmentModifier: natureMod,
         );
       } else {
         raw = StatCalculator.calculateOtherStat(
-          base: bases[key]!, iv: entry.ivs[key] ?? 31,
-          ev: entry.evs[key] ?? 0, level: entry.level, natureModifier: natureMod,
+          base: bases[key]!,
+          iv: entry.ivs[key] ?? 31,
+          ev: entry.evs[key] ?? 0,
+          level: entry.level,
+          natureModifier: natureMod,
         );
       }
 
@@ -182,8 +200,12 @@ class StatModifier {
   ) {
     final p = entry.pokemon;
     final bases = {
-      'hp': p.baseHp, 'atk': p.baseAtk, 'def': p.baseDef,
-      'spa': p.baseSpAtk, 'spd': p.baseSpDef, 'spe': p.baseSpd,
+      'hp': p.baseHp,
+      'atk': p.baseAtk,
+      'def': p.baseDef,
+      'spa': p.baseSpAtk,
+      'spd': p.baseSpDef,
+      'spe': p.baseSpd,
     };
 
     final isChampions = ruleset.isChampions;
@@ -196,12 +218,17 @@ class StatModifier {
     int rawHp;
     if (isChampions) {
       rawHp = StatCalculator.calculateChampionsHp(
-        base: bases['hp']!, sp: entry.sps['hp'] ?? 0, isShedinja: isShedinja,
+        base: bases['hp']!,
+        sp: entry.sps['hp'] ?? 0,
+        isShedinja: isShedinja,
       );
     } else {
       rawHp = StatCalculator.calculateHp(
-        base: bases['hp']!, iv: entry.ivs['hp'] ?? 31,
-        ev: entry.evs['hp'] ?? 0, level: entry.level, isShedinja: isShedinja,
+        base: bases['hp']!,
+        iv: entry.ivs['hp'] ?? 31,
+        ev: entry.evs['hp'] ?? 0,
+        level: entry.level,
+        isShedinja: isShedinja,
       );
     }
 
@@ -212,15 +239,23 @@ class StatModifier {
     final rawStats = <String, int>{};
     for (final key in ['atk', 'def', 'spa', 'spd', 'spe']) {
       final statLabel = _statKeyToLabel(key);
-      final natureMod = CombatUtils.getNatureMultiplier(entry.nature, statLabel);
+      final natureMod = CombatUtils.getNatureMultiplier(
+        entry.nature,
+        statLabel,
+      );
       if (isChampions) {
         rawStats[key] = StatCalculator.calculateChampionsStat(
-          base: bases[key]!, sp: entry.sps[key] ?? 0, alignmentModifier: natureMod,
+          base: bases[key]!,
+          sp: entry.sps[key] ?? 0,
+          alignmentModifier: natureMod,
         );
       } else {
         rawStats[key] = StatCalculator.calculateOtherStat(
-          base: bases[key]!, iv: entry.ivs[key] ?? 31,
-          ev: entry.evs[key] ?? 0, level: entry.level, natureModifier: natureMod,
+          base: bases[key]!,
+          iv: entry.ivs[key] ?? 31,
+          ev: entry.evs[key] ?? 0,
+          level: entry.level,
+          natureModifier: natureMod,
         );
       }
     }
@@ -254,22 +289,40 @@ class StatModifier {
       final stage = entry.stages[key] ?? 0;
       if (stage != 0) {
         final stageMult = CombatUtils.getStageMultiplier(stage);
-        mods.add(AppliedStatModifier(
-          '${stage > 0 ? '+' : ''}$stage stage', stageMult,
-        ));
+        mods.add(
+          AppliedStatModifier('${stage > 0 ? '+' : ''}$stage stage', stageMult),
+        );
         value *= stageMult;
       }
 
       // 4. Status effects
-      _applyStatusEffects(entry, key, ability, mods, value).also((v) => value = v);
+      _applyStatusEffects(
+        entry,
+        key,
+        ability,
+        mods,
+        value,
+      ).also((v) => value = v);
 
       // 5. Weather effects
-      _applyWeatherEffects(entry, key, ability, type1, type2, mods, value)
-          .also((v) => value = v);
+      _applyWeatherEffects(
+        entry,
+        key,
+        ability,
+        type1,
+        type2,
+        mods,
+        value,
+      ).also((v) => value = v);
 
       // 6. Terrain effects
-      _applyTerrainEffects(entry, key, ability, mods, value)
-          .also((v) => value = v);
+      _applyTerrainEffects(
+        entry,
+        key,
+        ability,
+        mods,
+        value,
+      ).also((v) => value = v);
 
       // 7. Slow Start
       if (ability == 'slow start' && entry.turnsOnField < 5) {
@@ -302,14 +355,18 @@ class StatModifier {
       // 11. Protosynthesis / Quark Drive
       if (protoQuarkBoostedStat == key) {
         final pqMult = key == 'spe' ? 1.5 : 1.3;
-        final pqLabel = ability == 'protosynthesis' ? 'Protosynthesis' : 'Quark Drive';
+        final pqLabel = ability == 'protosynthesis'
+            ? 'Protosynthesis'
+            : 'Quark Drive';
         mods.add(AppliedStatModifier(pqLabel, pqMult));
         value *= pqMult;
       }
 
       // 12. Plus / Minus (simplified — assumes pairing condition is active when set)
       if ((ability == 'plus' || ability == 'minus') && key == 'spa') {
-        mods.add(AppliedStatModifier(ability == 'plus' ? 'Plus' : 'Minus', 1.5));
+        mods.add(
+          AppliedStatModifier(ability == 'plus' ? 'Plus' : 'Minus', 1.5),
+        );
         value *= 1.5;
       }
 
@@ -329,14 +386,16 @@ class StatModifier {
       }
 
       // 15. Sandstorm SpDef for Rock types
-      if (key == 'spd' && entry.weather == 'sandstorm' &&
+      if (key == 'spd' &&
+          entry.weather == 'sandstorm' &&
           (type1 == 'rock' || type2 == 'rock')) {
         mods.add(const AppliedStatModifier('Sandstorm (Rock)', 1.5));
         value *= 1.5;
       }
 
       // 16. Snow Defense for Ice types
-      if (key == 'def' && entry.weather == 'snow' &&
+      if (key == 'def' &&
+          entry.weather == 'snow' &&
           (type1 == 'ice' || type2 == 'ice')) {
         mods.add(const AppliedStatModifier('Snow (Ice)', 1.5));
         value *= 1.5;
@@ -364,7 +423,10 @@ class StatModifier {
   /// Items whose stat effects are part of the "build" (always active,
   /// not turn-dependent). Does NOT include speed items or Choice Scarf
   /// (those are in effective stats only).
-  static double _permanentItemMultiplier(ComparisonEntry entry, String statKey) {
+  static double _permanentItemMultiplier(
+    ComparisonEntry entry,
+    String statKey,
+  ) {
     final item = _normalize(entry.heldItem);
     final pokemonName = entry.pokemon.name.toLowerCase();
 
@@ -373,8 +435,9 @@ class StatModifier {
       if (statKey == 'atk' || statKey == 'spa') return 2.0;
     }
     if (item == 'thick club' &&
-        (pokemonName == 'cubone' || pokemonName == 'marowak' ||
-         pokemonName.contains('marowak'))) {
+        (pokemonName == 'cubone' ||
+            pokemonName == 'marowak' ||
+            pokemonName.contains('marowak'))) {
       if (statKey == 'atk') return 2.0;
     }
     if (item == 'deep sea tooth' && pokemonName == 'clamperl') {
@@ -408,10 +471,14 @@ class StatModifier {
 
   // ── Permanent Ability Multipliers ───────────────────────────────────────
 
-  static double _permanentAbilityMultiplier(ComparisonEntry entry, String statKey) {
+  static double _permanentAbilityMultiplier(
+    ComparisonEntry entry,
+    String statKey,
+  ) {
     final ability = _normalize(entry.ability ?? '');
 
-    if ((ability == 'huge power' || ability == 'pure power') && statKey == 'atk') {
+    if ((ability == 'huge power' || ability == 'pure power') &&
+        statKey == 'atk') {
       return 2.0;
     }
     if (ability == 'fur coat' && statKey == 'def') return 2.0;
@@ -423,8 +490,11 @@ class StatModifier {
   // ── Status Effects ──────────────────────────────────────────────────────
 
   static double _applyStatusEffects(
-    ComparisonEntry entry, String key, String ability,
-    List<AppliedStatModifier> mods, double value,
+    ComparisonEntry entry,
+    String key,
+    String ability,
+    List<AppliedStatModifier> mods,
+    double value,
   ) {
     if (entry.status == 'none') return value;
 
@@ -463,9 +533,13 @@ class StatModifier {
   // ── Weather Effects ─────────────────────────────────────────────────────
 
   static double _applyWeatherEffects(
-    ComparisonEntry entry, String key, String ability,
-    String type1, String? type2,
-    List<AppliedStatModifier> mods, double value,
+    ComparisonEntry entry,
+    String key,
+    String ability,
+    String type1,
+    String? type2,
+    List<AppliedStatModifier> mods,
+    double value,
   ) {
     if (entry.weather == 'none') return value;
 
@@ -482,7 +556,9 @@ class StatModifier {
     }
 
     // Sand + Sand Rush = Speed ×2
-    if (entry.weather == 'sandstorm' && ability == 'sand rush' && key == 'spe') {
+    if (entry.weather == 'sandstorm' &&
+        ability == 'sand rush' &&
+        key == 'spe') {
       mods.add(const AppliedStatModifier('Sand Rush (Sandstorm)', 2.0));
       return value * 2.0;
     }
@@ -499,8 +575,11 @@ class StatModifier {
   // ── Terrain Effects ─────────────────────────────────────────────────────
 
   static double _applyTerrainEffects(
-    ComparisonEntry entry, String key, String ability,
-    List<AppliedStatModifier> mods, double value,
+    ComparisonEntry entry,
+    String key,
+    String ability,
+    List<AppliedStatModifier> mods,
+    double value,
   ) {
     if (entry.terrain == 'none') return value;
 
@@ -511,8 +590,12 @@ class StatModifier {
     }
 
     // Electric Terrain + Surge Surfer = Speed ×2
-    if (entry.terrain == 'electric' && ability == 'surge surfer' && key == 'spe') {
-      mods.add(const AppliedStatModifier('Surge Surfer (Electric Terrain)', 2.0));
+    if (entry.terrain == 'electric' &&
+        ability == 'surge surfer' &&
+        key == 'spe') {
+      mods.add(
+        const AppliedStatModifier('Surge Surfer (Electric Terrain)', 2.0),
+      );
       return value * 2.0;
     }
 
@@ -527,8 +610,12 @@ class StatModifier {
     if (item == 'macho brace') return 0.5;
     // Power items
     if (const {
-      'power weight', 'power bracer', 'power belt',
-      'power lens', 'power band', 'power anklet',
+      'power weight',
+      'power bracer',
+      'power belt',
+      'power lens',
+      'power band',
+      'power anklet',
     }.contains(item)) {
       return 0.5;
     }
@@ -591,19 +678,30 @@ class StatModifier {
     final rawStats = <String, int>{};
     for (final key in ['atk', 'def', 'spa', 'spd', 'spe']) {
       final statLabel = _statKeyToLabel(key);
-      final natureMod = CombatUtils.getNatureMultiplier(entry.nature, statLabel);
+      final natureMod = CombatUtils.getNatureMultiplier(
+        entry.nature,
+        statLabel,
+      );
       final bases = {
-        'atk': p.baseAtk, 'def': p.baseDef,
-        'spa': p.baseSpAtk, 'spd': p.baseSpDef, 'spe': p.baseSpd,
+        'atk': p.baseAtk,
+        'def': p.baseDef,
+        'spa': p.baseSpAtk,
+        'spd': p.baseSpDef,
+        'spe': p.baseSpd,
       };
       if (isChampions) {
         rawStats[key] = StatCalculator.calculateChampionsStat(
-          base: bases[key]!, sp: entry.sps[key] ?? 0, alignmentModifier: natureMod,
+          base: bases[key]!,
+          sp: entry.sps[key] ?? 0,
+          alignmentModifier: natureMod,
         );
       } else {
         rawStats[key] = StatCalculator.calculateOtherStat(
-          base: bases[key]!, iv: entry.ivs[key] ?? 31,
-          ev: entry.evs[key] ?? 0, level: entry.level, natureModifier: natureMod,
+          base: bases[key]!,
+          iv: entry.ivs[key] ?? 31,
+          ev: entry.evs[key] ?? 0,
+          level: entry.level,
+          natureModifier: natureMod,
         );
       }
     }
@@ -612,8 +710,14 @@ class StatModifier {
     if (boosted == null) return null;
 
     final mult = boosted == 'spe' ? 1.5 : 1.3;
-    final label = ability == 'protosynthesis' ? 'Protosynthesis' : 'Quark Drive';
-    return (statKey: boosted, multiplier: mult, label: '$label: ${_statKeyToLabel(boosted)} ×${mult.toStringAsFixed(1)}');
+    final label = ability == 'protosynthesis'
+        ? 'Protosynthesis'
+        : 'Quark Drive';
+    return (
+      statKey: boosted,
+      multiplier: mult,
+      label: '$label: ${_statKeyToLabel(boosted)} ×${mult.toStringAsFixed(1)}',
+    );
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────────

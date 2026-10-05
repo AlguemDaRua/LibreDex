@@ -56,7 +56,11 @@ class TeamBuilderScreen extends ConsumerWidget {
     );
   }
 
-  void _showImportDialog(BuildContext context, WidgetRef ref, List<Pokemon> catalog) async {
+  void _showImportDialog(
+    BuildContext context,
+    WidgetRef ref,
+    List<Pokemon> catalog,
+  ) async {
     final controller = TextEditingController();
     await showDialog(
       context: context,
@@ -77,7 +81,8 @@ class TeamBuilderScreen extends ConsumerWidget {
           controller: controller,
           maxLines: 8,
           decoration: const InputDecoration(
-            hintText: 'Paste Showdown team text here...\ne.g.\nPikachu @ Light Ball\nAbility: Static\n- Volt Tackle',
+            hintText:
+                'Paste Showdown team text here...\ne.g.\nPikachu @ Light Ball\nAbility: Static\n- Volt Tackle',
             border: OutlineInputBorder(),
           ),
         ),
@@ -89,14 +94,20 @@ class TeamBuilderScreen extends ConsumerWidget {
           ElevatedButton(
             onPressed: () async {
               final db = ref.read(databaseProvider);
-              final imported = await ShowdownParser.parseShowdownText(controller.text, db);
+              final imported = await ShowdownParser.parseShowdownText(
+                controller.text,
+                db,
+              );
               final notifier = ref.read(teamBuilderProvider.notifier);
               for (int i = 0; i < imported.length; i++) {
                 await notifier.setSlot(i, imported[i]?.id);
               }
               if (ctx.mounted) Navigator.pop(ctx);
             },
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.pokemonRed, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.pokemonRed,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Import'),
           ),
         ],
@@ -132,7 +143,9 @@ class TeamBuilderScreen extends ConsumerWidget {
                   icon: const Icon(Icons.file_download_outlined),
                   onPressed: () {
                     final byId = {for (final p in pokemon) p.id: p};
-                    final team = slots.map((id) => id == null ? null : byId[id]).toList();
+                    final team = slots
+                        .map((id) => id == null ? null : byId[id])
+                        .toList();
                     _showExportDialog(context, team);
                   },
                 ),
@@ -163,12 +176,18 @@ class TeamBuilderScreen extends ConsumerWidget {
           return CustomScrollView(
             slivers: [
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, AppSpacing.topContentGap, AppSpacing.pagePadding, 8),
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.pagePadding,
+                  AppSpacing.topContentGap,
+                  AppSpacing.pagePadding,
+                  8,
+                ),
                 sliver: SliverToBoxAdapter(
                   child: _TeamHeader(
                     count: selected.length,
                     format: format,
-                    onFormatChanged: (next) => ref.read(teamFormatProvider.notifier).setFormat(next),
+                    onFormatChanged: (next) =>
+                        ref.read(teamFormatProvider.notifier).setFormat(next),
                   ),
                 ),
               ),
@@ -187,19 +206,26 @@ class TeamBuilderScreen extends ConsumerWidget {
                       index: index,
                       pokemon: team[index],
                       format: format,
-                      onAdd: () => _showPokemonPicker(context, ref, pokemon, index),
+                      onAdd: () =>
+                          _showPokemonPicker(context, ref, pokemon, index),
                     );
                   },
                 ),
               ),
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 20, AppSpacing.pagePadding, AppSpacing.bottomScrollPadding),
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.pagePadding,
+                  20,
+                  AppSpacing.pagePadding,
+                  AppSpacing.bottomScrollPadding,
+                ),
                 sliver: SliverToBoxAdapter(
                   child: selected.isEmpty
                       ? const AppEmptyState(
                           icon: Icons.groups_rounded,
                           title: 'Start your team',
-                          message: 'Add up to six Pokémon, then LibreDex will summarize defensive gaps and type spread.',
+                          message:
+                              'Add up to six Pokémon, then LibreDex will summarize defensive gaps and type spread.',
                         )
                       : _TeamAnalysis(team: selected, format: format),
                 ),
@@ -220,7 +246,8 @@ class TeamBuilderScreen extends ConsumerWidget {
     showDialog<void>(
       context: context,
       barrierDismissible: true,
-      builder: (context) => _PokemonPickerSheet(pokemon: pokemon, slotIndex: slotIndex),
+      builder: (context) =>
+          _PokemonPickerSheet(pokemon: pokemon, slotIndex: slotIndex),
     );
   }
 }
@@ -258,7 +285,9 @@ class _TeamHeader extends StatelessWidget {
             children: [
               Icon(
                 isChampions ? Icons.emoji_events_rounded : Icons.groups_rounded,
-                color: isChampions ? Colors.deepPurpleAccent : AppTheme.pokemonRed,
+                color: isChampions
+                    ? Colors.deepPurpleAccent
+                    : AppTheme.pokemonRed,
                 size: 34,
               ),
               const SizedBox(width: 14),
@@ -268,14 +297,19 @@ class _TeamHeader extends StatelessWidget {
                   children: [
                     Text(
                       '$count / 6 selected',
-                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       isChampions
                           ? 'Plan a Champions squad — Lv. 50 battles, perfect IVs and 66 Stat Points each.'
                           : 'Plan a balanced squad before jumping into the calculator.',
-                      style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600]),
+                      style: TextStyle(
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      ),
                     ),
                   ],
                 ),
@@ -287,7 +321,9 @@ class _TeamHeader extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: isDark ? Colors.black.withValues(alpha: 0.35) : Colors.white.withValues(alpha: 0.7),
+              color: isDark
+                  ? Colors.black.withValues(alpha: 0.35)
+                  : Colors.white.withValues(alpha: 0.7),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Row(
@@ -301,7 +337,9 @@ class _TeamHeader extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         decoration: BoxDecoration(
                           color: format == option
-                              ? (option == TeamFormat.champions ? Colors.deepPurpleAccent : AppTheme.pokemonRed)
+                              ? (option == TeamFormat.champions
+                                    ? Colors.deepPurpleAccent
+                                    : AppTheme.pokemonRed)
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -311,7 +349,9 @@ class _TeamHeader extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w900,
-                            color: format == option ? Colors.white : Colors.grey,
+                            color: format == option
+                                ? Colors.white
+                                : Colors.grey,
                           ),
                         ),
                       ),
@@ -351,17 +391,29 @@ class _TeamSlotCard extends ConsumerWidget {
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF121212) : Colors.white,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0)),
+            border: Border.all(
+              color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0),
+            ),
           ),
           child: Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.add_circle_outline_rounded, color: AppTheme.pokemonRed, size: 34),
+                const Icon(
+                  Icons.add_circle_outline_rounded,
+                  color: AppTheme.pokemonRed,
+                  size: 34,
+                ),
                 const SizedBox(height: 8),
-                Text('Slot ${index + 1}', style: const TextStyle(fontWeight: FontWeight.w900)),
+                Text(
+                  'Slot ${index + 1}',
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
                 const SizedBox(height: 2),
-                const Text('Add Pokémon', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                const Text(
+                  'Add Pokémon',
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                ),
               ],
             ),
           ),
@@ -383,7 +435,13 @@ class _TeamSlotCard extends ConsumerWidget {
           borderRadius: BorderRadius.circular(24),
           gradient: LinearGradient(
             colors: isDark
-                ? [Color.alphaBlend(typeColor.withValues(alpha: 0.22), const Color(0xFF090909)), const Color(0xFF121212)]
+                ? [
+                    Color.alphaBlend(
+                      typeColor.withValues(alpha: 0.22),
+                      const Color(0xFF090909),
+                    ),
+                    const Color(0xFF121212),
+                  ]
                 : [typeColor.withValues(alpha: 0.18), Colors.white],
           ),
           border: Border.all(color: typeColor.withValues(alpha: 0.28)),
@@ -397,7 +455,8 @@ class _TeamSlotCard extends ConsumerWidget {
                 tooltip: 'Remove from team',
                 icon: const Icon(Icons.close_rounded, size: 18),
                 visualDensity: VisualDensity.compact,
-                onPressed: () => ref.read(teamBuilderProvider.notifier).setSlot(index, null),
+                onPressed: () =>
+                    ref.read(teamBuilderProvider.notifier).setSlot(index, null),
               ),
             ),
             Padding(
@@ -405,17 +464,30 @@ class _TeamSlotCard extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('#${dex.toString().padLeft(3, '0')}', style: TextStyle(color: typeColor, fontWeight: FontWeight.w900)),
+                  Text(
+                    '#${dex.toString().padLeft(3, '0')}',
+                    style: TextStyle(
+                      color: typeColor,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
                   Text(
                     p.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                   Expanded(
                     child: Center(
                       child: p.spriteUrl.isEmpty
-                          ? Icon(Icons.catching_pokemon, color: typeColor.withValues(alpha: 0.45), size: 54)
+                          ? Icon(
+                              Icons.catching_pokemon,
+                              color: typeColor.withValues(alpha: 0.45),
+                              size: 54,
+                            )
                           : PokemonSprite(
                               imageUrl: p.spriteUrl,
                               fallbackUrl: PokemonSprite.homeArtworkUrl(dex),
@@ -449,47 +521,91 @@ class _TeamAnalysis extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final weaknessCounts = <String, int>{for (final type in pokemonTypes) type: 0};
-    final resistCounts = <String, int>{for (final type in pokemonTypes) type: 0};
-    final immuneCounts = <String, int>{for (final type in pokemonTypes) type: 0};
+    final weaknessCounts = <String, int>{
+      for (final type in pokemonTypes) type: 0,
+    };
+    final resistCounts = <String, int>{
+      for (final type in pokemonTypes) type: 0,
+    };
+    final immuneCounts = <String, int>{
+      for (final type in pokemonTypes) type: 0,
+    };
     final ownedTypes = <String>{};
     // Offensive: which defending types can this team hit super-effectively?
-    final offensiveHits = <String, int>{for (final type in pokemonTypes) type: 0};
+    final offensiveHits = <String, int>{
+      for (final type in pokemonTypes) type: 0,
+    };
 
     for (final pokemon in team) {
       ownedTypes.add(pokemon.type1);
       if (pokemon.type2 != null) ownedTypes.add(pokemon.type2!);
-      final effectiveness = TypeEfficiencyCalculator.getCombinedEffectiveness(pokemon.type1, pokemon.type2);
+      final effectiveness = TypeEfficiencyCalculator.getCombinedEffectiveness(
+        pokemon.type1,
+        pokemon.type2,
+      );
       for (final type in pokemonTypes) {
         final value = effectiveness[type] ?? 1.0;
         if (value == 0) immuneCounts[type] = immuneCounts[type]! + 1;
         if (value > 1) weaknessCounts[type] = weaknessCounts[type]! + 1;
-        if (value > 0 && value < 1) resistCounts[type] = resistCounts[type]! + 1;
+        if (value > 0 && value < 1) {
+          resistCounts[type] = resistCounts[type]! + 1;
+        }
       }
       // Offensive: this Pokémon's STAB types as attackers
-      for (final atkType in [pokemon.type1, if (pokemon.type2 != null) pokemon.type2!]) {
+      for (final atkType in [
+        pokemon.type1,
+        if (pokemon.type2 != null) pokemon.type2!,
+      ]) {
         final atkMap = CombatUtils.effectivenessMap[atkType.toLowerCase()];
         if (atkMap == null) continue;
         for (final defType in (atkMap['double'] ?? const [])) {
-          offensiveHits[defType.toLowerCase()] = (offensiveHits[defType.toLowerCase()] ?? 0) + 1;
+          offensiveHits[defType.toLowerCase()] =
+              (offensiveHits[defType.toLowerCase()] ?? 0) + 1;
         }
       }
     }
 
     final pressure = weaknessCounts.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
-    final gaps = pressure.where((e) => e.value >= 2 && resistCounts[e.key] == 0 && immuneCounts[e.key] == 0).take(4).toList();
+    final gaps = pressure
+        .where(
+          (e) =>
+              e.value >= 2 &&
+              resistCounts[e.key] == 0 &&
+              immuneCounts[e.key] == 0,
+        )
+        .take(4)
+        .toList();
 
-    final offensiveSorted = offensiveHits.entries.where((e) => e.value > 0).toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-    final uncoveredOffense = pokemonTypes.where((t) => (offensiveHits[t] ?? 0) == 0).toList();
+    final offensiveSorted =
+        offensiveHits.entries.where((e) => e.value > 0).toList()
+          ..sort((a, b) => b.value.compareTo(a.value));
+    final uncoveredOffense = pokemonTypes
+        .where((t) => (offensiveHits[t] ?? 0) == 0)
+        .toList();
 
     // Snapshot stats — purely informational, no simulation
-    final totalBst = team.fold<int>(0, (s, p) => s + p.baseHp + p.baseAtk + p.baseDef + p.baseSpAtk + p.baseSpDef + p.baseSpd);
+    final totalBst = team.fold<int>(
+      0,
+      (s, p) =>
+          s +
+          p.baseHp +
+          p.baseAtk +
+          p.baseDef +
+          p.baseSpAtk +
+          p.baseSpDef +
+          p.baseSpd,
+    );
     final avgBst = team.isEmpty ? 0 : (totalBst / team.length).round();
-    final avgSpeed = team.isEmpty ? 0 : (team.fold<int>(0, (s, p) => s + p.baseSpd) / team.length).round();
-    final fastest = team.isEmpty ? null : team.reduce((a, b) => a.baseSpd > b.baseSpd ? a : b);
-    final slowest = team.isEmpty ? null : team.reduce((a, b) => a.baseSpd < b.baseSpd ? a : b);
+    final avgSpeed = team.isEmpty
+        ? 0
+        : (team.fold<int>(0, (s, p) => s + p.baseSpd) / team.length).round();
+    final fastest = team.isEmpty
+        ? null
+        : team.reduce((a, b) => a.baseSpd > b.baseSpd ? a : b);
+    final slowest = team.isEmpty
+        ? null
+        : team.reduce((a, b) => a.baseSpd < b.baseSpd ? a : b);
 
     final isChampions = format == TeamFormat.champions;
 
@@ -497,13 +613,21 @@ class _TeamAnalysis extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // ── SECTION: Defensive Overview ──
-        SectionHeader(icon: Icons.shield_rounded, title: 'Defensive Overview', subtitle: 'How your team soaks hits — Pokédex math, not a battle'),
+        SectionHeader(
+          icon: Icons.shield_rounded,
+          title: 'Defensive Overview',
+          subtitle: 'How your team soaks hits — Pokédex math, not a battle',
+        ),
         const SizedBox(height: 10),
         TeamDefenseMatrix(team: team),
         const SizedBox(height: 16),
 
         // ── SECTION: Readout ──
-        SectionHeader(icon: Icons.insights_rounded, title: 'Team readout', subtitle: 'Informational — no turns, no simulation'),
+        SectionHeader(
+          icon: Icons.insights_rounded,
+          title: 'Team readout',
+          subtitle: 'Informational — no turns, no simulation',
+        ),
         const SizedBox(height: 10),
         if (isChampions) ...[
           const AnalysisCard(
@@ -517,20 +641,36 @@ class _TeamAnalysis extends StatelessWidget {
           const SizedBox(height: 12),
         ],
         AnalysisCard(
-          title: gaps.isEmpty ? 'Defensive shape looks solid' : 'Watch these matchups',
-          icon: gaps.isEmpty ? Icons.verified_rounded : Icons.warning_amber_rounded,
+          title: gaps.isEmpty
+              ? 'Defensive shape looks solid'
+              : 'Watch these matchups',
+          icon: gaps.isEmpty
+              ? Icons.verified_rounded
+              : Icons.warning_amber_rounded,
           child: gaps.isEmpty
-              ? const Text('No attacking type currently hits multiple team members with zero resist or immunity support.')
+              ? const Text(
+                  'No attacking type currently hits multiple team members with zero resist or immunity support.',
+                )
               : Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: gaps.map((e) => CountPill(type: e.key, count: e.value, label: 'weak')).toList(),
+                  children: gaps
+                      .map(
+                        (e) => CountPill(
+                          type: e.key,
+                          count: e.value,
+                          label: 'weak',
+                        ),
+                      )
+                      .toList(),
                 ),
         ),
         const SizedBox(height: 12),
         // Offensive coverage — what can your STABs hit?
         AnalysisCard(
-          title: offensiveSorted.isEmpty ? 'Offensive coverage — add members' : 'Offensive coverage (STAB super-effective)',
+          title: offensiveSorted.isEmpty
+              ? 'Offensive coverage — add members'
+              : 'Offensive coverage (STAB super-effective)',
           icon: Icons.flash_on_rounded,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -539,18 +679,38 @@ class _TeamAnalysis extends StatelessWidget {
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: offensiveSorted.take(12).map((e) => CountPill(type: e.key, count: e.value, label: 'hit')).toList(),
+                  children: offensiveSorted
+                      .take(12)
+                      .map(
+                        (e) => CountPill(
+                          type: e.key,
+                          count: e.value,
+                          label: 'hit',
+                        ),
+                      )
+                      .toList(),
                 ),
               if (uncoveredOffense.isNotEmpty) ...[
                 const SizedBox(height: 10),
                 Text(
                   'No STAB super-effective vs: ${uncoveredOffense.map((t) => t.toUpperCase()).take(6).join(', ')}${uncoveredOffense.length > 6 ? '…' : ''}',
-                  style: const TextStyle(fontSize: 11, color: Colors.grey, height: 1.4),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey,
+                    height: 1.4,
+                  ),
                 ),
               ] else if (offensiveSorted.isNotEmpty)
                 const Padding(
                   padding: EdgeInsets.only(top: 8),
-                  child: Text('Covers every type super-effectively with STAB.', style: TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.w700)),
+                  child: Text(
+                    'Covers every type super-effectively with STAB.',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.green,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
             ],
           ),
@@ -580,24 +740,52 @@ class _TeamAnalysis extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Expanded(child: StatTile(label: 'Avg BST', value: '$avgBst', sub: 'team ${team.length}/6')),
+                  Expanded(
+                    child: StatTile(
+                      label: 'Avg BST',
+                      value: '$avgBst',
+                      sub: 'team ${team.length}/6',
+                    ),
+                  ),
                   const SizedBox(width: 8),
-                  Expanded(child: StatTile(label: 'Avg Speed', value: '$avgSpeed', sub: 'fastest ${fastest?.name ?? '-'}')),
+                  Expanded(
+                    child: StatTile(
+                      label: 'Avg Speed',
+                      value: '$avgSpeed',
+                      sub: 'fastest ${fastest?.name ?? '-'}',
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Expanded(child: StatTile(label: 'Slowest', value: slowest?.name ?? '-', sub: 'base ${slowest?.baseSpd ?? '-'} Spe')),
+                  Expanded(
+                    child: StatTile(
+                      label: 'Slowest',
+                      value: slowest?.name ?? '-',
+                      sub: 'base ${slowest?.baseSpd ?? '-'} Spe',
+                    ),
+                  ),
                   const SizedBox(width: 8),
-                  Expanded(child: StatTile(label: 'Weak ≥3', value: '${pressure.where((e) => e.value >= 3).length}', sub: 'types')),
+                  Expanded(
+                    child: StatTile(
+                      label: 'Weak ≥3',
+                      value: '${pressure.where((e) => e.value >= 3).length}',
+                      sub: 'types',
+                    ),
+                  ),
                 ],
               ),
             ],
           ),
         ),
         const SizedBox(height: 16),
-        SectionHeader(icon: Icons.compare_arrows_rounded, title: 'Team Comparison', subtitle: 'Compare two teams side-by-side — Pokédex info only'),
+        SectionHeader(
+          icon: Icons.compare_arrows_rounded,
+          title: 'Team Comparison',
+          subtitle: 'Compare two teams side-by-side — Pokédex info only',
+        ),
         const SizedBox(height: 10),
         _TeamCompareButton(team: team, format: format),
       ],
@@ -617,23 +805,43 @@ class _TeamCompareButton extends ConsumerWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF121212) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0)),
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('Team vs Team — type & stat overview. No turns, no rolls, just Pokédex math.', style: TextStyle(fontSize: 11, color: Colors.grey, height: 1.4)),
-        const SizedBox(height: 10),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            icon: const Icon(Icons.compare_rounded, size: 18),
-            label: const Text('Compare Teams', style: TextStyle(fontWeight: FontWeight.w900)),
-            style: FilledButton.styleFrom(backgroundColor: AppTheme.pokemonRed, padding: const EdgeInsets.symmetric(vertical: 14)),
-            onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => TeamComparisonScreen(myTeam: team, format: format)));
-            },
-          ),
+        border: Border.all(
+          color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0),
         ),
-      ]),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Team vs Team — type & stat overview. No turns, no rolls, just Pokédex math.',
+            style: TextStyle(fontSize: 11, color: Colors.grey, height: 1.4),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              icon: const Icon(Icons.compare_rounded, size: 18),
+              label: const Text(
+                'Compare Teams',
+                style: TextStyle(fontWeight: FontWeight.w900),
+              ),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppTheme.pokemonRed,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        TeamComparisonScreen(myTeam: team, format: format),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -645,7 +853,8 @@ class _PokemonPickerSheet extends ConsumerStatefulWidget {
   const _PokemonPickerSheet({required this.pokemon, required this.slotIndex});
 
   @override
-  ConsumerState<_PokemonPickerSheet> createState() => _PokemonPickerSheetState();
+  ConsumerState<_PokemonPickerSheet> createState() =>
+      _PokemonPickerSheetState();
 }
 
 class _PokemonPickerSheetState extends ConsumerState<_PokemonPickerSheet> {
@@ -657,21 +866,25 @@ class _PokemonPickerSheetState extends ConsumerState<_PokemonPickerSheet> {
     final favorites = ref.watch(favoritePokemonProvider);
     final teamSlots = ref.watch(teamBuilderProvider).whereType<int>().toSet();
     final query = _query.trim().toLowerCase();
-    final options = widget.pokemon.where((pokemon) {
-      final dex = pokemon.nationalDexNumber > 0 ? pokemon.nationalDexNumber : pokemon.id;
-      if (teamSlots.contains(pokemon.id)) return false;
-      if (query.isEmpty) return true;
-      return pokemon.name.toLowerCase().contains(query) ||
-          pokemon.type1.toLowerCase().contains(query) ||
-          (pokemon.type2?.toLowerCase().contains(query) ?? false) ||
-          dex.toString().contains(query);
-    }).toList()
-      ..sort((a, b) {
-        final aDex = a.nationalDexNumber > 0 ? a.nationalDexNumber : a.id;
-        final bDex = b.nationalDexNumber > 0 ? b.nationalDexNumber : b.id;
-        final favCompare = (favorites.contains(bDex) ? 1 : 0).compareTo(favorites.contains(aDex) ? 1 : 0);
-        return favCompare != 0 ? favCompare : aDex.compareTo(bDex);
-      });
+    final options =
+        widget.pokemon.where((pokemon) {
+          final dex = pokemon.nationalDexNumber > 0
+              ? pokemon.nationalDexNumber
+              : pokemon.id;
+          if (teamSlots.contains(pokemon.id)) return false;
+          if (query.isEmpty) return true;
+          return pokemon.name.toLowerCase().contains(query) ||
+              pokemon.type1.toLowerCase().contains(query) ||
+              (pokemon.type2?.toLowerCase().contains(query) ?? false) ||
+              dex.toString().contains(query);
+        }).toList()..sort((a, b) {
+          final aDex = a.nationalDexNumber > 0 ? a.nationalDexNumber : a.id;
+          final bDex = b.nationalDexNumber > 0 ? b.nationalDexNumber : b.id;
+          final favCompare = (favorites.contains(bDex) ? 1 : 0).compareTo(
+            favorites.contains(aDex) ? 1 : 0,
+          );
+          return favCompare != 0 ? favCompare : aDex.compareTo(bDex);
+        });
 
     final screenHeight = MediaQuery.of(context).size.height;
     return Dialog(
@@ -688,7 +901,10 @@ class _PokemonPickerSheetState extends ConsumerState<_PokemonPickerSheet> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Add to Team', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const Text(
+                    'Add to Team',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
                   IconButton(
                     icon: const Icon(Icons.close_rounded, size: 22),
                     onPressed: () => Navigator.pop(context),
@@ -711,43 +927,49 @@ class _PokemonPickerSheetState extends ConsumerState<_PokemonPickerSheet> {
             Flexible(
               child: ListView.builder(
                 padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
-                  itemCount: options.length,
-                  itemBuilder: (context, index) {
-                    final pokemon = options[index];
-                    final dex = pokemon.nationalDexNumber > 0 ? pokemon.nationalDexNumber : pokemon.id;
-                    final color = pokemonTypeColor(pokemon.type1);
-                    return ListTile(
-                      leading: SizedBox(
-                        width: 48,
-                        height: 48,
-                        child: pokemon.spriteUrl.isEmpty
-                            ? Icon(Icons.catching_pokemon, color: color)
-                            : PokemonSprite(
-                                imageUrl: pokemon.spriteUrl,
-                                fallbackUrl: PokemonSprite.homeArtworkUrl(dex),
-                                errorIconColor: color,
-                                errorIconSize: 24,
-                              ),
-                      ),
-                      title: Text(pokemon.name, style: const TextStyle(fontWeight: FontWeight.w800)),
-                      subtitle: Text('#${dex.toString().padLeft(3, '0')} · ${titleCasePokemonText(pokemon.type1)}${pokemon.type2 == null ? '' : ' / ${titleCasePokemonText(pokemon.type2!)}'}'),
-                      trailing: favorites.contains(dex) ? const Icon(Icons.star_rounded, color: Colors.amber) : null,
-                      onTap: () {
-                        ref.read(teamBuilderProvider.notifier).setSlot(widget.slotIndex, pokemon.id);
-                        Navigator.pop(context);
-                      },
-                    );
-                  },
-                ),
+                itemCount: options.length,
+                itemBuilder: (context, index) {
+                  final pokemon = options[index];
+                  final dex = pokemon.nationalDexNumber > 0
+                      ? pokemon.nationalDexNumber
+                      : pokemon.id;
+                  final color = pokemonTypeColor(pokemon.type1);
+                  return ListTile(
+                    leading: SizedBox(
+                      width: 48,
+                      height: 48,
+                      child: pokemon.spriteUrl.isEmpty
+                          ? Icon(Icons.catching_pokemon, color: color)
+                          : PokemonSprite(
+                              imageUrl: pokemon.spriteUrl,
+                              fallbackUrl: PokemonSprite.homeArtworkUrl(dex),
+                              errorIconColor: color,
+                              errorIconSize: 24,
+                            ),
+                    ),
+                    title: Text(
+                      pokemon.name,
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                    subtitle: Text(
+                      '#${dex.toString().padLeft(3, '0')} · ${titleCasePokemonText(pokemon.type1)}${pokemon.type2 == null ? '' : ' / ${titleCasePokemonText(pokemon.type2!)}'}',
+                    ),
+                    trailing: favorites.contains(dex)
+                        ? const Icon(Icons.star_rounded, color: Colors.amber)
+                        : null,
+                    onTap: () {
+                      ref
+                          .read(teamBuilderProvider.notifier)
+                          .setSlot(widget.slotIndex, pokemon.id);
+                      Navigator.pop(context);
+                    },
+                  );
+                },
               ),
+            ),
           ],
         ),
       ),
     );
   }
 }
-
-
-
-
-

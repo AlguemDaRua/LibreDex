@@ -41,7 +41,9 @@ class DexSortMenu<T> extends StatelessWidget {
               color: isDark ? const Color(0xFF141414) : const Color(0xFFF7FAFC),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isDark ? const Color(0xFF222222) : const Color(0xFFE2E8F0),
+                color: isDark
+                    ? const Color(0xFF222222)
+                    : const Color(0xFFE2E8F0),
               ),
             ),
             child: DropdownButtonHideUnderline(

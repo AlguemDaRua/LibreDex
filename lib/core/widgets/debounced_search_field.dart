@@ -37,7 +37,8 @@ class _DebouncedSearchFieldState extends State<DebouncedSearchField> {
   @override
   void didUpdateWidget(covariant DebouncedSearchField oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.initialValue != oldWidget.initialValue && widget.initialValue != _controller.text) {
+    if (widget.initialValue != oldWidget.initialValue &&
+        widget.initialValue != _controller.text) {
       _controller.text = widget.initialValue;
       _lastQuery = widget.initialValue;
     }
@@ -89,7 +90,10 @@ class _DebouncedSearchFieldState extends State<DebouncedSearchField> {
         ),
         decoration: InputDecoration(
           hintText: widget.hintText,
-          prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.pokemonRed),
+          prefixIcon: const Icon(
+            Icons.search_rounded,
+            color: AppTheme.pokemonRed,
+          ),
           suffixIcon: _controller.text.isNotEmpty
               ? IconButton(
                   icon: const Icon(Icons.clear_rounded, size: 20),
@@ -99,7 +103,10 @@ class _DebouncedSearchFieldState extends State<DebouncedSearchField> {
               : null,
           filled: true,
           fillColor: isDark ? const Color(0xFF141414) : const Color(0xFFEDF2F7),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 12,
+          ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide(
@@ -108,7 +115,10 @@ class _DebouncedSearchFieldState extends State<DebouncedSearchField> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: AppTheme.pokemonRed, width: 1.5),
+            borderSide: const BorderSide(
+              color: AppTheme.pokemonRed,
+              width: 1.5,
+            ),
           ),
         ),
       ),

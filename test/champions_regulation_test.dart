@@ -9,25 +9,32 @@ void main() {
   late ChampionsRegulationCatalog catalog;
 
   setUpAll(() {
-    raw = jsonDecode(
-      File('assets/data/champions_regulation_mc.json').readAsStringSync(),
-    ) as Map<String, dynamic>;
+    raw =
+        jsonDecode(
+              File(
+                'assets/data/champions_regulation_mc.json',
+              ).readAsStringSync(),
+            )
+            as Map<String, dynamic>;
     catalog = ChampionsRegulationCatalog.fromJson(raw);
   });
 
-  test('M-C catalog keeps roster entries separate from official species count', () {
-    expect(catalog.regulationCode, 'M-C');
-    expect(catalog.gameVersion, '1.2.0');
-    expect(catalog.asOf, '2026-10-01');
-    expect(catalog.rosterEntryCount, 345);
-    expect(catalog.newPokemonIds, hasLength(29));
-    expect(catalog.newMegaFormIds, hasLength(6));
-    expect(catalog.newRosterPokemonIds, hasLength(35));
-    expect(catalog.officialNewPokemonCount, 24);
-    expect(catalog.patchSummary, contains('Wish and Strength Sap'));
-    expect(catalog.sourcePokemonIds.length, 345);
-    expect(catalog.sourcePokemonIds.values.toSet(), hasLength(345));
-  });
+  test(
+    'M-C catalog keeps roster entries separate from official species count',
+    () {
+      expect(catalog.regulationCode, 'M-C');
+      expect(catalog.gameVersion, '1.2.0');
+      expect(catalog.asOf, '2026-10-01');
+      expect(catalog.rosterEntryCount, 345);
+      expect(catalog.newPokemonIds, hasLength(29));
+      expect(catalog.newMegaFormIds, hasLength(6));
+      expect(catalog.newRosterPokemonIds, hasLength(35));
+      expect(catalog.officialNewPokemonCount, 24);
+      expect(catalog.patchSummary, contains('Wish and Strength Sap'));
+      expect(catalog.sourcePokemonIds.length, 345);
+      expect(catalog.sourcePokemonIds.values.toSet(), hasLength(345));
+    },
+  );
 
   test('current and newly eligible IDs are independently queryable', () {
     expect(catalog.isPokemonEligible(6), isTrue);
@@ -37,22 +44,42 @@ void main() {
     expect(catalog.isNewPokemon(10307), isTrue);
     expect(catalog.isNewPokemon(6), isFalse);
     expect(catalog.matchesPokemonSearch(930, 'new m-c'), isTrue);
-    expect(catalog.matchesPokemonSearch(930, 'newly eligible', aliases: 'gogoat normal'), isTrue);
+    expect(
+      catalog.matchesPokemonSearch(
+        930,
+        'newly eligible',
+        aliases: 'gogoat normal',
+      ),
+      isTrue,
+    );
     expect(catalog.matchesPokemonSearch(6, 'new m-c'), isFalse);
-    expect(catalog.matchesPokemonSearch(25, 'm-c pikachu', aliases: 'pikachu normal electric 25'), isTrue);
-    expect(catalog.matchesPokemonSearch(25, 'new m-c', aliases: 'pikachu'), isFalse);
+    expect(
+      catalog.matchesPokemonSearch(
+        25,
+        'm-c pikachu',
+        aliases: 'pikachu normal electric 25',
+      ),
+      isTrue,
+    );
+    expect(
+      catalog.matchesPokemonSearch(25, 'new m-c', aliases: 'pikachu'),
+      isFalse,
+    );
   });
 
   test('high-ID Shadow moves are not implicitly Champions-origin moves', () {
-    final rows = jsonDecode(
-      File('assets/data/moves.json').readAsStringSync(),
-    ) as List<dynamic>;
+    final rows =
+        jsonDecode(File('assets/data/moves.json').readAsStringSync())
+            as List<dynamic>;
     final shadowMoves = rows
         .where((row) => row['id'] >= 10001 && row['id'] <= 10018)
         .toList();
 
     expect(shadowMoves, hasLength(18));
-    expect(shadowMoves.every((row) => row['name'].startsWith('Shadow ')), isTrue);
+    expect(
+      shadowMoves.every((row) => row['name'].startsWith('Shadow ')),
+      isTrue,
+    );
     expect(shadowMoves.every((row) => row['isChampionsMove'] != true), isTrue);
   });
 
@@ -70,7 +97,10 @@ void main() {
     expect(catalog.isNewAbility(314), isTrue);
     expect(catalog.isItemAvailable(2265), isTrue); // Absolite Z
     expect(catalog.isNewItem(2265), isTrue);
-    expect(catalog.isItemAvailable(236), isTrue); // Leek: newly eligible, not new to the series
+    expect(
+      catalog.isItemAvailable(236),
+      isTrue,
+    ); // Leek: newly eligible, not new to the series
     expect(catalog.isNewItem(236), isTrue);
     expect(catalog.newAbilityDescriptionFor(314), contains('contact moves'));
   });
@@ -92,9 +122,9 @@ void main() {
   });
 
   test('bundled M-C learnsets apply removals and keep Slash available', () {
-    final rows = jsonDecode(
-      File('assets/data/pokemon_moves.json').readAsStringSync(),
-    ) as List<dynamic>;
+    final rows =
+        jsonDecode(File('assets/data/pokemon_moves.json').readAsStringSync())
+            as List<dynamic>;
     final train = rows.where((row) => row[2] == 'train').toList();
     final pairs = train.map((row) => '${row[0]}:${row[1]}').toSet();
 

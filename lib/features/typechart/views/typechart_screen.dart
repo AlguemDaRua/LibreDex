@@ -13,9 +13,24 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
   String _secondaryType = 'none';
 
   final List<String> _allTypes = [
-    'normal', 'fire', 'water', 'electric', 'grass', 'ice',
-    'fighting', 'poison', 'ground', 'flying', 'psychic', 'bug',
-    'rock', 'ghost', 'dragon', 'dark', 'steel', 'fairy'
+    'normal',
+    'fire',
+    'water',
+    'electric',
+    'grass',
+    'ice',
+    'fighting',
+    'poison',
+    'ground',
+    'flying',
+    'psychic',
+    'bug',
+    'rock',
+    'ghost',
+    'dragon',
+    'dark',
+    'steel',
+    'fairy',
   ];
 
   static const Map<String, Color> _typeColors = {
@@ -76,7 +91,15 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
     },
     'grass': {
       'offense_2x': ['water', 'ground', 'rock'],
-      'offense_0.5x': ['fire', 'grass', 'poison', 'flying', 'bug', 'dragon', 'steel'],
+      'offense_0.5x': [
+        'fire',
+        'grass',
+        'poison',
+        'flying',
+        'bug',
+        'dragon',
+        'steel',
+      ],
       'offense_0x': [],
       'defense_2x': ['fire', 'ice', 'poison', 'flying', 'bug'],
       'defense_0.5x': ['water', 'electric', 'grass', 'ground'],
@@ -132,7 +155,15 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
     },
     'bug': {
       'offense_2x': ['grass', 'psychic', 'dark'],
-      'offense_0.5x': ['fire', 'fighting', 'poison', 'flying', 'ghost', 'steel', 'fairy'],
+      'offense_0.5x': [
+        'fire',
+        'fighting',
+        'poison',
+        'flying',
+        'ghost',
+        'steel',
+        'fairy',
+      ],
       'offense_0x': [],
       'defense_2x': ['fire', 'flying', 'rock'],
       'defense_0.5x': ['fighting', 'grass', 'ground'],
@@ -175,7 +206,18 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
       'offense_0.5x': ['fire', 'water', 'electric', 'steel'],
       'offense_0x': [],
       'defense_2x': ['fire', 'fighting', 'ground'],
-      'defense_0.5x': ['normal', 'grass', 'ice', 'flying', 'psychic', 'bug', 'rock', 'dragon', 'steel', 'fairy'],
+      'defense_0.5x': [
+        'normal',
+        'grass',
+        'ice',
+        'flying',
+        'psychic',
+        'bug',
+        'rock',
+        'dragon',
+        'steel',
+        'fairy',
+      ],
       'defense_0x': ['poison'],
     },
     'fairy': {
@@ -227,9 +269,14 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
         final options = isPrimary ? _allTypes : ['none', ..._allTypes];
 
         return Dialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 24,
+          ),
           backgroundColor: isDark ? const Color(0xFF141414) : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           child: ConstrainedBox(
             constraints: BoxConstraints(maxHeight: screenHeight * 0.65),
             child: Column(
@@ -241,7 +288,9 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        isPrimary ? 'Select Primary Type' : 'Select Secondary Type',
+                        isPrimary
+                            ? 'Select Primary Type'
+                            : 'Select Secondary Type',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -261,15 +310,18 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                     shrinkWrap: true,
                     itemCount: options.length,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      childAspectRatio: 2.5,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          childAspectRatio: 2.5,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                        ),
                     itemBuilder: (ctx, i) {
                       final type = options[i];
-                      final isSelected = isPrimary ? _primaryType == type : _secondaryType == type;
+                      final isSelected = isPrimary
+                          ? _primaryType == type
+                          : _secondaryType == type;
                       final color = _typeColors[type] ?? Colors.grey;
 
                       return InkWell(
@@ -290,10 +342,14 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
                         child: Container(
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: isSelected ? color : color.withValues(alpha: 0.15),
+                            color: isSelected
+                                ? color
+                                : color.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
-                              color: isSelected ? color : color.withValues(alpha: 0.4),
+                              color: isSelected
+                                  ? color
+                                  : color.withValues(alpha: 0.4),
                               width: 1.5,
                             ),
                           ),
@@ -355,7 +411,10 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
     return Scaffold(
       backgroundColor: isDark ? Colors.black : const Color(0xFFF9FAFB),
       appBar: AppBar(
-        title: Text('TypeDex Matchups', style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor)),
+        title: Text(
+          'TypeDex Matchups',
+          style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor),
+        ),
         iconTheme: IconThemeData(color: primaryColor),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -372,13 +431,22 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: _secondaryType == 'none'
-                      ? [primaryThemeColor.withValues(alpha: 0.45), primaryThemeColor.withValues(alpha: 0.1)]
-                      : [primaryThemeColor.withValues(alpha: 0.45), secondaryThemeColor.withValues(alpha: 0.45)],
+                      ? [
+                          primaryThemeColor.withValues(alpha: 0.45),
+                          primaryThemeColor.withValues(alpha: 0.1),
+                        ]
+                      : [
+                          primaryThemeColor.withValues(alpha: 0.45),
+                          secondaryThemeColor.withValues(alpha: 0.45),
+                        ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: primaryThemeColor.withValues(alpha: 0.35), width: 1.5),
+                border: Border.all(
+                  color: primaryThemeColor.withValues(alpha: 0.35),
+                  width: 1.5,
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: primaryThemeColor.withValues(alpha: 0.15),
@@ -422,23 +490,34 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
                                       style: TextStyle(
                                         fontSize: 9,
                                         fontWeight: FontWeight.w900,
-                                        color: isDark ? Colors.grey[400] : Colors.grey[700],
+                                        color: isDark
+                                            ? Colors.grey[400]
+                                            : Colors.grey[700],
                                         letterSpacing: 0.5,
                                       ),
                                     ),
                                     const SizedBox(width: 4),
-                                    Icon(Icons.arrow_drop_down_rounded, size: 16, color: primaryThemeColor),
+                                    Icon(
+                                      Icons.arrow_drop_down_rounded,
+                                      size: 16,
+                                      color: primaryThemeColor,
+                                    ),
                                   ],
                                 ),
                                 const SizedBox(height: 6),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 8,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: primaryThemeColor,
                                     borderRadius: BorderRadius.circular(12),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: primaryThemeColor.withValues(alpha: 0.5),
+                                        color: primaryThemeColor.withValues(
+                                          alpha: 0.5,
+                                        ),
                                         blurRadius: 8,
                                         offset: const Offset(0, 3),
                                       ),
@@ -457,7 +536,11 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
                                         ),
                                       ),
                                       const SizedBox(width: 6),
-                                      const Icon(Icons.touch_app_rounded, size: 14, color: Colors.white70),
+                                      const Icon(
+                                        Icons.touch_app_rounded,
+                                        size: 14,
+                                        color: Colors.white70,
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -490,32 +573,51 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
-                                      _secondaryType == 'none' ? 'PURE (ADD SECOND)' : 'SECONDARY TYPE',
+                                      _secondaryType == 'none'
+                                          ? 'PURE (ADD SECOND)'
+                                          : 'SECONDARY TYPE',
                                       style: TextStyle(
                                         fontSize: 9,
                                         fontWeight: FontWeight.w900,
-                                        color: isDark ? Colors.grey[400] : Colors.grey[700],
+                                        color: isDark
+                                            ? Colors.grey[400]
+                                            : Colors.grey[700],
                                         letterSpacing: 0.5,
                                       ),
                                     ),
                                     const SizedBox(width: 4),
-                                    Icon(Icons.arrow_drop_down_rounded, size: 16, color: secondaryThemeColor),
+                                    Icon(
+                                      Icons.arrow_drop_down_rounded,
+                                      size: 16,
+                                      color: secondaryThemeColor,
+                                    ),
                                   ],
                                 ),
                                 const SizedBox(height: 6),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 8,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: _secondaryType == 'none' ? Colors.transparent : secondaryThemeColor,
+                                    color: _secondaryType == 'none'
+                                        ? Colors.transparent
+                                        : secondaryThemeColor,
                                     borderRadius: BorderRadius.circular(12),
                                     border: _secondaryType == 'none'
-                                        ? Border.all(color: isDark ? Colors.white38 : Colors.black38, width: 1.5)
+                                        ? Border.all(
+                                            color: isDark
+                                                ? Colors.white38
+                                                : Colors.black38,
+                                            width: 1.5,
+                                          )
                                         : null,
                                     boxShadow: _secondaryType == 'none'
                                         ? []
                                         : [
                                             BoxShadow(
-                                              color: secondaryThemeColor.withValues(alpha: 0.5),
+                                              color: secondaryThemeColor
+                                                  .withValues(alpha: 0.5),
                                               blurRadius: 8,
                                               offset: const Offset(0, 3),
                                             ),
@@ -525,21 +627,31 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Text(
-                                        _secondaryType == 'none' ? '+ ADD TYPE' : _secondaryType.toUpperCase(),
+                                        _secondaryType == 'none'
+                                            ? '+ ADD TYPE'
+                                            : _secondaryType.toUpperCase(),
                                         style: TextStyle(
                                           fontSize: 13,
                                           fontWeight: FontWeight.w900,
                                           color: _secondaryType == 'none'
-                                              ? (isDark ? Colors.white70 : Colors.black87)
+                                              ? (isDark
+                                                    ? Colors.white70
+                                                    : Colors.black87)
                                               : Colors.white,
                                           letterSpacing: 1.2,
                                         ),
                                       ),
                                       const SizedBox(width: 6),
                                       Icon(
-                                        _secondaryType == 'none' ? Icons.add_circle_outline_rounded : Icons.touch_app_rounded,
+                                        _secondaryType == 'none'
+                                            ? Icons.add_circle_outline_rounded
+                                            : Icons.touch_app_rounded,
                                         size: 14,
-                                        color: _secondaryType == 'none' ? (isDark ? Colors.white70 : Colors.black87) : Colors.white70,
+                                        color: _secondaryType == 'none'
+                                            ? (isDark
+                                                  ? Colors.white70
+                                                  : Colors.black87)
+                                            : Colors.white70,
                                       ),
                                     ],
                                   ),
@@ -560,37 +672,81 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
             // Defending Effectiveness List
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.only(left: AppSpacing.pagePadding, right: AppSpacing.pagePadding, top: 0, bottom: AppSpacing.bottomScrollPadding),
+                padding: const EdgeInsets.only(
+                  left: AppSpacing.pagePadding,
+                  right: AppSpacing.pagePadding,
+                  top: 0,
+                  bottom: AppSpacing.bottomScrollPadding,
+                ),
                 children: [
-                  _buildSectionHeader('DEFENSIVE COVERAGE', 'Incoming damage multipliers', isDark),
+                  _buildSectionHeader(
+                    'DEFENSIVE COVERAGE',
+                    'Incoming damage multipliers',
+                    isDark,
+                  ),
                   const SizedBox(height: 10),
 
                   // Weaknesses 4x
-                  _buildEffectivenessRow('Double Weakness (Takes 4.0x)', weak4x, Colors.red[900]!, isDark),
+                  _buildEffectivenessRow(
+                    'Double Weakness (Takes 4.0x)',
+                    weak4x,
+                    Colors.red[900]!,
+                    isDark,
+                  ),
 
                   // Weaknesses 2x
-                  _buildEffectivenessRow('Weakness (Takes 2.0x)', weak2x, Colors.red[400]!, isDark),
+                  _buildEffectivenessRow(
+                    'Weakness (Takes 2.0x)',
+                    weak2x,
+                    Colors.red[400]!,
+                    isDark,
+                  ),
 
                   // Resistances 0.5x
-                  _buildEffectivenessRow('Resistance (Takes 0.5x)', resist0_5x, Colors.green[400]!, isDark),
+                  _buildEffectivenessRow(
+                    'Resistance (Takes 0.5x)',
+                    resist0_5x,
+                    Colors.green[400]!,
+                    isDark,
+                  ),
 
                   // Double Resistances 0.25x
-                  _buildEffectivenessRow('Double Resistance (Takes 0.25x)', resist0_25x, Colors.green[900]!, isDark),
+                  _buildEffectivenessRow(
+                    'Double Resistance (Takes 0.25x)',
+                    resist0_25x,
+                    Colors.green[900]!,
+                    isDark,
+                  ),
 
                   // Immunities 0x
-                  _buildEffectivenessRow('Immunity (Takes 0.0x)', immune0x, Colors.blueAccent, isDark),
+                  _buildEffectivenessRow(
+                    'Immunity (Takes 0.0x)',
+                    immune0x,
+                    Colors.blueAccent,
+                    isDark,
+                  ),
 
                   // Neutral 1x
-                  _buildEffectivenessRow('Neutral (Takes 1.0x)', neutral1x, Colors.grey, isDark),
+                  _buildEffectivenessRow(
+                    'Neutral (Takes 1.0x)',
+                    neutral1x,
+                    Colors.grey,
+                    isDark,
+                  ),
 
                   const SizedBox(height: 32),
 
                   // Offensive reference sections
-                  _buildSectionHeader('OFFENSIVE EFFECTIVENESS', 'Super Effective (2x) attacks when using', isDark),
+                  _buildSectionHeader(
+                    'OFFENSIVE EFFECTIVENESS',
+                    'Super Effective (2x) attacks when using',
+                    isDark,
+                  ),
                   const SizedBox(height: 12),
 
                   _buildOffenseCard(_primaryType, isDark),
-                  if (_secondaryType != 'none' && _secondaryType != _primaryType) ...[
+                  if (_secondaryType != 'none' &&
+                      _secondaryType != _primaryType) ...[
                     const SizedBox(height: 12),
                     _buildOffenseCard(_secondaryType, isDark),
                   ],
@@ -619,15 +775,17 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
           ),
         ),
         const SizedBox(height: 2),
-        Text(
-          subtitle,
-          style: TextStyle(fontSize: 11, color: Colors.grey[500]),
-        ),
+        Text(subtitle, style: TextStyle(fontSize: 11, color: Colors.grey[500])),
       ],
     );
   }
 
-  Widget _buildEffectivenessRow(String label, List<String> types, Color color, bool isDark) {
+  Widget _buildEffectivenessRow(
+    String label,
+    List<String> types,
+    Color color,
+    bool isDark,
+  ) {
     if (types.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -670,7 +828,10 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
             children: types.map((t) {
               final badgeColor = _typeColors[t] ?? Colors.grey;
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: badgeColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
@@ -717,7 +878,11 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
                 ),
                 child: Text(
                   type.toUpperCase(),
-                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -729,7 +894,10 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
           ),
           const SizedBox(height: 12),
           if (superEffectiveList.isEmpty)
-            const Text('No offensive advantages.', style: TextStyle(fontSize: 11, color: Colors.grey))
+            const Text(
+              'No offensive advantages.',
+              style: TextStyle(fontSize: 11, color: Colors.grey),
+            )
           else
             Wrap(
               spacing: 6,
@@ -737,11 +905,16 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
               children: superEffectiveList.map((t) {
                 final badgeColor = _typeColors[t] ?? Colors.grey;
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: badgeColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: badgeColor.withValues(alpha: 0.2)),
+                    border: Border.all(
+                      color: badgeColor.withValues(alpha: 0.2),
+                    ),
                   ),
                   child: Text(
                     t[0].toUpperCase() + t.substring(1),

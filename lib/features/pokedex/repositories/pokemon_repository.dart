@@ -39,11 +39,15 @@ class PokemonRepository {
     return db.select(db.pokemonTable).watch();
   }
 
-
   /// Watch abilities with full details for a given Pokémon using JOIN
-  Stream<List<PokemonAbilityWithDetails>> watchAbilitiesForPokemon(int pokemonId) {
+  Stream<List<PokemonAbilityWithDetails>> watchAbilitiesForPokemon(
+    int pokemonId,
+  ) {
     final query = db.select(db.pokemonAbilitiesTable).join([
-      innerJoin(db.abilityTable, db.abilityTable.id.equalsExp(db.pokemonAbilitiesTable.abilityId)),
+      innerJoin(
+        db.abilityTable,
+        db.abilityTable.id.equalsExp(db.pokemonAbilitiesTable.abilityId),
+      ),
     ])..where(db.pokemonAbilitiesTable.pokemonId.equals(pokemonId));
 
     return query.watch().map((rows) {
@@ -58,7 +62,10 @@ class PokemonRepository {
   /// Watch moves with full details for a given Pokémon using JOIN
   Stream<List<PokemonMoveWithDetails>> watchMovesForPokemon(int pokemonId) {
     final query = db.select(db.pokemonMovesTable).join([
-      innerJoin(db.moveTable, db.moveTable.id.equalsExp(db.pokemonMovesTable.moveId)),
+      innerJoin(
+        db.moveTable,
+        db.moveTable.id.equalsExp(db.pokemonMovesTable.moveId),
+      ),
     ])..where(db.pokemonMovesTable.pokemonId.equals(pokemonId));
 
     return query.watch().map((rows) {
@@ -75,14 +82,14 @@ class PokemonRepository {
   /// Z-A Megas whose Champions data is not released yet). Returns null when
   /// [pokemonId] is already the base form or cannot be resolved.
   Future<(int id, String name)?> _baseFormForFallback(int pokemonId) async {
-    final self = await (db.select(db.pokemonTable)
-          ..where((t) => t.id.equals(pokemonId)))
-        .getSingleOrNull();
+    final self = await (db.select(
+      db.pokemonTable,
+    )..where((t) => t.id.equals(pokemonId))).getSingleOrNull();
     if (self == null) return null;
     final dex = self.nationalDexNumber > 0 ? self.nationalDexNumber : self.id;
-    final sameDex = await (db.select(db.pokemonTable)
-          ..where((t) => t.nationalDexNumber.equals(dex)))
-        .get();
+    final sameDex = await (db.select(
+      db.pokemonTable,
+    )..where((t) => t.nationalDexNumber.equals(dex))).get();
     if (sameDex.isEmpty) return null;
     final base = sameDex.firstWhere(
       (p) => p.form == 'normal',
@@ -95,18 +102,20 @@ class PokemonRepository {
   Future<List<Map<String, dynamic>>> _movesAsMaps(int pokemonId) async {
     final rows = await db.getPokemonMoves(pokemonId);
     return rows
-        .map((row) => {
-              'id': row.move.id,
-              'name': row.move.name,
-              'type': row.move.type,
-              'power': row.move.power,
-              'pp': row.move.pp,
-              'accuracy': row.move.accuracy,
-              'damageClass': row.move.damageClass,
-              'description': row.move.description,
-              'learnMethod': row.junction.learnMethod,
-              'levelLearned': row.junction.levelLearned,
-            })
+        .map(
+          (row) => {
+            'id': row.move.id,
+            'name': row.move.name,
+            'type': row.move.type,
+            'power': row.move.power,
+            'pp': row.move.pp,
+            'accuracy': row.move.accuracy,
+            'damageClass': row.move.damageClass,
+            'description': row.move.description,
+            'learnMethod': row.junction.learnMethod,
+            'levelLearned': row.junction.levelLearned,
+          },
+        )
         .toList();
   }
 
@@ -120,9 +129,12 @@ class PokemonRepository {
   /// Champions "train" selections. Those alone would look like an empty
   /// dex page, so the base species learnset is merged in (tagged) with the
   /// train rows kept on top.
-  Stream<List<Map<String, dynamic>>> watchMovesWithFallback(int pokemonId) async* {
+  Stream<List<Map<String, dynamic>>> watchMovesWithFallback(
+    int pokemonId,
+  ) async* {
     await for (final rows in db.watchPokemonMoves(pokemonId)) {
-      final onlyTrainRows = rows.isNotEmpty && rows.every((r) => r['learnMethod'] == 'train');
+      final onlyTrainRows =
+          rows.isNotEmpty && rows.every((r) => r['learnMethod'] == 'train');
       if (rows.isNotEmpty && !onlyTrainRows) {
         yield rows;
         continue;
@@ -147,18 +159,22 @@ class PokemonRepository {
   Future<List<Map<String, dynamic>>> _abilitiesAsMaps(int pokemonId) async {
     final rows = await db.getPokemonAbilities(pokemonId);
     return rows
-        .map((row) => {
-              'id': row.ability.id,
-              'name': row.ability.name,
-              'effect': row.ability.description,
-              'isHidden': row.junction.isHidden,
-            })
+        .map(
+          (row) => {
+            'id': row.ability.id,
+            'name': row.ability.name,
+            'effect': row.ability.description,
+            'isHidden': row.junction.isHidden,
+          },
+        )
         .toList();
   }
 
   /// Same idea as [watchMovesWithFallback] for abilities — Mega forms with
   /// no released Champions ability still show something meaningful.
-  Stream<List<Map<String, dynamic>>> watchAbilitiesWithFallback(int pokemonId) async* {
+  Stream<List<Map<String, dynamic>>> watchAbilitiesWithFallback(
+    int pokemonId,
+  ) async* {
     await for (final rows in db.watchPokemonAbilities(pokemonId)) {
       if (rows.isNotEmpty) {
         yield rows;
@@ -182,7 +198,9 @@ class PokemonRepository {
 
   /// One-shot abilities fetch with the same base-form fallback; used by the
   /// damage calculator setup sheet.
-  Future<List<Map<String, dynamic>>> getAbilitiesWithFallback(int pokemonId) async {
+  Future<List<Map<String, dynamic>>> getAbilitiesWithFallback(
+    int pokemonId,
+  ) async {
     final rows = await _abilitiesAsMaps(pokemonId);
     if (rows.isNotEmpty) return rows;
     final base = await _baseFormForFallback(pokemonId);
@@ -228,9 +246,11 @@ class PokemonRepository {
   }
 
   Future<List<EvolutionStep>> _fetchLocalEvolutionSteps(int dexNum) async {
-    _localEvolutionChains ??= jsonDecode(
-      await rootBundle.loadString('assets/data/evolution_chains.json'),
-    ) as Map<String, dynamic>;
+    _localEvolutionChains ??=
+        jsonDecode(
+              await rootBundle.loadString('assets/data/evolution_chains.json'),
+            )
+            as Map<String, dynamic>;
 
     final chain = _localEvolutionChains!.entries
         .where((entry) => entry.value is List<dynamic>)
@@ -251,48 +271,59 @@ class PokemonRepository {
       final toDex = row['to'] as int;
       final fromPokemonId = row['fromPokemon'] as int? ?? fromDex;
       final toPokemonId = row['toPokemon'] as int? ?? toDex;
-      final fromPokemon = await _pokemonById(fromPokemonId) ?? await _firstPokemonForDex(fromDex);
-      final toPokemon = await _pokemonById(toPokemonId) ?? await _firstPokemonForDex(toDex);
-      final fromForm = row['fromForm'] as String? ?? fromPokemon?.form ?? 'normal';
+      final fromPokemon =
+          await _pokemonById(fromPokemonId) ??
+          await _firstPokemonForDex(fromDex);
+      final toPokemon =
+          await _pokemonById(toPokemonId) ?? await _firstPokemonForDex(toDex);
+      final fromForm =
+          row['fromForm'] as String? ?? fromPokemon?.form ?? 'normal';
       final toForm = row['toForm'] as String? ?? toPokemon?.form ?? 'normal';
 
-      steps.add(EvolutionStep(
-        fromId: fromPokemon?.id ?? fromPokemonId,
-        fromName: _formatEvolutionPokemonName(
-          fromPokemon?.name ?? 'pokemon-$fromDex',
-          fromPokemon?.form ?? fromForm,
+      steps.add(
+        EvolutionStep(
+          fromId: fromPokemon?.id ?? fromPokemonId,
+          fromName: _formatEvolutionPokemonName(
+            fromPokemon?.name ?? 'pokemon-$fromDex',
+            fromPokemon?.form ?? fromForm,
+          ),
+          fromSprite: fromPokemon?.spriteUrl,
+          toId: toPokemon?.id ?? toPokemonId,
+          toName: _formatEvolutionPokemonName(
+            toPokemon?.name ?? 'pokemon-$toDex',
+            toPokemon?.form ?? toForm,
+          ),
+          toSprite: toPokemon?.spriteUrl,
+          trigger: row['trigger'] as String? ?? 'Evolves',
+          form: row['form'] as String? ?? _evolutionFormLabel(fromForm, toForm),
+          fromForm: fromForm,
+          toForm: toForm,
         ),
-        fromSprite: fromPokemon?.spriteUrl,
-        toId: toPokemon?.id ?? toPokemonId,
-        toName: _formatEvolutionPokemonName(
-          toPokemon?.name ?? 'pokemon-$toDex',
-          toPokemon?.form ?? toForm,
-        ),
-        toSprite: toPokemon?.spriteUrl,
-        trigger: row['trigger'] as String? ?? 'Evolves',
-        form: row['form'] as String? ?? _evolutionFormLabel(fromForm, toForm),
-        fromForm: fromForm,
-        toForm: toForm,
-      ));
+      );
     }
     return steps;
   }
 
   Future<Pokemon?> _pokemonById(int pokemonId) async {
-    final rows = await (db.select(db.pokemonTable)..where((t) => t.id.equals(pokemonId))).get();
+    final rows = await (db.select(
+      db.pokemonTable,
+    )..where((t) => t.id.equals(pokemonId))).get();
     return rows.isEmpty ? null : rows.first;
   }
 
   Future<Pokemon?> _firstPokemonForDex(int dexNum) async {
-    final rows = await (db.select(db.pokemonTable)..where((t) => t.nationalDexNumber.equals(dexNum))).get();
+    final rows = await (db.select(
+      db.pokemonTable,
+    )..where((t) => t.nationalDexNumber.equals(dexNum))).get();
     if (rows.isEmpty) return null;
     return rows.firstWhere((p) => p.form == 'normal', orElse: () => rows.first);
   }
 
   String _evolutionFormLabel(String fromForm, String toForm) {
-    final forms = [fromForm, toForm]
-        .where((form) => form.toLowerCase() != 'normal')
-        .toSet();
+    final forms = [
+      fromForm,
+      toForm,
+    ].where((form) => form.toLowerCase() != 'normal').toSet();
     return forms.isEmpty ? 'normal' : forms.join(' → ');
   }
 
@@ -316,17 +347,24 @@ class PokemonRepository {
     return '$name (${_capitalize(form)})';
   }
 
-  Future<void> _parseChainNode(Map<String, dynamic> node, List<EvolutionStep> steps) async {
+  Future<void> _parseChainNode(
+    Map<String, dynamic> node,
+    List<EvolutionStep> steps,
+  ) async {
     final speciesName = node['species']['name'] as String;
     final speciesUrl = node['species']['url'] as String;
-    final fromDexId = int.parse(speciesUrl.split('/').where((part) => part.isNotEmpty).last);
+    final fromDexId = int.parse(
+      speciesUrl.split('/').where((part) => part.isNotEmpty).last,
+    );
     final evolvesTo = node['evolves_to'] as List<dynamic>? ?? const [];
 
     for (final rawNext in evolvesTo) {
       final next = rawNext as Map<String, dynamic>;
       final nextSpeciesName = next['species']['name'] as String;
       final nextSpeciesUrl = next['species']['url'] as String;
-      final toDexId = int.parse(nextSpeciesUrl.split('/').where((part) => part.isNotEmpty).last);
+      final toDexId = int.parse(
+        nextSpeciesUrl.split('/').where((part) => part.isNotEmpty).last,
+      );
       final fromPokemon = await _firstPokemonForDex(fromDexId);
       final toPokemon = await _firstPokemonForDex(toDexId);
       final details = (next['evolution_details'] as List<dynamic>? ?? const [])
@@ -335,22 +373,31 @@ class PokemonRepository {
 
       // A child can have more than one published trigger/condition row; keep
       // every row rather than silently dropping all but the first.
-      for (final detail in details.isEmpty ? <Map<String, dynamic>>[{}] : details) {
+      for (final detail
+          in details.isEmpty ? <Map<String, dynamic>>[{}] : details) {
         final fromForm = fromPokemon?.form ?? 'normal';
         final toForm = toPokemon?.form ?? 'normal';
         final trigger = _formatEvolutionTrigger(detail);
-        steps.add(EvolutionStep(
-          fromId: fromPokemon?.id ?? fromDexId,
-          fromName: _formatEvolutionPokemonName(fromPokemon?.name ?? speciesName, fromForm),
-          fromSprite: fromPokemon?.spriteUrl,
-          toId: toPokemon?.id ?? toDexId,
-          toName: _formatEvolutionPokemonName(toPokemon?.name ?? nextSpeciesName, toForm),
-          toSprite: toPokemon?.spriteUrl,
-          trigger: trigger,
-          form: _evolutionFormLabel(fromForm, toForm),
-          fromForm: fromForm,
-          toForm: toForm,
-        ));
+        steps.add(
+          EvolutionStep(
+            fromId: fromPokemon?.id ?? fromDexId,
+            fromName: _formatEvolutionPokemonName(
+              fromPokemon?.name ?? speciesName,
+              fromForm,
+            ),
+            fromSprite: fromPokemon?.spriteUrl,
+            toId: toPokemon?.id ?? toDexId,
+            toName: _formatEvolutionPokemonName(
+              toPokemon?.name ?? nextSpeciesName,
+              toForm,
+            ),
+            toSprite: toPokemon?.spriteUrl,
+            trigger: trigger,
+            form: _evolutionFormLabel(fromForm, toForm),
+            fromForm: fromForm,
+            toForm: toForm,
+          ),
+        );
       }
 
       // Recursion walks every branch from the family root, so a detail view
@@ -373,30 +420,57 @@ class PokemonRepository {
     final parts = <String>[];
 
     if (minLevel != null) parts.add('Level $minLevel');
-    if (item != null) parts.add('Use ${_capitalize(item.toString().replaceAll('-', ' '))}');
-    if (heldItem != null) parts.add('Hold ${_capitalize(heldItem.toString().replaceAll('-', ' '))}');
-    if (knownMove != null) parts.add('Know ${_capitalize(knownMove.toString().replaceAll('-', ' '))}');
-    if (knownMoveType != null) parts.add('Know a ${_capitalize(knownMoveType.toString())}-type move');
+    if (item != null) {
+      parts.add('Use ${_capitalize(item.toString().replaceAll('-', ' '))}');
+    }
+    if (heldItem != null) {
+      parts.add(
+        'Hold ${_capitalize(heldItem.toString().replaceAll('-', ' '))}',
+      );
+    }
+    if (knownMove != null) {
+      parts.add(
+        'Know ${_capitalize(knownMove.toString().replaceAll('-', ' '))}',
+      );
+    }
+    if (knownMoveType != null) {
+      parts.add('Know a ${_capitalize(knownMoveType.toString())}-type move');
+    }
     if (happiness != null) parts.add('High friendship');
     if (gender != null) parts.add(gender == 1 ? 'Female only' : 'Male only');
-    if (timeOfDay.isNotEmpty) parts.add(timeOfDay[0].toUpperCase() + timeOfDay.substring(1));
-    if (location != null) parts.add('At ${_capitalize(location.toString().replaceAll('-', ' '))}');
+    if (timeOfDay.isNotEmpty) {
+      parts.add(timeOfDay[0].toUpperCase() + timeOfDay.substring(1));
+    }
+    if (location != null) {
+      parts.add('At ${_capitalize(location.toString().replaceAll('-', ' '))}');
+    }
 
     if (parts.isNotEmpty) return parts.join(' · ');
     if (trigger == 'trade') return 'Trade';
     if (trigger == 'shed') return 'Shed shell';
     if (trigger == 'use-item') return 'Use an item';
-    return trigger.isEmpty ? 'Evolution condition' : _capitalize(trigger.replaceAll('-', ' '));
+    return trigger.isEmpty
+        ? 'Evolution condition'
+        : _capitalize(trigger.replaceAll('-', ' '));
   }
 
   String _capitalize(String s) {
     if (s.isEmpty) return s;
-    return s.split(' ').map((word) => word.isEmpty ? '' : word[0].toUpperCase() + word.substring(1)).join(' ');
+    return s
+        .split(' ')
+        .map(
+          (word) =>
+              word.isEmpty ? '' : word[0].toUpperCase() + word.substring(1),
+        )
+        .join(' ');
   }
 }
 
 @riverpod
-Stream<List<PokemonAbilityWithDetails>> pokemonAbilities(Ref ref, int pokemonId) {
+Stream<List<PokemonAbilityWithDetails>> pokemonAbilities(
+  Ref ref,
+  int pokemonId,
+) {
   final repo = ref.watch(pokemonRepositoryProvider);
   return repo.watchAbilitiesForPokemon(pokemonId);
 }
@@ -408,7 +482,10 @@ Stream<List<PokemonMoveWithDetails>> pokemonMoves(Ref ref, int pokemonId) {
 }
 
 @riverpod
-Stream<List<Map<String, dynamic>>> pokemonAbilitiesStream(Ref ref, int pokemonId) {
+Stream<List<Map<String, dynamic>>> pokemonAbilitiesStream(
+  Ref ref,
+  int pokemonId,
+) {
   final repo = ref.watch(pokemonRepositoryProvider);
   return repo.watchAbilitiesWithFallback(pokemonId);
 }
@@ -421,7 +498,7 @@ Stream<List<Map<String, dynamic>>> pokemonMovesStream(Ref ref, int pokemonId) {
 
 final pokemonEvolutionChainProvider =
     FutureProvider.family<List<EvolutionStep>, int>((ref, dexNum) {
-  final repo = ref.watch(pokemonRepositoryProvider);
-  final preferOnline = ref.watch(liveEvolutionDataProvider);
-  return repo.fetchEvolutionSteps(dexNum, preferOnline: preferOnline);
-});
+      final repo = ref.watch(pokemonRepositoryProvider);
+      final preferOnline = ref.watch(liveEvolutionDataProvider);
+      return repo.fetchEvolutionSteps(dexNum, preferOnline: preferOnline);
+    });

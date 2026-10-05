@@ -26,7 +26,8 @@ class ItemArtworkIcon extends StatelessWidget {
     return FutureBuilder<File?>(
       future: OfflineArtworkStore.instance.fileForUrl(imageUrl),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done && snapshot.data != null) {
+        if (snapshot.connectionState == ConnectionState.done &&
+            snapshot.data != null) {
           return Image.file(
             snapshot.data!,
             fit: fit,

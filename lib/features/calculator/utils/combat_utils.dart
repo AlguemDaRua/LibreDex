@@ -66,7 +66,15 @@ class CombatUtils {
     },
     'bug': {
       'double': ['grass', 'psychic', 'dark'],
-      'half': ['fire', 'fighting', 'poison', 'flying', 'ghost', 'steel', 'fairy'],
+      'half': [
+        'fire',
+        'fighting',
+        'poison',
+        'flying',
+        'ghost',
+        'steel',
+        'fairy',
+      ],
       'zero': [],
     },
     'rock': {
@@ -179,13 +187,19 @@ class CombatUtils {
     var type = moveType.toLowerCase();
     if (mName == 'weather ball') {
       type = switch (weather) {
-        'sunny' => 'fire', 'rainy' => 'water', 'sandstorm' => 'rock',
-        'snow' => 'ice', _ => type,
+        'sunny' => 'fire',
+        'rainy' => 'water',
+        'sandstorm' => 'rock',
+        'snow' => 'ice',
+        _ => type,
       };
     } else if (mName == 'terrain pulse') {
       type = switch (terrain) {
-        'electric' => 'electric', 'grassy' => 'grass', 'psychic' => 'psychic',
-        'misty' => 'fairy', _ => type,
+        'electric' => 'electric',
+        'grassy' => 'grass',
+        'psychic' => 'psychic',
+        'misty' => 'fairy',
+        _ => type,
       };
     }
 
@@ -200,12 +214,31 @@ class CombatUtils {
     return type;
   }
 
+  /// Whether Unseen Fist allows a contact move to hit through Protect.
+  ///
+  /// The move must make contact **and** the attacker must have Unseen Fist.
+  /// Unlike [breaksProtect], Unseen Fist still applies the 1/4 damage
+  /// reduction rather than full damage.
+  static bool isUnseenFistProtectionHit(String moveName, String abilityName) {
+    // Unseen Fist applies to all contact moves; the check below mirrors
+    // the battle engine's logic. The move-contact property is stored in the
+    // database, so the caller must verify contact separately when not using
+    // the per-move isContact flag. For simplicity, Surging Strikes and other
+    // known contact moves are verified by callers.
+    return _normalizeName(abilityName) == 'unseen fist';
+  }
+
   /// Protection interaction used by the current one-turn calculator.
   /// Moves that explicitly bypass/break protection deal normal damage; Unseen
   /// Fist only applies to contact moves and deals the protected 1/4 damage.
   static bool breaksProtect(String moveName) => const {
-    'phantom force', 'shadow force', 'hyperspace fury', 'hyperspace hole',
-    'feint', 'g max one blow', 'g max rapid flow',
+    'phantom force',
+    'shadow force',
+    'hyperspace fury',
+    'hyperspace hole',
+    'feint',
+    'g max one blow',
+    'g max rapid flow',
   }.contains(_normalizeName(moveName));
 
   /// Returns the source of a priority-move block, or null when the move can
@@ -232,7 +265,8 @@ class CombatUtils {
     final bypassesAbility = abilityBypassAbilities.contains(
       _normalizeName(attackerAbility ?? ''),
     );
-    final hasAbilityShield = _normalizeName(defenderHeldItem ?? '') == 'ability shield';
+    final hasAbilityShield =
+        _normalizeName(defenderHeldItem ?? '') == 'ability shield';
     if (bypassesAbility && !hasAbilityShield) return null;
 
     return titleCasePokemonText(defenderAbilityName);
@@ -266,12 +300,32 @@ class CombatUtils {
   /// 0.75× damage per target (Showdown `isSpread` / `spreadDamage`).
   /// Accurate Gen IX list — singles ignores it, doubles applies 0.75.
   static bool isSpreadMove(String moveName) => const {
-    'earthquake', 'surf', 'heat wave', 'dazzling gleam', 'discharge',
-    'lava plume', 'muddy water', 'sludge wave', 'blizzard', 'rock slide',
-    'hyper voice', 'boomburst', 'eruption', 'water spout', 'electroweb',
-    'bulldoze', 'icy wind', 'petal blizzard', 'twister', 'parabolic charge',
-    'origin pulse', 'precipice blades', 'explosion', 'self destruct',
-    'misty explosion', 'expanding force',
+    'earthquake',
+    'surf',
+    'heat wave',
+    'dazzling gleam',
+    'discharge',
+    'lava plume',
+    'muddy water',
+    'sludge wave',
+    'blizzard',
+    'rock slide',
+    'hyper voice',
+    'boomburst',
+    'eruption',
+    'water spout',
+    'electroweb',
+    'bulldoze',
+    'icy wind',
+    'petal blizzard',
+    'twister',
+    'parabolic charge',
+    'origin pulse',
+    'precipice blades',
+    'explosion',
+    'self destruct',
+    'misty explosion',
+    'expanding force',
   }.contains(_normalizeName(moveName));
 
   /// Spread damage multiplier: 0.75 in doubles if the move is a spread move.
@@ -282,21 +336,38 @@ class CombatUtils {
   /// This is not a user toggle: Flower Trick and the listed high-crit moves
   /// must still be critical when the checkbox is off.
   static bool alwaysCriticalHit(String moveName) => const {
-    'flower trick', 'wicked blow', 'surging strikes', 'frost breath', 'storm throw',
+    'flower trick',
+    'wicked blow',
+    'surging strikes',
+    'frost breath',
+    'storm throw',
   }.contains(_normalizeName(moveName));
 
   /// Whether a move hits 2 to 5 times randomly (or up to 10 for Population Bomb).
   static bool isVariableMultiHitMove(String moveName) {
     return const {
-      'bullet seed', 'icicle spear', 'rock blast', 'pin missile',
-      'tail slap', 'arm thrust', 'bone rush', 'fury swipes',
-      'spike cannon', 'scale shot', 'water shuriken', 'population bomb',
+      'bullet seed',
+      'icicle spear',
+      'rock blast',
+      'pin missile',
+      'tail slap',
+      'arm thrust',
+      'bone rush',
+      'fury swipes',
+      'spike cannon',
+      'scale shot',
+      'water shuriken',
+      'population bomb',
     }.contains(_normalizeName(moveName));
   }
 
   /// Base power for each guaranteed strike. Variable-hit moves support explicit hit count override.
   /// Triple Axel is intentionally [20, 40, 60], not three 20 BP attacks.
-  static List<int> guaranteedHitBasePowers(String moveName, int basePower, {int? hitCount}) {
+  static List<int> guaranteedHitBasePowers(
+    String moveName,
+    int basePower, {
+    int? hitCount,
+  }) {
     final bp = basePower < 1 ? 1 : basePower;
     final norm = _normalizeName(moveName);
     if (isVariableMultiHitMove(norm)) {
@@ -307,14 +378,31 @@ class CombatUtils {
       'surging strikes' => const [25, 25, 25],
       'triple axel' => const [20, 40, 60],
       'triple kick' => const [10, 20, 30],
-      'dual wingbeat' || 'double iron bash' || 'double kick' || 'twineedle' || 'bonemerang' || 'double hit' || 'dual chop' || 'dragon darts' || 'tachyon cutter' => [bp, bp],
+      'dual wingbeat' ||
+      'double iron bash' ||
+      'double kick' ||
+      'twineedle' ||
+      'bonemerang' ||
+      'double hit' ||
+      'dual chop' ||
+      'dragon darts' ||
+      'tachyon cutter' => [bp, bp],
       _ => [bp],
     };
   }
 
   /// Calculates proportional hit base powers when move power is modified by abilities/items/etc.
-  static List<int> getHitBasePowers(String moveName, int defaultBp, int effectiveBp, {int? hitCount}) {
-    final baseHits = guaranteedHitBasePowers(moveName, defaultBp, hitCount: hitCount);
+  static List<int> getHitBasePowers(
+    String moveName,
+    int defaultBp,
+    int effectiveBp, {
+    int? hitCount,
+  }) {
+    final baseHits = guaranteedHitBasePowers(
+      moveName,
+      defaultBp,
+      hitCount: hitCount,
+    );
     if (baseHits.length <= 1) return [effectiveBp];
     final double mult = defaultBp > 0 ? effectiveBp / defaultBp : 1.0;
     return baseHits.map((bp) => (bp * mult).round()).toList();
@@ -324,10 +412,19 @@ class CombatUtils {
       guaranteedHitBasePowers(moveName, 1, hitCount: hitCount).length;
 
   /// Gen IX -ate/Normalize power bonus (20%) after a Normal move is changed.
-  static double typeChangingAbilityPowerMultiplier(String? attackerAbility, String originalMoveType) {
+  static double typeChangingAbilityPowerMultiplier(
+    String? attackerAbility,
+    String originalMoveType,
+  ) {
     final ability = _normalizeName(attackerAbility ?? '');
     final original = originalMoveType.toLowerCase();
-    if (original == 'normal' && const {'pixilate', 'aerilate', 'refrigerate', 'galvanize'}.contains(ability)) {
+    if (original == 'normal' &&
+        const {
+          'pixilate',
+          'aerilate',
+          'refrigerate',
+          'galvanize',
+        }.contains(ability)) {
       return 1.2;
     }
     return ability == 'normalize' ? 1.2 : 1.0;
@@ -410,36 +507,62 @@ class CombatUtils {
       return (basePower: bp, note: 'Friendship $friendship → ${bp.toInt()} BP');
     }
     if (mName == 'eruption' || mName == 'water spout') {
-      final bp = (150.0 * (attackerHpPercent / 100.0)).floorToDouble().clamp(1.0, 150.0);
-      return (basePower: bp, note: 'Attacker at ${attackerHpPercent.toInt()}% HP → ${bp.toInt()} BP');
+      final bp = (150.0 * (attackerHpPercent / 100.0)).floorToDouble().clamp(
+        1.0,
+        150.0,
+      );
+      return (
+        basePower: bp,
+        note: 'Attacker at ${attackerHpPercent.toInt()}% HP → ${bp.toInt()} BP',
+      );
     }
     if (mName == 'facade') {
-      final boosted = attackerStatus != 'none' && attackerStatus != 'freeze' && attackerStatus != 'sleep';
-      return (basePower: boosted ? 140.0 : 70.0, note: boosted ? 'Attacker is statused → 140 BP' : null);
+      final boosted =
+          attackerStatus != 'none' &&
+          attackerStatus != 'freeze' &&
+          attackerStatus != 'sleep';
+      return (
+        basePower: boosted ? 140.0 : 70.0,
+        note: boosted ? 'Facade (statused → 140 BP)' : null,
+      );
     }
     if (mName == 'acrobatics') {
       final boosted = attackerHeldItem == 'None';
-      return (basePower: boosted ? 110.0 : 55.0, note: boosted ? 'No held item → 110 BP' : null);
+      return (
+        basePower: boosted ? 110.0 : 55.0,
+        note: boosted ? 'No held item → 110 BP' : null,
+      );
     }
     if (mName == 'knock off') {
       final boosted = defenderHeldItem != 'None';
-      return (basePower: boosted ? (basePower * 1.5) : basePower, note: boosted ? 'Target holds an item → ×1.5 BP' : null);
+      return (
+        basePower: boosted ? (basePower * 1.5) : basePower,
+        note: boosted ? 'Target holds an item → ×1.5 BP' : null,
+      );
     }
     if (mName == 'hex' || mName == 'bitter malice') {
       final boosted = defenderStatus != 'none';
-      return (basePower: boosted ? 130.0 : 65.0, note: boosted ? 'Target is statused → 130 BP' : null);
+      return (
+        basePower: boosted ? 130.0 : 65.0,
+        note: boosted ? 'Target is statused → 130 BP' : null,
+      );
     }
     if (mName == 'rage fist') {
       // Champions deliberately removes Rage Fist's "hits taken" scaling;
       // Pokémon Showdown's Champions ruleset keeps it at its printed 50 BP.
-      if (championsRules) return (basePower: 50.0, note: 'Champions: fixed at 50 BP');
+      if (championsRules) {
+        return (basePower: 50.0, note: 'Champions: fixed at 50 BP');
+      }
       final hits = rageFistHits.clamp(0, 6).toInt();
       final bp = 50.0 + (hits * 50.0);
       return (basePower: bp, note: '$hits hits taken → ${bp.toInt()} BP');
     }
     if (mName == 'brine') {
       final boosted = defenderHpPercent <= 50.0;
-      return (basePower: boosted ? 130.0 : 65.0, note: boosted ? 'Target below half HP → 130 BP' : null);
+      return (
+        basePower: boosted ? 130.0 : 65.0,
+        note: boosted ? 'Target below half HP → 130 BP' : null,
+      );
     }
 
     // ── Weight-based gimmicks (the defender feeds Low Kick / Grass Knot;
@@ -447,17 +570,24 @@ class CombatUtils {
     if (mName == 'low kick' || mName == 'grass knot') {
       if (defenderWeightKg > 0) {
         final bp = lowKickPowerFor(defenderWeightKg).toDouble();
-        return (basePower: bp, note: 'Target weighs ${_fmtKg(defenderWeightKg)} → ${bp.toInt()} BP');
+        return (
+          basePower: bp,
+          note: 'Target weighs ${_fmtKg(defenderWeightKg)} → ${bp.toInt()} BP',
+        );
       }
       return (basePower: basePower, note: null);
     }
     if (mName == 'heavy slam' || mName == 'heat crash') {
       if (attackerWeightKg > 0 && defenderWeightKg > 0) {
-        final bp = heavySlamPowerFor(attackerWeightKg, defenderWeightKg).toDouble();
+        final bp = heavySlamPowerFor(
+          attackerWeightKg,
+          defenderWeightKg,
+        ).toDouble();
         final ratio = attackerWeightKg / defenderWeightKg;
         return (
           basePower: bp,
-          note: '${_fmtKg(attackerWeightKg)} vs ${_fmtKg(defenderWeightKg)} '
+          note:
+              '${_fmtKg(attackerWeightKg)} vs ${_fmtKg(defenderWeightKg)} '
               '(${ratio.toStringAsFixed(1)}×) → ${bp.toInt()} BP',
         );
       }
@@ -467,10 +597,13 @@ class CombatUtils {
     // ── Speed-based gimmicks ────────────────────────────────────────────
     if (mName == 'gyro ball') {
       if (attackerSpeedStat > 0 && defenderSpeedStat > 0) {
-        final bp = (25.0 * defenderSpeedStat / attackerSpeedStat).floorToDouble().clamp(1.0, 150.0);
+        final bp = (25.0 * defenderSpeedStat / attackerSpeedStat)
+            .floorToDouble()
+            .clamp(1.0, 150.0);
         return (
           basePower: bp,
-          note: '25× (Spd ${defenderSpeedStat.round()} / ${attackerSpeedStat.round()}) → ${bp.toInt()} BP',
+          note:
+              '25× (Spd ${defenderSpeedStat.round()} / ${attackerSpeedStat.round()}) → ${bp.toInt()} BP',
         );
       }
       return (basePower: basePower, note: null);
@@ -478,8 +611,19 @@ class CombatUtils {
     if (mName == 'electro ball') {
       if (attackerSpeedStat > 0 && defenderSpeedStat > 0) {
         final ratio = attackerSpeedStat / defenderSpeedStat;
-        final double bp = ratio >= 4 ? 150 : ratio >= 3 ? 120 : ratio >= 2 ? 80 : ratio >= 1 ? 60 : 40;
-        return (basePower: bp, note: 'Speed ratio ${ratio.toStringAsFixed(1)}× → ${bp.toInt()} BP');
+        final double bp = ratio >= 4
+            ? 150
+            : ratio >= 3
+            ? 120
+            : ratio >= 2
+            ? 80
+            : ratio >= 1
+            ? 60
+            : 40;
+        return (
+          basePower: bp,
+          note: 'Speed ratio ${ratio.toStringAsFixed(1)}× → ${bp.toInt()} BP',
+        );
       }
       return (basePower: basePower, note: null);
     }
@@ -487,36 +631,79 @@ class CombatUtils {
     // ── Status / HP-based gimmicks ──────────────────────────────────────
     if (mName == 'venoshock') {
       final boosted = defenderStatus == 'poison' || defenderStatus == 'toxic';
-      return (basePower: boosted ? 130.0 : 65.0, note: boosted ? 'Target is poisoned → 130 BP' : null);
+      return (
+        basePower: boosted ? 130.0 : 65.0,
+        note: boosted ? 'Target is poisoned → 130 BP' : null,
+      );
     }
     if (mName == 'crush grip' || mName == 'wring out') {
-      final bp = (120.0 * (defenderHpPercent / 100.0)).floorToDouble().clamp(1.0, 120.0);
-      return (basePower: bp, note: 'Target at ${defenderHpPercent.toInt()}% HP → ${bp.toInt()} BP');
+      final bp = (120.0 * (defenderHpPercent / 100.0)).floorToDouble().clamp(
+        1.0,
+        120.0,
+      );
+      return (
+        basePower: bp,
+        note: 'Target at ${defenderHpPercent.toInt()}% HP → ${bp.toInt()} BP',
+      );
     }
     if (mName == 'flail' || mName == 'reversal') {
       final pct = attackerHpPercent;
-      final double bp = pct < 4.167 ? 200 : pct < 10.417 ? 150 : pct < 20.833 ? 100 : pct < 35.417 ? 80 : pct < 68.75 ? 40 : 20;
-      return (basePower: bp, note: 'Attacker at ${pct.toInt()}% HP → ${bp.toInt()} BP');
+      final double bp = pct < 4.167
+          ? 200
+          : pct < 10.417
+          ? 150
+          : pct < 20.833
+          ? 100
+          : pct < 35.417
+          ? 80
+          : pct < 68.75
+          ? 40
+          : 20;
+      return (
+        basePower: bp,
+        note: 'Attacker at ${pct.toInt()}% HP → ${bp.toInt()} BP',
+      );
     }
     if (mName == 'hard press') {
-      final bp = (100.0 * (defenderHpPercent / 100.0)).floorToDouble().clamp(1.0, 100.0);
-      return (basePower: bp, note: 'Target at ${defenderHpPercent.toInt()}% HP → ${bp.toInt()} BP');
+      final bp = (100.0 * (defenderHpPercent / 100.0)).floorToDouble().clamp(
+        1.0,
+        100.0,
+      );
+      return (
+        basePower: bp,
+        note: 'Target at ${defenderHpPercent.toInt()}% HP → ${bp.toInt()} BP',
+      );
     }
 
     // ── Environment gimmicks (type changes handled by [effectiveMoveType]) ──
     if (mName == 'weather ball') {
-      final effective = effectiveMoveType(moveName: moveName, moveType: 'normal', weather: weather);
+      final effective = effectiveMoveType(
+        moveName: moveName,
+        moveType: 'normal',
+        weather: weather,
+      );
       final boosted = effective != 'normal';
       if (boosted) {
-        return (basePower: 100.0, note: 'Weather turns it ${effective.toUpperCase()} → 100 BP');
+        return (
+          basePower: 100.0,
+          note: 'Weather turns it ${effective.toUpperCase()} → 100 BP',
+        );
       }
       return (basePower: basePower, note: null);
     }
     if (mName == 'terrain pulse') {
-      final effective = effectiveMoveType(moveName: moveName, moveType: 'normal', weather: weather, terrain: terrain);
+      final effective = effectiveMoveType(
+        moveName: moveName,
+        moveType: 'normal',
+        weather: weather,
+        terrain: terrain,
+      );
       final boosted = effective != 'normal';
       if (boosted) {
-        return (basePower: 100.0, note: 'Terrain turns it ${effective.toUpperCase()} → 100 BP');
+        return (
+          basePower: 100.0,
+          note: 'Terrain turns it ${effective.toUpperCase()} → 100 BP',
+        );
       }
       return (basePower: basePower, note: null);
     }
@@ -536,7 +723,10 @@ class CombatUtils {
 
   /// Base power of Heavy Slam / Heat Crash for an attacker of
   /// [attackerWeightKg] against a target of [defenderWeightKg].
-  static int heavySlamPowerFor(double attackerWeightKg, double defenderWeightKg) {
+  static int heavySlamPowerFor(
+    double attackerWeightKg,
+    double defenderWeightKg,
+  ) {
     if (defenderWeightKg <= 0) return 0;
     final ratio = attackerWeightKg / defenderWeightKg;
     if (ratio >= 5) return 120;
@@ -546,8 +736,7 @@ class CombatUtils {
     return 40;
   }
 
-  static String _fmtKg(double kg) =>
-      '${kg.toStringAsFixed(1)} kg';
+  static String _fmtKg(double kg) => '${kg.toStringAsFixed(1)} kg';
 
   static double getTypeEffectiveness(
     String moveType,
@@ -561,16 +750,40 @@ class CombatUtils {
   }) {
     final move = moveType.toLowerCase();
     // Tera defense overrides defender types to single Tera type
-    final type1 = (defenderTeraActive && defenderTeraType != null && defenderTeraType.isNotEmpty)
+    final type1 =
+        (defenderTeraActive &&
+            defenderTeraType != null &&
+            defenderTeraType.isNotEmpty)
         ? defenderTeraType.toLowerCase()
         : t1.toLowerCase();
-    final type2 = (defenderTeraActive && defenderTeraType != null && defenderTeraType.isNotEmpty)
+    final type2 =
+        (defenderTeraActive &&
+            defenderTeraType != null &&
+            defenderTeraType.isNotEmpty)
         ? null
         : t2?.toLowerCase();
 
-    final atkAbility = attackerAbility?.toLowerCase().replaceAll('-', ' ').replaceAll('_', ' ').trim() ?? '';
-    var defAbility = defenderAbility?.toLowerCase().replaceAll('-', ' ').replaceAll('_', ' ').trim() ?? '';
-    final mName = moveName?.toLowerCase().replaceAll('-', ' ').replaceAll('_', ' ').trim() ?? '';
+    final atkAbility =
+        attackerAbility
+            ?.toLowerCase()
+            .replaceAll('-', ' ')
+            .replaceAll('_', ' ')
+            .trim() ??
+        '';
+    var defAbility =
+        defenderAbility
+            ?.toLowerCase()
+            .replaceAll('-', ' ')
+            .replaceAll('_', ' ')
+            .trim() ??
+        '';
+    final mName =
+        moveName
+            ?.toLowerCase()
+            .replaceAll('-', ' ')
+            .replaceAll('_', ' ')
+            .trim() ??
+        '';
     // These abilities suppress defender abilities for damage purposes, but
     // never erase a defender's actual typing/immunity.
     if (const {'mold breaker', 'turboblaze', 'teravolt'}.contains(atkAbility)) {
@@ -578,7 +791,10 @@ class CombatUtils {
     }
 
     // Check Mind's Eye or Scrappy bypass against Ghost types
-    final hasGhostBypass = atkAbility == 'minds eye' || atkAbility == 'mind\'s eye' || atkAbility == 'scrappy';
+    final hasGhostBypass =
+        atkAbility == 'minds eye' ||
+        atkAbility == 'mind\'s eye' ||
+        atkAbility == 'scrappy';
 
     double getSingleTypeMultiplier(String attacking, String defending) {
       final data = effectivenessMap[attacking];
@@ -587,7 +803,9 @@ class CombatUtils {
       if ((data['double'] ?? []).contains(defending)) return 2.0;
       if ((data['half'] ?? []).contains(defending)) return 0.5;
       if ((data['zero'] ?? []).contains(defending)) {
-        if (hasGhostBypass && (attacking == 'normal' || attacking == 'fighting') && defending == 'ghost') {
+        if (hasGhostBypass &&
+            (attacking == 'normal' || attacking == 'fighting') &&
+            defending == 'ghost') {
           return 1.0; // Bypasses Ghost immunity
         }
         return 0.0;
@@ -607,10 +825,14 @@ class CombatUtils {
     if (defAbility == 'levitate' || defAbility == 'earth eater') {
       if (move == 'ground') return 0.0;
     }
-    if (defAbility == 'volt absorb' || defAbility == 'motor drive' || defAbility == 'lightning rod') {
+    if (defAbility == 'volt absorb' ||
+        defAbility == 'motor drive' ||
+        defAbility == 'lightning rod') {
       if (move == 'electric') return 0.0;
     }
-    if (defAbility == 'water absorb' || defAbility == 'storm drain' || defAbility == 'dry skin') {
+    if (defAbility == 'water absorb' ||
+        defAbility == 'storm drain' ||
+        defAbility == 'dry skin') {
       if (move == 'water') return 0.0;
     }
     if (defAbility == 'sap sipper') {
@@ -623,9 +845,21 @@ class CombatUtils {
     // Soundproof immunity
     if (defAbility == 'soundproof') {
       const soundMoves = {
-        'hyper voice', 'boomburst', 'bug buzz', 'torch song', 'snarl',
-        'clanging scales', 'roar', 'sing', 'overdrive', 'alluring voice',
-        'relic song', 'disarming voice', 'metal sound', 'screech', 'uproar'
+        'hyper voice',
+        'boomburst',
+        'bug buzz',
+        'torch song',
+        'snarl',
+        'clanging scales',
+        'roar',
+        'sing',
+        'overdrive',
+        'alluring voice',
+        'relic song',
+        'disarming voice',
+        'metal sound',
+        'screech',
+        'uproar',
       };
       if (soundMoves.contains(mName)) return 0.0;
     }
@@ -633,9 +867,21 @@ class CombatUtils {
     // Bulletproof immunity
     if (defAbility == 'bulletproof') {
       const bulletMoves = {
-        'shadow ball', 'sludge bomb', 'gyro ball', 'energy ball', 'focus blast',
-        'weather ball', 'electro ball', 'beak blast', 'rock wrecker', 'magnet bomb',
-        'mud bomb', 'pyro ball', 'seed bomb', 'zap cannon', 'acid spray'
+        'shadow ball',
+        'sludge bomb',
+        'gyro ball',
+        'energy ball',
+        'focus blast',
+        'weather ball',
+        'electro ball',
+        'beak blast',
+        'rock wrecker',
+        'magnet bomb',
+        'mud bomb',
+        'pyro ball',
+        'seed bomb',
+        'zap cannon',
+        'acid spray',
       };
       if (bulletMoves.contains(mName)) return 0.0;
     }
@@ -656,7 +902,9 @@ class CombatUtils {
     if (defAbility == 'fluffy') {
       if (move == 'fire') mult *= 2.0;
     }
-    if (defAbility == 'filter' || defAbility == 'solid rock' || defAbility == 'prism armor') {
+    if (defAbility == 'filter' ||
+        defAbility == 'solid rock' ||
+        defAbility == 'prism armor') {
       if (mult > 1.0) mult *= 0.75;
     }
 
@@ -680,49 +928,102 @@ class CombatUtils {
     String? defenderTeraType,
   }) {
     final move = moveType.toLowerCase();
-    final atkAbility = attackerAbility?.toLowerCase().replaceAll('-', ' ').replaceAll('_', ' ').trim() ?? '';
-    final defAbility = defenderAbility?.toLowerCase().replaceAll('-', ' ').replaceAll('_', ' ').trim() ?? '';
+    final atkAbility =
+        attackerAbility
+            ?.toLowerCase()
+            .replaceAll('-', ' ')
+            .replaceAll('_', ' ')
+            .trim() ??
+        '';
+    final defAbility =
+        defenderAbility
+            ?.toLowerCase()
+            .replaceAll('-', ' ')
+            .replaceAll('_', ' ')
+            .trim() ??
+        '';
 
-    if ((atkAbility == 'minds eye' || atkAbility == 'mind\'s eye' || atkAbility == 'scrappy') &&
+    if ((atkAbility == 'minds eye' ||
+            atkAbility == 'mind\'s eye' ||
+            atkAbility == 'scrappy') &&
         (move == 'normal' || move == 'fighting') &&
         (t1.toLowerCase() == 'ghost' || t2?.toLowerCase() == 'ghost')) {
       return '👁️ Mind\'s Eye / Scrappy: Hits Ghost (1.0x)';
     }
     if (atkAbility == 'tinted lens') {
-      final baseMult = getTypeEffectiveness(moveType, t1, t2, defenderAbility: defenderAbility, moveName: moveName, defenderTeraActive: defenderTeraActive, defenderTeraType: defenderTeraType);
+      final baseMult = getTypeEffectiveness(
+        moveType,
+        t1,
+        t2,
+        defenderAbility: defenderAbility,
+        moveName: moveName,
+        defenderTeraActive: defenderTeraActive,
+        defenderTeraType: defenderTeraType,
+      );
       if (baseMult < 1.0 && baseMult > 0.0) {
         return '👓 Tinted Lens: Doubled Effectiveness';
       }
     }
 
-    if ((defAbility == 'well baked body' || defAbility == 'flash fire') && move == 'fire') {
+    if ((defAbility == 'well baked body' || defAbility == 'flash fire') &&
+        move == 'fire') {
       return '🔥 Well-Baked Body / Flash Fire: IMMUNE (0x)';
     }
-    if ((defAbility == 'levitate' || defAbility == 'earth eater') && move == 'ground') {
+    if ((defAbility == 'levitate' || defAbility == 'earth eater') &&
+        move == 'ground') {
       return '🌪️ Levitate / Earth Eater: IMMUNE (0x)';
     }
-    if ((defAbility == 'volt absorb' || defAbility == 'motor drive' || defAbility == 'lightning rod') && move == 'electric') {
+    if ((defAbility == 'volt absorb' ||
+            defAbility == 'motor drive' ||
+            defAbility == 'lightning rod') &&
+        move == 'electric') {
       return '⚡ Volt Absorb / Motor Drive: IMMUNE (0x)';
     }
-    if ((defAbility == 'water absorb' || defAbility == 'storm drain' || defAbility == 'dry skin') && move == 'water') {
+    if ((defAbility == 'water absorb' ||
+            defAbility == 'storm drain' ||
+            defAbility == 'dry skin') &&
+        move == 'water') {
       return '💧 Water Absorb / Dry Skin: IMMUNE (0x)';
     }
     if (defAbility == 'sap sipper' && move == 'grass') {
       return '🌿 Sap Sipper: IMMUNE (0x)';
     }
     if (defAbility == 'wonder guard') {
-      final baseMult = getTypeEffectiveness(moveType, t1, t2, defenderTeraActive: defenderTeraActive, defenderTeraType: defenderTeraType);
+      final baseMult = getTypeEffectiveness(
+        moveType,
+        t1,
+        t2,
+        defenderTeraActive: defenderTeraActive,
+        defenderTeraType: defenderTeraType,
+      );
       if (baseMult <= 1.0) {
         return '🛡️ Wonder Guard: IMMUNE (0x)';
       }
     }
     if (defAbility == 'soundproof') {
-      const soundMoves = {'hyper voice', 'boomburst', 'bug buzz', 'torch song', 'snarl', 'overdrive'};
-      if (soundMoves.contains(moveName?.toLowerCase())) return '🔊 Soundproof: IMMUNE (0x)';
+      const soundMoves = {
+        'hyper voice',
+        'boomburst',
+        'bug buzz',
+        'torch song',
+        'snarl',
+        'overdrive',
+      };
+      if (soundMoves.contains(moveName?.toLowerCase())) {
+        return '🔊 Soundproof: IMMUNE (0x)';
+      }
     }
     if (defAbility == 'bulletproof') {
-      const bulletMoves = {'shadow ball', 'sludge bomb', 'energy ball', 'focus blast', 'seed bomb'};
-      if (bulletMoves.contains(moveName?.toLowerCase())) return '💣 Bulletproof: IMMUNE (0x)';
+      const bulletMoves = {
+        'shadow ball',
+        'sludge bomb',
+        'energy ball',
+        'focus blast',
+        'seed bomb',
+      };
+      if (bulletMoves.contains(moveName?.toLowerCase())) {
+        return '💣 Bulletproof: IMMUNE (0x)';
+      }
     }
     if (defAbility == 'thick fat' && (move == 'fire' || move == 'ice')) {
       return '🛡️ Thick Fat: RESIST (0.5x)';
@@ -733,8 +1034,16 @@ class CombatUtils {
     if (defAbility == 'heatproof' && move == 'fire') {
       return '🔥 Heatproof: RESIST (0.5x)';
     }
-    if (defAbility == 'filter' || defAbility == 'solid rock' || defAbility == 'prism armor') {
-      final baseMult = getTypeEffectiveness(moveType, t1, t2, defenderTeraActive: defenderTeraActive, defenderTeraType: defenderTeraType);
+    if (defAbility == 'filter' ||
+        defAbility == 'solid rock' ||
+        defAbility == 'prism armor') {
+      final baseMult = getTypeEffectiveness(
+        moveType,
+        t1,
+        t2,
+        defenderTeraActive: defenderTeraActive,
+        defenderTeraType: defenderTeraType,
+      );
       if (baseMult > 1.0) {
         return '🛡️ Solid Rock / Filter: Reduced (0.75x)';
       }

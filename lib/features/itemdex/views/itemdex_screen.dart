@@ -25,7 +25,7 @@ class ItemDexScreen extends ConsumerStatefulWidget {
 class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
-  
+
   // Filters
   String? _selectedCategory;
   String? _selectedSubcategory;
@@ -51,8 +51,20 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
   int _totalToDownload = 0;
 
   static const List<String> _keywords = [
-    'Heal', 'Boost', 'Attack', 'Defense', 'Speed', 'Evolve', 'Catch', 'Recovers',
-    'Stat', 'Critical', 'EXP', 'Money', 'Accuracy', 'Immunity'
+    'Heal',
+    'Boost',
+    'Attack',
+    'Defense',
+    'Speed',
+    'Evolve',
+    'Catch',
+    'Recovers',
+    'Stat',
+    'Critical',
+    'EXP',
+    'Money',
+    'Accuracy',
+    'Immunity',
   ];
 
   @override
@@ -101,98 +113,144 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
     final list = <ActiveFilterItem>[];
 
     if (_selectedCategory != null) {
-      list.add(ActiveFilterItem(
-        label: 'Cat: $_selectedCategory',
-        onDeleted: () => setState(() => _selectedCategory = null),
-      ));
+      list.add(
+        ActiveFilterItem(
+          label: 'Cat: $_selectedCategory',
+          onDeleted: () => setState(() => _selectedCategory = null),
+        ),
+      );
     }
     if (_selectedSubcategory != null) {
-      list.add(ActiveFilterItem(
-        label: 'Subcat: $_selectedSubcategory',
-        onDeleted: () => setState(() => _selectedSubcategory = null),
-      ));
+      list.add(
+        ActiveFilterItem(
+          label: 'Subcat: $_selectedSubcategory',
+          onDeleted: () => setState(() => _selectedSubcategory = null),
+        ),
+      );
     }
     if (_selectedTag != null) {
-      list.add(ActiveFilterItem(
-        label: 'Tag: $_selectedTag',
-        onDeleted: () => setState(() => _selectedTag = null),
-      ));
+      list.add(
+        ActiveFilterItem(
+          label: 'Tag: $_selectedTag',
+          onDeleted: () => setState(() => _selectedTag = null),
+        ),
+      );
     }
     if (_filterHeldItem) {
-      list.add(ActiveFilterItem(label: 'Held Items', onDeleted: () => setState(() => _filterHeldItem = false)));
+      list.add(
+        ActiveFilterItem(
+          label: 'Held Items',
+          onDeleted: () => setState(() => _filterHeldItem = false),
+        ),
+      );
     }
     if (_filterBattleItem) {
-      list.add(ActiveFilterItem(label: 'Battle Items', onDeleted: () => setState(() => _filterBattleItem = false)));
+      list.add(
+        ActiveFilterItem(
+          label: 'Battle Items',
+          onDeleted: () => setState(() => _filterBattleItem = false),
+        ),
+      );
     }
     if (_filterEvolutionItem) {
-      list.add(ActiveFilterItem(label: 'Evolution Items', onDeleted: () => setState(() => _filterEvolutionItem = false)));
+      list.add(
+        ActiveFilterItem(
+          label: 'Evolution Items',
+          onDeleted: () => setState(() => _filterEvolutionItem = false),
+        ),
+      );
     }
     if (_filterDLCItem) {
-      list.add(ActiveFilterItem(label: 'DLC Items', onDeleted: () => setState(() => _filterDLCItem = false)));
+      list.add(
+        ActiveFilterItem(
+          label: 'DLC Items',
+          onDeleted: () => setState(() => _filterDLCItem = false),
+        ),
+      );
     }
     if (_filterMCAvailable) {
-      list.add(ActiveFilterItem(
-        label: 'Available in M-C',
-        onDeleted: () => setState(() => _filterMCAvailable = false),
-      ));
+      list.add(
+        ActiveFilterItem(
+          label: 'Available in M-C',
+          onDeleted: () => setState(() => _filterMCAvailable = false),
+        ),
+      );
     }
     if (_filterNewInMC) {
-      list.add(ActiveFilterItem(
-        label: 'New to M-C',
-        onDeleted: () => setState(() => _filterNewInMC = false),
-      ));
+      list.add(
+        ActiveFilterItem(
+          label: 'New to M-C',
+          onDeleted: () => setState(() => _filterNewInMC = false),
+        ),
+      );
     }
     if (_filterChampionsOrigin) {
-      list.add(ActiveFilterItem(
-        label: 'Champions-origin item',
-        onDeleted: () => setState(() => _filterChampionsOrigin = false),
-      ));
+      list.add(
+        ActiveFilterItem(
+          label: 'Champions-origin item',
+          onDeleted: () => setState(() => _filterChampionsOrigin = false),
+        ),
+      );
     }
     if (_filterLegendsZAItem) {
-      list.add(ActiveFilterItem(label: 'Legends Z-A', onDeleted: () => setState(() => _filterLegendsZAItem = false)));
+      list.add(
+        ActiveFilterItem(
+          label: 'Legends Z-A',
+          onDeleted: () => setState(() => _filterLegendsZAItem = false),
+        ),
+      );
     }
     if (_includeAliases) {
-      list.add(ActiveFilterItem(
-        label: 'Include item aliases',
-        onDeleted: () => setState(() => _includeAliases = false),
-      ));
+      list.add(
+        ActiveFilterItem(
+          label: 'Include item aliases',
+          onDeleted: () => setState(() => _includeAliases = false),
+        ),
+      );
     }
     if (_selectedEffectKeyword != null) {
-      list.add(ActiveFilterItem(
-        label: 'Effect: $_selectedEffectKeyword',
-        onDeleted: () => setState(() => _selectedEffectKeyword = null),
-      ));
+      list.add(
+        ActiveFilterItem(
+          label: 'Effect: $_selectedEffectKeyword',
+          onDeleted: () => setState(() => _selectedEffectKeyword = null),
+        ),
+      );
     }
     if (_sortOption != 'name_asc') {
-      list.add(ActiveFilterItem(
-        label: 'Sort: ${_sortOption.replaceAll('_', ' ')}',
-        onDeleted: () => setState(() => _sortOption = 'name_asc'),
-      ));
+      list.add(
+        ActiveFilterItem(
+          label: 'Sort: ${_sortOption.replaceAll('_', ' ')}',
+          onDeleted: () => setState(() => _sortOption = 'name_asc'),
+        ),
+      );
     }
 
     return list;
   }
 
   void _openFilterSheet(List<ItemDexEntry> allItems) {
-    final categories = allItems
-        .map((item) => item.category.trim())
-        .where((value) => value.isNotEmpty)
-        .toSet()
-        .toList()
-      ..sort();
-    final subcategories = allItems
-        .map((item) => item.subcategory.trim())
-        .where((value) => value.isNotEmpty)
-        .toSet()
-        .toList()
-      ..sort();
-    final tags = allItems
-        .expand((item) => item.tags)
-        .map((tag) => tag.trim())
-        .where((value) => value.isNotEmpty)
-        .toSet()
-        .toList()
-      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    final categories =
+        allItems
+            .map((item) => item.category.trim())
+            .where((value) => value.isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort();
+    final subcategories =
+        allItems
+            .map((item) => item.subcategory.trim())
+            .where((value) => value.isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort();
+    final tags =
+        allItems
+            .expand((item) => item.tags)
+            .map((tag) => tag.trim())
+            .where((value) => value.isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
     final hasDlcProvenance = allItems.any((item) => item.isDLCItem);
     final hasChampionsProvenance = allItems.any((item) => item.isChampionsItem);
     final hasAliases = allItems.any((item) => item.isAlias);
@@ -249,63 +307,115 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
                   const SizedBox(height: 20),
 
                   // Battle properties
-                  const Text('ITEM TYPES', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
+                  const Text(
+                    'ITEM TYPES',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.grey,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF141414) : const Color(0xFFF7FAFC),
+                      color: isDark
+                          ? const Color(0xFF141414)
+                          : const Color(0xFFF7FAFC),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE2E8F0)),
+                      border: Border.all(
+                        color: isDark
+                            ? const Color(0xFF222222)
+                            : const Color(0xFFE2E8F0),
+                      ),
                     ),
                     child: Column(
                       children: [
-                        _buildSwitchRow('Held item compatibility', _filterHeldItem, (val) {
-                          setState(() => _filterHeldItem = val);
-                          setModalState(() {});
-                        }),
-                        _buildSwitchRow('Usable in battle', _filterBattleItem, (val) {
+                        _buildSwitchRow(
+                          'Held item compatibility',
+                          _filterHeldItem,
+                          (val) {
+                            setState(() => _filterHeldItem = val);
+                            setModalState(() {});
+                          },
+                        ),
+                        _buildSwitchRow('Usable in battle', _filterBattleItem, (
+                          val,
+                        ) {
                           setState(() => _filterBattleItem = val);
                           setModalState(() {});
                         }),
-                        _buildSwitchRow('Evolution items', _filterEvolutionItem, (val) {
-                          setState(() => _filterEvolutionItem = val);
-                          setModalState(() {});
-                        }),
-                        if (hasDlcProvenance)
-                          _buildSwitchRow('Scarlet/Violet DLC', _filterDLCItem, (val) {
-                            setState(() => _filterDLCItem = val);
+                        _buildSwitchRow(
+                          'Evolution items',
+                          _filterEvolutionItem,
+                          (val) {
+                            setState(() => _filterEvolutionItem = val);
                             setModalState(() {});
-                          }),
-                        _buildSwitchRow('Available in Regulation M-C', _filterMCAvailable, (val) {
-                          setState(() => _filterMCAvailable = val);
-                          setModalState(() {});
-                        }),
-                        _buildSwitchRow('Newly added to M-C', _filterNewInMC, (val) {
+                          },
+                        ),
+                        if (hasDlcProvenance)
+                          _buildSwitchRow(
+                            'Scarlet/Violet DLC',
+                            _filterDLCItem,
+                            (val) {
+                              setState(() => _filterDLCItem = val);
+                              setModalState(() {});
+                            },
+                          ),
+                        _buildSwitchRow(
+                          'Available in Regulation M-C',
+                          _filterMCAvailable,
+                          (val) {
+                            setState(() => _filterMCAvailable = val);
+                            setModalState(() {});
+                          },
+                        ),
+                        _buildSwitchRow('Newly added to M-C', _filterNewInMC, (
+                          val,
+                        ) {
                           setState(() => _filterNewInMC = val);
                           setModalState(() {});
                         }),
                         if (hasChampionsProvenance)
-                          _buildSwitchRow('Champions-origin items', _filterChampionsOrigin, (val) {
-                            setState(() => _filterChampionsOrigin = val);
+                          _buildSwitchRow(
+                            'Champions-origin items',
+                            _filterChampionsOrigin,
+                            (val) {
+                              setState(() => _filterChampionsOrigin = val);
+                              setModalState(() {});
+                            },
+                          ),
+                        _buildSwitchRow(
+                          'Legends: Z-A origin',
+                          _filterLegendsZAItem,
+                          (val) {
+                            setState(() => _filterLegendsZAItem = val);
                             setModalState(() {});
-                          }),
-                        _buildSwitchRow('Legends: Z-A origin', _filterLegendsZAItem, (val) {
-                          setState(() => _filterLegendsZAItem = val);
-                          setModalState(() {});
-                        }),
+                          },
+                        ),
                         if (hasAliases)
-                          _buildSwitchRow('Include duplicate API aliases', _includeAliases, (val) {
-                            setState(() => _includeAliases = val);
-                            setModalState(() {});
-                          }),
+                          _buildSwitchRow(
+                            'Include duplicate API aliases',
+                            _includeAliases,
+                            (val) {
+                              setState(() => _includeAliases = val);
+                              setModalState(() {});
+                            },
+                          ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 20),
 
                   // Keywords
-                  const Text('EFFECT KEYWORDS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
+                  const Text(
+                    'EFFECT KEYWORDS',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.grey,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 6,
@@ -313,11 +423,19 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
                     children: _keywords.map((key) {
                       final isSel = _selectedEffectKeyword == key;
                       return ChoiceChip(
-                        label: Text(key.toUpperCase(), style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
+                        label: Text(
+                          key.toUpperCase(),
+                          style: const TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         selected: isSel,
                         selectedColor: AppTheme.pokemonRed,
                         onSelected: (selected) {
-                          setState(() { _selectedEffectKeyword = selected ? key : null; });
+                          setState(() {
+                            _selectedEffectKeyword = selected ? key : null;
+                          });
                           setModalState(() {});
                         },
                       );
@@ -329,18 +447,41 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
                   DexSortMenu<String>(
                     currentValue: _sortOption,
                     items: const [
-                      DropdownMenuItem(value: 'name_asc', child: Text('NAME (A - Z)')),
-                      DropdownMenuItem(value: 'name_desc', child: Text('NAME (Z - A)')),
-                      DropdownMenuItem(value: 'category', child: Text('CATEGORY')),
-                      DropdownMenuItem(value: 'generation', child: Text('GENERATION (NEWEST FIRST)')),
+                      DropdownMenuItem(
+                        value: 'name_asc',
+                        child: Text('NAME (A - Z)'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'name_desc',
+                        child: Text('NAME (Z - A)'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'category',
+                        child: Text('CATEGORY'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'generation',
+                        child: Text('GENERATION (NEWEST FIRST)'),
+                      ),
                       DropdownMenuItem(value: 'id', child: Text('ITEM ID')),
-                      DropdownMenuItem(value: 'held_first', child: Text('HELD ITEMS FIRST')),
-                      DropdownMenuItem(value: 'battle_first', child: Text('BATTLE ITEMS FIRST')),
-                      DropdownMenuItem(value: 'evolution_first', child: Text('EVOLUTION ITEMS FIRST')),
+                      DropdownMenuItem(
+                        value: 'held_first',
+                        child: Text('HELD ITEMS FIRST'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'battle_first',
+                        child: Text('BATTLE ITEMS FIRST'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'evolution_first',
+                        child: Text('EVOLUTION ITEMS FIRST'),
+                      ),
                     ],
                     onChanged: (val) {
                       if (val != null) {
-                        setState(() { _sortOption = val; });
+                        setState(() {
+                          _sortOption = val;
+                        });
                         setModalState(() {});
                       }
                     },
@@ -348,17 +489,29 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
                   const SizedBox(height: 20),
 
                   // Bulk download settings inside filter panel
-                  const Text('OFFLINE CACHE UTILITIES', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
+                  const Text(
+                    'OFFLINE CACHE UTILITIES',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.grey,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
                       Expanded(
                         child: ElevatedButton.icon(
-                          onPressed: _isDownloadingAll ? null : () {
-                            Navigator.pop(context);
-                            _bulkDownloadIcons(allItems);
-                          },
-                          icon: const Icon(Icons.download_for_offline_rounded, size: 16),
+                          onPressed: _isDownloadingAll
+                              ? null
+                              : () {
+                                  Navigator.pop(context);
+                                  _bulkDownloadIcons(allItems);
+                                },
+                          icon: const Icon(
+                            Icons.download_for_offline_rounded,
+                            size: 16,
+                          ),
                           label: Text(
                             _isDownloadingAll
                                 ? 'Downloading $_processedDownloadCount/$_totalToDownload'
@@ -377,11 +530,18 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
                             await OfflineArtworkStore.instance.deleteAll();
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Offline item artwork cache cleared.')),
+                              const SnackBar(
+                                content: Text(
+                                  'Offline item artwork cache cleared.',
+                                ),
+                              ),
                             );
                             setModalState(() {});
                           },
-                          icon: const Icon(Icons.delete_sweep_rounded, size: 16),
+                          icon: const Icon(
+                            Icons.delete_sweep_rounded,
+                            size: 16,
+                          ),
                           label: const Text('Clear Cache'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.redAccent,
@@ -399,11 +559,18 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
     );
   }
 
-  Widget _buildSwitchRow(String label, bool value, ValueChanged<bool> onChanged) {
+  Widget _buildSwitchRow(
+    String label,
+    bool value,
+    ValueChanged<bool> onChanged,
+  ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        ),
         Switch(
           value: value,
           activeThumbColor: AppTheme.pokemonRed,
@@ -421,7 +588,7 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
     required ValueChanged<String?> onChanged,
   }) {
     return DropdownButtonFormField<String>(
-      value: selectedValue ?? '',
+      initialValue: selectedValue ?? '',
       isExpanded: true,
       decoration: InputDecoration(
         labelText: label,
@@ -437,7 +604,8 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
           ),
         ),
       ],
-      onChanged: (value) => onChanged(value == null || value.isEmpty ? null : value),
+      onChanged: (value) =>
+          onChanged(value == null || value.isEmpty ? null : value),
     );
   }
 
@@ -504,7 +672,9 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
       final result = processed == total
           ? 'Offline artwork available for $succeeded of $total unique item icons; $failed failed.'
           : 'Bulk download stopped after $processed of $total unique item icons; $succeeded ready, $failed failed.';
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(result)));
     }
   }
 
@@ -517,7 +687,10 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
     return Scaffold(
       backgroundColor: isDark ? Colors.black : const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('ItemDex', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'ItemDex',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
@@ -539,7 +712,9 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
         ],
       ),
       body: itemsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator(color: AppTheme.pokemonRed)),
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: AppTheme.pokemonRed),
+        ),
         error: (error, _) => AppEmptyState(
           icon: Icons.inventory_2_outlined,
           title: 'Item data could not load',
@@ -548,14 +723,17 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
         data: (items) {
           final filtered = items.where((item) {
             final q = _query.trim().toLowerCase();
-            final idQuery = q.replaceFirst(RegExp(r'^(?:#|item\s*)'), '').trim();
+            final idQuery = q
+                .replaceFirst(RegExp(r'^(?:#|item\s*)'), '')
+                .trim();
             final matchesId = idQuery == item.id.toString();
             // Keep the duplicate upstream Roseli stub in the bundled data, but
             // hide it in ordinary browsing. It remains discoverable by ID or
             // by enabling the aliases filter.
             if (item.isAlias && !_includeAliases && !matchesId) return false;
             if (q.isNotEmpty) {
-              final matchesQuery = item.name.toLowerCase().contains(q) ||
+              final matchesQuery =
+                  item.name.toLowerCase().contains(q) ||
                   item.category.toLowerCase().contains(q) ||
                   item.subcategory.toLowerCase().contains(q) ||
                   item.tags.any((tag) => tag.toLowerCase().contains(q)) ||
@@ -564,15 +742,21 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
             }
 
             if (_selectedCategory != null &&
-                item.category.trim().toLowerCase() != _selectedCategory!.trim().toLowerCase()) {
+                item.category.trim().toLowerCase() !=
+                    _selectedCategory!.trim().toLowerCase()) {
               return false;
             }
             if (_selectedSubcategory != null &&
-                item.subcategory.trim().toLowerCase() != _selectedSubcategory!.trim().toLowerCase()) {
+                item.subcategory.trim().toLowerCase() !=
+                    _selectedSubcategory!.trim().toLowerCase()) {
               return false;
             }
             if (_selectedTag != null &&
-                !item.tags.any((tag) => tag.trim().toLowerCase() == _selectedTag!.trim().toLowerCase())) {
+                !item.tags.any(
+                  (tag) =>
+                      tag.trim().toLowerCase() ==
+                      _selectedTag!.trim().toLowerCase(),
+                )) {
               return false;
             }
 
@@ -580,16 +764,24 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
             if (_filterBattleItem && !item.isBattleItem) return false;
             if (_filterEvolutionItem && !item.isEvolutionItem) return false;
             if (_filterDLCItem && !item.isDLCItem) return false;
-            if (_filterMCAvailable && !(regulation?.isItemAvailable(item.id) ?? false)) return false;
-            if (_filterNewInMC && !(regulation?.isNewItem(item.id) ?? false)) return false;
+            if (_filterMCAvailable &&
+                !(regulation?.isItemAvailable(item.id) ?? false)) {
+              return false;
+            }
+            if (_filterNewInMC && !(regulation?.isNewItem(item.id) ?? false)) {
+              return false;
+            }
             if (_filterChampionsOrigin && !item.isChampionsItem) return false;
             if (_filterLegendsZAItem && !item.isLegendsZAItem) return false;
 
             if (_selectedEffectKeyword != null) {
-              final text = ('${item.name} ${item.category} ${item.subcategory} '
-                      '${item.shortEffect} ${item.description} ${item.tags.join(' ')}')
-                  .toLowerCase();
-              if (!text.contains(_selectedEffectKeyword!.toLowerCase())) return false;
+              final text =
+                  ('${item.name} ${item.category} ${item.subcategory} '
+                          '${item.shortEffect} ${item.description} ${item.tags.join(' ')}')
+                      .toLowerCase();
+              if (!text.contains(_selectedEffectKeyword!.toLowerCase())) {
+                return false;
+              }
             }
 
             return true;
@@ -640,10 +832,14 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
                 searchHint: 'Search items, tags, or roles...',
                 initialSearchValue: _query,
                 onSearchChanged: (val) {
-                  setState(() { _query = val; });
+                  setState(() {
+                    _query = val;
+                  });
                 },
                 onClearSearch: () {
-                  setState(() { _query = ''; });
+                  setState(() {
+                    _query = '';
+                  });
                 },
                 onFilterPressed: () => _openFilterSheet(items),
                 hasActiveFilters: _hasActiveFilters,
@@ -662,16 +858,23 @@ class _ItemDexScreenState extends ConsumerState<ItemDexScreen> {
                     ? const AppEmptyState(
                         icon: Icons.search_off_rounded,
                         title: 'No items found',
-                        message: 'Try a broader search such as “recovery”, “choice”, “weather”, or “damage”.',
+                        message:
+                            'Try a broader search such as “recovery”, “choice”, “weather”, or “damage”.',
                       )
                     : ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 8, AppSpacing.pagePadding, AppSpacing.bottomScrollPadding),
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.pagePadding,
+                          8,
+                          AppSpacing.pagePadding,
+                          AppSpacing.bottomScrollPadding,
+                        ),
                         itemCount: filtered.length,
                         itemBuilder: (context, index) {
                           final item = filtered[index];
                           return _ItemCard(
                             item: item,
-                            mCAvailable: regulation?.isItemAvailable(item.id) ?? false,
+                            mCAvailable:
+                                regulation?.isItemAvailable(item.id) ?? false,
                             newInMC: regulation?.isNewItem(item.id) ?? false,
                           );
                         },
@@ -713,7 +916,9 @@ class _ItemCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF121212) : Colors.white,
               borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: accent.withValues(alpha: isDark ? 0.35 : 0.20)),
+              border: Border.all(
+                color: accent.withValues(alpha: isDark ? 0.35 : 0.20),
+              ),
             ),
             child: Row(
               children: [
@@ -742,24 +947,40 @@ class _ItemCard extends StatelessWidget {
                               item.name,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
+                              ),
                             ),
                           ),
                           if (mCAvailable) ...[
                             const SizedBox(width: 6),
-                            const ContentBadge.mC(tooltip: 'Available in Regulation M-C'),
+                            const ContentBadge.mC(
+                              tooltip: 'Available in Regulation M-C',
+                            ),
                           ],
                           if (newInMC) ...[
                             const SizedBox(width: 4),
-                            const ContentBadge.mC(isNew: true, tooltip: 'Newly added to Regulation M-C'),
+                            const ContentBadge.mC(
+                              isNew: true,
+                              tooltip: 'Newly added to Regulation M-C',
+                            ),
                           ],
                           if (item.isChampionsItem) ...[
                             const SizedBox(width: 4),
-                            const ContentBadge(label: 'CHAMP', color: Colors.orangeAccent, tooltip: 'Champions-origin item'),
+                            const ContentBadge(
+                              label: 'CHAMP',
+                              color: Colors.orangeAccent,
+                              tooltip: 'Champions-origin item',
+                            ),
                           ],
                           if (item.isLegendsZAItem) ...[
                             const SizedBox(width: 4),
-                            const ContentBadge(label: 'LZA', color: Colors.purpleAccent, tooltip: 'Legends: Z-A item'),
+                            const ContentBadge(
+                              label: 'LZA',
+                              color: Colors.purpleAccent,
+                              tooltip: 'Legends: Z-A item',
+                            ),
                           ],
                           if (item.isDLCItem) ...[
                             const SizedBox(width: 4),
@@ -776,7 +997,8 @@ class _ItemCard extends StatelessWidget {
                             ContentBadge(
                               label: 'ALIAS',
                               color: Colors.blueGrey,
-                              tooltip: 'Upstream alias of item #${item.aliasOf}; the source row is preserved.',
+                              tooltip:
+                                  'Upstream alias of item #${item.aliasOf}; the source row is preserved.',
                             ),
                           ],
                         ],
@@ -786,7 +1008,10 @@ class _ItemCard extends StatelessWidget {
                         item.shortEffect,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], height: 1.25),
+                        style: TextStyle(
+                          color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          height: 1.25,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Wrap(
@@ -795,7 +1020,10 @@ class _ItemCard extends StatelessWidget {
                         children: [
                           _Tag(label: item.category, color: accent),
                           _Tag(label: item.subcategory, color: accent),
-                          _Tag(label: item.introducedIn, color: Colors.blueGrey),
+                          _Tag(
+                            label: item.introducedIn,
+                            color: Colors.blueGrey,
+                          ),
                         ],
                       ),
                     ],
@@ -818,9 +1046,14 @@ class _ItemCard extends StatelessWidget {
       barrierDismissible: true,
       builder: (context) {
         return Dialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 24,
+          ),
           backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 480),
             child: Padding(
@@ -845,7 +1078,10 @@ class _ItemCard extends StatelessWidget {
                       Container(
                         width: 56,
                         height: 56,
-                        decoration: BoxDecoration(color: accent.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(18)),
+                        decoration: BoxDecoration(
+                          color: accent.withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(18),
+                        ),
                         child: ItemArtworkIcon(
                           imageUrl: item.iconUrl,
                           accent: accent,
@@ -857,23 +1093,52 @@ class _ItemCard extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(item.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
+                            Text(
+                              item.name,
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
                             const SizedBox(height: 4),
-                            Text('#${item.id} · ${item.category} · ${item.subcategory} · ${item.introducedIn}', style: TextStyle(color: accent, fontWeight: FontWeight.w800)),
-                            if (mCAvailable || newInMC || item.isChampionsItem || item.isLegendsZAItem || item.isDLCItem || item.isAlias) ...[
+                            Text(
+                              '#${item.id} · ${item.category} · ${item.subcategory} · ${item.introducedIn}',
+                              style: TextStyle(
+                                color: accent,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            if (mCAvailable ||
+                                newInMC ||
+                                item.isChampionsItem ||
+                                item.isLegendsZAItem ||
+                                item.isDLCItem ||
+                                item.isAlias) ...[
                               const SizedBox(height: 6),
                               Wrap(
                                 spacing: 6,
                                 runSpacing: 4,
                                 children: [
                                   if (mCAvailable)
-                                    const ContentBadge.mC(tooltip: 'Available in Regulation M-C'),
+                                    const ContentBadge.mC(
+                                      tooltip: 'Available in Regulation M-C',
+                                    ),
                                   if (newInMC)
-                                    const ContentBadge.mC(isNew: true, tooltip: 'Newly added to Regulation M-C'),
+                                    const ContentBadge.mC(
+                                      isNew: true,
+                                      tooltip: 'Newly added to Regulation M-C',
+                                    ),
                                   if (item.isChampionsItem)
-                                    const ContentBadge(label: 'CHAMP', color: Colors.orangeAccent, tooltip: 'Champions-origin item'),
+                                    const ContentBadge(
+                                      label: 'CHAMP',
+                                      color: Colors.orangeAccent,
+                                      tooltip: 'Champions-origin item',
+                                    ),
                                   if (item.isLegendsZAItem)
-                                    const ContentBadge(label: 'LZA', color: Colors.purpleAccent),
+                                    const ContentBadge(
+                                      label: 'LZA',
+                                      color: Colors.purpleAccent,
+                                    ),
                                   if (item.isDLCItem)
                                     ContentBadge(
                                       label: 'DLC',
@@ -896,11 +1161,30 @@ class _ItemCard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 18),
-                  Text(item.shortEffect, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, height: 1.35)),
+                  Text(
+                    item.shortEffect,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      height: 1.35,
+                    ),
+                  ),
                   const SizedBox(height: 10),
-                  Text(item.description, style: TextStyle(color: isDark ? Colors.grey[300] : Colors.grey[700], height: 1.45)),
+                  Text(
+                    item.description,
+                    style: TextStyle(
+                      color: isDark ? Colors.grey[300] : Colors.grey[700],
+                      height: 1.45,
+                    ),
+                  ),
                   const SizedBox(height: 16),
-                  Wrap(spacing: 8, runSpacing: 8, children: item.tags.map((tag) => _Tag(label: tag, color: accent)).toList()),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: item.tags
+                        .map((tag) => _Tag(label: tag, color: accent))
+                        .toList(),
+                  ),
                 ],
               ),
             ),
@@ -921,8 +1205,18 @@ class _Tag extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.13), borderRadius: BorderRadius.circular(9)),
-      child: Text(label, style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 11)),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.13),
+        borderRadius: BorderRadius.circular(9),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w900,
+          fontSize: 11,
+        ),
+      ),
     );
   }
 }

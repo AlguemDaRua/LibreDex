@@ -6,7 +6,12 @@ class StatTile extends StatelessWidget {
   final String label;
   final String value;
   final String sub;
-  const StatTile({super.key, required this.label, required this.value, required this.sub});
+  const StatTile({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.sub,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -16,14 +21,44 @@ class StatTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF141414) : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0),
+        ),
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey, letterSpacing: 0.5)),
-        const SizedBox(height: 4),
-        Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: AppTheme.pokemonRed), maxLines: 1, overflow: TextOverflow.ellipsis),
-        Text(sub, style: TextStyle(fontSize: 10, color: isDark ? Colors.grey[400] : Colors.grey[600]), maxLines: 1, overflow: TextOverflow.ellipsis),
-      ]),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              color: Colors.grey,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+              color: AppTheme.pokemonRed,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          Text(
+            sub,
+            style: TextStyle(
+              fontSize: 10,
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -41,12 +76,30 @@ class MiniStat extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF141414) : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0),
+        ),
       ),
-      child: Column(children: [
-        Text(label, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Colors.grey)),
-        Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: AppTheme.pokemonRed)),
-      ]),
+      child: Column(
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.w900,
+              color: Colors.grey,
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+              color: AppTheme.pokemonRed,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

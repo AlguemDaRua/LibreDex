@@ -24,9 +24,8 @@ class LibreDexApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
-      builder: (context, child) => WavyThemeTransition(
-        child: child ?? const SizedBox.shrink(),
-      ),
+      builder: (context, child) =>
+          WavyThemeTransition(child: child ?? const SizedBox.shrink()),
       home: const StartupGate(),
     );
   }
@@ -119,7 +118,7 @@ class _StartupScreen extends StatelessWidget {
                 hasError
                     ? error!
                     : 'Preparing the local reference database. Artwork and up-to-date evolution '
-                        'details load online when a connection is available.',
+                          'details load online when a connection is available.',
                 style: TextStyle(
                   fontSize: 13,
                   height: 1.5,

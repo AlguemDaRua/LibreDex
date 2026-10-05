@@ -4,7 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final evYieldDatasetProvider = FutureProvider<Map<int, EvYieldFacts>>((ref) async {
+final evYieldDatasetProvider = FutureProvider<Map<int, EvYieldFacts>>((
+  ref,
+) async {
   final raw = await rootBundle.loadString('assets/data/pokemon_ev_yields.json');
   return compute(_decodeEvYields, raw);
 });
@@ -12,7 +14,10 @@ final evYieldDatasetProvider = FutureProvider<Map<int, EvYieldFacts>>((ref) asyn
 Map<int, EvYieldFacts> _decodeEvYields(String raw) {
   final json = jsonDecode(raw) as Map<String, dynamic>;
   return json.map((key, value) {
-    return MapEntry(int.parse(key), EvYieldFacts.fromJson(value as Map<String, dynamic>));
+    return MapEntry(
+      int.parse(key),
+      EvYieldFacts.fromJson(value as Map<String, dynamic>),
+    );
   });
 }
 

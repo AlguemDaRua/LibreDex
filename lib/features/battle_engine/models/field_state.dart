@@ -11,7 +11,8 @@ class FieldState {
   final bool trickRoomActive;
   final bool defenderProtected;
   final bool isDoubleBattle;
-  final Set<String> activeRuinAbilities; // 'Tablets of Ruin', 'Sword of Ruin', etc.
+  final Set<String>
+  activeRuinAbilities; // 'Tablets of Ruin', 'Sword of Ruin', etc.
 
   const FieldState({
     this.weather = 'none',
@@ -48,7 +49,8 @@ class FieldState {
       trickRoomActive: trickRoomActive ?? this.trickRoomActive,
       defenderProtected: defenderProtected ?? this.defenderProtected,
       isDoubleBattle: isDoubleBattle ?? this.isDoubleBattle,
-      activeRuinAbilities: activeRuinAbilities ?? Set.from(this.activeRuinAbilities),
+      activeRuinAbilities:
+          activeRuinAbilities ?? Set.from(this.activeRuinAbilities),
     );
   }
 }

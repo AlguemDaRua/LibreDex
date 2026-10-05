@@ -134,16 +134,17 @@ class OfflineArtworkStore {
     if (inFlight != null) return inFlight;
 
     late final Future<void> task;
-    task = _downloadArtwork(
-      sourceUrl: sourceUrl,
-      remoteUrl: remoteUrl,
-      quality: quality,
-    ).whenComplete(() {
-      if (identical(_downloads[sourceUrl], task)) {
-        _downloads.remove(sourceUrl);
-        _downloadTokens.remove(sourceUrl);
-      }
-    });
+    task =
+        _downloadArtwork(
+          sourceUrl: sourceUrl,
+          remoteUrl: remoteUrl,
+          quality: quality,
+        ).whenComplete(() {
+          if (identical(_downloads[sourceUrl], task)) {
+            _downloads.remove(sourceUrl);
+            _downloadTokens.remove(sourceUrl);
+          }
+        });
     _downloads[sourceUrl] = task;
     return task;
   }
@@ -210,7 +211,8 @@ class OfflineArtworkStore {
     if (urls.isEmpty) return false;
     for (final url in urls) {
       final record = _records[url];
-      if (record != null && await File(p.join(_directory.path, record.fileName)).exists()) {
+      if (record != null &&
+          await File(p.join(_directory.path, record.fileName)).exists()) {
         return true;
       }
     }
@@ -331,8 +333,8 @@ class _OfflineArtworkRecord {
   final String quality;
 
   Map<String, dynamic> toJson() => {
-        'fileName': fileName,
-        'bytes': bytes,
-        'quality': quality,
-      };
+    'fileName': fileName,
+    'bytes': bytes,
+    'quality': quality,
+  };
 }

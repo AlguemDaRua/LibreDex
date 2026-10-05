@@ -52,7 +52,10 @@ class DexFilterSheet extends StatelessWidget {
                         if (hasActiveFilters) ...[
                           const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.orangeAccent,
                               borderRadius: BorderRadius.circular(12),

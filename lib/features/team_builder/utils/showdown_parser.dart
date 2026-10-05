@@ -22,7 +22,10 @@ class ShowdownParser {
   }
 
   /// Parses a raw Pokémon Showdown paste block into a list of [Pokemon] database objects.
-  static Future<List<Pokemon?>> parseShowdownText(String text, AppDatabase db) async {
+  static Future<List<Pokemon?>> parseShowdownText(
+    String text,
+    AppDatabase db,
+  ) async {
     final List<Pokemon?> slots = List<Pokemon?>.filled(6, null);
     if (text.trim().isEmpty) return slots;
 
@@ -90,7 +93,10 @@ class ShowdownParser {
     // 1. Direct name match
     for (final p in catalog) {
       final pClean = p.name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
-      final pFormClean = p.form.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+      final pFormClean = p.form.toLowerCase().replaceAll(
+        RegExp(r'[^a-z0-9]'),
+        '',
+      );
 
       // Check combined name-form e.g. ninetalesalola
       if ('$pClean$pFormClean' == cleanQuery) {

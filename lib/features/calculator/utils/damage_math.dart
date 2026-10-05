@@ -65,7 +65,8 @@ class DamageMath {
     }
 
     // getBaseDamage() from the Pokémon Showdown calculator / Gen IX engine.
-    var base = (((((2 * level) ~/ 5) + 2) * basePower * attack) ~/ defense) ~/ 50 + 2;
+    var base =
+        (((((2 * level) ~/ 5) + 2) * basePower * attack) ~/ defense) ~/ 50 + 2;
     base = _fixedModifier(base, _modifierFromDouble(weather));
     // Gen IX Parental Bond's second strike is 25% of the base damage,
     // before random/STAB/type/final modifiers are applied.
@@ -111,22 +112,40 @@ class DamageMath {
     final perHit = <DamageRange>[
       for (final bp in powers)
         calculate(
-          level: level, basePower: bp, attack: attack, defense: defense,
-          stab: stab, effectiveness: effectiveness, critical: critical,
-          weather: weather, burned: burned, finalModifiers: finalModifiers,
+          level: level,
+          basePower: bp,
+          attack: attack,
+          defense: defense,
+          stab: stab,
+          effectiveness: effectiveness,
+          critical: critical,
+          weather: weather,
+          burned: burned,
+          finalModifiers: finalModifiers,
         ),
     ];
     if (parentalBond) {
       // Parental Bond adds one child strike for a normally single-hit move.
-      perHit.add(calculate(
-        level: level, basePower: powers.first, attack: attack, defense: defense,
-        stab: stab, effectiveness: effectiveness, critical: critical,
-        weather: weather, burned: burned, finalModifiers: finalModifiers,
-        parentalBondChild: true,
-      ));
+      perHit.add(
+        calculate(
+          level: level,
+          basePower: powers.first,
+          attack: attack,
+          defense: defense,
+          stab: stab,
+          effectiveness: effectiveness,
+          critical: critical,
+          weather: weather,
+          burned: burned,
+          finalModifiers: finalModifiers,
+          parentalBondChild: true,
+        ),
+      );
     }
-    final total = List<int>.generate(16, (i) =>
-        perHit.fold(0, (sum, hit) => sum + hit.rolls[i]));
+    final total = List<int>.generate(
+      16,
+      (i) => perHit.fold(0, (sum, hit) => sum + hit.rolls[i]),
+    );
     return MultiHitDamage(perHit: perHit, total: DamageRange(total));
   }
 }

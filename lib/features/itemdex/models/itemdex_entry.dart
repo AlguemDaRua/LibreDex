@@ -56,16 +56,14 @@ class ItemDexEntry {
 
   /// Regulation eligibility and game origin are separate facts. Only explicit
   /// provenance tags identify an item as having originated in Champions.
-  bool get isChampionsItem => _hasAnyTag(const {
-        'champions',
-        'pokemon champions',
-      });
+  bool get isChampionsItem =>
+      _hasAnyTag(const {'champions', 'pokemon champions'});
 
   bool get isLegendsZAItem => _hasAnyTag(const {
-        'legends za',
-        'pokemon legends za',
-        'pokemon legends z a',
-      });
+    'legends za',
+    'pokemon legends za',
+    'pokemon legends z a',
+  });
 
   List<String> get effectTags => tags;
   List<String> get pokemonRestrictions => const [];
@@ -76,8 +74,8 @@ class ItemDexEntry {
   bool _hasTag(String expected) => _hasAnyTag({expected});
 
   bool _hasAnyTag(Set<String> expected) => tags.any(
-        (tag) => expected.any((value) => _normalized(tag) == _normalized(value)),
-      );
+    (tag) => expected.any((value) => _normalized(tag) == _normalized(value)),
+  );
 
   static String _normalized(String value) => value
       .toLowerCase()
@@ -106,7 +104,8 @@ class ItemDexEntry {
       subcategory: json['subcategory'] as String,
       shortEffect: json['shortEffect'] as String,
       description: json['description'] as String,
-      tags: (json['tags'] as List<dynamic>? ?? const <dynamic>[]).cast<String>(),
+      tags: (json['tags'] as List<dynamic>? ?? const <dynamic>[])
+          .cast<String>(),
       generation: (json['generation'] as num?)?.toInt(),
       dlcSource: json['dlcSource'] as String?,
       aliasOf: (json['aliasOf'] as num?)?.toInt(),

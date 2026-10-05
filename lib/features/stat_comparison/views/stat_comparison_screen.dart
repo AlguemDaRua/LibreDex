@@ -35,9 +35,13 @@ class StatComparisonScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: isDark ? Colors.black : const Color(0xFFF9FAFB),
       appBar: AppBar(
-        title: Text('Stat Comparison', style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor)),
+        title: Text(
+          'Stat Comparison',
+          style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor),
+        ),
         iconTheme: IconThemeData(color: primaryColor),
-        backgroundColor: Colors.transparent, elevation: 0,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         actions: [
           if (!state.isEmpty)
             IconButton(
@@ -48,11 +52,16 @@ class StatComparisonScreen extends ConsumerWidget {
         ],
       ),
       body: pokedexAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator(color: AppTheme.pokemonRed)),
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: AppTheme.pokemonRed),
+        ),
         error: (e, _) => Center(child: Text('Error: $e')),
         data: (pokemonList) => _Body(
-          pokemonList: pokemonList, state: state, vm: vm,
-          isDark: isDark, ref: ref,
+          pokemonList: pokemonList,
+          state: state,
+          vm: vm,
+          isDark: isDark,
+          ref: ref,
         ),
       ),
     );
@@ -67,102 +76,151 @@ class _Body extends StatelessWidget {
   final WidgetRef ref;
 
   const _Body({
-    required this.pokemonList, required this.state, required this.vm,
-    required this.isDark, required this.ref,
+    required this.pokemonList,
+    required this.state,
+    required this.vm,
+    required this.isDark,
+    required this.ref,
   });
 
   @override
   Widget build(BuildContext context) {
     final sorted = state.sortedEntries();
 
-    return CustomScrollView(slivers: [
-      // Ruleset + display mode bar
-      SliverToBoxAdapter(child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, AppSpacing.topContentGap, 16, 0),
-        child: Column(children: [
-          _RulesetBar(state: state, vm: vm, isDark: isDark),
-          const SizedBox(height: 10),
-          _DisplayModeBar(state: state, vm: vm, isDark: isDark),
-        ]),
-      )),
-
-      // Action buttons
-      SliverToBoxAdapter(child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-        child: Wrap(spacing: 8, runSpacing: 8, children: [
-          if (state.count < 6)
-            _ActionChip(
-              icon: Icons.add_rounded, label: 'Add Pokémon',
-              onTap: () => _showPokemonPicker(context),
-            ),
-          _ActionChip(
-            icon: Icons.groups_rounded, label: 'From Team',
-            onTap: () => _loadFromTeam(context),
-          ),
-        ]),
-      )),
-
-      // Pokémon cards
-      if (state.count > 0) SliverToBoxAdapter(
-        child: SizedBox(
-          height: 120,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            itemCount: sorted.length,
-            separatorBuilder: (ctx, i) => const SizedBox(width: 10),
-            itemBuilder: (ctx, i) => _PokemonCard(
-              entry: sorted[i].entry,
-              slotIndex: sorted[i].index,
-              isDark: isDark,
-              onEdit: () => _editEntry(context, sorted[i].index, sorted[i].entry),
-              onRemove: () => vm.removeEntry(sorted[i].index),
-              onDuplicate: state.count < 6 ? () => vm.duplicateEntry(sorted[i].index) : null,
-            ),
-          ),
-        ),
-      ),
-
-      // Comparison table
-      if (sorted.isNotEmpty)
+    return CustomScrollView(
+      slivers: [
+        // Ruleset + display mode bar
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(8, 4, 8, AppSpacing.bottomScrollPadding),
-            child: Card(
-              elevation: 0,
-              color: isDark ? const Color(0xFF121212) : Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-                side: BorderSide(color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE2E8F0)),
-              ),
-              child: ComparisonTable(
-                rows: sorted,
-                sortColumn: state.sortColumn,
-                sortDirection: state.sortDirection,
-                displayMode: state.displayMode,
-                onSort: vm.toggleSort,
-              ),
+            padding: const EdgeInsets.fromLTRB(
+              16,
+              AppSpacing.topContentGap,
+              16,
+              0,
+            ),
+            child: Column(
+              children: [
+                _RulesetBar(state: state, vm: vm, isDark: isDark),
+                const SizedBox(height: 10),
+                _DisplayModeBar(state: state, vm: vm, isDark: isDark),
+              ],
             ),
           ),
         ),
 
-      // Empty state
-      if (state.isEmpty)
-        SliverFillRemaining(
-          hasScrollBody: false,
-          child: Center(child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.compare_arrows_rounded, size: 64, color: AppTheme.pokemonRed.withValues(alpha: 0.4)),
-              const SizedBox(height: 16),
-              const Text('Compare up to 6 Pokémon', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
-              const SizedBox(height: 8),
-              Text('Add Pokémon to see their stats side by side.',
-                style: TextStyle(color: Colors.grey[500], fontSize: 13)),
-            ],
-          )),
+        // Action buttons
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                if (state.count < 6)
+                  _ActionChip(
+                    icon: Icons.add_rounded,
+                    label: 'Add Pokémon',
+                    onTap: () => _showPokemonPicker(context),
+                  ),
+                _ActionChip(
+                  icon: Icons.groups_rounded,
+                  label: 'From Team',
+                  onTap: () => _loadFromTeam(context),
+                ),
+              ],
+            ),
+          ),
         ),
-    ]);
+
+        // Pokémon cards
+        if (state.count > 0)
+          SliverToBoxAdapter(
+            child: SizedBox(
+              height: 120,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                itemCount: sorted.length,
+                separatorBuilder: (ctx, i) => const SizedBox(width: 10),
+                itemBuilder: (ctx, i) => _PokemonCard(
+                  entry: sorted[i].entry,
+                  slotIndex: sorted[i].index,
+                  isDark: isDark,
+                  onEdit: () =>
+                      _editEntry(context, sorted[i].index, sorted[i].entry),
+                  onRemove: () => vm.removeEntry(sorted[i].index),
+                  onDuplicate: state.count < 6
+                      ? () => vm.duplicateEntry(sorted[i].index)
+                      : null,
+                ),
+              ),
+            ),
+          ),
+
+        // Comparison table
+        if (sorted.isNotEmpty)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                8,
+                4,
+                8,
+                AppSpacing.bottomScrollPadding,
+              ),
+              child: Card(
+                elevation: 0,
+                color: isDark ? const Color(0xFF121212) : Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  side: BorderSide(
+                    color: isDark
+                        ? const Color(0xFF1E1E1E)
+                        : const Color(0xFFE2E8F0),
+                  ),
+                ),
+                child: ComparisonTable(
+                  rows: sorted,
+                  sortColumn: state.sortColumn,
+                  sortDirection: state.sortDirection,
+                  displayMode: state.displayMode,
+                  onSort: vm.toggleSort,
+                ),
+              ),
+            ),
+          ),
+
+        // Empty state
+        if (state.isEmpty)
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.compare_arrows_rounded,
+                    size: 64,
+                    color: AppTheme.pokemonRed.withValues(alpha: 0.4),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Compare up to 6 Pokémon',
+                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Add Pokémon to see their stats side by side.',
+                    style: TextStyle(color: Colors.grey[500], fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
   }
 
   void _showPokemonPicker(BuildContext context) {
@@ -173,7 +231,9 @@ class _Body extends StatelessWidget {
         onPicked: (pokemon) async {
           String? ability;
           try {
-            final abs = await ref.read(pokemonRepositoryProvider).getAbilitiesWithFallback(pokemon.id);
+            final abs = await ref
+                .read(pokemonRepositoryProvider)
+                .getAbilitiesWithFallback(pokemon.id);
             if (abs.isNotEmpty) ability = abs.first['name'] as String?;
           } catch (_) {}
           vm.addPokemon(pokemon, ability: ability);
@@ -185,20 +245,33 @@ class _Body extends StatelessWidget {
   void _loadFromTeam(BuildContext context) {
     final slots = ref.read(teamBuilderProvider);
     final byId = {for (final p in pokemonList) p.id: p};
-    final teamPokemon = slots.whereType<int>().map((id) => byId[id]).whereType<Pokemon>().toList();
+    final teamPokemon = slots
+        .whereType<int>()
+        .map((id) => byId[id])
+        .whereType<Pokemon>()
+        .toList();
     if (teamPokemon.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No team members found. Build a team first.')),
+        const SnackBar(
+          content: Text('No team members found. Build a team first.'),
+        ),
       );
       return;
     }
     vm.loadFromTeam(teamPokemon);
   }
 
-  Future<void> _editEntry(BuildContext context, int index, ComparisonEntry entry) async {
+  Future<void> _editEntry(
+    BuildContext context,
+    int index,
+    ComparisonEntry entry,
+  ) async {
     final result = await showBuildEditor(
-      context, entry: entry, ruleset: state.ruleset,
-      showFieldControls: state.displayMode == ComparisonDisplayMode.effectiveBattle,
+      context,
+      entry: entry,
+      ruleset: state.ruleset,
+      showFieldControls:
+          state.displayMode == ComparisonDisplayMode.effectiveBattle,
     );
     if (result != null) vm.updateEntry(index, result);
   }
@@ -211,7 +284,11 @@ class _RulesetBar extends StatelessWidget {
   final StatComparisonNotifier vm;
   final bool isDark;
 
-  const _RulesetBar({required this.state, required this.vm, required this.isDark});
+  const _RulesetBar({
+    required this.state,
+    required this.vm,
+    required this.isDark,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -220,35 +297,58 @@ class _RulesetBar extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF111111) : Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: state.ruleset.isChampions
-            ? Colors.deepPurpleAccent.withValues(alpha: 0.45)
-            : (isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB))),
+        border: Border.all(
+          color: state.ruleset.isChampions
+              ? Colors.deepPurpleAccent.withValues(alpha: 0.45)
+              : (isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB)),
+        ),
       ),
-      child: Row(children: [
-        for (final rs in BattleRuleset.values)
-          Expanded(child: GestureDetector(
-            onTap: () => vm.setRuleset(rs),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 160),
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              decoration: BoxDecoration(
-                color: state.ruleset == rs
-                    ? (rs.isChampions ? Colors.deepPurpleAccent : AppTheme.pokemonRed)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(10),
+      child: Row(
+        children: [
+          for (final rs in BattleRuleset.values)
+            Expanded(
+              child: GestureDetector(
+                onTap: () => vm.setRuleset(rs),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 160),
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: state.ruleset == rs
+                        ? (rs.isChampions
+                              ? Colors.deepPurpleAccent
+                              : AppTheme.pokemonRed)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        rs.isChampions
+                            ? Icons.emoji_events_rounded
+                            : Icons.videogame_asset_rounded,
+                        size: 14,
+                        color: state.ruleset == rs ? Colors.white : Colors.grey,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        rs.label.toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.4,
+                          color: state.ruleset == rs
+                              ? Colors.white
+                              : Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Icon(rs.isChampions ? Icons.emoji_events_rounded : Icons.videogame_asset_rounded,
-                  size: 14, color: state.ruleset == rs ? Colors.white : Colors.grey),
-                const SizedBox(width: 6),
-                Text(rs.label.toUpperCase(), style: TextStyle(
-                  fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.4,
-                  color: state.ruleset == rs ? Colors.white : Colors.grey,
-                )),
-              ]),
             ),
-          )),
-      ]),
+        ],
+      ),
     );
   }
 }
@@ -260,7 +360,11 @@ class _DisplayModeBar extends StatelessWidget {
   final StatComparisonNotifier vm;
   final bool isDark;
 
-  const _DisplayModeBar({required this.state, required this.vm, required this.isDark});
+  const _DisplayModeBar({
+    required this.state,
+    required this.vm,
+    required this.isDark,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -269,34 +373,49 @@ class _DisplayModeBar extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF111111) : Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB),
+        ),
       ),
-      child: Row(children: [
-        for (final mode in ComparisonDisplayMode.values)
-          Expanded(child: GestureDetector(
-            onTap: () => vm.setDisplayMode(mode),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 160),
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              decoration: BoxDecoration(
-                color: state.displayMode == mode ? AppTheme.pokemonRed.withValues(alpha: 0.15) : Colors.transparent,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: state.displayMode == mode ? AppTheme.pokemonRed : Colors.transparent,
-                  width: 1,
-                ),
-              ),
-              child: Text(
-                mode == ComparisonDisplayMode.rawBuild ? 'RAW BUILD' : 'EFFECTIVE',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 10, fontWeight: FontWeight.w900,
-                  color: state.displayMode == mode ? AppTheme.pokemonRed : Colors.grey,
+      child: Row(
+        children: [
+          for (final mode in ComparisonDisplayMode.values)
+            Expanded(
+              child: GestureDetector(
+                onTap: () => vm.setDisplayMode(mode),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 160),
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: state.displayMode == mode
+                        ? AppTheme.pokemonRed.withValues(alpha: 0.15)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: state.displayMode == mode
+                          ? AppTheme.pokemonRed
+                          : Colors.transparent,
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    mode == ComparisonDisplayMode.rawBuild
+                        ? 'RAW BUILD'
+                        : 'EFFECTIVE',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      color: state.displayMode == mode
+                          ? AppTheme.pokemonRed
+                          : Colors.grey,
+                    ),
+                  ),
                 ),
               ),
             ),
-          )),
-      ]),
+        ],
+      ),
     );
   }
 }
@@ -312,8 +431,12 @@ class _PokemonCard extends StatelessWidget {
   final VoidCallback? onDuplicate;
 
   const _PokemonCard({
-    required this.entry, required this.slotIndex, required this.isDark,
-    required this.onEdit, required this.onRemove, this.onDuplicate,
+    required this.entry,
+    required this.slotIndex,
+    required this.isDark,
+    required this.onEdit,
+    required this.onRemove,
+    this.onDuplicate,
   });
 
   @override
@@ -329,41 +452,65 @@ class _PokemonCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF121212) : Colors.white,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0)),
-        ),
-        child: Row(children: [
-          SizedBox(
-            width: 44, height: 44,
-            child: p.spriteUrl.isEmpty
-                ? const Icon(Icons.catching_pokemon, color: AppTheme.pokemonRed, size: 28)
-                : PokemonSprite(
-                    imageUrl: p.spriteUrl,
-                    fallbackUrl: PokemonSprite.homeArtworkUrl(dex),
-                    errorIconSize: 28, errorIconColor: AppTheme.pokemonRed,
-                  ),
+          border: Border.all(
+            color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0),
           ),
-          const SizedBox(width: 8),
-          Expanded(child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(p.name, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12),
-                maxLines: 1, overflow: TextOverflow.ellipsis),
-              Text('#${dex.toString().padLeft(3, '0')}',
-                style: TextStyle(fontSize: 10, color: Colors.grey[500])),
-              const SizedBox(height: 4),
-              Row(mainAxisSize: MainAxisSize.min, children: [
-                _IconBtn(Icons.tune_rounded, 'Edit', onEdit),
-                if (onDuplicate != null) ...[
-                  const SizedBox(width: 4),
-                  _IconBtn(Icons.copy_rounded, 'Duplicate', onDuplicate!),
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 44,
+              height: 44,
+              child: p.spriteUrl.isEmpty
+                  ? const Icon(
+                      Icons.catching_pokemon,
+                      color: AppTheme.pokemonRed,
+                      size: 28,
+                    )
+                  : PokemonSprite(
+                      imageUrl: p.spriteUrl,
+                      fallbackUrl: PokemonSprite.homeArtworkUrl(dex),
+                      errorIconSize: 28,
+                      errorIconColor: AppTheme.pokemonRed,
+                    ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    p.name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 12,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    '#${dex.toString().padLeft(3, '0')}',
+                    style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _IconBtn(Icons.tune_rounded, 'Edit', onEdit),
+                      if (onDuplicate != null) ...[
+                        const SizedBox(width: 4),
+                        _IconBtn(Icons.copy_rounded, 'Duplicate', onDuplicate!),
+                      ],
+                      const SizedBox(width: 4),
+                      _IconBtn(Icons.close_rounded, 'Remove', onRemove),
+                    ],
+                  ),
                 ],
-                const SizedBox(width: 4),
-                _IconBtn(Icons.close_rounded, 'Remove', onRemove),
-              ]),
-            ],
-          )),
-        ]),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -383,7 +530,13 @@ class _IconBtn extends StatelessWidget {
       message: tooltip,
       child: Padding(
         padding: const EdgeInsets.all(3.0),
-        child: Icon(icon, size: 14, color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : Colors.grey[600]),
+        child: Icon(
+          icon,
+          size: 14,
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.grey[400]
+              : Colors.grey[600],
+        ),
       ),
     ),
   );
@@ -395,12 +548,19 @@ class _ActionChip extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  const _ActionChip({required this.icon, required this.label, required this.onTap});
+  const _ActionChip({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) => ActionChip(
     avatar: Icon(icon, size: 16, color: AppTheme.pokemonRed),
-    label: Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 11)),
+    label: Text(
+      label,
+      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 11),
+    ),
     onPressed: onTap,
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
   );
@@ -412,7 +572,10 @@ class _PokemonPickerDialog extends StatefulWidget {
   final List<Pokemon> pokemonList;
   final ValueChanged<Pokemon> onPicked;
 
-  const _PokemonPickerDialog({required this.pokemonList, required this.onPicked});
+  const _PokemonPickerDialog({
+    required this.pokemonList,
+    required this.onPicked,
+  });
 
   @override
   State<_PokemonPickerDialog> createState() => _PokemonPickerDialogState();
@@ -439,44 +602,78 @@ class _PokemonPickerDialogState extends State<_PokemonPickerDialog> {
       backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 8, 0),
-            child: Row(children: [
-              const Text('Add Pokémon', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              const Spacer(),
-              IconButton(icon: const Icon(Icons.close_rounded, size: 22), onPressed: () => Navigator.pop(context)),
-            ]),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: DebouncedSearchField(
-              hintText: 'Search by name, type, or #',
-              initialValue: _query,
-              onChanged: (v) => setState(() => _query = v),
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.8,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 8, 0),
+              child: Row(
+                children: [
+                  const Text(
+                    'Add Pokémon',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 22),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Flexible(child: ListView.builder(
-            padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
-            itemCount: options.length,
-            itemBuilder: (ctx, i) {
-              final p = options[i];
-              final dex = p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id;
-              return ListTile(
-                leading: SizedBox(width: 40, height: 40, child: p.spriteUrl.isEmpty
-                    ? const Icon(Icons.catching_pokemon)
-                    : PokemonSprite(imageUrl: p.spriteUrl, fallbackUrl: PokemonSprite.homeArtworkUrl(dex), errorIconSize: 20)),
-                title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
-                subtitle: Text('#${dex.toString().padLeft(3, '0')}', style: const TextStyle(fontSize: 11)),
-                onTap: () {
-                  widget.onPicked(p);
-                  Navigator.pop(ctx);
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: DebouncedSearchField(
+                hintText: 'Search by name, type, or #',
+                initialValue: _query,
+                onChanged: (v) => setState(() => _query = v),
+              ),
+            ),
+            Flexible(
+              child: ListView.builder(
+                padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
+                itemCount: options.length,
+                itemBuilder: (ctx, i) {
+                  final p = options[i];
+                  final dex = p.nationalDexNumber > 0
+                      ? p.nationalDexNumber
+                      : p.id;
+                  return ListTile(
+                    leading: SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: p.spriteUrl.isEmpty
+                          ? const Icon(Icons.catching_pokemon)
+                          : PokemonSprite(
+                              imageUrl: p.spriteUrl,
+                              fallbackUrl: PokemonSprite.homeArtworkUrl(dex),
+                              errorIconSize: 20,
+                            ),
+                    ),
+                    title: Text(
+                      p.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                      ),
+                    ),
+                    subtitle: Text(
+                      '#${dex.toString().padLeft(3, '0')}',
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                    onTap: () {
+                      widget.onPicked(p);
+                      Navigator.pop(ctx);
+                    },
+                  );
                 },
-              );
-            },
-          )),
-        ]),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

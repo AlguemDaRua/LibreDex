@@ -35,7 +35,9 @@ class ComparisonTable extends StatelessWidget {
     // Compute min/max for color grading
     final allStats = <SortColumn, List<int>>{};
     for (final col in _columns) {
-      allStats[col.key] = rows.map((r) => _getValue(r.stats, r.entry, col.key)).toList();
+      allStats[col.key] = rows
+          .map((r) => _getValue(r.stats, r.entry, col.key))
+          .toList();
     }
 
     return SingleChildScrollView(
@@ -56,7 +58,12 @@ class ComparisonTable extends StatelessWidget {
           ),
         ),
         columns: [
-          const DataColumn(label: Text('Pokémon', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11))),
+          const DataColumn(
+            label: Text(
+              'Pokémon',
+              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11),
+            ),
+          ),
           for (final col in _columns)
             DataColumn(
               numeric: true,
@@ -76,7 +83,10 @@ class ComparisonTable extends StatelessWidget {
                   width: 100,
                   child: Text(
                     row.entry.pokemon.name,
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12,
+                    ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -86,7 +96,8 @@ class ComparisonTable extends StatelessWidget {
                   _StatCell(
                     value: _getValue(row.stats, row.entry, col.key),
                     rawValue: _getRawValue(row.stats, row.entry, col.key),
-                    showDelta: displayMode == ComparisonDisplayMode.effectiveBattle &&
+                    showDelta:
+                        displayMode == ComparisonDisplayMode.effectiveBattle &&
                         col.key != SortColumn.bst &&
                         col.key != SortColumn.physBulk &&
                         col.key != SortColumn.specBulk,
@@ -104,7 +115,11 @@ class ComparisonTable extends StatelessWidget {
     );
   }
 
-  static int _getValue(ComparisonStats stats, ComparisonEntry entry, SortColumn col) {
+  static int _getValue(
+    ComparisonStats stats,
+    ComparisonEntry entry,
+    SortColumn col,
+  ) {
     return switch (col) {
       SortColumn.hp => stats.hp.effectiveStat,
       SortColumn.atk => stats.attack.effectiveStat,
@@ -119,7 +134,11 @@ class ComparisonTable extends StatelessWidget {
     };
   }
 
-  static int _getRawValue(ComparisonStats stats, ComparisonEntry entry, SortColumn col) {
+  static int _getRawValue(
+    ComparisonStats stats,
+    ComparisonEntry entry,
+    SortColumn col,
+  ) {
     return switch (col) {
       SortColumn.hp => stats.hp.rawStat,
       SortColumn.atk => stats.attack.rawStat,
@@ -134,7 +153,10 @@ class ComparisonTable extends StatelessWidget {
     };
   }
 
-  static List<AppliedStatModifier> _getModifiers(ComparisonStats stats, SortColumn col) {
+  static List<AppliedStatModifier> _getModifiers(
+    ComparisonStats stats,
+    SortColumn col,
+  ) {
     return switch (col) {
       SortColumn.hp => stats.hp.modifiers,
       SortColumn.atk => stats.attack.modifiers,
@@ -234,7 +256,6 @@ class _StatCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     final color = Color.lerp(
       Colors.red.shade300,
       Colors.green.shade400,
@@ -266,9 +287,7 @@ class _StatCell extends StatelessWidget {
               style: TextStyle(
                 fontSize: 9,
                 fontWeight: FontWeight.w700,
-                color: delta > 0
-                    ? Colors.green.shade400
-                    : Colors.red.shade400,
+                color: delta > 0 ? Colors.green.shade400 : Colors.red.shade400,
               ),
             ),
         ],

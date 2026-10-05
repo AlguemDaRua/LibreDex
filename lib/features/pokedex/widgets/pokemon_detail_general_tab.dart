@@ -33,12 +33,14 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
     required this.forms,
   });
 
-  Color _getTypeColor(String type) => CombatUtils.typeColors[type.toLowerCase()] ?? Colors.grey;
+  Color _getTypeColor(String type) =>
+      CombatUtils.typeColors[type.toLowerCase()] ?? Colors.grey;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final regulation = ref.watch(championsRegulationProvider).asData?.value;
-    final isAvailableInMC = regulation?.isPokemonEligible(activePokemon.id) ?? false;
+    final isAvailableInMC =
+        regulation?.isPokemonEligible(activePokemon.id) ?? false;
     final doubleEffs = TypeEfficiencyCalculator.getCombinedEffectiveness(
       activePokemon.type1,
       activePokemon.type2,
@@ -131,11 +133,20 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildTypeDexCard(BuildContext context, Map<String, double> efficiencies) {
+  Widget _buildTypeDexCard(
+    BuildContext context,
+    Map<String, double> efficiencies,
+  ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final weaknesses = efficiencies.entries.where((e) => e.value > 1.0).toList();
-    final resistances = efficiencies.entries.where((e) => e.value < 1.0 && e.value > 0.0).toList();
-    final immunities = efficiencies.entries.where((e) => e.value == 0.0).toList();
+    final weaknesses = efficiencies.entries
+        .where((e) => e.value > 1.0)
+        .toList();
+    final resistances = efficiencies.entries
+        .where((e) => e.value < 1.0 && e.value > 0.0)
+        .toList();
+    final immunities = efficiencies.entries
+        .where((e) => e.value == 0.0)
+        .toList();
 
     return Container(
       width: double.infinity,
@@ -143,49 +154,91 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF121212) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
-        boxShadow: isDark ? [] : [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
-        ],
+        border: Border.all(
+          color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB),
+        ),
+        boxShadow: isDark
+            ? []
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Type Relations (TypeDex)',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : Colors.black,
+            ),
           ),
-          Divider(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB), height: 24),
+          Divider(
+            color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB),
+            height: 24,
+          ),
 
           if (weaknesses.isNotEmpty) ...[
-            const Text('Weaknesses (Takes Extra Damage)', style: TextStyle(color: Colors.redAccent, fontSize: 13, fontWeight: FontWeight.w600)),
+            const Text(
+              'Weaknesses (Takes Extra Damage)',
+              style: TextStyle(
+                color: Colors.redAccent,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: weaknesses.map((e) => _buildMiniTypeEffBadge(context, e.key, e.value)).toList(),
+              children: weaknesses
+                  .map((e) => _buildMiniTypeEffBadge(context, e.key, e.value))
+                  .toList(),
             ),
             const SizedBox(height: 16),
           ],
 
           if (resistances.isNotEmpty) ...[
-            const Text('Resistances (Takes Less Damage)', style: TextStyle(color: Colors.greenAccent, fontSize: 13, fontWeight: FontWeight.w600)),
+            const Text(
+              'Resistances (Takes Less Damage)',
+              style: TextStyle(
+                color: Colors.greenAccent,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: resistances.map((e) => _buildMiniTypeEffBadge(context, e.key, e.value)).toList(),
+              children: resistances
+                  .map((e) => _buildMiniTypeEffBadge(context, e.key, e.value))
+                  .toList(),
             ),
             const SizedBox(height: 16),
           ],
 
           if (immunities.isNotEmpty) ...[
-            const Text('Immunities (Zero Damage)', style: TextStyle(color: Colors.blueAccent, fontSize: 13, fontWeight: FontWeight.w600)),
+            const Text(
+              'Immunities (Zero Damage)',
+              style: TextStyle(
+                color: Colors.blueAccent,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: immunities.map((e) => _buildMiniTypeEffBadge(context, e.key, e.value)).toList(),
+              children: immunities
+                  .map((e) => _buildMiniTypeEffBadge(context, e.key, e.value))
+                  .toList(),
             ),
           ],
         ],
@@ -193,9 +246,15 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildMiniTypeEffBadge(BuildContext context, String type, double multiplier) {
+  Widget _buildMiniTypeEffBadge(
+    BuildContext context,
+    String type,
+    double multiplier,
+  ) {
     final color = _getTypeColor(type);
-    String label = multiplier % 1 == 0 ? multiplier.toInt().toString() : multiplier.toString();
+    String label = multiplier % 1 == 0
+        ? multiplier.toInt().toString()
+        : multiplier.toString();
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -208,13 +267,19 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
         children: [
           Text(
             type.toUpperCase(),
-            style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: color,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(width: 4),
           Text(
             'x$label',
             style: TextStyle(
-              color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : Colors.black87,
               fontSize: 10,
               fontWeight: FontWeight.bold,
             ),
@@ -226,7 +291,9 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
 
   Widget _buildPokedexEntryCard(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final dexNumber = activePokemon.nationalDexNumber > 0 ? activePokemon.nationalDexNumber : activePokemon.id;
+    final dexNumber = activePokemon.nationalDexNumber > 0
+        ? activePokemon.nationalDexNumber
+        : activePokemon.id;
     final entriesAsync = ref.watch(pokedexEntryDatasetProvider);
     final entry = entriesAsync.asData?.value[dexNumber];
     if (entry == null || (entry.genus.isEmpty && entry.flavor.isEmpty)) {
@@ -239,7 +306,9 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF121212) : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -247,7 +316,11 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
           if (entry.genus.isNotEmpty)
             Text(
               entry.genus,
-              style: const TextStyle(color: AppTheme.pokemonRed, fontWeight: FontWeight.w900, letterSpacing: 0.3),
+              style: const TextStyle(
+                color: AppTheme.pokemonRed,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.3,
+              ),
             ),
           if (entry.genus.isNotEmpty) const SizedBox(height: 8),
           Text(
@@ -264,7 +337,11 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildFallbackNote(String message, {required String source, required bool isDark}) {
+  Widget _buildFallbackNote(
+    String message, {
+    required String source,
+    required bool isDark,
+  }) {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -293,7 +370,9 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
 
   Widget _buildAbilitiesCard(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final abilitiesAsync = ref.watch(pokemonAbilitiesStreamProvider(activePokemon.id));
+    final abilitiesAsync = ref.watch(
+      pokemonAbilitiesStreamProvider(activePokemon.id),
+    );
     final abilitiesList = abilitiesAsync.asData?.value;
     String? abilityFallbackFrom;
     if (abilitiesList != null) {
@@ -311,19 +390,34 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF121212) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
-        boxShadow: isDark ? [] : [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
-        ],
+        border: Border.all(
+          color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB),
+        ),
+        boxShadow: isDark
+            ? []
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Abilities',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : Colors.black,
+            ),
           ),
-          Divider(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB), height: 24),
+          Divider(
+            color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB),
+            height: 24,
+          ),
           if (abilityFallbackFrom != null) ...[
             _buildFallbackNote(
               'Using base species abilities for this form.',
@@ -338,9 +432,11 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
                 return AppEmptyState(
                   icon: Icons.auto_awesome_rounded,
                   title: 'No abilities linked yet',
-                  message: 'Rebuild the bundled links now, or open Settings and use “Fix Moves & Abilities Links”.',
+                  message:
+                      'Rebuild the bundled links now, or open Settings and use “Fix Moves & Abilities Links”.',
                   actionLabel: 'Fix links now',
-                  onAction: () => ref.read(pokedexSyncNotifierProvider.notifier).reseed(),
+                  onAction: () =>
+                      ref.read(pokedexSyncNotifierProvider.notifier).reseed(),
                 );
               }
               final sortedAbilities = List<Map<String, dynamic>>.from(abilities)
@@ -356,12 +452,14 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: sortedAbilities.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 12),
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final ability = sortedAbilities[index];
                   final int? abilityId = ability['id'];
                   final String name = ability['name'] ?? '';
-                  final String effect = ability['effect'] ?? 'No description available.';
+                  final String effect =
+                      ability['effect'] ?? 'No description available.';
                   final bool isHidden = ability['isHidden'] ?? false;
 
                   return GestureDetector(
@@ -370,16 +468,27 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
                       if (abilityId != null) {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => AbilityDetailScreen(abilityId: abilityId, abilityName: name)),
+                          MaterialPageRoute(
+                            builder: (_) => AbilityDetailScreen(
+                              abilityId: abilityId,
+                              abilityName: name,
+                            ),
+                          ),
                         );
                       }
                     },
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF9FAFB),
+                        color: isDark
+                            ? const Color(0xFF1E1E1E)
+                            : const Color(0xFFF9FAFB),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFF3F4F6)),
+                        border: Border.all(
+                          color: isDark
+                              ? const Color(0xFF2D2D2D)
+                              : const Color(0xFFF3F4F6),
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -397,15 +506,27 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
                               if (isHidden) ...[
                                 const SizedBox(width: 8),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: Colors.purple.withValues(alpha: 0.15),
+                                    color: Colors.purple.withValues(
+                                      alpha: 0.15,
+                                    ),
                                     borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(color: Colors.purpleAccent, width: 0.8),
+                                    border: Border.all(
+                                      color: Colors.purpleAccent,
+                                      width: 0.8,
+                                    ),
                                   ),
                                   child: const Text(
                                     'HIDDEN',
-                                    style: TextStyle(color: Colors.purpleAccent, fontSize: 8, fontWeight: FontWeight.bold),
+                                    style: TextStyle(
+                                      color: Colors.purpleAccent,
+                                      fontSize: 8,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -413,14 +534,22 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
                               Icon(
                                 Icons.info_outline_rounded,
                                 size: 14,
-                                color: isDark ? Colors.grey[500] : Colors.grey[400],
+                                color: isDark
+                                    ? Colors.grey[500]
+                                    : Colors.grey[400],
                               ),
                             ],
                           ),
                           const SizedBox(height: 6),
                           Text(
                             effect,
-                            style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 12, height: 1.4),
+                            style: TextStyle(
+                              color: isDark
+                                  ? Colors.grey[400]
+                                  : Colors.grey[600],
+                              fontSize: 12,
+                              height: 1.4,
+                            ),
                           ),
                         ],
                       ),
@@ -435,26 +564,42 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
                 child: SizedBox(
                   width: 24,
                   height: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(AppTheme.pokemonRed)),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation(AppTheme.pokemonRed),
+                  ),
                 ),
               ),
             ),
-            error: (err, stack) => Text('Error loading abilities: $err', style: const TextStyle(color: Colors.redAccent)),
+            error: (err, stack) => Text(
+              'Error loading abilities: $err',
+              style: const TextStyle(color: Colors.redAccent),
+            ),
           ),
         ],
       ),
     );
   }
 
-  void _navigateToPokemon(BuildContext context, WidgetRef ref, int targetId) async {
+  void _navigateToPokemon(
+    BuildContext context,
+    WidgetRef ref,
+    int targetId,
+  ) async {
     if (targetId == activePokemon.id) return;
 
     final db = ref.read(pokemonRepositoryProvider).db;
-    final targetPokemon = await (db.select(db.pokemonTable)..where((t) => t.id.equals(targetId))).getSingleOrNull();
+    final targetPokemon = await (db.select(
+      db.pokemonTable,
+    )..where((t) => t.id.equals(targetId))).getSingleOrNull();
 
     if (targetPokemon != null && context.mounted) {
-      final int targetDexNum = targetPokemon.nationalDexNumber > 0 ? targetPokemon.nationalDexNumber : targetPokemon.id;
-      final allForms = await (db.select(db.pokemonTable)..where((t) => t.nationalDexNumber.equals(targetDexNum))).get();
+      final int targetDexNum = targetPokemon.nationalDexNumber > 0
+          ? targetPokemon.nationalDexNumber
+          : targetPokemon.id;
+      final allForms = await (db.select(
+        db.pokemonTable,
+      )..where((t) => t.nationalDexNumber.equals(targetDexNum))).get();
       final formsList = allForms.isNotEmpty ? allForms : [targetPokemon];
       final targetIdx = formsList.indexWhere((p) => p.id == targetId);
 
@@ -474,7 +619,9 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
 
   Widget _buildEvolutionCard(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final int dexNum = activePokemon.nationalDexNumber > 0 ? activePokemon.nationalDexNumber : activePokemon.id;
+    final int dexNum = activePokemon.nationalDexNumber > 0
+        ? activePokemon.nationalDexNumber
+        : activePokemon.id;
     final evoAsync = ref.watch(pokemonEvolutionChainProvider(dexNum));
 
     return Container(
@@ -483,10 +630,18 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF121212) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
-        boxShadow: isDark ? [] : [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
-        ],
+        border: Border.all(
+          color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB),
+        ),
+        boxShadow: isDark
+            ? []
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -495,13 +650,24 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
             children: [
               Text(
                 'Evolutions & Forms',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black,
+                ),
               ),
               const Spacer(),
-              const Icon(Icons.account_tree_outlined, size: 18, color: AppTheme.pokemonRed),
+              const Icon(
+                Icons.account_tree_outlined,
+                size: 18,
+                color: AppTheme.pokemonRed,
+              ),
             ],
           ),
-          Divider(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB), height: 24),
+          Divider(
+            color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB),
+            height: 24,
+          ),
           evoAsync.when(
             data: (steps) {
               if (steps.isEmpty) {
@@ -510,7 +676,11 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
                   child: Center(
                     child: Text(
                       'This Pokémon does not evolve.',
-                      style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 13, fontStyle: FontStyle.italic),
+                      style: TextStyle(
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        fontSize: 13,
+                        fontStyle: FontStyle.italic,
+                      ),
                     ),
                   ),
                 );
@@ -520,7 +690,8 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: steps.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 14),
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 14),
                 itemBuilder: (context, index) {
                   final step = steps[index];
                   final isFormEvolution = step.form != 'normal';
@@ -528,12 +699,16 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
                   return Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF9FAFB),
+                      color: isDark
+                          ? const Color(0xFF1A1A1A)
+                          : const Color(0xFFF9FAFB),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
                         color: isFormEvolution
                             ? AppTheme.pokemonRed.withValues(alpha: 0.4)
-                            : (isDark ? const Color(0xFF2B2B2B) : const Color(0xFFE5E7EB)),
+                            : (isDark
+                                  ? const Color(0xFF2B2B2B)
+                                  : const Color(0xFFE5E7EB)),
                       ),
                     ),
                     child: Column(
@@ -542,15 +717,28 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
                           Padding(
                             padding: const EdgeInsets.only(bottom: 8.0),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 3,
+                              ),
                               decoration: BoxDecoration(
-                                color: AppTheme.pokemonRed.withValues(alpha: 0.15),
+                                color: AppTheme.pokemonRed.withValues(
+                                  alpha: 0.15,
+                                ),
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: AppTheme.pokemonRed, width: 0.8),
+                                border: Border.all(
+                                  color: AppTheme.pokemonRed,
+                                  width: 0.8,
+                                ),
                               ),
                               child: Text(
                                 step.form.toUpperCase(),
-                                style: const TextStyle(color: AppTheme.pokemonRed, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                                style: const TextStyle(
+                                  color: AppTheme.pokemonRed,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.5,
+                                ),
                               ),
                             ),
                           ),
@@ -558,13 +746,20 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
                           children: [
                             Expanded(
                               child: InkWell(
-                                onTap: () => _navigateToPokemon(context, ref, step.fromId),
+                                onTap: () => _navigateToPokemon(
+                                  context,
+                                  ref,
+                                  step.fromId,
+                                ),
                                 borderRadius: BorderRadius.circular(10),
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 4.0),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 4.0,
+                                  ),
                                   child: Column(
                                     children: [
-                                      if (step.fromSprite != null && step.fromSprite!.isNotEmpty)
+                                      if (step.fromSprite != null &&
+                                          step.fromSprite!.isNotEmpty)
                                         SizedBox(
                                           height: 54,
                                           width: 54,
@@ -574,14 +769,22 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
                                           ),
                                         )
                                       else
-                                        const Icon(Icons.catching_pokemon, size: 40, color: Colors.grey),
+                                        const Icon(
+                                          Icons.catching_pokemon,
+                                          size: 40,
+                                          color: Colors.grey,
+                                        ),
                                       const SizedBox(height: 4),
                                       Text(
                                         step.fromName,
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.bold,
-                                          color: step.fromId == activePokemon.id ? AppTheme.pokemonRed : (isDark ? Colors.white : Colors.black87),
+                                          color: step.fromId == activePokemon.id
+                                              ? AppTheme.pokemonRed
+                                              : (isDark
+                                                    ? Colors.white
+                                                    : Colors.black87),
                                         ),
                                         textAlign: TextAlign.center,
                                         maxLines: 1,
@@ -598,9 +801,14 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
                               child: Column(
                                 children: [
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: isDark ? const Color(0xFF262626) : const Color(0xFFE2E8F0),
+                                      color: isDark
+                                          ? const Color(0xFF262626)
+                                          : const Color(0xFFE2E8F0),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
@@ -608,26 +816,36 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
                                       style: TextStyle(
                                         fontSize: 10,
                                         fontWeight: FontWeight.bold,
-                                        color: isDark ? Colors.grey[300] : Colors.grey[800],
+                                        color: isDark
+                                            ? Colors.grey[300]
+                                            : Colors.grey[800],
                                       ),
                                       textAlign: TextAlign.center,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
-                                  const Icon(Icons.arrow_forward_rounded, color: AppTheme.pokemonRed, size: 20),
+                                  const Icon(
+                                    Icons.arrow_forward_rounded,
+                                    color: AppTheme.pokemonRed,
+                                    size: 20,
+                                  ),
                                 ],
                               ),
                             ),
 
                             Expanded(
                               child: InkWell(
-                                onTap: () => _navigateToPokemon(context, ref, step.toId),
+                                onTap: () =>
+                                    _navigateToPokemon(context, ref, step.toId),
                                 borderRadius: BorderRadius.circular(10),
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 4.0),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 4.0,
+                                  ),
                                   child: Column(
                                     children: [
-                                      if (step.toSprite != null && step.toSprite!.isNotEmpty)
+                                      if (step.toSprite != null &&
+                                          step.toSprite!.isNotEmpty)
                                         SizedBox(
                                           height: 54,
                                           width: 54,
@@ -637,14 +855,22 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
                                           ),
                                         )
                                       else
-                                        const Icon(Icons.catching_pokemon, size: 40, color: Colors.grey),
+                                        const Icon(
+                                          Icons.catching_pokemon,
+                                          size: 40,
+                                          color: Colors.grey,
+                                        ),
                                       const SizedBox(height: 4),
                                       Text(
                                         step.toName,
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.bold,
-                                          color: step.toId == activePokemon.id ? AppTheme.pokemonRed : (isDark ? Colors.white : Colors.black87),
+                                          color: step.toId == activePokemon.id
+                                              ? AppTheme.pokemonRed
+                                              : (isDark
+                                                    ? Colors.white
+                                                    : Colors.black87),
                                         ),
                                         textAlign: TextAlign.center,
                                         maxLines: 1,
@@ -669,11 +895,17 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
                 child: SizedBox(
                   width: 24,
                   height: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(AppTheme.pokemonRed)),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation(AppTheme.pokemonRed),
+                  ),
                 ),
               ),
             ),
-            error: (err, stack) => Text('Could not load evolutions: $err', style: const TextStyle(color: Colors.redAccent, fontSize: 11)),
+            error: (err, stack) => Text(
+              'Could not load evolutions: $err',
+              style: const TextStyle(color: Colors.redAccent, fontSize: 11),
+            ),
           ),
         ],
       ),
@@ -684,7 +916,8 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? Colors.white : Colors.black;
 
-    final int bst = activePokemon.baseHp +
+    final int bst =
+        activePokemon.baseHp +
         activePokemon.baseAtk +
         activePokemon.baseDef +
         activePokemon.baseSpAtk +
@@ -693,14 +926,19 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
 
     final evYieldAsync = ref.watch(evYieldDatasetProvider);
     final realEvYield = evYieldAsync.asData?.value[activePokemon.id];
-    final String evYield = realEvYield?.label ?? '${PokemonDataHelpers.getEvYield(activePokemon)} (estimated)';
+    final String evYield =
+        realEvYield?.label ??
+        '${PokemonDataHelpers.getEvYield(activePokemon)} (estimated)';
 
     final datasetAsync = ref.watch(speciesDatasetProvider);
     final dataset = datasetAsync.asData?.value;
     final int dexNumber = activePokemon.nationalDexNumber > 0
         ? activePokemon.nationalDexNumber
         : activePokemon.id;
-    final FormFacts? form = dataset?.formFacts(activePokemon.id, nationalDexNumber: dexNumber);
+    final FormFacts? form = dataset?.formFacts(
+      activePokemon.id,
+      nationalDexNumber: dexNumber,
+    );
     final SpeciesFacts? species = dataset?.speciesFacts(dexNumber);
 
     Color bstColor = Colors.grey;
@@ -716,7 +954,9 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
       bstLabel = 'Mid Tier';
     }
 
-    final gender = dataset?.genderFor(activePokemon.id, nationalDexNumber: dexNumber) ?? species?.gender;
+    final gender =
+        dataset?.genderFor(activePokemon.id, nationalDexNumber: dexNumber) ??
+        species?.gender;
     final bool isGenderless = gender?.genderless ?? true;
     final double malePct = gender?.malePercent ?? 0;
     final double femalePct = gender?.femalePercent ?? 0;
@@ -727,11 +967,17 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF121212) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB),
+        ),
         boxShadow: isDark
             ? []
             : [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
               ],
       ),
       child: Column(
@@ -746,19 +992,30 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
                   children: [
                     Text(
                       'Breeding, Training & EV Yields',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: primaryColor),
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: primaryColor,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       bstLabel,
-                      style: TextStyle(color: bstColor, fontSize: 11, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        color: bstColor,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: bstColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
@@ -766,17 +1023,34 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
                 ),
                 child: Text(
                   '$bst BST',
-                  style: TextStyle(color: bstColor, fontSize: 11, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: bstColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
           ),
-          Divider(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB), height: 24),
+          Divider(
+            color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB),
+            height: 24,
+          ),
 
           if (form != null) ...[
-            _buildBioRow('Height', form.heightLabel, Icons.height_rounded, isDark),
+            _buildBioRow(
+              'Height',
+              form.heightLabel,
+              Icons.height_rounded,
+              isDark,
+            ),
             const SizedBox(height: 12),
-            _buildBioRow('Weight', form.weightLabel, Icons.monitor_weight_rounded, isDark),
+            _buildBioRow(
+              'Weight',
+              form.weightLabel,
+              Icons.monitor_weight_rounded,
+              isDark,
+            ),
             const SizedBox(height: 12),
             _buildBioRow(
               'Base EXP',
@@ -787,11 +1061,21 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
             const SizedBox(height: 12),
           ],
 
-          _buildBioRow('EV Yield', evYield, Icons.fitness_center_rounded, isDark),
+          _buildBioRow(
+            'EV Yield',
+            evYield,
+            Icons.fitness_center_rounded,
+            isDark,
+          ),
           const SizedBox(height: 12),
 
           if (species != null) ...[
-            _buildBioRow('Egg Groups', species.eggGroupLabel, Icons.egg_rounded, isDark),
+            _buildBioRow(
+              'Egg Groups',
+              species.eggGroupLabel,
+              Icons.egg_rounded,
+              isDark,
+            ),
             const SizedBox(height: 12),
             if (species.canBreed) ...[
               _buildBioRow(
@@ -837,25 +1121,42 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
             children: [
               Row(
                 children: [
-                  Icon(Icons.wc_rounded, size: 16, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+                  Icon(
+                    Icons.wc_rounded,
+                    size: 16,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     'Gender Ratio',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 6),
               if (isGenderless)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6),
+                    color: isDark
+                        ? const Color(0xFF1E1E1E)
+                        : const Color(0xFFF3F4F6),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Text(
                     'Genderless (100% N/A)',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey,
+                    ),
                   ),
                 )
               else
@@ -887,11 +1188,19 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
                       children: [
                         Text(
                           '♂ ${GenderRatio.formatPercent(malePct)}% Male',
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.blueAccent),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blueAccent,
+                          ),
                         ),
                         Text(
                           '♀ ${GenderRatio.formatPercent(femalePct)}% Female',
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.pinkAccent),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.pinkAccent,
+                          ),
                         ),
                       ],
                     ),
@@ -905,27 +1214,39 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
   }
 
   String _formatExp(int value) => value.toString().replaceAllMapped(
-        RegExp(r'(\d)(?=(\d{3})+$)'),
-        (m) => '${m[1]},',
-      );
+    RegExp(r'(\d)(?=(\d{3})+$)'),
+    (m) => '${m[1]},',
+  );
 
   Widget _buildBioRow(String label, String value, IconData icon, bool isDark) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 16, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+        Icon(
+          icon,
+          size: 16,
+          color: isDark ? Colors.grey[400] : Colors.grey[600],
+        ),
         const SizedBox(width: 8),
         SizedBox(
           width: 90,
           child: Text(
             label,
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
+            ),
           ),
         ),
         Expanded(
           child: Text(
             value,
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : Colors.black87,
+            ),
           ),
         ),
       ],

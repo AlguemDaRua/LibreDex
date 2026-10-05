@@ -24,10 +24,7 @@ class ResultCountLabel extends StatelessWidget {
       label: '$count $label',
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        child: Text(
-          '$count $label',
-          style: textStyle,
-        ),
+        child: Text('$count $label', style: textStyle),
       ),
     );
   }

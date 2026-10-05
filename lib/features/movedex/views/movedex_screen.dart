@@ -95,151 +95,182 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
   String? _selectedEffect;
 
   static const List<String> _types = [
-    'normal', 'fire', 'water', 'electric', 'grass', 'ice',
-    'fighting', 'poison', 'ground', 'flying', 'psychic', 'bug',
-    'rock', 'ghost', 'dragon', 'dark', 'steel', 'fairy'
+    'normal',
+    'fire',
+    'water',
+    'electric',
+    'grass',
+    'ice',
+    'fighting',
+    'poison',
+    'ground',
+    'flying',
+    'psychic',
+    'bug',
+    'rock',
+    'ghost',
+    'dragon',
+    'dark',
+    'steel',
+    'fairy',
   ];
 
   static const List<String> _effects = [
-    'Burn', 'Freeze', 'Paralysis', 'Poison', 'Toxic', 'Sleep', 'Confusion', 'Flinch',
-    'Stat boost', 'Stat drop', 'Weather', 'Terrain', 'Trick Room', 'Entry hazards',
-    'Healing', 'Recovery', 'Substitute', 'Protection', 'Type change'
+    'Burn',
+    'Freeze',
+    'Paralysis',
+    'Poison',
+    'Toxic',
+    'Sleep',
+    'Confusion',
+    'Flinch',
+    'Stat boost',
+    'Stat drop',
+    'Weather',
+    'Terrain',
+    'Trick Room',
+    'Entry hazards',
+    'Healing',
+    'Recovery',
+    'Substitute',
+    'Protection',
+    'Type change',
   ];
 
   List<_MovePropertyFilter> get _propertyFilters => [
-        _MovePropertyFilter(
-          label: 'Priority moves',
-          value: _filterPriority,
-          onChanged: (v) => _filterPriority = v,
-          matches: (move) => move.priority > 0,
-        ),
-        _MovePropertyFilter(
-          label: 'Negative-priority moves',
-          value: _filterNegativePriority,
-          onChanged: (v) => _filterNegativePriority = v,
-          matches: (move) => move.priority < 0,
-        ),
-        _MovePropertyFilter(
-          label: 'Makes contact',
-          value: _filterContact,
-          onChanged: (v) => _filterContact = v,
-          matches: (move) => move.isContact,
-        ),
-        _MovePropertyFilter(
-          label: 'Non-contact',
-          value: _filterNonContact,
-          onChanged: (v) => _filterNonContact = v,
-          matches: (move) => !move.isContact,
-        ),
-        _MovePropertyFilter(
-          label: 'Status moves',
-          value: _filterStatus,
-          onChanged: (v) => _filterStatus = v,
-          matches: (move) => move.isStatusMove,
-        ),
-        _MovePropertyFilter(
-          label: 'Damaging moves',
-          value: _filterDamaging,
-          onChanged: (v) => _filterDamaging = v,
-          matches: (move) => move.isDamagingMove,
-        ),
-        _MovePropertyFilter(
-          label: 'Multi-hit',
-          value: _filterMultiHit,
-          onChanged: (v) => _filterMultiHit = v,
-          matches: (move) => move.isMultiHit,
-        ),
-        _MovePropertyFilter(
-          label: 'Recoil',
-          value: _filterRecoil,
-          onChanged: (v) => _filterRecoil = v,
-          matches: (move) => move.isRecoil,
-        ),
-        _MovePropertyFilter(
-          label: 'Draining',
-          value: _filterDraining,
-          onChanged: (v) => _filterDraining = v,
-          matches: (move) => move.isDraining,
-        ),
-        _MovePropertyFilter(
-          label: 'Healing',
-          value: _filterHealing,
-          onChanged: (v) => _filterHealing = v,
-          matches: (move) => move.isHealing,
-        ),
-        _MovePropertyFilter(
-          label: 'Switching',
-          value: _filterSwitching,
-          onChanged: (v) => _filterSwitching = v,
-          matches: (move) => move.isSwitching,
-        ),
-        _MovePropertyFilter(
-          label: 'Protective',
-          value: _filterProtecting,
-          onChanged: (v) => _filterProtecting = v,
-          matches: (move) => move.isProtective,
-        ),
-        _MovePropertyFilter(
-          label: 'Recharge',
-          value: _filterRecharge,
-          onChanged: (v) => _filterRecharge = v,
-          matches: (move) => move.isRecharge,
-        ),
-        _MovePropertyFilter(
-          label: 'Sound-based',
-          value: _filterSound,
-          onChanged: (v) => _filterSound = v,
-          matches: (move) => move.isSound,
-        ),
-        _MovePropertyFilter(
-          label: 'Punching',
-          value: _filterPunching,
-          onChanged: (v) => _filterPunching = v,
-          matches: (move) => move.isPunching,
-        ),
-        _MovePropertyFilter(
-          label: 'Biting',
-          value: _filterBiting,
-          onChanged: (v) => _filterBiting = v,
-          matches: (move) => move.isBiting,
-        ),
-        _MovePropertyFilter(
-          label: 'Powder',
-          value: _filterPowder,
-          onChanged: (v) => _filterPowder = v,
-          matches: (move) => move.isPowder,
-        ),
-        _MovePropertyFilter(
-          label: 'Pulse / aura',
-          value: _filterPulse,
-          onChanged: (v) => _filterPulse = v,
-          matches: (move) => move.isPulse,
-        ),
-        _MovePropertyFilter(
-          label: 'Ballistic',
-          value: _filterBallistic,
-          onChanged: (v) => _filterBallistic = v,
-          matches: (move) => move.isBallistic,
-        ),
-        _MovePropertyFilter(
-          label: 'Slicing',
-          value: _filterSlicing,
-          onChanged: (v) => _filterSlicing = v,
-          matches: (move) => move.isSlicing,
-        ),
-        _MovePropertyFilter(
-          label: 'Wind',
-          value: _filterWind,
-          onChanged: (v) => _filterWind = v,
-          matches: (move) => move.isWind,
-        ),
-        _MovePropertyFilter(
-          label: 'Dance',
-          value: _filterDance,
-          onChanged: (v) => _filterDance = v,
-          matches: (move) => move.isDance,
-        ),
-      ];
+    _MovePropertyFilter(
+      label: 'Priority moves',
+      value: _filterPriority,
+      onChanged: (v) => _filterPriority = v,
+      matches: (move) => move.priority > 0,
+    ),
+    _MovePropertyFilter(
+      label: 'Negative-priority moves',
+      value: _filterNegativePriority,
+      onChanged: (v) => _filterNegativePriority = v,
+      matches: (move) => move.priority < 0,
+    ),
+    _MovePropertyFilter(
+      label: 'Makes contact',
+      value: _filterContact,
+      onChanged: (v) => _filterContact = v,
+      matches: (move) => move.isContact,
+    ),
+    _MovePropertyFilter(
+      label: 'Non-contact',
+      value: _filterNonContact,
+      onChanged: (v) => _filterNonContact = v,
+      matches: (move) => !move.isContact,
+    ),
+    _MovePropertyFilter(
+      label: 'Status moves',
+      value: _filterStatus,
+      onChanged: (v) => _filterStatus = v,
+      matches: (move) => move.isStatusMove,
+    ),
+    _MovePropertyFilter(
+      label: 'Damaging moves',
+      value: _filterDamaging,
+      onChanged: (v) => _filterDamaging = v,
+      matches: (move) => move.isDamagingMove,
+    ),
+    _MovePropertyFilter(
+      label: 'Multi-hit',
+      value: _filterMultiHit,
+      onChanged: (v) => _filterMultiHit = v,
+      matches: (move) => move.isMultiHit,
+    ),
+    _MovePropertyFilter(
+      label: 'Recoil',
+      value: _filterRecoil,
+      onChanged: (v) => _filterRecoil = v,
+      matches: (move) => move.isRecoil,
+    ),
+    _MovePropertyFilter(
+      label: 'Draining',
+      value: _filterDraining,
+      onChanged: (v) => _filterDraining = v,
+      matches: (move) => move.isDraining,
+    ),
+    _MovePropertyFilter(
+      label: 'Healing',
+      value: _filterHealing,
+      onChanged: (v) => _filterHealing = v,
+      matches: (move) => move.isHealing,
+    ),
+    _MovePropertyFilter(
+      label: 'Switching',
+      value: _filterSwitching,
+      onChanged: (v) => _filterSwitching = v,
+      matches: (move) => move.isSwitching,
+    ),
+    _MovePropertyFilter(
+      label: 'Protective',
+      value: _filterProtecting,
+      onChanged: (v) => _filterProtecting = v,
+      matches: (move) => move.isProtective,
+    ),
+    _MovePropertyFilter(
+      label: 'Recharge',
+      value: _filterRecharge,
+      onChanged: (v) => _filterRecharge = v,
+      matches: (move) => move.isRecharge,
+    ),
+    _MovePropertyFilter(
+      label: 'Sound-based',
+      value: _filterSound,
+      onChanged: (v) => _filterSound = v,
+      matches: (move) => move.isSound,
+    ),
+    _MovePropertyFilter(
+      label: 'Punching',
+      value: _filterPunching,
+      onChanged: (v) => _filterPunching = v,
+      matches: (move) => move.isPunching,
+    ),
+    _MovePropertyFilter(
+      label: 'Biting',
+      value: _filterBiting,
+      onChanged: (v) => _filterBiting = v,
+      matches: (move) => move.isBiting,
+    ),
+    _MovePropertyFilter(
+      label: 'Powder',
+      value: _filterPowder,
+      onChanged: (v) => _filterPowder = v,
+      matches: (move) => move.isPowder,
+    ),
+    _MovePropertyFilter(
+      label: 'Pulse / aura',
+      value: _filterPulse,
+      onChanged: (v) => _filterPulse = v,
+      matches: (move) => move.isPulse,
+    ),
+    _MovePropertyFilter(
+      label: 'Ballistic',
+      value: _filterBallistic,
+      onChanged: (v) => _filterBallistic = v,
+      matches: (move) => move.isBallistic,
+    ),
+    _MovePropertyFilter(
+      label: 'Slicing',
+      value: _filterSlicing,
+      onChanged: (v) => _filterSlicing = v,
+      matches: (move) => move.isSlicing,
+    ),
+    _MovePropertyFilter(
+      label: 'Wind',
+      value: _filterWind,
+      onChanged: (v) => _filterWind = v,
+      matches: (move) => move.isWind,
+    ),
+    _MovePropertyFilter(
+      label: 'Dance',
+      value: _filterDance,
+      onChanged: (v) => _filterDance = v,
+      matches: (move) => move.isDance,
+    ),
+  ];
 
   @override
   void initState() {
@@ -327,15 +358,24 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
     final query = _searchQuery.trim().toLowerCase();
     var list = _allMoves.where((m) {
       if (query.isNotEmpty) {
-        final matchesQuery = m.name.toLowerCase().contains(query) ||
+        final matchesQuery =
+            m.name.toLowerCase().contains(query) ||
             m.type.toLowerCase().contains(query) ||
             (m.description ?? '').toLowerCase().contains(query);
         if (!matchesQuery) return false;
       }
 
-      if (_selectedType != null && m.type.toLowerCase() != _selectedType!.toLowerCase()) return false;
-      if (_selectedClass != null && m.damageClass.toLowerCase() != _selectedClass!.toLowerCase()) return false;
-      if (_selectedGeneration != null && m.generation != _selectedGeneration) return false;
+      if (_selectedType != null &&
+          m.type.toLowerCase() != _selectedType!.toLowerCase()) {
+        return false;
+      }
+      if (_selectedClass != null &&
+          m.damageClass.toLowerCase() != _selectedClass!.toLowerCase()) {
+        return false;
+      }
+      if (_selectedGeneration != null && m.generation != _selectedGeneration) {
+        return false;
+      }
 
       // Stats range
       final power = m.power ?? 0;
@@ -410,83 +450,173 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
     final list = <ActiveFilterItem>[];
 
     if (_selectedType != null) {
-      list.add(ActiveFilterItem(
-        label: 'Type: ${_selectedType!.toUpperCase()}',
-        color: _getTypeColor(_selectedType!),
-        onDeleted: () => setState(() { _selectedType = null; _applyFilters(); }),
-      ));
+      list.add(
+        ActiveFilterItem(
+          label: 'Type: ${_selectedType!.toUpperCase()}',
+          color: _getTypeColor(_selectedType!),
+          onDeleted: () => setState(() {
+            _selectedType = null;
+            _applyFilters();
+          }),
+        ),
+      );
     }
     if (_selectedClass != null) {
-      list.add(ActiveFilterItem(
-        label: 'Class: ${_selectedClass!.toUpperCase()}',
-        onDeleted: () => setState(() { _selectedClass = null; _applyFilters(); }),
-      ));
+      list.add(
+        ActiveFilterItem(
+          label: 'Class: ${_selectedClass!.toUpperCase()}',
+          onDeleted: () => setState(() {
+            _selectedClass = null;
+            _applyFilters();
+          }),
+        ),
+      );
     }
     if (_selectedGeneration != null) {
-      list.add(ActiveFilterItem(
-        label: 'Gen: $_selectedGeneration',
-        onDeleted: () => setState(() { _selectedGeneration = null; _applyFilters(); }),
-      ));
+      list.add(
+        ActiveFilterItem(
+          label: 'Gen: $_selectedGeneration',
+          onDeleted: () => setState(() {
+            _selectedGeneration = null;
+            _applyFilters();
+          }),
+        ),
+      );
     }
     if (_minPower > 0.0 || _maxPower < 250.0) {
-      list.add(ActiveFilterItem(
-        label: 'Power: ${_minPower.round()}–${_maxPower.round()}',
-        onDeleted: () => setState(() { _minPower = 0.0; _maxPower = 250.0; _applyFilters(); }),
-      ));
+      list.add(
+        ActiveFilterItem(
+          label: 'Power: ${_minPower.round()}–${_maxPower.round()}',
+          onDeleted: () => setState(() {
+            _minPower = 0.0;
+            _maxPower = 250.0;
+            _applyFilters();
+          }),
+        ),
+      );
     }
     if (_minAccuracy > 0.0 || _maxAccuracy < 100.0) {
-      list.add(ActiveFilterItem(
-        label: 'Acc: ${_minAccuracy.round()}%–${_maxAccuracy.round()}%',
-        onDeleted: () => setState(() { _minAccuracy = 0.0; _maxAccuracy = 100.0; _applyFilters(); }),
-      ));
+      list.add(
+        ActiveFilterItem(
+          label: 'Acc: ${_minAccuracy.round()}%–${_maxAccuracy.round()}%',
+          onDeleted: () => setState(() {
+            _minAccuracy = 0.0;
+            _maxAccuracy = 100.0;
+            _applyFilters();
+          }),
+        ),
+      );
     }
     if (_minPp > 0.0 || _maxPp < 40.0) {
-      list.add(ActiveFilterItem(
-        label: 'PP: ${_minPp.round()}–${_maxPp.round()}',
-        onDeleted: () => setState(() { _minPp = 0.0; _maxPp = 40.0; _applyFilters(); }),
-      ));
+      list.add(
+        ActiveFilterItem(
+          label: 'PP: ${_minPp.round()}–${_maxPp.round()}',
+          onDeleted: () => setState(() {
+            _minPp = 0.0;
+            _maxPp = 40.0;
+            _applyFilters();
+          }),
+        ),
+      );
     }
     for (final filter in _propertyFilters.where((filter) => filter.value)) {
-      list.add(ActiveFilterItem(
-        label: filter.label,
-        onDeleted: () => setState(() {
-          filter.onChanged(false);
-          _applyFilters();
-        }),
-      ));
+      list.add(
+        ActiveFilterItem(
+          label: filter.label,
+          onDeleted: () => setState(() {
+            filter.onChanged(false);
+            _applyFilters();
+          }),
+        ),
+      );
     }
     if (_filterDLC) {
-      list.add(ActiveFilterItem(label: 'DLC', onDeleted: () => setState(() { _filterDLC = false; _applyFilters(); })));
+      list.add(
+        ActiveFilterItem(
+          label: 'DLC',
+          onDeleted: () => setState(() {
+            _filterDLC = false;
+            _applyFilters();
+          }),
+        ),
+      );
     }
     if (_filterMCAvailable) {
-      list.add(ActiveFilterItem(label: 'Available in M-C', onDeleted: () => setState(() { _filterMCAvailable = false; _applyFilters(); })));
+      list.add(
+        ActiveFilterItem(
+          label: 'Available in M-C',
+          onDeleted: () => setState(() {
+            _filterMCAvailable = false;
+            _applyFilters();
+          }),
+        ),
+      );
     }
     if (_filterNewInMC) {
-      list.add(ActiveFilterItem(label: 'New to M-C', onDeleted: () => setState(() { _filterNewInMC = false; _applyFilters(); })));
+      list.add(
+        ActiveFilterItem(
+          label: 'New to M-C',
+          onDeleted: () => setState(() {
+            _filterNewInMC = false;
+            _applyFilters();
+          }),
+        ),
+      );
     }
     if (_filterChampionsOrigin) {
-      list.add(ActiveFilterItem(label: 'Champions-origin move', onDeleted: () => setState(() { _filterChampionsOrigin = false; _applyFilters(); })));
+      list.add(
+        ActiveFilterItem(
+          label: 'Champions-origin move',
+          onDeleted: () => setState(() {
+            _filterChampionsOrigin = false;
+            _applyFilters();
+          }),
+        ),
+      );
     }
     if (_filterLegendsZA) {
-      list.add(ActiveFilterItem(label: 'Legends Z-A', onDeleted: () => setState(() { _filterLegendsZA = false; _applyFilters(); })));
+      list.add(
+        ActiveFilterItem(
+          label: 'Legends Z-A',
+          onDeleted: () => setState(() {
+            _filterLegendsZA = false;
+            _applyFilters();
+          }),
+        ),
+      );
     }
     if (_filterSignature) {
-      list.add(ActiveFilterItem(label: 'Signature move', onDeleted: () => setState(() { _filterSignature = false; _applyFilters(); })));
+      list.add(
+        ActiveFilterItem(
+          label: 'Signature move',
+          onDeleted: () => setState(() {
+            _filterSignature = false;
+            _applyFilters();
+          }),
+        ),
+      );
     }
     if (_selectedEffect != null) {
-      list.add(ActiveFilterItem(
-        label: 'Effect: $_selectedEffect',
-        onDeleted: () => setState(() { _selectedEffect = null; _applyFilters(); }),
-      ));
+      list.add(
+        ActiveFilterItem(
+          label: 'Effect: $_selectedEffect',
+          onDeleted: () => setState(() {
+            _selectedEffect = null;
+            _applyFilters();
+          }),
+        ),
+      );
     }
     if (_sortOption != 'name_asc') {
-      list.add(ActiveFilterItem(
-        label: 'Sort: ${_sortOption.replaceAll('_', ' ')}',
-        onDeleted: () => setState(() {
-          _sortOption = 'name_asc';
-          _applyFilters();
-        }),
-      ));
+      list.add(
+        ActiveFilterItem(
+          label: 'Sort: ${_sortOption.replaceAll('_', ' ')}',
+          onDeleted: () => setState(() {
+            _sortOption = 'name_asc';
+            _applyFilters();
+          }),
+        ),
+      );
     }
 
     return list;
@@ -511,7 +641,14 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Type selection
-                  const Text('ELEMENTAL TYPE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
+                  const Text(
+                    'ELEMENTAL TYPE',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.grey,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 6,
@@ -520,12 +657,21 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
                       final isSel = _selectedType == type;
                       final col = _getTypeColor(type);
                       return ChoiceChip(
-                        label: Text(type.toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isSel ? Colors.white : col)),
+                        label: Text(
+                          type.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: isSel ? Colors.white : col,
+                          ),
+                        ),
                         selected: isSel,
                         selectedColor: col,
                         backgroundColor: col.withValues(alpha: 0.1),
                         onSelected: (selected) {
-                          setState(() { _selectedType = selected ? type : null; });
+                          setState(() {
+                            _selectedType = selected ? type : null;
+                          });
                           _applyFilters();
                           setModalState(() {});
                         },
@@ -535,18 +681,34 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
                   const SizedBox(height: 20),
 
                   // Damage Class
-                  const Text('DAMAGE CLASS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
+                  const Text(
+                    'DAMAGE CLASS',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.grey,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
                     children: ['physical', 'special', 'status'].map((cls) {
                       final isSel = _selectedClass == cls;
                       return ChoiceChip(
-                        label: Text(cls.toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isSel ? Colors.white : Colors.grey)),
+                        label: Text(
+                          cls.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: isSel ? Colors.white : Colors.grey,
+                          ),
+                        ),
                         selected: isSel,
                         selectedColor: AppTheme.pokemonRed,
                         onSelected: (selected) {
-                          setState(() { _selectedClass = selected ? cls : null; });
+                          setState(() {
+                            _selectedClass = selected ? cls : null;
+                          });
                           _applyFilters();
                           setModalState(() {});
                         },
@@ -556,18 +718,34 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
                   const SizedBox(height: 20),
 
                   // Generation
-                  const Text('GENERATION', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
+                  const Text(
+                    'GENERATION',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.grey,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 6,
                     children: List.generate(9, (idx) => idx + 1).map((gen) {
                       final isSel = _selectedGeneration == gen;
                       return ChoiceChip(
-                        label: Text('GEN $gen', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isSel ? Colors.white : Colors.grey)),
+                        label: Text(
+                          'GEN $gen',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: isSel ? Colors.white : Colors.grey,
+                          ),
+                        ),
                         selected: isSel,
                         selectedColor: AppTheme.pokemonRed,
                         onSelected: (selected) {
-                          setState(() { _selectedGeneration = selected ? gen : null; });
+                          setState(() {
+                            _selectedGeneration = selected ? gen : null;
+                          });
                           _applyFilters();
                           setModalState(() {});
                         },
@@ -585,7 +763,9 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
                     divisions: 50,
                     activeColor: AppTheme.pokemonRed,
                     onChanged: (val) {
-                      setState(() { _minPower = val; });
+                      setState(() {
+                        _minPower = val;
+                      });
                       _applyFilters();
                       setModalState(() {});
                     },
@@ -600,7 +780,9 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
                     divisions: 20,
                     activeColor: AppTheme.pokemonRed,
                     onChanged: (val) {
-                      setState(() { _minAccuracy = val; });
+                      setState(() {
+                        _minAccuracy = val;
+                      });
                       _applyFilters();
                       setModalState(() {});
                     },
@@ -615,7 +797,9 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
                     divisions: 8,
                     activeColor: AppTheme.pokemonRed,
                     onChanged: (val) {
-                      setState(() { _minPp = val; });
+                      setState(() {
+                        _minPp = val;
+                      });
                       _applyFilters();
                       setModalState(() {});
                     },
@@ -623,14 +807,27 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
                   const SizedBox(height: 20),
 
                   // Battle properties
-                  const Text('BATTLE PROPERTIES', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
+                  const Text(
+                    'BATTLE PROPERTIES',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.grey,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF141414) : const Color(0xFFF7FAFC),
+                      color: isDark
+                          ? const Color(0xFF141414)
+                          : const Color(0xFFF7FAFC),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE2E8F0)),
+                      border: Border.all(
+                        color: isDark
+                            ? const Color(0xFF222222)
+                            : const Color(0xFFE2E8F0),
+                      ),
                     ),
                     child: Column(
                       children: [
@@ -646,33 +843,58 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
                   const SizedBox(height: 20),
 
                   // Source filters
-                  const Text('SOURCE & RULES', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
+                  const Text(
+                    'SOURCE & RULES',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.grey,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF141414) : const Color(0xFFF7FAFC),
+                      color: isDark
+                          ? const Color(0xFF141414)
+                          : const Color(0xFFF7FAFC),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE2E8F0)),
+                      border: Border.all(
+                        color: isDark
+                            ? const Color(0xFF222222)
+                            : const Color(0xFFE2E8F0),
+                      ),
                     ),
                     child: Column(
                       children: [
-                        _buildSwitchRow('Available in Regulation M-C', _filterMCAvailable, (val) {
-                          setState(() => _filterMCAvailable = val);
-                          _applyFilters();
-                          setModalState(() {});
-                        }),
-                        _buildSwitchRow('Newly added to M-C', _filterNewInMC, (val) {
+                        _buildSwitchRow(
+                          'Available in Regulation M-C',
+                          _filterMCAvailable,
+                          (val) {
+                            setState(() => _filterMCAvailable = val);
+                            _applyFilters();
+                            setModalState(() {});
+                          },
+                        ),
+                        _buildSwitchRow('Newly added to M-C', _filterNewInMC, (
+                          val,
+                        ) {
                           setState(() => _filterNewInMC = val);
                           _applyFilters();
                           setModalState(() {});
                         }),
-                        _buildSwitchRow('Champions-origin moves', _filterChampionsOrigin, (val) {
-                          setState(() => _filterChampionsOrigin = val);
-                          _applyFilters();
-                          setModalState(() {});
-                        }),
-                        _buildSwitchRow('Legends: Z-A', _filterLegendsZA, (val) {
+                        _buildSwitchRow(
+                          'Champions-origin moves',
+                          _filterChampionsOrigin,
+                          (val) {
+                            setState(() => _filterChampionsOrigin = val);
+                            _applyFilters();
+                            setModalState(() {});
+                          },
+                        ),
+                        _buildSwitchRow('Legends: Z-A', _filterLegendsZA, (
+                          val,
+                        ) {
                           setState(() => _filterLegendsZA = val);
                           _applyFilters();
                           setModalState(() {});
@@ -682,7 +904,9 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
                           _applyFilters();
                           setModalState(() {});
                         }),
-                        _buildSwitchRow('Signature Moves', _filterSignature, (val) {
+                        _buildSwitchRow('Signature Moves', _filterSignature, (
+                          val,
+                        ) {
                           setState(() => _filterSignature = val);
                           _applyFilters();
                           setModalState(() {});
@@ -693,7 +917,14 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
                   const SizedBox(height: 20),
 
                   // Effects
-                  const Text('ADDITIONAL EFFECTS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
+                  const Text(
+                    'ADDITIONAL EFFECTS',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.grey,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 6,
@@ -701,11 +932,19 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
                     children: _effects.map((eff) {
                       final isSel = _selectedEffect == eff;
                       return ChoiceChip(
-                        label: Text(eff.toUpperCase(), style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
+                        label: Text(
+                          eff.toUpperCase(),
+                          style: const TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         selected: isSel,
                         selectedColor: AppTheme.pokemonRed,
                         onSelected: (selected) {
-                          setState(() { _selectedEffect = selected ? eff : null; });
+                          setState(() {
+                            _selectedEffect = selected ? eff : null;
+                          });
                           _applyFilters();
                           setModalState(() {});
                         },
@@ -718,22 +957,54 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
                   DexSortMenu<String>(
                     currentValue: _sortOption,
                     items: const [
-                      DropdownMenuItem(value: 'name_asc', child: Text('NAME (A - Z)')),
-                      DropdownMenuItem(value: 'name_desc', child: Text('NAME (Z - A)')),
-                      DropdownMenuItem(value: 'power_desc', child: Text('POWER (HIGHEST FIRST)')),
-                      DropdownMenuItem(value: 'power_asc', child: Text('POWER (LOWEST FIRST)')),
-                      DropdownMenuItem(value: 'acc_desc', child: Text('ACCURACY (HIGHEST FIRST)')),
-                      DropdownMenuItem(value: 'acc_asc', child: Text('ACCURACY (LOWEST FIRST)')),
-                      DropdownMenuItem(value: 'pp_desc', child: Text('PP (HIGHEST FIRST)')),
-                      DropdownMenuItem(value: 'pp_asc', child: Text('PP (LOWEST FIRST)')),
-                      DropdownMenuItem(value: 'priority_desc', child: Text('PRIORITY (HIGHEST FIRST)')),
+                      DropdownMenuItem(
+                        value: 'name_asc',
+                        child: Text('NAME (A - Z)'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'name_desc',
+                        child: Text('NAME (Z - A)'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'power_desc',
+                        child: Text('POWER (HIGHEST FIRST)'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'power_asc',
+                        child: Text('POWER (LOWEST FIRST)'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'acc_desc',
+                        child: Text('ACCURACY (HIGHEST FIRST)'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'acc_asc',
+                        child: Text('ACCURACY (LOWEST FIRST)'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'pp_desc',
+                        child: Text('PP (HIGHEST FIRST)'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'pp_asc',
+                        child: Text('PP (LOWEST FIRST)'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'priority_desc',
+                        child: Text('PRIORITY (HIGHEST FIRST)'),
+                      ),
                       DropdownMenuItem(value: 'type', child: Text('TYPE')),
-                      DropdownMenuItem(value: 'class', child: Text('DAMAGE CLASS')),
+                      DropdownMenuItem(
+                        value: 'class',
+                        child: Text('DAMAGE CLASS'),
+                      ),
                       DropdownMenuItem(value: 'gen', child: Text('GENERATION')),
                     ],
                     onChanged: (val) {
                       if (val != null) {
-                        setState(() { _sortOption = val; });
+                        setState(() {
+                          _sortOption = val;
+                        });
                         _applyFilters();
                         setModalState(() {});
                       }
@@ -752,17 +1023,38 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
-        Text(val > 0 ? '${val.round()}+' : 'Any', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.pokemonRed)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w900,
+            color: Colors.grey,
+          ),
+        ),
+        Text(
+          val > 0 ? '${val.round()}+' : 'Any',
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.pokemonRed,
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildSwitchRow(String label, bool value, ValueChanged<bool> onChanged) {
+  Widget _buildSwitchRow(
+    String label,
+    bool value,
+    ValueChanged<bool> onChanged,
+  ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        ),
         Switch(
           value: value,
           activeThumbColor: AppTheme.pokemonRed,
@@ -781,7 +1073,10 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
     return Scaffold(
       backgroundColor: isDark ? Colors.black : const Color(0xFFF9FAFB),
       appBar: AppBar(
-        title: Text('MoveDex', style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor)),
+        title: Text(
+          'MoveDex',
+          style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor),
+        ),
         iconTheme: IconThemeData(color: primaryColor),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -789,7 +1084,11 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
       body: SafeArea(
         bottom: true,
         child: _isLoading
-            ? const Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(AppTheme.pokemonRed)))
+            ? const Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation(AppTheme.pokemonRed),
+                ),
+              )
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -818,27 +1117,53 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
                       onClearAll: _clearAllFilters,
                     ),
 
-                  ResultCountLabel(count: _filteredMoves.length, label: 'moves found'),
+                  ResultCountLabel(
+                    count: _filteredMoves.length,
+                    label: 'moves found',
+                  ),
 
                   Expanded(
                     child: _filteredMoves.isEmpty
-                        ? const Center(child: Text('No moves found.', style: TextStyle(color: Colors.grey)))
+                        ? const Center(
+                            child: Text(
+                              'No moves found.',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          )
                         : ListView.separated(
-                            padding: const EdgeInsets.only(left: AppSpacing.pagePadding, right: AppSpacing.pagePadding, top: 8, bottom: AppSpacing.bottomScrollPadding),
+                            padding: const EdgeInsets.only(
+                              left: AppSpacing.pagePadding,
+                              right: AppSpacing.pagePadding,
+                              top: 8,
+                              bottom: AppSpacing.bottomScrollPadding,
+                            ),
                             itemCount: _filteredMoves.length,
                             separatorBuilder: (context, index) => Divider(
-                              color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB),
+                              color: isDark
+                                  ? const Color(0xFF1E1E1E)
+                                  : const Color(0xFFE5E7EB),
                               height: 1,
                             ),
                             itemBuilder: (context, index) {
                               final move = _filteredMoves[index];
                               final color = _getTypeColor(move.type);
-                              final isMCAvailable = regulation?.isMoveAvailable(move.id) ?? _mCMoveIds.contains(move.id);
-                              final isNewInMC = regulation?.isNewMove(move.id) ?? _newMCMoveIds.contains(move.id);
-                              final isNewlyUsable = regulation?.newlyUsableMoveIds.contains(move.id) ?? false;
+                              final isMCAvailable =
+                                  regulation?.isMoveAvailable(move.id) ??
+                                  _mCMoveIds.contains(move.id);
+                              final isNewInMC =
+                                  regulation?.isNewMove(move.id) ??
+                                  _newMCMoveIds.contains(move.id);
+                              final isNewlyUsable =
+                                  regulation?.newlyUsableMoveIds.contains(
+                                    move.id,
+                                  ) ??
+                                  false;
                               final mCPp = regulation?.movePpFor(move.id);
                               return ListTile(
-                                contentPadding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 4,
+                                  horizontal: 8,
+                                ),
                                 title: Row(
                                   children: [
                                     Flexible(
@@ -846,39 +1171,85 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
                                         move.name,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 15),
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: primaryColor,
+                                          fontSize: 15,
+                                        ),
                                       ),
                                     ),
                                     if (isMCAvailable) ...[
                                       const SizedBox(width: 6),
-                                      const ContentBadge.mC(tooltip: 'Available in Regulation M-C'),
+                                      const ContentBadge.mC(
+                                        tooltip: 'Available in Regulation M-C',
+                                      ),
                                     ],
                                     if (isNewInMC) ...[
                                       const SizedBox(width: 4),
-                                      const ContentBadge.mC(isNew: true, tooltip: 'Newly added to Regulation M-C'),
+                                      const ContentBadge.mC(
+                                        isNew: true,
+                                        tooltip:
+                                            'Newly added to Regulation M-C',
+                                      ),
                                     ],
                                     if (isNewlyUsable) ...[
                                       const SizedBox(width: 4),
-                                      const ContentBadge(label: 'NEWLY USABLE', color: Colors.teal),
+                                      const ContentBadge(
+                                        label: 'NEWLY USABLE',
+                                        color: Colors.teal,
+                                      ),
                                     ],
                                     if (move.isChampionsMove) ...[
                                       const SizedBox(width: 6),
-                                      const ContentBadge(label: 'CHAMP', color: Colors.orangeAccent),
+                                      const ContentBadge(
+                                        label: 'CHAMP',
+                                        color: Colors.orangeAccent,
+                                      ),
                                     ],
                                     if (move.isLegendsZAMove) ...[
                                       const SizedBox(width: 6),
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                        decoration: BoxDecoration(color: Colors.purpleAccent, borderRadius: BorderRadius.circular(4)),
-                                        child: const Text('LZA', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 4,
+                                          vertical: 1,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.purpleAccent,
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          'LZA',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 8,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
                                       ),
                                     ],
                                     if (move.isDLCMove) ...[
                                       const SizedBox(width: 6),
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                        decoration: BoxDecoration(color: Colors.blueAccent, borderRadius: BorderRadius.circular(4)),
-                                        child: const Text('DLC', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 4,
+                                          vertical: 1,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.blueAccent,
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          'DLC',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 8,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ],
@@ -886,26 +1257,41 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
                                 subtitle: Row(
                                   children: [
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: color.withValues(alpha: 0.15),
                                         borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Text(
                                         move.type.toUpperCase(),
-                                        style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.bold),
+                                        style: TextStyle(
+                                          color: color,
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
                                       move.damageClass.toUpperCase(),
-                                      style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold),
+                                      style: const TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.grey,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                     if (mCPp != null) ...[
                                       const SizedBox(width: 8),
                                       Text(
                                         'M-C PP: $mCPp',
-                                        style: const TextStyle(fontSize: 10, color: Colors.deepPurpleAccent, fontWeight: FontWeight.bold),
+                                        style: const TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.deepPurpleAccent,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ],
                                   ],
@@ -915,7 +1301,9 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
                                     Text(
-                                      move.power != null && move.power! > 0 ? 'Pwr: ${move.power}' : 'Status',
+                                      move.power != null && move.power! > 0
+                                          ? 'Pwr: ${move.power}'
+                                          : 'Status',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         color: primaryColor,
@@ -925,7 +1313,10 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
                                     const SizedBox(height: 2),
                                     Text(
                                       'PP: ${move.pp}',
-                                      style: const TextStyle(color: Colors.grey, fontSize: 10),
+                                      style: const TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: 10,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -944,10 +1335,8 @@ class _MovedexScreenState extends ConsumerState<MovedexScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => MoveDetailScreen(
-          moveId: move.id,
-          moveName: move.name,
-        ),
+        builder: (context) =>
+            MoveDetailScreen(moveId: move.id, moveName: move.name),
       ),
     );
   }

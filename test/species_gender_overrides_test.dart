@@ -12,7 +12,10 @@ import 'package:libredex/core/data/species_data.dart';
 void main() {
   group('SpeciesDataset.genderFor', () {
     test('applies the form override before any species data', () {
-      final ratio = SpeciesDataset.empty.genderFor(10186, nationalDexNumber: 876);
+      final ratio = SpeciesDataset.empty.genderFor(
+        10186,
+        nationalDexNumber: 876,
+      );
       expect(ratio, same(SpeciesDataset.femaleLocked));
       expect(ratio!.femalePercent, 100);
       expect(ratio.malePercent, 0);
@@ -38,39 +41,66 @@ void main() {
       }
     });
 
-    test('forms without an override fall back to the species ratio (or null)', () {
-      expect(SpeciesDataset.empty.genderFor(6, nationalDexNumber: 6), isNull);
-    });
+    test(
+      'forms without an override fall back to the species ratio (or null)',
+      () {
+        expect(SpeciesDataset.empty.genderFor(6, nationalDexNumber: 6), isNull);
+      },
+    );
 
-    test('overrides only cover forms that exist in the bundled pokemon.json', () {
-      final bundle = jsonDecode(File('assets/data/pokemon.json').readAsStringSync()) as List<dynamic>;
-      final byId = {for (final p in bundle) p['id'] as int: p as Map<String, dynamic>};
-      for (final id in SpeciesDataset.formGenderOverrides.keys) {
-        final row = byId[id];
-        expect(row, isNotNull, reason: 'gender override for unknown form id $id');
-        final name = (row!['name'] as String).toLowerCase();
-        final locked = SpeciesDataset.formGenderOverrides[id]!;
-        if (locked.malePercent == 100 && id != 678 && id != 876 && id != 902) {
-          // Event-locked male forms (caps, Battle Bond) — name sanity only.
-          expect(name, isNot(contains('female')));
-        }
-        if (locked.femalePercent == 100) {
+    test(
+      'overrides only cover forms that exist in the bundled pokemon.json',
+      () {
+        final bundle =
+            jsonDecode(File('assets/data/pokemon.json').readAsStringSync())
+                as List<dynamic>;
+        final byId = {
+          for (final p in bundle) p['id'] as int: p as Map<String, dynamic>,
+        };
+        for (final id in SpeciesDataset.formGenderOverrides.keys) {
+          final row = byId[id];
           expect(
-            name.contains('female') || name.contains('pikachu'),
-            isTrue,
-            reason: 'a 100%-female override must sit on the female visual: $name',
+            row,
+            isNotNull,
+            reason: 'gender override for unknown form id $id',
           );
+          final name = (row!['name'] as String).toLowerCase();
+          final locked = SpeciesDataset.formGenderOverrides[id]!;
+          if (locked.malePercent == 100 &&
+              id != 678 &&
+              id != 876 &&
+              id != 902) {
+            // Event-locked male forms (caps, Battle Bond) — name sanity only.
+            expect(name, isNot(contains('female')));
+          }
+          if (locked.femalePercent == 100) {
+            expect(
+              name.contains('female') || name.contains('pikachu'),
+              isTrue,
+              reason:
+                  'a 100%-female override must sit on the female visual: $name',
+            );
+          }
         }
-      }
-    });
+      },
+    );
 
-    test('the specific case the user reported: Indeedee-Female is 100% female', () {
-      final indeedeeFemale = SpeciesDataset.empty.genderFor(10186, nationalDexNumber: 876)!;
-      expect(indeedeeFemale.genderless, isFalse);
-      expect(indeedeeFemale.femalePercent, 100);
-      // ...and its male counterpart is 100% male, not the species 50/50.
-      final indeedeeMale = SpeciesDataset.empty.genderFor(876, nationalDexNumber: 876)!;
-      expect(indeedeeMale.malePercent, 100);
-    });
+    test(
+      'the specific case the user reported: Indeedee-Female is 100% female',
+      () {
+        final indeedeeFemale = SpeciesDataset.empty.genderFor(
+          10186,
+          nationalDexNumber: 876,
+        )!;
+        expect(indeedeeFemale.genderless, isFalse);
+        expect(indeedeeFemale.femalePercent, 100);
+        // ...and its male counterpart is 100% male, not the species 50/50.
+        final indeedeeMale = SpeciesDataset.empty.genderFor(
+          876,
+          nationalDexNumber: 876,
+        )!;
+        expect(indeedeeMale.malePercent, 100);
+      },
+    );
   });
 }

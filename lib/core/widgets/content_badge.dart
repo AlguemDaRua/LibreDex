@@ -13,12 +13,9 @@ class ContentBadge extends StatelessWidget {
     this.tooltip,
   });
 
-  const ContentBadge.mC({
-    super.key,
-    bool isNew = false,
-    this.tooltip,
-  })  : label = isNew ? 'NEW M-C' : 'M-C',
-        color = isNew ? Colors.deepOrangeAccent : Colors.deepPurpleAccent;
+  const ContentBadge.mC({super.key, bool isNew = false, this.tooltip})
+    : label = isNew ? 'NEW M-C' : 'M-C',
+      color = isNew ? Colors.deepOrangeAccent : Colors.deepPurpleAccent;
 
   @override
   Widget build(BuildContext context) {

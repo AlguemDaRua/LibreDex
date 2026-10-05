@@ -17,12 +17,18 @@ class ChampionsDamageEngine {
     // Ensure state uses Champions ruleset
     final championsState = state.copyWith(ruleset: BattleRuleset.champions);
 
-    final moveName = championsState.move.name.toLowerCase().replaceAll('-', ' ').trim();
+    final moveName = championsState.move.name
+        .toLowerCase()
+        .replaceAll('-', ' ')
+        .trim();
     final attackerStats = StatEngine.computeEffectiveStats(
       championsState.attacker,
       BattleRuleset.champions,
       isCriticalAttacker: championsState.move.isCritical,
-      additionallyIgnoreNegativeStages: championsState.move.isCritical && moveName == 'body press' ? const {'def'} : const {},
+      additionallyIgnoreNegativeStages:
+          championsState.move.isCritical && moveName == 'body press'
+          ? const {'def'}
+          : const {},
       weather: championsState.field.weather,
       terrain: championsState.field.terrain,
     );
@@ -30,7 +36,10 @@ class ChampionsDamageEngine {
       championsState.defender,
       BattleRuleset.champions,
       isCriticalDefender: championsState.move.isCritical,
-      additionallyIgnoreNegativeStages: championsState.move.isCritical && moveName == 'foul play' ? const {'atk'} : const {},
+      additionallyIgnoreNegativeStages:
+          championsState.move.isCritical && moveName == 'foul play'
+          ? const {'atk'}
+          : const {},
       weather: championsState.field.weather,
       terrain: championsState.field.terrain,
     );
@@ -38,7 +47,11 @@ class ChampionsDamageEngine {
     final maxHp = defenderStats.hp.effectiveStat;
 
     // Process pipeline modifiers
-    final pipe = ModifierPipeline.process(championsState, attackerStats, defenderStats);
+    final pipe = ModifierPipeline.process(
+      championsState,
+      attackerStats,
+      defenderStats,
+    );
 
     // Champions forces Level 50
     final hitBasePowers = CombatUtils.getHitBasePowers(
@@ -47,7 +60,9 @@ class ChampionsDamageEngine {
       pipe.effectiveBasePower,
       hitCount: championsState.move.hits,
     );
-    final hasParentalBond = championsState.attacker.ability?.toLowerCase() == 'parental bond' && hitBasePowers.length == 1;
+    final hasParentalBond =
+        championsState.attacker.ability?.toLowerCase() == 'parental bond' &&
+        hitBasePowers.length == 1;
 
     final DamageRange range;
     if (hitBasePowers.length > 1 || hasParentalBond) {

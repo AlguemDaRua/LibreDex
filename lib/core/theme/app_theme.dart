@@ -50,24 +50,41 @@ class AppTheme {
         margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(22),
-          side: BorderSide(color: isDark ? const Color(0xFF242424) : const Color(0xFFE5E7EB)),
+          side: BorderSide(
+            color: isDark ? const Color(0xFF242424) : const Color(0xFFE5E7EB),
+          ),
         ),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: isDark ? const Color(0xFF171717) : const Color(0xFFF1F5F9),
+        backgroundColor: isDark
+            ? const Color(0xFF171717)
+            : const Color(0xFFF1F5F9),
         selectedColor: pokemonRed,
-        labelStyle: TextStyle(color: isDark ? Colors.white : const Color(0xFF111827), fontWeight: FontWeight.w700),
-        secondaryLabelStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
-        side: BorderSide(color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE2E8F0)),
+        labelStyle: TextStyle(
+          color: isDark ? Colors.white : const Color(0xFF111827),
+          fontWeight: FontWeight.w700,
+        ),
+        secondaryLabelStyle: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w800,
+        ),
+        side: BorderSide(
+          color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE2E8F0),
+        ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: isDark ? const Color(0xFF141414) : const Color(0xFFFFFFFF),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide.none,
+        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide(color: isDark ? const Color(0xFF252525) : const Color(0xFFE2E8F0)),
+          borderSide: BorderSide(
+            color: isDark ? const Color(0xFF252525) : const Color(0xFFE2E8F0),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
@@ -79,7 +96,9 @@ class AppTheme {
           backgroundColor: pokemonRed,
           foregroundColor: Colors.white,
           textStyle: const TextStyle(fontWeight: FontWeight.w800),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
         ),
       ),
     );

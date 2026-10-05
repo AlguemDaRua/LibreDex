@@ -28,7 +28,10 @@ class SettingsScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: isDark ? Colors.black : const Color(0xFFF9FAFB),
       appBar: AppBar(
-        title: Text('Settings', style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor)),
+        title: Text(
+          'Settings',
+          style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor),
+        ),
         iconTheme: IconThemeData(color: primaryColor),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -36,7 +39,12 @@ class SettingsScreen extends ConsumerWidget {
       body: SafeArea(
         bottom: true,
         child: ListView(
-          padding: const EdgeInsets.only(left: 20, right: 20, top: AppSpacing.topContentGap, bottom: AppSpacing.bottomScrollPadding),
+          padding: const EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: AppSpacing.topContentGap,
+            bottom: AppSpacing.bottomScrollPadding,
+          ),
           children: [
             // ─── Section: Navigation & Layout ────────────────────────────────────
             _buildSectionHeader('NAVIGATION & LAYOUT', isDark),
@@ -47,49 +55,89 @@ class SettingsScreen extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF121212) : Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFF222222)
+                      : const Color(0xFFE5E7EB),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.explore_rounded, color: AppTheme.pokemonRed, size: 22),
+                      const Icon(
+                        Icons.explore_rounded,
+                        color: AppTheme.pokemonRed,
+                        size: 22,
+                      ),
                       const SizedBox(width: 12),
                       Text(
                         'Adaptive Navigation',
-                        style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 15),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: primaryColor,
+                          fontSize: 15,
+                        ),
                       ),
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
                           color: AppTheme.pokemonRed.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Text('AUTO', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: AppTheme.pokemonRed)),
+                        child: const Text(
+                          'AUTO',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                            color: AppTheme.pokemonRed,
+                          ),
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 10),
                   Text(
                     'LibreDex now uses a single adaptive bar: bottom navigation on phones and a side rail on tablets. Tap More to see all 10 tools in one hub. No duplicate hamburger + bottom bar.',
-                    style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 12, height: 1.45),
+                    style: TextStyle(
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      fontSize: 12,
+                      height: 1.45,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      Icon(Icons.phone_iphone_rounded, size: 14, color: Colors.grey[500]),
+                      Icon(
+                        Icons.phone_iphone_rounded,
+                        size: 14,
+                        color: Colors.grey[500],
+                      ),
                       const SizedBox(width: 6),
-                      Text('Phone: bottom bar (Pokédex · Teams · Moves · Calc · More)', style: TextStyle(fontSize: 11, color: Colors.grey[500])),
+                      Text(
+                        'Phone: bottom bar (Pokédex · Teams · Moves · Calc · More)',
+                        style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(Icons.tablet_rounded, size: 14, color: Colors.grey[500]),
+                      Icon(
+                        Icons.tablet_rounded,
+                        size: 14,
+                        color: Colors.grey[500],
+                      ),
                       const SizedBox(width: 6),
-                      Text('Tablet: side rail · same 5 items', style: TextStyle(fontSize: 11, color: Colors.grey[500])),
+                      Text(
+                        'Tablet: side rail · same 5 items',
+                        style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                      ),
                     ],
                   ),
                 ],
@@ -108,18 +156,30 @@ class SettingsScreen extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF121212) : Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFF222222)
+                      : const Color(0xFFE5E7EB),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.storage_rounded, color: AppTheme.pokemonRed, size: 22),
+                      const Icon(
+                        Icons.storage_rounded,
+                        color: AppTheme.pokemonRed,
+                        size: 22,
+                      ),
                       const SizedBox(width: 12),
                       Text(
                         'Local data and online artwork',
-                        style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 15),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: primaryColor,
+                          fontSize: 15,
+                        ),
                       ),
                     ],
                   ),
@@ -157,7 +217,8 @@ class SettingsScreen extends ConsumerWidget {
               primaryColor: primaryColor,
               icon: Icons.auto_fix_high_rounded,
               title: 'Repair move and ability links',
-              subtitle: 'Rebuilds Move, Ability and Learnset links from the data bundled with the app. Use this if a detail page is missing a related Pokémon.',
+              subtitle:
+                  'Rebuilds Move, Ability and Learnset links from the data bundled with the app. Use this if a detail page is missing a related Pokémon.',
               onTap: () => _reseedBundledData(context, ref),
             ),
             const SizedBox(height: 12),
@@ -168,7 +229,8 @@ class SettingsScreen extends ConsumerWidget {
               primaryColor: primaryColor,
               icon: Icons.download_rounded,
               title: 'Download artwork for offline use',
-              subtitle: 'Choose a quality and save a durable artwork library in private app storage. Existing files are skipped, so this safely resumes an interrupted download.',
+              subtitle:
+                  'Choose a quality and save a durable artwork library in private app storage. Existing files are skipped, so this safely resumes an interrupted download.',
               onTap: () => showArtworkDownloadDialog(context),
             ),
             const SizedBox(height: 12),
@@ -179,7 +241,8 @@ class SettingsScreen extends ConsumerWidget {
               primaryColor: primaryColor,
               icon: Icons.cached_rounded,
               title: 'Clear browsing artwork cache',
-              subtitle: 'Remove artwork saved automatically while browsing. Your downloaded offline artwork stays intact.',
+              subtitle:
+                  'Remove artwork saved automatically while browsing. Your downloaded offline artwork stays intact.',
               onTap: () => _confirmClearCachedArtwork(context),
             ),
             const SizedBox(height: 12),
@@ -190,7 +253,8 @@ class SettingsScreen extends ConsumerWidget {
               primaryColor: primaryColor,
               icon: Icons.folder_delete_outlined,
               title: 'Delete downloaded artwork',
-              subtitle: 'Remove the offline artwork library from private storage while keeping your database, favorites and team.',
+              subtitle:
+                  'Remove the offline artwork library from private storage while keeping your database, favorites and team.',
               onTap: () => _confirmDeleteOfflineArtwork(context, ref),
             ),
             const SizedBox(height: 12),
@@ -201,7 +265,8 @@ class SettingsScreen extends ConsumerWidget {
               primaryColor: primaryColor,
               icon: Icons.sync_problem_rounded,
               title: 'Rebuild local data',
-              subtitle: 'Clear and rebuild the reference tables from the data bundled in the app. No internet connection is needed.',
+              subtitle:
+                  'Clear and rebuild the reference tables from the data bundled in the app. No internet connection is needed.',
               onTap: () => _confirmResetAndSync(context, ref),
             ),
             const SizedBox(height: 12),
@@ -211,7 +276,8 @@ class SettingsScreen extends ConsumerWidget {
               primaryColor: primaryColor,
               icon: Icons.delete_forever_rounded,
               title: 'Delete everything',
-              subtitle: 'Erase LibreDex data, downloads, cache, favorites, teams and settings from this device. You can then close or restart the app.',
+              subtitle:
+                  'Erase LibreDex data, downloads, cache, favorites, teams and settings from this device. You can then close or restart the app.',
               onTap: () => _confirmDeleteEverything(context, ref),
             ),
 
@@ -226,50 +292,134 @@ class SettingsScreen extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF121212) : Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFF222222)
+                      : const Color(0xFFE5E7EB),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildInfoRow('Database Schema Version', 'Version 4', isDark, primaryColor),
-                  Divider(height: 1, color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
-                  _buildInfoRow('Total Pokémon Forms', '1351 records', isDark, primaryColor),
-                  Divider(height: 1, color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
-                  _buildInfoRow('Total Move Entries', '937 records', isDark, primaryColor),
-                  Divider(height: 1, color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
-                  _buildInfoRow('Total Abilities', '367 records', isDark, primaryColor),
-                  Divider(height: 1, color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
-                  _buildInfoRow('Total ItemDex Entries', '2223 records', isDark, primaryColor),
-                  Divider(height: 1, color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
-                  _buildInfoRow('Legends: Z-A Overlay', 'Enabled (v1.0)', isDark, primaryColor),
-                  Divider(height: 1, color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
-                  _buildInfoRow('Champions Ruleset', 'Enabled (v1.2)', isDark, primaryColor),
+                  _buildInfoRow(
+                    'Database Schema Version',
+                    'Version 4',
+                    isDark,
+                    primaryColor,
+                  ),
+                  Divider(
+                    height: 1,
+                    color: isDark
+                        ? const Color(0xFF222222)
+                        : const Color(0xFFE5E7EB),
+                  ),
+                  _buildInfoRow(
+                    'Total Pokémon Forms',
+                    '1351 records',
+                    isDark,
+                    primaryColor,
+                  ),
+                  Divider(
+                    height: 1,
+                    color: isDark
+                        ? const Color(0xFF222222)
+                        : const Color(0xFFE5E7EB),
+                  ),
+                  _buildInfoRow(
+                    'Total Move Entries',
+                    '937 records',
+                    isDark,
+                    primaryColor,
+                  ),
+                  Divider(
+                    height: 1,
+                    color: isDark
+                        ? const Color(0xFF222222)
+                        : const Color(0xFFE5E7EB),
+                  ),
+                  _buildInfoRow(
+                    'Total Abilities',
+                    '367 records',
+                    isDark,
+                    primaryColor,
+                  ),
+                  Divider(
+                    height: 1,
+                    color: isDark
+                        ? const Color(0xFF222222)
+                        : const Color(0xFFE5E7EB),
+                  ),
+                  _buildInfoRow(
+                    'Total ItemDex Entries',
+                    '2223 records',
+                    isDark,
+                    primaryColor,
+                  ),
+                  Divider(
+                    height: 1,
+                    color: isDark
+                        ? const Color(0xFF222222)
+                        : const Color(0xFFE5E7EB),
+                  ),
+                  _buildInfoRow(
+                    'Legends: Z-A Overlay',
+                    'Enabled (v1.0)',
+                    isDark,
+                    primaryColor,
+                  ),
+                  Divider(
+                    height: 1,
+                    color: isDark
+                        ? const Color(0xFF222222)
+                        : const Color(0xFFE5E7EB),
+                  ),
+                  _buildInfoRow(
+                    'Champions Ruleset',
+                    'Enabled (v1.2)',
+                    isDark,
+                    primaryColor,
+                  ),
                   const SizedBox(height: 16),
-                  
+
                   Row(
                     children: [
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: () => _runDataAuditDialog(context),
                           icon: const Icon(Icons.analytics_outlined, size: 16),
-                          label: const Text('Run Data Audit', style: TextStyle(fontSize: 12)),
+                          label: const Text(
+                            'Run Data Audit',
+                            style: TextStyle(fontSize: 12),
+                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.pokemonRed,
                             foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: OutlinedButton.icon(
-                          onPressed: () => _exportDiagnosticsToClipboard(context),
+                          onPressed: () =>
+                              _exportDiagnosticsToClipboard(context),
                           icon: const Icon(Icons.copy_all_rounded, size: 16),
-                          label: const Text('Export System', style: TextStyle(fontSize: 12)),
+                          label: const Text(
+                            'Export System',
+                            style: TextStyle(fontSize: 12),
+                          ),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: primaryColor,
-                            side: BorderSide(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            side: BorderSide(
+                              color: isDark
+                                  ? const Color(0xFF222222)
+                                  : const Color(0xFFE5E7EB),
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
                         ),
                       ),
@@ -290,21 +440,70 @@ class SettingsScreen extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF121212) : Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFF222222)
+                      : const Color(0xFFE5E7EB),
+                ),
               ),
               child: Column(
                 children: [
                   _buildInfoRow('App Name', 'LibreDex', isDark, primaryColor),
-                  Divider(height: 1, color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
+                  Divider(
+                    height: 1,
+                    color: isDark
+                        ? const Color(0xFF222222)
+                        : const Color(0xFFE5E7EB),
+                  ),
                   _buildInfoRow('Version', '1.0.0', isDark, primaryColor),
-                  Divider(height: 1, color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
-                  _buildInfoRow('Data release', BattleDataManifest.releaseDate, isDark, primaryColor),
-                  Divider(height: 1, color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
-                  _buildInfoRow('Ruleset', BattleDataManifest.championsRulesetVersion, isDark, primaryColor),
-                  Divider(height: 1, color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
-                  _buildInfoRow('Cost & ads', 'Free — no ads or purchases', isDark, primaryColor),
-                  Divider(height: 1, color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
-                  _buildInfoRow('Source Code', 'Open source (MIT)', isDark, primaryColor),
+                  Divider(
+                    height: 1,
+                    color: isDark
+                        ? const Color(0xFF222222)
+                        : const Color(0xFFE5E7EB),
+                  ),
+                  _buildInfoRow(
+                    'Data release',
+                    BattleDataManifest.releaseDate,
+                    isDark,
+                    primaryColor,
+                  ),
+                  Divider(
+                    height: 1,
+                    color: isDark
+                        ? const Color(0xFF222222)
+                        : const Color(0xFFE5E7EB),
+                  ),
+                  _buildInfoRow(
+                    'Ruleset',
+                    BattleDataManifest.championsRulesetVersion,
+                    isDark,
+                    primaryColor,
+                  ),
+                  Divider(
+                    height: 1,
+                    color: isDark
+                        ? const Color(0xFF222222)
+                        : const Color(0xFFE5E7EB),
+                  ),
+                  _buildInfoRow(
+                    'Cost & ads',
+                    'Free — no ads or purchases',
+                    isDark,
+                    primaryColor,
+                  ),
+                  Divider(
+                    height: 1,
+                    color: isDark
+                        ? const Color(0xFF222222)
+                        : const Color(0xFFE5E7EB),
+                  ),
+                  _buildInfoRow(
+                    'Source Code',
+                    'Open source (MIT)',
+                    isDark,
+                    primaryColor,
+                  ),
                 ],
               ),
             ),
@@ -345,10 +544,17 @@ class SettingsScreen extends ConsumerWidget {
         onChanged: (value) =>
             ref.read(liveEvolutionDataProvider.notifier).setEnabled(value),
         activeThumbColor: AppTheme.pokemonRed,
-        secondary: const Icon(Icons.account_tree_outlined, color: AppTheme.pokemonRed),
+        secondary: const Icon(
+          Icons.account_tree_outlined,
+          color: AppTheme.pokemonRed,
+        ),
         title: Text(
           'Use live evolution data',
-          style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 14),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: primaryColor,
+            fontSize: 14,
+          ),
         ),
         subtitle: const Text(
           'When off, evolution pages use only the bundled records and make no PokéAPI request.',
@@ -388,7 +594,9 @@ class SettingsScreen extends ConsumerWidget {
       child: Row(
         children: [
           Icon(
-            isDownloading ? Icons.downloading_rounded : Icons.folder_copy_outlined,
+            isDownloading
+                ? Icons.downloading_rounded
+                : Icons.folder_copy_outlined,
             color: AppTheme.pokemonRed,
             size: 22,
           ),
@@ -398,7 +606,9 @@ class SettingsScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isDownloading ? 'Offline artwork download' : 'Offline artwork library',
+                  isDownloading
+                      ? 'Offline artwork download'
+                      : 'Offline artwork library',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: primaryColor,
@@ -443,17 +653,40 @@ class SettingsScreen extends ConsumerWidget {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB)),
+            border: Border.all(
+              color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB),
+            ),
           ),
           child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 4,
+            ),
             leading: Icon(icon, color: AppTheme.pokemonRed, size: 22),
-            title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 14)),
+            title: Text(
+              title,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: primaryColor,
+                fontSize: 14,
+              ),
+            ),
             subtitle: Padding(
               padding: const EdgeInsets.only(top: 2),
-              child: Text(subtitle, style: const TextStyle(fontSize: 11, color: Colors.grey, height: 1.4)),
+              child: Text(
+                subtitle,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Colors.grey,
+                  height: 1.4,
+                ),
+              ),
             ),
-            trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey),
+            trailing: const Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 14,
+              color: Colors.grey,
+            ),
           ),
         ),
       ),
@@ -487,7 +720,10 @@ class SettingsScreen extends ConsumerWidget {
   ///
   /// Runs entirely offline, and always dismisses its own progress dialog using
   /// the dialog's context so it can never pop the app shell.
-  Future<void> _rebuildLocalDatabase(BuildContext context, WidgetRef ref) async {
+  Future<void> _rebuildLocalDatabase(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
     _showBlockingProgress(
       context,
       'Rebuilding the local database from bundled data. This may take a few seconds.',
@@ -543,8 +779,13 @@ class SettingsScreen extends ConsumerWidget {
       builder: (ctx) {
         return AlertDialog(
           backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Rebuild local database?', style: TextStyle(fontWeight: FontWeight.bold)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            'Rebuild local database?',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           content: const Text(
             'This clears the local Pokémon, Move, Ability and Learnset tables and rebuilds '
             'them from the data bundled inside the app. No internet connection is required.',
@@ -559,14 +800,19 @@ class SettingsScreen extends ConsumerWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.pokemonRed,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               onPressed: () {
                 Navigator.pop(ctx);
                 // Use the screen's context, not the dismissed dialog's.
                 _rebuildLocalDatabase(context, ref);
               },
-              child: const Text('Rebuild', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Rebuild',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         );
@@ -581,8 +827,13 @@ class SettingsScreen extends ConsumerWidget {
       builder: (ctx) {
         return AlertDialog(
           backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Clear browsing cache?', style: TextStyle(fontWeight: FontWeight.bold)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            'Clear browsing cache?',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           content: const Text(
             'This removes artwork saved automatically while browsing. Your downloaded offline artwork library, local database, favorites and team stay intact. Browsed artwork downloads again when you view it online.',
             style: TextStyle(fontSize: 13, height: 1.4),
@@ -596,7 +847,9 @@ class SettingsScreen extends ConsumerWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.pokemonRed,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               onPressed: () async {
                 Navigator.pop(ctx);
@@ -611,7 +864,10 @@ class SettingsScreen extends ConsumerWidget {
                   );
                 }
               },
-              child: const Text('Clear artwork', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Clear artwork',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         );
@@ -643,7 +899,9 @@ class SettingsScreen extends ConsumerWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.pokemonRed,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             onPressed: () async {
               Navigator.pop(ctx);
@@ -699,7 +957,9 @@ class SettingsScreen extends ConsumerWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.pokemonRed,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             onPressed: () {
               Navigator.pop(ctx);
@@ -751,13 +1011,18 @@ class SettingsScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => SystemNavigator.pop(),
-            child: const Text('Close app', style: TextStyle(color: Colors.grey)),
+            child: const Text(
+              'Close app',
+              style: TextStyle(color: Colors.grey),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.pokemonRed,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             onPressed: () {
               Navigator.of(ctx, rootNavigator: true).pop();
@@ -770,14 +1035,32 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildInfoRow(String label, String value, bool isDark, Color primaryColor) {
+  Widget _buildInfoRow(
+    String label,
+    String value,
+    bool isDark,
+    Color primaryColor,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: primaryColor)),
-          Text(value, style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 13)),
+          Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+              color: primaryColor,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
+              fontSize: 13,
+            ),
+          ),
         ],
       ),
     );
@@ -794,26 +1077,53 @@ class SettingsScreen extends ConsumerWidget {
           children: [
             Icon(Icons.check_circle_outline_rounded, color: Colors.green),
             SizedBox(width: 8),
-            Text('Data Audit: PASSED', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text(
+              'Data Audit: PASSED',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
           ],
         ),
         content: const Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('• Pokémon Records: 1351 (No duplicate IDs)', style: TextStyle(fontSize: 12, height: 1.4)),
-            Text('• Move Table: 937 (Valid priorities, accuracy and classes)', style: TextStyle(fontSize: 12, height: 1.4)),
-            Text('• Ability Table: 367 (All effects & classifications present)', style: TextStyle(fontSize: 12, height: 1.4)),
-            Text('• ItemDex Table: 2223 (Categories, subcategories validated)', style: TextStyle(fontSize: 12, height: 1.4)),
-            Text('• Junction Table References: Validated cascading constraints', style: TextStyle(fontSize: 12, height: 1.4)),
+            Text(
+              '• Pokémon Records: 1351 (No duplicate IDs)',
+              style: TextStyle(fontSize: 12, height: 1.4),
+            ),
+            Text(
+              '• Move Table: 937 (Valid priorities, accuracy and classes)',
+              style: TextStyle(fontSize: 12, height: 1.4),
+            ),
+            Text(
+              '• Ability Table: 367 (All effects & classifications present)',
+              style: TextStyle(fontSize: 12, height: 1.4),
+            ),
+            Text(
+              '• ItemDex Table: 2223 (Categories, subcategories validated)',
+              style: TextStyle(fontSize: 12, height: 1.4),
+            ),
+            Text(
+              '• Junction Table References: Validated cascading constraints',
+              style: TextStyle(fontSize: 12, height: 1.4),
+            ),
             SizedBox(height: 12),
-            Text('All database indexes verified. No broken sprite or artwork references found.', style: TextStyle(fontSize: 11, color: Colors.grey)),
+            Text(
+              'All database indexes verified. No broken sprite or artwork references found.',
+              style: TextStyle(fontSize: 11, color: Colors.grey),
+            ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('OK', style: TextStyle(color: AppTheme.pokemonRed, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'OK',
+              style: TextStyle(
+                color: AppTheme.pokemonRed,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -821,7 +1131,8 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   void _exportDiagnosticsToClipboard(BuildContext context) {
-    final text = 'LIBREDEX SYSTEM DIAGNOSTICS REPORT\n'
+    final text =
+        'LIBREDEX SYSTEM DIAGNOSTICS REPORT\n'
         '===================================\n'
         'App Version: 1.0.0\n'
         'Database version: 4\n'

@@ -1,0 +1,71 @@
+name: LibreDex CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch: # Permite rodar o workflow manualmente no GitHub
+
+jobs:
+  build-and-test:
+    name: Build, Analyze, and Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ☕ Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+          cache: 'gradle' # Faz cache automático das dependências do Android
+
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true # Cache agressivo para acelerar os builds seguintes
+
+      - name: 🐍 Setup Python (Para Validação de Dados)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 📦 Install Flutter Dependencies
+        run: flutter pub get
+
+      - name: 🧹 Verify Formatting
+        # Trava a pipeline se alguém commitar código sem passar o `dart format`
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: 🔍 Analyze Source Code
+        # O `--fatal-infos` garante que até infos/warnings bloqueiem PRs sujos
+        run: flutter analyze --fatal-infos
+
+      - name: 📊 Run Data Asset Validators
+        # Garante que as bases de dados e JSONs do LibreDex estão perfeitas
+        run: |
+          python3 tools/audit_libredex_data.py
+          python3 tools/validate_champions_data.py
+          python3 tools/validate_forms_catalog.py
+          python3 tools/validate_learnsets.py
+          python3 tools/validate_move_properties.py
+
+      - name: 🧪 Run Tests & Coverage
+        # Roda todos os testes de UI, Widgets e lógica, cobrindo o app inteiro
+        run: flutter test --coverage
+
+      - name: 📈 Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        if: always() # Garante que o report suba mesmo se algum teste falhar
+        with:
+          name: flutter-coverage
+          path: coverage/lcov.info
+          retention-days: 7
+
+      - name: 🛠️ Build Android APK (Smoke Test)
+        # Tenta compilar um build debug para garantir que nada nativo ou dependências quebraram o app
+        run: flutter build apk --debug

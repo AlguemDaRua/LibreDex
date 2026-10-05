@@ -7,7 +7,12 @@ class AnalysisCard extends StatelessWidget {
   final String title;
   final IconData icon;
   final Widget child;
-  const AnalysisCard({super.key, required this.title, required this.icon, required this.child});
+  const AnalysisCard({
+    super.key,
+    required this.title,
+    required this.icon,
+    required this.child,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -18,12 +23,20 @@ class AnalysisCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF121212) : Colors.white,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [Icon(icon, color: AppTheme.pokemonRed), const SizedBox(width: 8), Text(title, style: const TextStyle(fontWeight: FontWeight.w900))]),
+          Row(
+            children: [
+              Icon(icon, color: AppTheme.pokemonRed),
+              const SizedBox(width: 8),
+              Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
+            ],
+          ),
           const SizedBox(height: 12),
           child,
         ],

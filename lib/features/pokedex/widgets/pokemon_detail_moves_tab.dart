@@ -18,21 +18,24 @@ import 'package:libredex/features/pokedex/viewmodels/pokedex_viewmodel.dart';
 class PokemonDetailMovesTab extends ConsumerStatefulWidget {
   final Pokemon activePokemon;
 
-  const PokemonDetailMovesTab({
-    super.key,
-    required this.activePokemon,
-  });
+  const PokemonDetailMovesTab({super.key, required this.activePokemon});
 
   @override
-  ConsumerState<PokemonDetailMovesTab> createState() => _PokemonDetailMovesTabState();
+  ConsumerState<PokemonDetailMovesTab> createState() =>
+      _PokemonDetailMovesTabState();
 }
 
 class _PokemonDetailMovesTabState extends ConsumerState<PokemonDetailMovesTab> {
   String _moveFilter = 'all';
 
-  Color _getTypeColor(String type) => CombatUtils.typeColors[type.toLowerCase()] ?? Colors.grey;
+  Color _getTypeColor(String type) =>
+      CombatUtils.typeColors[type.toLowerCase()] ?? Colors.grey;
 
-  Widget _buildFallbackNote(String message, {required String source, required bool isDark}) {
+  Widget _buildFallbackNote(
+    String message, {
+    required String source,
+    required bool isDark,
+  }) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       padding: const EdgeInsets.all(10),
@@ -65,7 +68,11 @@ class _PokemonDetailMovesTabState extends ConsumerState<PokemonDetailMovesTab> {
     required bool isDark,
   }) {
     final moveNames = changes
-        .map((change) => change.moveName.isEmpty ? 'Move #${change.moveId}' : change.moveName)
+        .map(
+          (change) => change.moveName.isEmpty
+              ? 'Move #${change.moveId}'
+              : change.moveName,
+        )
         .toList(growable: false);
 
     return Container(
@@ -74,12 +81,18 @@ class _PokemonDetailMovesTabState extends ConsumerState<PokemonDetailMovesTab> {
       decoration: BoxDecoration(
         color: Colors.deepOrangeAccent.withValues(alpha: isDark ? 0.12 : 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.deepOrangeAccent.withValues(alpha: 0.38)),
+        border: Border.all(
+          color: Colors.deepOrangeAccent.withValues(alpha: 0.38),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.info_outline_rounded, color: Colors.deepOrangeAccent, size: 18),
+          const Icon(
+            Icons.info_outline_rounded,
+            color: Colors.deepOrangeAccent,
+            size: 18,
+          ),
           const SizedBox(width: 9),
           Expanded(
             child: Column(
@@ -123,17 +136,25 @@ class _PokemonDetailMovesTabState extends ConsumerState<PokemonDetailMovesTab> {
       },
       selectedColor: AppTheme.pokemonRed,
       labelStyle: TextStyle(
-        color: isSelected ? Colors.white : (Theme.of(context).brightness == Brightness.dark ? Colors.grey[300] : Colors.grey[700]),
+        color: isSelected
+            ? Colors.white
+            : (Theme.of(context).brightness == Brightness.dark
+                  ? Colors.grey[300]
+                  : Colors.grey[700]),
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         fontSize: 12,
       ),
-      backgroundColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6),
+      backgroundColor: Theme.of(context).brightness == Brightness.dark
+          ? const Color(0xFF1E1E1E)
+          : const Color(0xFFF3F4F6),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(
           color: isSelected
               ? AppTheme.pokemonRed
-              : (Theme.of(context).brightness == Brightness.dark ? const Color(0xFF2D2D2D) : const Color(0xFFE5E7EB)),
+              : (Theme.of(context).brightness == Brightness.dark
+                    ? const Color(0xFF2D2D2D)
+                    : const Color(0xFFE5E7EB)),
         ),
       ),
     );
@@ -143,9 +164,12 @@ class _PokemonDetailMovesTabState extends ConsumerState<PokemonDetailMovesTab> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final regulation = ref.watch(championsRegulationProvider).asData?.value;
-    final removedMoves = regulation?.removedMovesForPokemon(widget.activePokemon.id) ??
+    final removedMoves =
+        regulation?.removedMovesForPokemon(widget.activePokemon.id) ??
         const <ChampionsMoveChange>[];
-    final movesAsync = ref.watch(pokemonMovesStreamProvider(widget.activePokemon.id));
+    final movesAsync = ref.watch(
+      pokemonMovesStreamProvider(widget.activePokemon.id),
+    );
 
     final movesValue = movesAsync.asData?.value;
     String? fallbackFrom;
@@ -194,15 +218,19 @@ class _PokemonDetailMovesTabState extends ConsumerState<PokemonDetailMovesTab> {
                 return AppEmptyState(
                   icon: Icons.flash_off_rounded,
                   title: 'No moves linked yet',
-                  message: 'Rebuild the bundled links now, or open Settings and use “Fix Moves & Abilities Links”.',
+                  message:
+                      'Rebuild the bundled links now, or open Settings and use “Fix Moves & Abilities Links”.',
                   actionLabel: 'Fix links now',
-                  onAction: () => ref.read(pokedexSyncNotifierProvider.notifier).reseed(),
+                  onAction: () =>
+                      ref.read(pokedexSyncNotifierProvider.notifier).reseed(),
                 );
               }
 
               final filteredMoves = movesList.where((item) {
                 if (_moveFilter == 'all') return true;
-                final kind = learnMethodKind((item['learnMethod'] ?? '').toString());
+                final kind = learnMethodKind(
+                  (item['learnMethod'] ?? '').toString(),
+                );
                 switch (_moveFilter) {
                   case 'level':
                     return kind == LearnMethodKind.level;
@@ -222,33 +250,47 @@ class _PokemonDetailMovesTabState extends ConsumerState<PokemonDetailMovesTab> {
               if (filteredMoves.isEmpty) {
                 return AppEmptyState(
                   icon: Icons.filter_alt_off_rounded,
-                  title: 'No ${_moveFilter == "tm" ? learnMethodLabel("machine") : _moveFilter} moves',
-                  message: 'This Pokémon has no bundled moves for the selected learn method.',
+                  title:
+                      'No ${_moveFilter == "tm" ? learnMethodLabel("machine") : _moveFilter} moves',
+                  message:
+                      'This Pokémon has no bundled moves for the selected learn method.',
                   actionLabel: 'Show all moves',
                   onAction: () => setState(() => _moveFilter = 'all'),
                 );
               }
 
               return ListView.separated(
-                padding: const EdgeInsets.only(left: AppSpacing.pagePadding, right: AppSpacing.pagePadding, top: 4, bottom: AppSpacing.bottomScrollPadding),
+                padding: const EdgeInsets.only(
+                  left: AppSpacing.pagePadding,
+                  right: AppSpacing.pagePadding,
+                  top: 4,
+                  bottom: AppSpacing.bottomScrollPadding,
+                ),
                 itemCount: filteredMoves.length,
                 separatorBuilder: (context, index) => Divider(
-                  color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB),
+                  color: isDark
+                      ? const Color(0xFF1E1E1E)
+                      : const Color(0xFFE5E7EB),
                   height: 1,
                 ),
                 itemBuilder: (context, index) {
                   final move = filteredMoves[index];
                   final int moveId = move['id'] as int? ?? 0;
                   final int? mCPp = regulation?.movePpFor(moveId);
-                  final int? previousMCPp = regulation?.previousMovePpFor(moveId);
-                  final String previousPpLabel = previousMCPp == null ? '' : ' (was $previousMCPp)';
+                  final int? previousMCPp = regulation?.previousMovePpFor(
+                    moveId,
+                  );
+                  final String previousPpLabel = previousMCPp == null
+                      ? ''
+                      : ' (was $previousMCPp)';
                   final String name = move['name'] ?? '';
                   final String moveType = move['type'] ?? 'normal';
                   final String damageClass = move['damageClass'] ?? 'physical';
                   final int? power = move['power'];
                   final int pp = move['pp'] ?? 15;
                   final int? accuracy = move['accuracy'];
-                  final String description = move['description'] ?? 'No information available.';
+                  final String description =
+                      move['description'] ?? 'No information available.';
                   final String learnMethod = move['learnMethod'] ?? 'level';
                   final int? levelLearned = move['levelLearned'];
 
@@ -289,35 +331,55 @@ class _PokemonDetailMovesTabState extends ConsumerState<PokemonDetailMovesTab> {
                               Row(
                                 children: [
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: color.withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Text(
                                       moveType.toUpperCase(),
-                                      style: TextStyle(color: color, fontSize: 8, fontWeight: FontWeight.bold),
+                                      style: TextStyle(
+                                        color: color,
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(width: 6),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: damageClass.toLowerCase() == 'physical'
-                                          ? const Color(0xFFF87171).withValues(alpha: 0.15)
-                                          : damageClass.toLowerCase() == 'special'
-                                              ? const Color(0xFF60A5FA).withValues(alpha: 0.15)
-                                              : Colors.grey.withValues(alpha: 0.15),
+                                      color:
+                                          damageClass.toLowerCase() ==
+                                              'physical'
+                                          ? const Color(
+                                              0xFFF87171,
+                                            ).withValues(alpha: 0.15)
+                                          : damageClass.toLowerCase() ==
+                                                'special'
+                                          ? const Color(
+                                              0xFF60A5FA,
+                                            ).withValues(alpha: 0.15)
+                                          : Colors.grey.withValues(alpha: 0.15),
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Text(
                                       damageClass.toUpperCase(),
                                       style: TextStyle(
-                                        color: damageClass.toLowerCase() == 'physical'
+                                        color:
+                                            damageClass.toLowerCase() ==
+                                                'physical'
                                             ? const Color(0xFFF87171)
-                                            : damageClass.toLowerCase() == 'special'
-                                                ? const Color(0xFF60A5FA)
-                                                : Colors.grey,
+                                            : damageClass.toLowerCase() ==
+                                                  'special'
+                                            ? const Color(0xFF60A5FA)
+                                            : Colors.grey,
                                         fontSize: 8,
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -344,7 +406,10 @@ class _PokemonDetailMovesTabState extends ConsumerState<PokemonDetailMovesTab> {
                             const SizedBox(height: 4),
                             Text(
                               'PP: $pp',
-                              style: const TextStyle(color: Colors.grey, fontSize: 10),
+                              style: const TextStyle(
+                                color: Colors.grey,
+                                fontSize: 10,
+                              ),
                             ),
                             if (mCPp != null)
                               Text(
@@ -361,14 +426,23 @@ class _PokemonDetailMovesTabState extends ConsumerState<PokemonDetailMovesTab> {
                     ),
                     children: [
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0,
+                          vertical: 8.0,
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Divider(color: Color(0xFF2D2D2D), height: 12),
                             Text(
                               description,
-                              style: TextStyle(color: isDark ? Colors.grey[300] : Colors.grey[700], fontSize: 12, height: 1.4),
+                              style: TextStyle(
+                                color: isDark
+                                    ? Colors.grey[300]
+                                    : Colors.grey[700],
+                                fontSize: 12,
+                                height: 1.4,
+                              ),
                             ),
                             const SizedBox(height: 12),
                             Row(
@@ -376,15 +450,33 @@ class _PokemonDetailMovesTabState extends ConsumerState<PokemonDetailMovesTab> {
                               children: [
                                 Text(
                                   'Accuracy: ${accuracy != null ? "$accuracy%" : "—"}',
-                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark
+                                        ? Colors.grey[400]
+                                        : Colors.grey[600],
+                                  ),
                                 ),
                                 Text(
                                   'PP: $pp/$pp',
-                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark
+                                        ? Colors.grey[400]
+                                        : Colors.grey[600],
+                                  ),
                                 ),
                                 Text(
                                   'Category: ${damageClass[0].toUpperCase() + damageClass.substring(1)}',
-                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark
+                                        ? Colors.grey[400]
+                                        : Colors.grey[600],
+                                  ),
                                 ),
                               ],
                             ),
@@ -393,26 +485,45 @@ class _PokemonDetailMovesTabState extends ConsumerState<PokemonDetailMovesTab> {
                               width: double.infinity,
                               child: ElevatedButton.icon(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6),
+                                  backgroundColor: isDark
+                                      ? const Color(0xFF1E1E1E)
+                                      : const Color(0xFFF3F4F6),
                                   foregroundColor: AppTheme.pokemonRed,
                                   elevation: 0,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10),
-                                    side: BorderSide(color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE2E8F0)),
+                                    side: BorderSide(
+                                      color: isDark
+                                          ? const Color(0xFF2D2D2D)
+                                          : const Color(0xFFE2E8F0),
+                                    ),
                                   ),
-                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 10,
+                                  ),
                                 ),
-                                icon: const Icon(Icons.catching_pokemon, size: 16),
+                                icon: const Icon(
+                                  Icons.catching_pokemon,
+                                  size: 16,
+                                ),
                                 label: const Text(
                                   'Who Else Learns This Move?',
-                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                                 onPressed: () {
                                   final int? moveId = move['id'];
                                   if (moveId != null) {
                                     Navigator.push(
                                       context,
-                                      MaterialPageRoute(builder: (_) => MoveDetailScreen(moveId: moveId, moveName: name)),
+                                      MaterialPageRoute(
+                                        builder: (_) => MoveDetailScreen(
+                                          moveId: moveId,
+                                          moveName: name,
+                                        ),
+                                      ),
                                     );
                                   }
                                 },
@@ -432,7 +543,10 @@ class _PokemonDetailMovesTabState extends ConsumerState<PokemonDetailMovesTab> {
                 child: SizedBox(
                   width: 32,
                   height: 32,
-                  child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(AppTheme.pokemonRed)),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation(AppTheme.pokemonRed),
+                  ),
                 ),
               ),
             ),

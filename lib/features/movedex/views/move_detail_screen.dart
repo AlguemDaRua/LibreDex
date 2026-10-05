@@ -33,7 +33,8 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
   Move? _moveDetails;
 
   // Learnset filters (Multi-select)
-  final TextEditingController _pokemonSearchController = TextEditingController();
+  final TextEditingController _pokemonSearchController =
+      TextEditingController();
   String _pokemonQuery = '';
   final Set<String> _selectedTypes = {};
   final Set<int> _selectedGens = {};
@@ -62,14 +63,18 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
     return _pokemons.where((row) {
       final p = row['pokemon'] as Pokemon;
       final String method = (row['learnMethod'] ?? 'level-up').toString();
-      final text = '${p.name} ${p.form} ${p.type1} ${p.type2 ?? ''}'.toLowerCase();
+      final text = '${p.name} ${p.form} ${p.type1} ${p.type2 ?? ''}'
+          .toLowerCase();
 
       final matchesQuery = q.isEmpty || text.contains(q);
-      final matchesType = _selectedTypes.isEmpty ||
+      final matchesType =
+          _selectedTypes.isEmpty ||
           _selectedTypes.contains(p.type1.toLowerCase()) ||
           (p.type2 != null && _selectedTypes.contains(p.type2!.toLowerCase()));
-      final matchesGen = _selectedGens.isEmpty || _selectedGens.contains(p.generation);
-      final matchesMethod = _selectedMethods.isEmpty ||
+      final matchesGen =
+          _selectedGens.isEmpty || _selectedGens.contains(p.generation);
+      final matchesMethod =
+          _selectedMethods.isEmpty ||
           _selectedMethods.any((m) => m.toLowerCase() == method.toLowerCase());
 
       return matchesQuery && matchesType && matchesGen && matchesMethod;
@@ -92,7 +97,9 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
       final db = ref.read(databaseProvider);
 
       // Fetch move details
-      _moveDetails = await (db.select(db.moveTable)..where((tbl) => tbl.id.equals(widget.moveId))).getSingleOrNull();
+      _moveDetails = await (db.select(
+        db.moveTable,
+      )..where((tbl) => tbl.id.equals(widget.moveId))).getSingleOrNull();
       if (_moveDetails == null) {
         throw Exception('Move reference not found in local database.');
       }
@@ -122,7 +129,8 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
   void _copyMoveDetailsToClipboard() {
     if (_moveDetails == null) return;
     final m = _moveDetails!;
-    final text = 'MOVE: ${m.name.toUpperCase()}\n'
+    final text =
+        'MOVE: ${m.name.toUpperCase()}\n'
         'Type: ${m.type.toUpperCase()} | Class: ${m.damageClass.toUpperCase()}\n'
         'Power: ${m.power?.toString() ?? "—"} | Acc: ${m.accuracy != null ? "${m.accuracy}%" : "—"} | PP: ${m.pp}\n'
         'Priority: ${m.priority} | Contact: ${m.isContact ? "Yes" : "No"}\n'
@@ -137,7 +145,8 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
   void _shareMoveDetails() {
     if (_moveDetails == null) return;
     final m = _moveDetails!;
-    final text = 'Check out ${m.name} in LibreDex!\n'
+    final text =
+        'Check out ${m.name} in LibreDex!\n'
         'Type: ${m.type.toUpperCase()} | Pwr: ${m.power ?? "Status"} | Acc: ${m.accuracy ?? "—"}\n'
         '${m.description ?? ""}';
     Clipboard.setData(ClipboardData(text: text));
@@ -158,7 +167,11 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
       appBar: AppBar(
         title: Text(
           widget.moveName.toUpperCase(),
-          style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1, color: primaryColor),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1,
+            color: primaryColor,
+          ),
         ),
         iconTheme: IconThemeData(color: primaryColor),
         backgroundColor: Colors.transparent,
@@ -182,215 +195,279 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
         top: false,
         bottom: true,
         child: _isLoading
-            ? const Center(child: CircularProgressIndicator(color: AppTheme.pokemonRed))
+            ? const Center(
+                child: CircularProgressIndicator(color: AppTheme.pokemonRed),
+              )
             : _hasError
-                ? _buildErrorState()
-                : CustomScrollView(
-                    physics: const BouncingScrollPhysics(),
-                  slivers: [
-                    // Move Card Header (Scrolls away cleanly!)
-                    if (_moveDetails != null)
-                      SliverToBoxAdapter(
-                        child: _buildMoveHeaderCard(isDark, regulation),
-                      ),
-
-                    // Section Title: Learned By
+            ? _buildErrorState()
+            : CustomScrollView(
+                physics: const BouncingScrollPhysics(),
+                slivers: [
+                  // Move Card Header (Scrolls away cleanly!)
+                  if (_moveDetails != null)
                     SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: 16, right: 16, top: 12, bottom: 4),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(Icons.school_outlined, size: 20, color: AppTheme.pokemonRed.withValues(alpha: 0.8)),
-                                const SizedBox(width: 8),
-                                const Text(
-                                  'LEARNED BY',
-                                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey, fontSize: 12),
+                      child: _buildMoveHeaderCard(isDark, regulation),
+                    ),
+
+                  // Section Title: Learned By
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                        left: 16,
+                        right: 16,
+                        top: 12,
+                        bottom: 4,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.school_outlined,
+                                size: 20,
+                                color: AppTheme.pokemonRed.withValues(
+                                  alpha: 0.8,
                                 ),
-                              ],
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'LEARNED BY',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            '${_visiblePokemons.length} matches',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                              color: Colors.grey,
                             ),
-                            Text(
-                              '${_visiblePokemons.length} matches',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Sticky Filter & Search Bar
+                  SliverPersistentHeader(
+                    pinned: true,
+                    delegate: _MoveFilterHeaderDelegate(
+                      child: Container(
+                        color: isDark ? Colors.black : const Color(0xFFF9FAFB),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 4,
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            TextField(
+                              controller: _pokemonSearchController,
+                              onChanged: (value) =>
+                                  setState(() => _pokemonQuery = value),
+                              decoration: InputDecoration(
+                                hintText: 'Filter learned-by Pokémon...',
+                                prefixIcon: const Icon(
+                                  Icons.search_rounded,
+                                  color: AppTheme.pokemonRed,
+                                ),
+                                suffixIcon: _pokemonQuery.isEmpty
+                                    ? null
+                                    : IconButton(
+                                        icon: const Icon(Icons.clear),
+                                        onPressed: () {
+                                          _pokemonSearchController.clear();
+                                          setState(() => _pokemonQuery = '');
+                                        },
+                                      ),
+                                isDense: true,
+                              ),
                             ),
+                            const SizedBox(height: 6),
+                            _buildFilterChipsRow(),
                           ],
                         ),
                       ),
                     ),
+                  ),
 
-                    // Sticky Filter & Search Bar
-                    SliverPersistentHeader(
-                      pinned: true,
-                      delegate: _MoveFilterHeaderDelegate(
-                        child: Container(
-                          color: isDark ? Colors.black : const Color(0xFFF9FAFB),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              TextField(
-                                controller: _pokemonSearchController,
-                                onChanged: (value) => setState(() => _pokemonQuery = value),
-                                decoration: InputDecoration(
-                                  hintText: 'Filter learned-by Pokémon...',
-                                  prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.pokemonRed),
-                                  suffixIcon: _pokemonQuery.isEmpty
-                                      ? null
-                                      : IconButton(
-                                          icon: const Icon(Icons.clear),
-                                          onPressed: () {
-                                            _pokemonSearchController.clear();
-                                            setState(() => _pokemonQuery = '');
-                                          },
-                                        ),
-                                  isDense: true,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              _buildFilterChipsRow(),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    // List of learned-by Pokémon
-                    _visiblePokemons.isEmpty
-                        ? SliverFillRemaining(
-                            hasScrollBody: false,
-                            child: Center(
-                              child: Text(
-                                'No Pokémon match this filter.',
-                                style: TextStyle(color: isDark ? Colors.grey[500] : Colors.grey[600]),
+                  // List of learned-by Pokémon
+                  _visiblePokemons.isEmpty
+                      ? SliverFillRemaining(
+                          hasScrollBody: false,
+                          child: Center(
+                            child: Text(
+                              'No Pokémon match this filter.',
+                              style: TextStyle(
+                                color: isDark
+                                    ? Colors.grey[500]
+                                    : Colors.grey[600],
                               ),
                             ),
-                          )
-                        : SliverList(
-                            delegate: SliverChildBuilderDelegate(
-                              (context, index) {
-                                final item = _visiblePokemons[index];
-                                final Pokemon p = item['pokemon'];
-                                final String method = item['learnMethod'];
-                                final int? level = item['levelLearned'];
-                                final typeColor = _getTypeColor(p.type1);
+                          ),
+                        )
+                      : SliverList(
+                          delegate: SliverChildBuilderDelegate((
+                            context,
+                            index,
+                          ) {
+                            final item = _visiblePokemons[index];
+                            final Pokemon p = item['pokemon'];
+                            final String method = item['learnMethod'];
+                            final int? level = item['levelLearned'];
+                            final typeColor = _getTypeColor(p.type1);
 
-                                return Card(
-                                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                                  elevation: 0,
-                                  color: isDark ? const Color(0xFF121212) : Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                    side: BorderSide(
-                                        color: isDark ? const Color(0xFF1C1C1C) : const Color(0xFFE2E8F0)),
-                                  ),
-                                  child: InkWell(
-                                    borderRadius: BorderRadius.circular(16),
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) => PokemonDetailScreen(forms: [p])),
-                                      );
-                                    },
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(12),
-                                      child: Row(
-                                        children: [
-                                          Hero(
-                                            tag: 'move_${widget.moveId}_pokemon_${p.id}',
-                                            child: SizedBox(
-                                              width: 54,
-                                              height: 54,
-                                              child: p.spriteUrl.isNotEmpty
-                                                  ? PokemonSprite(
-                                                      imageUrl: p.spriteUrl,
-                                                      fallbackUrl: PokemonSprite.homeArtworkUrl(
-                                                          p.nationalDexNumber > 0
-                                                              ? p.nationalDexNumber
-                                                              : p.id),
-                                                      loadingIndicatorSize: 20,
-                                                      errorIconColor: typeColor.withValues(alpha: 0.3),
-                                                      errorIconSize: 24,
-                                                    )
-                                                  : Icon(Icons.catching_pokemon,
-                                                      color: typeColor.withValues(alpha: 0.3)),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 14),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Row(
-                                                  children: [
-                                                    Text(
-                                                      '#${p.nationalDexNumber > 0 ? p.nationalDexNumber.toString().padLeft(3, '0') : p.id}',
-                                                      style: TextStyle(
-                                                        fontSize: 11,
-                                                        fontWeight: FontWeight.bold,
-                                                        color: isDark ? Colors.grey[500] : Colors.grey[600],
+                            return Card(
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 6,
+                              ),
+                              elevation: 0,
+                              color: isDark
+                                  ? const Color(0xFF121212)
+                                  : Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                side: BorderSide(
+                                  color: isDark
+                                      ? const Color(0xFF1C1C1C)
+                                      : const Color(0xFFE2E8F0),
+                                ),
+                              ),
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(16),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          PokemonDetailScreen(forms: [p]),
+                                    ),
+                                  );
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Row(
+                                    children: [
+                                      Hero(
+                                        tag:
+                                            'move_${widget.moveId}_pokemon_${p.id}',
+                                        child: SizedBox(
+                                          width: 54,
+                                          height: 54,
+                                          child: p.spriteUrl.isNotEmpty
+                                              ? PokemonSprite(
+                                                  imageUrl: p.spriteUrl,
+                                                  fallbackUrl:
+                                                      PokemonSprite.homeArtworkUrl(
+                                                        p.nationalDexNumber > 0
+                                                            ? p.nationalDexNumber
+                                                            : p.id,
                                                       ),
-                                                    ),
-                                                    const SizedBox(width: 6),
-                                                    Expanded(
-                                                      child: Text(
-                                                        p.name,
-                                                        style: const TextStyle(
-                                                          fontWeight: FontWeight.bold,
-                                                          fontSize: 15,
-                                                        ),
-                                                        maxLines: 1,
-                                                        overflow: TextOverflow.ellipsis,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                                if (p.form.isNotEmpty && p.form != 'normal')
-                                                  Text(
-                                                    p.form.toUpperCase(),
-                                                    style: TextStyle(
-                                                      fontSize: 10,
-                                                      fontWeight: FontWeight.w600,
-                                                      color: isDark ? Colors.grey[400] : Colors.grey[600],
-                                                    ),
+                                                  loadingIndicatorSize: 20,
+                                                  errorIconColor: typeColor
+                                                      .withValues(alpha: 0.3),
+                                                  errorIconSize: 24,
+                                                )
+                                              : Icon(
+                                                  Icons.catching_pokemon,
+                                                  color: typeColor.withValues(
+                                                    alpha: 0.3,
                                                   ),
-                                                const SizedBox(height: 4),
-                                                Row(
-                                                  children: [
-                                                    _buildTypeBadge(p.type1),
-                                                    if (p.type2 != null) ...[
-                                                      const SizedBox(width: 4),
-                                                      _buildTypeBadge(p.type2!),
-                                                    ],
-                                                  ],
+                                                ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 14),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  '#${p.nationalDexNumber > 0 ? p.nationalDexNumber.toString().padLeft(3, '0') : p.id}',
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: isDark
+                                                        ? Colors.grey[500]
+                                                        : Colors.grey[600],
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 6),
+                                                Expanded(
+                                                  child: Text(
+                                                    p.name,
+                                                    style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 15,
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
                                                 ),
                                               ],
                                             ),
-                                          ),
-                                          _buildLearnMethodBadge(method, level),
-                                        ],
+                                            if (p.form.isNotEmpty &&
+                                                p.form != 'normal')
+                                              Text(
+                                                p.form.toUpperCase(),
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: isDark
+                                                      ? Colors.grey[400]
+                                                      : Colors.grey[600],
+                                                ),
+                                              ),
+                                            const SizedBox(height: 4),
+                                            Row(
+                                              children: [
+                                                _buildTypeBadge(p.type1),
+                                                if (p.type2 != null) ...[
+                                                  const SizedBox(width: 4),
+                                                  _buildTypeBadge(p.type2!),
+                                                ],
+                                              ],
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                    ),
+                                      _buildLearnMethodBadge(method, level),
+                                    ],
                                   ),
-                                );
-                              },
-                              childCount: _visiblePokemons.length,
-                            ),
-                          ),
-                  ],
-                ),
+                                ),
+                              ),
+                            );
+                          }, childCount: _visiblePokemons.length),
+                        ),
+                ],
+              ),
       ),
     );
   }
 
-  Widget _buildMoveHeaderCard(bool isDark, ChampionsRegulationCatalog? regulation) {
+  Widget _buildMoveHeaderCard(
+    bool isDark,
+    ChampionsRegulationCatalog? regulation,
+  ) {
     final move = _moveDetails!;
     final isMCAvailable = regulation?.isMoveAvailable(move.id) ?? false;
     final isNewInMC = regulation?.isNewMove(move.id) ?? false;
-    final isNewlyUsable = regulation?.newlyUsableMoveIds.contains(move.id) ?? false;
-    final mCEffect = isMCAvailable ? regulation?.moveDescriptionFor(move.id) : null;
+    final isNewlyUsable =
+        regulation?.newlyUsableMoveIds.contains(move.id) ?? false;
+    final mCEffect = isMCAvailable
+        ? regulation?.moveDescriptionFor(move.id)
+        : null;
     final mCPp = regulation?.movePpFor(move.id);
     final previousMCPp = regulation?.previousMovePpFor(move.id);
 
@@ -400,7 +477,9 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF121212) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -409,7 +488,10 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: _getTypeColor(move.type).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
@@ -425,7 +507,11 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
               ),
               Row(
                 children: [
-                  _buildStatBadge('BP', move.power?.toString() ?? '—', Colors.redAccent),
+                  _buildStatBadge(
+                    'BP',
+                    move.power?.toString() ?? '—',
+                    Colors.redAccent,
+                  ),
                   const SizedBox(width: 8),
                   _buildStatBadge(
                     'ACC',
@@ -447,63 +533,190 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
                 if (isMCAvailable)
                   const ContentBadge.mC(tooltip: 'Available in Regulation M-C'),
                 if (isNewInMC)
-                  const ContentBadge.mC(isNew: true, tooltip: 'Newly added to Regulation M-C'),
+                  const ContentBadge.mC(
+                    isNew: true,
+                    tooltip: 'Newly added to Regulation M-C',
+                  ),
                 if (isNewlyUsable)
-                  const ContentBadge(label: 'NEWLY USABLE', color: Colors.teal, tooltip: 'Newly permitted by the M-C update'),
+                  const ContentBadge(
+                    label: 'NEWLY USABLE',
+                    color: Colors.teal,
+                    tooltip: 'Newly permitted by the M-C update',
+                  ),
               ],
             ),
           ],
           const SizedBox(height: 12),
           Text(
             mCEffect == null ? 'MOVE EFFECT' : 'REGULATION M-C EFFECT',
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey),
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
             mCEffect ?? move.description ?? 'No description available.',
-            style: TextStyle(fontSize: 14, color: isDark ? Colors.white70 : Colors.black87, height: 1.4),
+            style: TextStyle(
+              fontSize: 14,
+              color: isDark ? Colors.white70 : Colors.black87,
+              height: 1.4,
+            ),
           ),
           const SizedBox(height: 12),
-          const Text('MOVE PROPERTIES', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
+          const Text(
+            'MOVE PROPERTIES',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey,
+            ),
+          ),
           const SizedBox(height: 6),
           Wrap(
             spacing: 6,
             runSpacing: 6,
             children: [
-              _buildPropertyBadge('Priority: ${move.priority}', Colors.orangeAccent, icon: Icons.priority_high),
-              _buildPropertyBadge('Contact: ${move.isContact ? "Yes" : "No"}', Colors.blueAccent, icon: Icons.pan_tool_outlined),
+              _buildPropertyBadge(
+                'Priority: ${move.priority}',
+                Colors.orangeAccent,
+                icon: Icons.priority_high,
+              ),
+              _buildPropertyBadge(
+                'Contact: ${move.isContact ? "Yes" : "No"}',
+                Colors.blueAccent,
+                icon: Icons.pan_tool_outlined,
+              ),
               if (mCPp != null)
                 _buildPropertyBadge(
                   'M-C PP: $mCPp${previousMCPp == null ? "" : " (was $previousMCPp)"}',
                   Colors.deepPurpleAccent,
                   icon: Icons.tune_rounded,
                 ),
-              if (move.isHealing) _buildPropertyBadge('Healing', Colors.green, icon: Icons.healing),
-              if (move.isSound) _buildPropertyBadge('Sound-Based', Colors.purple, icon: Icons.volume_up),
-              if (move.isPunching) _buildPropertyBadge('Punching', Colors.red, icon: Icons.sports_mma),
-              if (move.isBiting) _buildPropertyBadge('Biting', Colors.deepOrange, icon: Icons.pets),
-              if (move.isPowder) _buildPropertyBadge('Powder', Colors.lime, icon: Icons.blur_on),
-              if (move.isPulse) _buildPropertyBadge('Pulse/Aura', Colors.indigo, icon: Icons.radio_button_unchecked),
-              if (move.isBallistic) _buildPropertyBadge('Ballistic', Colors.blueGrey, icon: Icons.gps_fixed),
-              if (move.isSlicing) _buildPropertyBadge('Slicing', Colors.teal, icon: Icons.content_cut),
-              if (move.isWind) _buildPropertyBadge('Wind-Based', Colors.cyan, icon: Icons.air),
-              if (move.isDance) _buildPropertyBadge('Dance', Colors.pink, icon: Icons.music_note),
-              if (move.isMultiHit) _buildPropertyBadge('Multi-Hit', Colors.brown, icon: Icons.repeat),
-              if (move.isProtective) _buildPropertyBadge('Protective', Colors.green, icon: Icons.security),
-              if (move.isSwitching) _buildPropertyBadge('Switching', Colors.deepPurple, icon: Icons.swap_horiz),
-              if (move.isRecharge) _buildPropertyBadge('Recharge Required', Colors.red, icon: Icons.battery_charging_full),
-              if (move.isRecoil) _buildPropertyBadge('Recoil', Colors.blue, icon: Icons.keyboard_return),
-              if (move.isDraining) _buildPropertyBadge('Draining', Colors.green, icon: Icons.add_circle_outline),
-              _buildPropertyBadge(move.introducedIn ?? 'Unknown', Colors.grey, icon: Icons.calendar_today),
+              if (move.isHealing)
+                _buildPropertyBadge(
+                  'Healing',
+                  Colors.green,
+                  icon: Icons.healing,
+                ),
+              if (move.isSound)
+                _buildPropertyBadge(
+                  'Sound-Based',
+                  Colors.purple,
+                  icon: Icons.volume_up,
+                ),
+              if (move.isPunching)
+                _buildPropertyBadge(
+                  'Punching',
+                  Colors.red,
+                  icon: Icons.sports_mma,
+                ),
+              if (move.isBiting)
+                _buildPropertyBadge(
+                  'Biting',
+                  Colors.deepOrange,
+                  icon: Icons.pets,
+                ),
+              if (move.isPowder)
+                _buildPropertyBadge('Powder', Colors.lime, icon: Icons.blur_on),
+              if (move.isPulse)
+                _buildPropertyBadge(
+                  'Pulse/Aura',
+                  Colors.indigo,
+                  icon: Icons.radio_button_unchecked,
+                ),
+              if (move.isBallistic)
+                _buildPropertyBadge(
+                  'Ballistic',
+                  Colors.blueGrey,
+                  icon: Icons.gps_fixed,
+                ),
+              if (move.isSlicing)
+                _buildPropertyBadge(
+                  'Slicing',
+                  Colors.teal,
+                  icon: Icons.content_cut,
+                ),
+              if (move.isWind)
+                _buildPropertyBadge('Wind-Based', Colors.cyan, icon: Icons.air),
+              if (move.isDance)
+                _buildPropertyBadge(
+                  'Dance',
+                  Colors.pink,
+                  icon: Icons.music_note,
+                ),
+              if (move.isMultiHit)
+                _buildPropertyBadge(
+                  'Multi-Hit',
+                  Colors.brown,
+                  icon: Icons.repeat,
+                ),
+              if (move.isProtective)
+                _buildPropertyBadge(
+                  'Protective',
+                  Colors.green,
+                  icon: Icons.security,
+                ),
+              if (move.isSwitching)
+                _buildPropertyBadge(
+                  'Switching',
+                  Colors.deepPurple,
+                  icon: Icons.swap_horiz,
+                ),
+              if (move.isRecharge)
+                _buildPropertyBadge(
+                  'Recharge Required',
+                  Colors.red,
+                  icon: Icons.battery_charging_full,
+                ),
+              if (move.isRecoil)
+                _buildPropertyBadge(
+                  'Recoil',
+                  Colors.blue,
+                  icon: Icons.keyboard_return,
+                ),
+              if (move.isDraining)
+                _buildPropertyBadge(
+                  'Draining',
+                  Colors.green,
+                  icon: Icons.add_circle_outline,
+                ),
+              _buildPropertyBadge(
+                move.introducedIn ?? 'Unknown',
+                Colors.grey,
+                icon: Icons.calendar_today,
+              ),
               if (isMCAvailable)
-                _buildPropertyBadge('Available in M-C', Colors.deepPurpleAccent, icon: Icons.emoji_events),
+                _buildPropertyBadge(
+                  'Available in M-C',
+                  Colors.deepPurpleAccent,
+                  icon: Icons.emoji_events,
+                ),
               if (move.isChampionsMove)
-                _buildPropertyBadge('Champions-origin move', Colors.orangeAccent, icon: Icons.sports_esports),
+                _buildPropertyBadge(
+                  'Champions-origin move',
+                  Colors.orangeAccent,
+                  icon: Icons.sports_esports,
+                ),
               if (move.isLegendsZAMove)
-                _buildPropertyBadge('Legends: Z-A', Colors.purple, icon: Icons.auto_awesome),
-              if (move.isDLCMove) _buildPropertyBadge('DLC Content', Colors.indigoAccent, icon: Icons.extension),
+                _buildPropertyBadge(
+                  'Legends: Z-A',
+                  Colors.purple,
+                  icon: Icons.auto_awesome,
+                ),
+              if (move.isDLCMove)
+                _buildPropertyBadge(
+                  'DLC Content',
+                  Colors.indigoAccent,
+                  icon: Icons.extension,
+                ),
               if (move.isSignatureMove)
-                _buildPropertyBadge('Signature Move', Colors.amber, icon: Icons.workspace_premium),
+                _buildPropertyBadge(
+                  'Signature Move',
+                  Colors.amber,
+                  icon: Icons.workspace_premium,
+                ),
             ],
           ),
         ],
@@ -512,7 +725,10 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
   }
 
   Widget _buildFilterChipsRow() {
-    final hasActiveFilter = _selectedTypes.isNotEmpty || _selectedGens.isNotEmpty || _selectedMethods.isNotEmpty;
+    final hasActiveFilter =
+        _selectedTypes.isNotEmpty ||
+        _selectedGens.isNotEmpty ||
+        _selectedMethods.isNotEmpty;
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -553,11 +769,16 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
               },
               borderRadius: BorderRadius.circular(20),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: AppTheme.pokemonRed.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppTheme.pokemonRed.withValues(alpha: 0.4)),
+                  border: Border.all(
+                    color: AppTheme.pokemonRed.withValues(alpha: 0.4),
+                  ),
                 ),
                 child: const Row(
                   children: [
@@ -588,7 +809,9 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: isDark ? const Color(0xFF141414) : Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (ctx) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
@@ -603,14 +826,24 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
                     children: [
                       const Text(
                         'FILTER BY ELEMENTAL TYPE',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 0.5),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                       TextButton(
                         onPressed: () {
                           setSheetState(() => _selectedTypes.clear());
                           setState(() {});
                         },
-                        child: const Text('Reset', style: TextStyle(color: AppTheme.pokemonRed, fontSize: 12)),
+                        child: const Text(
+                          'Reset',
+                          style: TextStyle(
+                            color: AppTheme.pokemonRed,
+                            fontSize: 12,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -629,10 +862,14 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
                         labelStyle: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
-                          color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                          color: isSelected
+                              ? Colors.white
+                              : (isDark ? Colors.white70 : Colors.black87),
                         ),
                         selectedColor: typeColor,
-                        backgroundColor: isDark ? const Color(0xFF222222) : const Color(0xFFF3F4F6),
+                        backgroundColor: isDark
+                            ? const Color(0xFF222222)
+                            : const Color(0xFFF3F4F6),
                         checkmarkColor: Colors.white,
                         onSelected: (val) {
                           setSheetState(() {
@@ -654,10 +891,15 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.pokemonRed,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       onPressed: () => Navigator.pop(ctx),
-                      child: const Text('Apply Filter', style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        'Apply Filter',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ],
@@ -676,7 +918,9 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: isDark ? const Color(0xFF141414) : Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (ctx) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
@@ -691,14 +935,24 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
                     children: [
                       const Text(
                         'FILTER BY GENERATION',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 0.5),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                       TextButton(
                         onPressed: () {
                           setSheetState(() => _selectedGens.clear());
                           setState(() {});
                         },
-                        child: const Text('Reset', style: TextStyle(color: AppTheme.pokemonRed, fontSize: 12)),
+                        child: const Text(
+                          'Reset',
+                          style: TextStyle(
+                            color: AppTheme.pokemonRed,
+                            fontSize: 12,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -715,10 +969,14 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
                         labelStyle: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
-                          color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                          color: isSelected
+                              ? Colors.white
+                              : (isDark ? Colors.white70 : Colors.black87),
                         ),
                         selectedColor: AppTheme.pokemonRed,
-                        backgroundColor: isDark ? const Color(0xFF222222) : const Color(0xFFF3F4F6),
+                        backgroundColor: isDark
+                            ? const Color(0xFF222222)
+                            : const Color(0xFFF3F4F6),
                         checkmarkColor: Colors.white,
                         onSelected: (val) {
                           setSheetState(() {
@@ -740,10 +998,15 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.pokemonRed,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       onPressed: () => Navigator.pop(ctx),
-                      child: const Text('Apply Filter', style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        'Apply Filter',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ],
@@ -762,7 +1025,9 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: isDark ? const Color(0xFF141414) : Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (ctx) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
@@ -777,14 +1042,24 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
                     children: [
                       const Text(
                         'FILTER BY LEARN METHOD',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 0.5),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                       TextButton(
                         onPressed: () {
                           setSheetState(() => _selectedMethods.clear());
                           setState(() {});
                         },
-                        child: const Text('Reset', style: TextStyle(color: AppTheme.pokemonRed, fontSize: 12)),
+                        child: const Text(
+                          'Reset',
+                          style: TextStyle(
+                            color: AppTheme.pokemonRed,
+                            fontSize: 12,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -801,10 +1076,14 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
                         labelStyle: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
-                          color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                          color: isSelected
+                              ? Colors.white
+                              : (isDark ? Colors.white70 : Colors.black87),
                         ),
                         selectedColor: AppTheme.pokemonRed,
-                        backgroundColor: isDark ? const Color(0xFF222222) : const Color(0xFFF3F4F6),
+                        backgroundColor: isDark
+                            ? const Color(0xFF222222)
+                            : const Color(0xFFF3F4F6),
                         checkmarkColor: Colors.white,
                         onSelected: (val) {
                           setSheetState(() {
@@ -826,10 +1105,15 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.pokemonRed,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       onPressed: () => Navigator.pop(ctx),
-                      child: const Text('Apply Filter', style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        'Apply Filter',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ],
@@ -858,7 +1142,9 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
               : (isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6)),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isActive ? AppTheme.pokemonRed : (isDark ? const Color(0xFF333333) : const Color(0xFFE5E7EB)),
+            color: isActive
+                ? AppTheme.pokemonRed
+                : (isDark ? const Color(0xFF333333) : const Color(0xFFE5E7EB)),
           ),
         ),
         child: Row(
@@ -897,9 +1183,23 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
           const SizedBox(width: 4),
-          Text(value, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color)),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
         ],
       ),
     );
@@ -922,7 +1222,11 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
           ],
           Text(
             label,
-            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color),
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
           ),
         ],
       ),
@@ -939,7 +1243,11 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
       ),
       child: Text(
         type.toUpperCase(),
-        style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: color),
+        style: TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.bold,
+          color: color,
+        ),
       ),
     );
   }
@@ -955,18 +1263,29 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline_rounded, size: 48, color: Colors.redAccent),
+            const Icon(
+              Icons.error_outline_rounded,
+              size: 48,
+              color: Colors.redAccent,
+            ),
             const SizedBox(height: 16),
             Text(
-              _errorMessage.isNotEmpty ? _errorMessage : 'Move details could not be loaded.',
+              _errorMessage.isNotEmpty
+                  ? _errorMessage
+                  : 'Move details could not be loaded.',
               style: const TextStyle(fontSize: 14),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _fetchData,
-              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.pokemonRed),
-              child: const Text('Try Again', style: TextStyle(color: Colors.white)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.pokemonRed,
+              ),
+              child: const Text(
+                'Try Again',
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           ],
         ),
@@ -981,8 +1300,12 @@ class _MoveFilterHeaderDelegate extends SliverPersistentHeaderDelegate {
   _MoveFilterHeaderDelegate({required this.child});
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return child;
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return SizedBox.expand(child: child);
   }
 
   @override

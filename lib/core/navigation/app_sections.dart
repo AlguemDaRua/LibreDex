@@ -2,16 +2,61 @@ import 'package:flutter/material.dart';
 
 /// Single source of truth for every top-level destination.
 enum AppSection {
-  pokedex('Pokédex', 'Pokédex', Icons.catching_pokemon, Icons.catching_pokemon_outlined),
-  teamBuilder('Teams', 'Team Builder', Icons.groups_rounded, Icons.groups_outlined),
-  statCompare('Compare', 'Stat Compare', Icons.compare_arrows_rounded, Icons.compare_arrows_outlined),
+  pokedex(
+    'Pokédex',
+    'Pokédex',
+    Icons.catching_pokemon,
+    Icons.catching_pokemon_outlined,
+  ),
+  teamBuilder(
+    'Teams',
+    'Team Builder',
+    Icons.groups_rounded,
+    Icons.groups_outlined,
+  ),
+  statCompare(
+    'Compare',
+    'Stat Compare',
+    Icons.compare_arrows_rounded,
+    Icons.compare_arrows_outlined,
+  ),
   movedex('Moves', 'MoveDex', Icons.flash_on_rounded, Icons.flash_on_outlined),
-  abilitydex('Abilities', 'AbilityDex', Icons.auto_awesome_rounded, Icons.auto_awesome_outlined),
-  itemdex('Items', 'ItemDex', Icons.inventory_2_rounded, Icons.inventory_2_outlined),
-  naturedex('Natures', 'NatureDex', Icons.analytics_rounded, Icons.analytics_outlined),
-  typeChart('Type Chart', 'Type Chart', Icons.grid_on_rounded, Icons.grid_on_outlined),
-  calculator('Calc', 'Damage Calc', Icons.calculate_rounded, Icons.calculate_outlined),
-  settings('Settings', 'Settings', Icons.settings_rounded, Icons.settings_outlined);
+  abilitydex(
+    'Abilities',
+    'AbilityDex',
+    Icons.auto_awesome_rounded,
+    Icons.auto_awesome_outlined,
+  ),
+  itemdex(
+    'Items',
+    'ItemDex',
+    Icons.inventory_2_rounded,
+    Icons.inventory_2_outlined,
+  ),
+  naturedex(
+    'Natures',
+    'NatureDex',
+    Icons.analytics_rounded,
+    Icons.analytics_outlined,
+  ),
+  typeChart(
+    'Type Chart',
+    'Type Chart',
+    Icons.grid_on_rounded,
+    Icons.grid_on_outlined,
+  ),
+  calculator(
+    'Calc',
+    'Damage Calc',
+    Icons.calculate_rounded,
+    Icons.calculate_outlined,
+  ),
+  settings(
+    'Settings',
+    'Settings',
+    Icons.settings_rounded,
+    Icons.settings_outlined,
+  );
 
   const AppSection(
     this.label,
@@ -30,9 +75,9 @@ enum AppSection {
   final IconData unselectedIcon;
 
   static AppSection fromIndex(int i) => AppSection.values.firstWhere(
-        (section) => section.index == i,
-        orElse: () => AppSection.pokedex,
-      );
+    (section) => section.index == i,
+    orElse: () => AppSection.pokedex,
+  );
 }
 
 /// What appears in the adaptive primary nav.

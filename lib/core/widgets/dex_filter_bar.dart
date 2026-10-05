@@ -43,19 +43,25 @@ class DexFilterBar extends StatelessWidget {
             decoration: BoxDecoration(
               color: hasActiveFilters
                   ? Colors.orangeAccent.withValues(alpha: 0.15)
-                  : (isDark ? const Color(0xFF141414) : const Color(0xFFEDF2F7)),
+                  : (isDark
+                        ? const Color(0xFF141414)
+                        : const Color(0xFFEDF2F7)),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: hasActiveFilters
                     ? Colors.orangeAccent
-                    : (isDark ? const Color(0xFF222222) : const Color(0xFFE2E8F0)),
+                    : (isDark
+                          ? const Color(0xFF222222)
+                          : const Color(0xFFE2E8F0)),
                 width: 1.2,
               ),
             ),
             child: Semantics(
               button: true,
               label: 'Advanced Filters',
-              hint: hasActiveFilters ? 'Filters are active' : 'No filters active',
+              hint: hasActiveFilters
+                  ? 'Filters are active'
+                  : 'No filters active',
               child: IconButton(
                 icon: Icon(
                   Icons.filter_list_rounded,

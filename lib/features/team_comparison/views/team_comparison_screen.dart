@@ -19,10 +19,15 @@ import 'package:libredex/features/pokedex/viewmodels/team_builder_provider.dart'
 class TeamComparisonScreen extends ConsumerStatefulWidget {
   final List<Pokemon> myTeam;
   final TeamFormat format;
-  const TeamComparisonScreen({super.key, required this.myTeam, required this.format});
+  const TeamComparisonScreen({
+    super.key,
+    required this.myTeam,
+    required this.format,
+  });
 
   @override
-  ConsumerState<TeamComparisonScreen> createState() => _TeamComparisonScreenState();
+  ConsumerState<TeamComparisonScreen> createState() =>
+      _TeamComparisonScreenState();
 }
 
 class _TeamComparisonScreenState extends ConsumerState<TeamComparisonScreen> {
@@ -37,62 +42,158 @@ class _TeamComparisonScreenState extends ConsumerState<TeamComparisonScreen> {
     return Scaffold(
       backgroundColor: isDark ? Colors.black : const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Team Comparison', style: TextStyle(fontWeight: FontWeight.w900)),
+        title: const Text(
+          'Team Comparison',
+          style: TextStyle(fontWeight: FontWeight.w900),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
       body: CustomScrollView(
         slivers: [
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, AppSpacing.topContentGap, AppSpacing.pagePadding, 12),
-            sliver: SliverToBoxAdapter(
-              child: _InfoBanner(),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.pagePadding,
+              AppSpacing.topContentGap,
+              AppSpacing.pagePadding,
+              12,
             ),
+            sliver: SliverToBoxAdapter(child: _InfoBanner()),
           ),
           // ── MY TEAM ──
           SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
-            sliver: SliverToBoxAdapter(child: SectionHeader(icon: Icons.shield_rounded, title: 'Your Team', subtitle: '${myTeam.length}/6 — ${widget.format.label}')),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.pagePadding,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: SectionHeader(
+                icon: Icons.shield_rounded,
+                title: 'Your Team',
+                subtitle: '${myTeam.length}/6 — ${widget.format.label}',
+              ),
+            ),
           ),
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 8, AppSpacing.pagePadding, 0),
-            sliver: SliverToBoxAdapter(child: _TeamRow(team: myTeam, isDark: isDark)),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.pagePadding,
+              8,
+              AppSpacing.pagePadding,
+              0,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: _TeamRow(team: myTeam, isDark: isDark),
+            ),
           ),
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 12, AppSpacing.pagePadding, 0),
-            sliver: SliverToBoxAdapter(child: _TeamStats(team: myTeam, label: 'Your team')),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.pagePadding,
+              12,
+              AppSpacing.pagePadding,
+              0,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: _TeamStats(team: myTeam, label: 'Your team'),
+            ),
           ),
           // ── FOE TEAM ──
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 20, AppSpacing.pagePadding, 0),
-            sliver: SliverToBoxAdapter(child: SectionHeader(icon: Icons.groups_2_outlined, title: 'Foe Team', subtitle: foeTeam.isEmpty ? 'Tap to add foe Pokémon — info only' : '${foeTeam.length}/6 foe')),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.pagePadding,
+              20,
+              AppSpacing.pagePadding,
+              0,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: SectionHeader(
+                icon: Icons.groups_2_outlined,
+                title: 'Foe Team',
+                subtitle: foeTeam.isEmpty
+                    ? 'Tap to add foe Pokémon — info only'
+                    : '${foeTeam.length}/6 foe',
+              ),
+            ),
           ),
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 8, AppSpacing.pagePadding, 0),
-            sliver: SliverToBoxAdapter(child: _FoeGrid(foe: foe, onChanged: (i, p) => setState(() => foe[i] = p))),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.pagePadding,
+              8,
+              AppSpacing.pagePadding,
+              0,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: _FoeGrid(
+                foe: foe,
+                onChanged: (i, p) => setState(() => foe[i] = p),
+              ),
+            ),
           ),
           if (foeTeam.isNotEmpty) ...[
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 12, AppSpacing.pagePadding, 0),
-              sliver: SliverToBoxAdapter(child: _TeamStats(team: foeTeam, label: 'Foe team')),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.pagePadding,
+                12,
+                AppSpacing.pagePadding,
+                0,
+              ),
+              sliver: SliverToBoxAdapter(
+                child: _TeamStats(team: foeTeam, label: 'Foe team'),
+              ),
             ),
             // ── HEAD-TO-HEAD ──
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 20, AppSpacing.pagePadding, 0),
-              sliver: SliverToBoxAdapter(child: SectionHeader(icon: Icons.compare_arrows_rounded, title: 'Head-to-Head (info)', subtitle: 'Which STABs hit which side — type chart only')),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.pagePadding,
+                20,
+                AppSpacing.pagePadding,
+                0,
+              ),
+              sliver: SliverToBoxAdapter(
+                child: SectionHeader(
+                  icon: Icons.compare_arrows_rounded,
+                  title: 'Head-to-Head (info)',
+                  subtitle: 'Which STABs hit which side — type chart only',
+                ),
+              ),
             ),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 8, AppSpacing.pagePadding, AppSpacing.bottomScrollPadding),
-              sliver: SliverToBoxAdapter(child: _HeadToHead(myTeam: myTeam, foeTeam: foeTeam)),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.pagePadding,
+                8,
+                AppSpacing.pagePadding,
+                AppSpacing.bottomScrollPadding,
+              ),
+              sliver: SliverToBoxAdapter(
+                child: _HeadToHead(myTeam: myTeam, foeTeam: foeTeam),
+              ),
             ),
           ] else
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 12, AppSpacing.pagePadding, AppSpacing.bottomScrollPadding),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.pagePadding,
+                12,
+                AppSpacing.pagePadding,
+                AppSpacing.bottomScrollPadding,
+              ),
               sliver: SliverToBoxAdapter(
                 child: Container(
                   padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(color: isDark ? const Color(0xFF121212) : Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0))),
-                  child: const Text('Add foe Pokémon to see head-to-head type matchups. No damage calc — use Calculator for 1vs1.', style: TextStyle(fontSize: 12, color: Colors.grey, height: 1.4)),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF121212) : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isDark
+                          ? const Color(0xFF242424)
+                          : const Color(0xFFE2E8F0),
+                    ),
+                  ),
+                  child: const Text(
+                    'Add foe Pokémon to see head-to-head type matchups. No damage calc — use Calculator for 1vs1.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                      height: 1.4,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -108,16 +209,35 @@ class _InfoBanner extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: AppTheme.pokemonRed.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(16), border: Border.all(color: AppTheme.pokemonRed.withValues(alpha: 0.22))),
-      child: Row(children: [
-        const Icon(Icons.info_outline_rounded, size: 18, color: AppTheme.pokemonRed),
-        const SizedBox(width: 8),
-        Expanded(child: Text('Team Comparison is a Pokédex readout — type coverage & averages. Not a battle simulation.', style: TextStyle(fontSize: 11, height: 1.4, color: isDark ? Colors.grey[300] : Colors.grey[700], fontWeight: FontWeight.w600))),
-      ]),
+      decoration: BoxDecoration(
+        color: AppTheme.pokemonRed.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.pokemonRed.withValues(alpha: 0.22)),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.info_outline_rounded,
+            size: 18,
+            color: AppTheme.pokemonRed,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Team Comparison is a Pokédex readout — type coverage & averages. Not a battle simulation.',
+              style: TextStyle(
+                fontSize: 11,
+                height: 1.4,
+                color: isDark ? Colors.grey[300] : Colors.grey[700],
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
-
 
 class _TeamRow extends StatelessWidget {
   final List<Pokemon> team;
@@ -135,13 +255,41 @@ class _TeamRow extends StatelessWidget {
         return Container(
           width: 86,
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: c.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(14), border: Border.all(color: c.withValues(alpha: 0.28))),
-          child: Column(children: [
-            SizedBox(height: 48, child: PokemonSprite(imageUrl: p.spriteUrl, fallbackUrl: PokemonSprite.homeArtworkUrl(dex), errorIconSize: 24)),
-            const SizedBox(height: 4),
-            Text(p.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900)),
-            Text('#${dex.toString().padLeft(3, '0')}', style: TextStyle(fontSize: 10, color: c, fontWeight: FontWeight.w700)),
-          ]),
+          decoration: BoxDecoration(
+            color: c.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: c.withValues(alpha: 0.28)),
+          ),
+          child: Column(
+            children: [
+              SizedBox(
+                height: 48,
+                child: PokemonSprite(
+                  imageUrl: p.spriteUrl,
+                  fallbackUrl: PokemonSprite.homeArtworkUrl(dex),
+                  errorIconSize: 24,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                p.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              Text(
+                '#${dex.toString().padLeft(3, '0')}',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: c,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
         );
       }).toList(),
     );
@@ -156,20 +304,37 @@ class _TeamStats extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     if (team.isEmpty) return const SizedBox.shrink();
-    final totalBst = team.fold<int>(0, (s, p) => s + p.baseHp + p.baseAtk + p.baseDef + p.baseSpAtk + p.baseSpDef + p.baseSpd);
+    final totalBst = team.fold<int>(
+      0,
+      (s, p) =>
+          s +
+          p.baseHp +
+          p.baseAtk +
+          p.baseDef +
+          p.baseSpAtk +
+          p.baseSpDef +
+          p.baseSpd,
+    );
     final avgBst = (totalBst / team.length).round();
-    final avgSpe = (team.fold<int>(0, (s, p) => s + p.baseSpd) / team.length).round();
+    final avgSpe = (team.fold<int>(0, (s, p) => s + p.baseSpd) / team.length)
+        .round();
     // Defensive weak ≥2 and offensive STAB hits
     final weakCounts = <String, int>{for (final t in pokemonTypes) t: 0};
     final offensiveHits = <String, int>{for (final t in pokemonTypes) t: 0};
     for (final p in team) {
-      final eff = TypeEfficiencyCalculator.getCombinedEffectiveness(p.type1, p.type2);
+      final eff = TypeEfficiencyCalculator.getCombinedEffectiveness(
+        p.type1,
+        p.type2,
+      );
       for (final t in pokemonTypes) {
         if ((eff[t] ?? 1.0) > 1) weakCounts[t] = (weakCounts[t] ?? 0) + 1;
       }
       for (final atk in [p.type1, if (p.type2 != null) p.type2!]) {
-        for (final def in (CombatUtils.effectivenessMap[atk.toLowerCase()]?['double'] ?? const [])) {
-          offensiveHits[def.toLowerCase()] = (offensiveHits[def.toLowerCase()] ?? 0) + 1;
+        for (final def
+            in (CombatUtils.effectivenessMap[atk.toLowerCase()]?['double'] ??
+                const [])) {
+          offensiveHits[def.toLowerCase()] =
+              (offensiveHits[def.toLowerCase()] ?? 0) + 1;
         }
       }
     }
@@ -177,24 +342,45 @@ class _TeamStats extends StatelessWidget {
     final seTypes = offensiveHits.values.where((v) => v > 0).length;
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: isDark ? const Color(0xFF121212) : Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0))),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('$label — ${team.length}/6', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
-        const SizedBox(height: 8),
-        Row(children: [
-          Expanded(child: MiniStat(label: 'Avg BST', value: '$avgBst')),
-          const SizedBox(width: 8),
-          Expanded(child: MiniStat(label: 'Avg Spe', value: '$avgSpe')),
-          const SizedBox(width: 8),
-          Expanded(child: MiniStat(label: 'Weak ≥2', value: '$weakGe2')),
-          const SizedBox(width: 8),
-          Expanded(child: MiniStat(label: 'SE hits', value: '$seTypes/18')),
-        ]),
-      ]),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF121212) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$label — ${team.length}/6',
+            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: MiniStat(label: 'Avg BST', value: '$avgBst'),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: MiniStat(label: 'Avg Spe', value: '$avgSpe'),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: MiniStat(label: 'Weak ≥2', value: '$weakGe2'),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: MiniStat(label: 'SE hits', value: '$seTypes/18'),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
-
 
 class _FoeGrid extends ConsumerWidget {
   final List<Pokemon?> foe;
@@ -203,12 +389,19 @@ class _FoeGrid extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final all = ref.watch(pokedexProvider).maybeWhen(data: (v) => v, orElse: () => <Pokemon>[]);
+    final all = ref
+        .watch(pokedexProvider)
+        .maybeWhen(data: (v) => v, orElse: () => <Pokemon>[]);
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: 6,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, childAspectRatio: 1.55, crossAxisSpacing: 8, mainAxisSpacing: 8),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        childAspectRatio: 1.55,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+      ),
       itemBuilder: (ctx, i) {
         final p = foe[i];
         if (p == null) {
@@ -219,8 +412,24 @@ class _FoeGrid extends ConsumerWidget {
             },
             borderRadius: BorderRadius.circular(14),
             child: Container(
-              decoration: BoxDecoration(border: Border.all(color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0)), borderRadius: BorderRadius.circular(14)),
-              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [const Icon(Icons.add_rounded, color: Colors.grey, size: 20), Text('Slot ${i + 1}', style: const TextStyle(fontSize: 11, color: Colors.grey))]),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFF242424)
+                      : const Color(0xFFE2E8F0),
+                ),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.add_rounded, color: Colors.grey, size: 20),
+                  Text(
+                    'Slot ${i + 1}',
+                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
+                ],
+              ),
             ),
           );
         }
@@ -230,11 +439,33 @@ class _FoeGrid extends ConsumerWidget {
           borderRadius: BorderRadius.circular(14),
           child: Container(
             padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(color: c.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(14), border: Border.all(color: c.withValues(alpha: 0.28))),
-            child: Column(children: [
-              Expanded(child: PokemonSprite(imageUrl: p.spriteUrl, fallbackUrl: PokemonSprite.homeArtworkUrl(p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id), errorIconSize: 22)),
-              Text(p.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900)),
-            ]),
+            decoration: BoxDecoration(
+              color: c.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: c.withValues(alpha: 0.28)),
+            ),
+            child: Column(
+              children: [
+                Expanded(
+                  child: PokemonSprite(
+                    imageUrl: p.spriteUrl,
+                    fallbackUrl: PokemonSprite.homeArtworkUrl(
+                      p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id,
+                    ),
+                    errorIconSize: 22,
+                  ),
+                ),
+                Text(
+                  p.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -247,25 +478,54 @@ class _FoeGrid extends ConsumerWidget {
       context: context,
       builder: (ctx) {
         String q = '';
-        return StatefulBuilder(builder: (ctx, setS) {
-          final filtered = all.where((p) => p.name.toLowerCase().contains(q.toLowerCase())).take(50).toList();
-          return AlertDialog(
-            title: const Text('Pick foe Pokémon'),
-            content: SizedBox(
-              width: double.maxFinite,
-              height: 380,
-              child: Column(children: [
-                TextField(decoration: const InputDecoration(hintText: 'Search'), onChanged: (v) => setS(() => q = v)),
-                const SizedBox(height: 8),
-                Expanded(child: ListView.builder(itemCount: filtered.length, itemBuilder: (_, i) {
-                  final p = filtered[i];
-                  return ListTile(title: Text(p.name), subtitle: Text('${p.type1}${p.type2 == null ? '' : '/${p.type2}'}'), onTap: () { result = p; Navigator.pop(ctx); });
-                })),
-              ]),
-            ),
-            actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close'))],
-          );
-        });
+        return StatefulBuilder(
+          builder: (ctx, setS) {
+            final filtered = all
+                .where((p) => p.name.toLowerCase().contains(q.toLowerCase()))
+                .take(50)
+                .toList();
+            return AlertDialog(
+              title: const Text('Pick foe Pokémon'),
+              content: SizedBox(
+                width: double.maxFinite,
+                height: 380,
+                child: Column(
+                  children: [
+                    TextField(
+                      decoration: const InputDecoration(hintText: 'Search'),
+                      onChanged: (v) => setS(() => q = v),
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: filtered.length,
+                        itemBuilder: (_, i) {
+                          final p = filtered[i];
+                          return ListTile(
+                            title: Text(p.name),
+                            subtitle: Text(
+                              '${p.type1}${p.type2 == null ? '' : '/${p.type2}'}',
+                            ),
+                            onTap: () {
+                              result = p;
+                              Navigator.pop(ctx);
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Close'),
+                ),
+              ],
+            );
+          },
+        );
       },
     );
     return result;
@@ -282,14 +542,23 @@ class _HeadToHead extends StatelessWidget {
     // Count how many Pokémon on each side are weak to the other's STABs
     int countWeak(List<Pokemon> defenders, List<Pokemon> attackers) {
       int c = 0;
-      final atkTypes = attackers.expand((p) => [p.type1, if (p.type2 != null) p.type2!]).map((t) => t.toLowerCase()).toSet();
+      final atkTypes = attackers
+          .expand((p) => [p.type1, if (p.type2 != null) p.type2!])
+          .map((t) => t.toLowerCase())
+          .toSet();
       for (final def in defenders) {
-        final eff = TypeEfficiencyCalculator.getCombinedEffectiveness(def.type1, def.type2);
+        final eff = TypeEfficiencyCalculator.getCombinedEffectiveness(
+          def.type1,
+          def.type2,
+        );
         bool isWeak = false;
         for (final atk in atkTypes) {
           if ((eff[atk] ?? 1.0) == 0) continue;
           // eff is defender's weakness to attacker type: if defender is weak to atk, then atk hits def SE
-          if ((eff[atk] ?? 1.0) > 1) { isWeak = true; break; }
+          if ((eff[atk] ?? 1.0) > 1) {
+            isWeak = true;
+            break;
+          }
         }
         if (isWeak) c++;
       }
@@ -301,16 +570,39 @@ class _HeadToHead extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: isDark ? const Color(0xFF121212) : Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0))),
-      child: Column(children: [
-        Row(children: [
-          Expanded(child: MiniStat(label: 'You weak to foe', value: '$myWeakToFoe/6')),
-          const SizedBox(width: 8),
-          Expanded(child: MiniStat(label: 'Foe weak to you', value: '$foeWeakToMe/6')),
-        ]),
-        const SizedBox(height: 8),
-        const Text('_counts how many Pokémon are weak (2×) to any opposing STAB — type chart only, no rolls.', style: TextStyle(fontSize: 11, color: Colors.grey, height: 1.4)),
-      ]),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF121212) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? const Color(0xFF242424) : const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: MiniStat(
+                  label: 'You weak to foe',
+                  value: '$myWeakToFoe/6',
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: MiniStat(
+                  label: 'Foe weak to you',
+                  value: '$foeWeakToMe/6',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            '_counts how many Pokémon are weak (2×) to any opposing STAB — type chart only, no rolls.',
+            style: TextStyle(fontSize: 11, color: Colors.grey, height: 1.4),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -10,13 +10,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// flags: an entry can be available in M-C without being Champions-exclusive,
 /// and an existing item can become regulation-eligible without being new to
 /// the series.
-final championsRegulationProvider =
-    FutureProvider<ChampionsRegulationCatalog>((ref) async {
+final championsRegulationProvider = FutureProvider<ChampionsRegulationCatalog>((
+  ref,
+) async {
   try {
     final raw = await rootBundle.loadString(
       'assets/data/champions_regulation_mc.json',
     );
-    return compute(_decodeRegulationCatalog, raw);
+    return await compute(_decodeRegulationCatalog, raw);
   } catch (_) {
     return ChampionsRegulationCatalog.empty();
   }
@@ -130,11 +131,13 @@ class ChampionsRegulationCatalog {
       regulationName: meta['title'] as String? ?? 'Pokémon Champions',
       gameVersion: meta['gameVersion'] as String? ?? '',
       asOf: meta['asOf'] as String? ?? '',
-      activeStartUtc: (meta['activePeriodUtc'] as Map<String, dynamic>?)
-              ?['startDate'] as String? ??
+      activeStartUtc:
+          (meta['activePeriodUtc'] as Map<String, dynamic>?)?['startDate']
+              as String? ??
           '',
-      activeEndUtc: (meta['activePeriodUtc'] as Map<String, dynamic>?)
-              ?['endDate'] as String? ??
+      activeEndUtc:
+          (meta['activePeriodUtc'] as Map<String, dynamic>?)?['endDate']
+              as String? ??
           '',
       officialAnnouncementPeriod:
           meta['officialAnnouncementPeriod'] as String? ?? '',
@@ -151,7 +154,9 @@ class ChampionsRegulationCatalog {
       itemIds: _readIntList(json, 'itemIds'),
       newItemIds: _readIntList(json, 'newItemIds'),
       sourcePokemonIds: {
-        for (final entry in (json['sourcePokemonIds'] as Map<String, dynamic>? ?? const {}).entries)
+        for (final entry
+            in (json['sourcePokemonIds'] as Map<String, dynamic>? ?? const {})
+                .entries)
           entry.key: entry.value as int,
       },
       abilityDescriptions: _readStringMap(json, 'abilityDescriptions'),
@@ -159,53 +164,62 @@ class ChampionsRegulationCatalog {
       moveDescriptions: _readStringMap(json, 'moveDescriptions'),
       newMoveDescriptions: _readStringMap(json, 'newMoveDescriptions'),
       movePpAdjustments: {
-        for (final change in ppChanges) change['moveId'] as int: change['pp'] as int,
+        for (final change in ppChanges)
+          change['moveId'] as int: change['pp'] as int,
       },
       previousMovePp: {
         for (final change in ppChanges)
           change['moveId'] as int: change['previousPp'] as int,
       },
-      removedMoves: [for (final change in removed) ChampionsMoveChange.fromJson(change)],
+      removedMoves: [
+        for (final change in removed) ChampionsMoveChange.fromJson(change),
+      ],
       newlyUsableMoveIds: _readIntList(json, 'newlyUsableMoveIds'),
     );
   }
 
   factory ChampionsRegulationCatalog.empty() => ChampionsRegulationCatalog(
-        regulationName: 'Pokémon Champions',
-        gameVersion: '',
-        asOf: '',
-        activeStartUtc: '',
-        activeEndUtc: '',
-        officialAnnouncementPeriod: '',
-        patchSummary: '',
-        officialNewPokemonCount: 0,
-        pokemonIds: const [],
-        newPokemonIds: const [],
-        newMegaFormIds: const [],
-        newRosterPokemonIds: const [],
-        moveIds: const [],
-        newMoveIds: const [],
-        abilityIds: const [],
-        newAbilityIds: const [],
-        itemIds: const [],
-        newItemIds: const [],
-        sourcePokemonIds: const {},
-        abilityDescriptions: const {},
-        newAbilityDescriptions: const {},
-        moveDescriptions: const {},
-        newMoveDescriptions: const {},
-        movePpAdjustments: const {},
-        previousMovePp: const {},
-        removedMoves: const [],
-        newlyUsableMoveIds: const [],
-      );
+    regulationName: 'Pokémon Champions',
+    gameVersion: '',
+    asOf: '',
+    activeStartUtc: '',
+    activeEndUtc: '',
+    officialAnnouncementPeriod: '',
+    patchSummary: '',
+    officialNewPokemonCount: 0,
+    pokemonIds: const [],
+    newPokemonIds: const [],
+    newMegaFormIds: const [],
+    newRosterPokemonIds: const [],
+    moveIds: const [],
+    newMoveIds: const [],
+    abilityIds: const [],
+    newAbilityIds: const [],
+    itemIds: const [],
+    newItemIds: const [],
+    sourcePokemonIds: const {},
+    abilityDescriptions: const {},
+    newAbilityDescriptions: const {},
+    moveDescriptions: const {},
+    newMoveDescriptions: const {},
+    movePpAdjustments: const {},
+    previousMovePp: const {},
+    removedMoves: const [],
+    newlyUsableMoveIds: const [],
+  );
 
   static List<int> _readIntList(Map<String, dynamic> json, String key) =>
       (json[key] as List<dynamic>? ?? const []).cast<int>();
 
-  static Map<int, String> _readStringMap(Map<String, dynamic> json, String key) {
+  static Map<int, String> _readStringMap(
+    Map<String, dynamic> json,
+    String key,
+  ) {
     final map = json[key] as Map<String, dynamic>? ?? const {};
-    return {for (final entry in map.entries) int.parse(entry.key): entry.value as String};
+    return {
+      for (final entry in map.entries)
+        int.parse(entry.key): entry.value as String,
+    };
   }
 
   String get regulationCode => 'M-C';
@@ -227,8 +241,9 @@ class ChampionsRegulationCatalog {
   String? newMoveDescriptionFor(int id) => newMoveDescriptions[id];
   int? movePpFor(int id) => movePpAdjustments[id];
   int? previousMovePpFor(int id) => previousMovePp[id];
-  List<ChampionsMoveChange> removedMovesForPokemon(int id) =>
-      removedMoves.where((change) => change.pokemonId == id).toList(growable: false);
+  List<ChampionsMoveChange> removedMovesForPokemon(int id) => removedMoves
+      .where((change) => change.pokemonId == id)
+      .toList(growable: false);
 
   /// Adds M-C aliases to Pokémon names for roster-aware search.
   ///

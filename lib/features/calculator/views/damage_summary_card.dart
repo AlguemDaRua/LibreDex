@@ -30,14 +30,8 @@ class DamageSummaryCard extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: isDark
-                ? [
-                    const Color(0xFF1E293B),
-                    const Color(0xFF0F172A),
-                  ]
-                : [
-                    Colors.white,
-                    const Color(0xFFF8FAFC),
-                  ],
+                ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
+                : [Colors.white, const Color(0xFFF8FAFC)],
           ),
           border: Border.all(
             color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE2E8F0),
@@ -58,27 +52,31 @@ class DamageSummaryCard extends StatelessWidget {
                     children: [
                       Text(
                         moveName,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         '${result.minDamage} – ${result.maxDamage} HP (${result.minPercentage.toStringAsFixed(1)}% – ${result.maxPercentage.toStringAsFixed(1)}%)',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: result.maxPercentage >= 100
-                                  ? Colors.red
-                                  : (isDark ? Colors.grey[400] : Colors.grey[600]),
-                              fontWeight: FontWeight.w600,
-                            ),
+                          color: result.maxPercentage >= 100
+                              ? Colors.red
+                              : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
-                    color: _getKoColor(result.maxPercentage).withValues(alpha: 0.15),
+                    color: _getKoColor(
+                      result.maxPercentage,
+                    ).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: _getKoColor(result.maxPercentage),
@@ -132,9 +130,9 @@ class DamageSummaryCard extends StatelessWidget {
               Text(
                 'Applied Modifiers Breakdown',
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.grey[400] : Colors.grey[600],
-                    ),
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                ),
               ),
               const SizedBox(height: 6),
               Wrap(
@@ -164,9 +162,9 @@ class DamageSummaryCard extends StatelessWidget {
             Text(
               '16 Damage Rolls (85% – 100%)',
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.grey[400] : Colors.grey[600],
-                  ),
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
             ),
             const SizedBox(height: 6),
             Wrap(
@@ -175,7 +173,10 @@ class DamageSummaryCard extends StatelessWidget {
               children: result.rolls.map((roll) {
                 final pct = (roll / result.defenderMaxHp) * 100.0;
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: isDark ? Colors.black26 : Colors.grey[200],
                     borderRadius: BorderRadius.circular(6),
@@ -207,12 +208,19 @@ class DamageSummaryCard extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 18),
+                    const Icon(
+                      Icons.warning_amber_rounded,
+                      color: Colors.amber,
+                      size: 18,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         result.warnings.join('\n'),
-                        style: const TextStyle(fontSize: 11, color: Colors.amber),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.amber,
+                        ),
                       ),
                     ),
                   ],
@@ -241,9 +249,13 @@ class DamageSummaryCard extends StatelessWidget {
       ModifierCategory.weather => Colors.cyan.withValues(alpha: alphaVal),
       ModifierCategory.terrain => Colors.green.withValues(alpha: alphaVal),
       ModifierCategory.stab => Colors.amber.withValues(alpha: alphaVal),
-      ModifierCategory.typeEffectiveness => Colors.deepOrange.withValues(alpha: alphaVal),
+      ModifierCategory.typeEffectiveness => Colors.deepOrange.withValues(
+        alpha: alphaVal,
+      ),
       ModifierCategory.critical => Colors.yellow.withValues(alpha: alphaVal),
-      ModifierCategory.status => Colors.purpleAccent.withValues(alpha: alphaVal),
+      ModifierCategory.status => Colors.purpleAccent.withValues(
+        alpha: alphaVal,
+      ),
       ModifierCategory.screen => Colors.indigo.withValues(alpha: alphaVal),
       ModifierCategory.ability => Colors.teal.withValues(alpha: alphaVal),
       ModifierCategory.item => Colors.brown.withValues(alpha: alphaVal),

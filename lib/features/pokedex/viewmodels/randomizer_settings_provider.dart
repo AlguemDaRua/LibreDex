@@ -3,11 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/database/app_database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-enum RandomPoolMode {
-  all,
-  activeFilters,
-  custom,
-}
+enum RandomPoolMode { all, activeFilters, custom }
 
 class RandomizerSettings {
   final RandomPoolMode poolMode;
@@ -68,7 +64,13 @@ class RandomizerSettings {
       if (!selectedGens.contains(p.generation)) return false;
     }
 
-    final bst = p.baseHp + p.baseAtk + p.baseDef + p.baseSpAtk + p.baseSpDef + p.baseSpd;
+    final bst =
+        p.baseHp +
+        p.baseAtk +
+        p.baseDef +
+        p.baseSpAtk +
+        p.baseSpDef +
+        p.baseSpd;
     if (bst < minBst || bst > maxBst) return false;
 
     // Include final evolutions and genuine single-stage Pokémon, but exclude
@@ -79,14 +81,14 @@ class RandomizerSettings {
   }
 
   Map<String, dynamic> toJson() => {
-        'poolMode': poolMode.name,
-        'selectedTypes': selectedTypes.toList(),
-        'selectedGens': selectedGens.toList(),
-        'minBst': minBst,
-        'maxBst': maxBst,
-        'fullyEvolvedOnly': fullyEvolvedOnly,
-        'instantRollOnTap': instantRollOnTap,
-      };
+    'poolMode': poolMode.name,
+    'selectedTypes': selectedTypes.toList(),
+    'selectedGens': selectedGens.toList(),
+    'minBst': minBst,
+    'maxBst': maxBst,
+    'fullyEvolvedOnly': fullyEvolvedOnly,
+    'instantRollOnTap': instantRollOnTap,
+  };
 
   factory RandomizerSettings.fromJson(Map<String, dynamic> json) {
     return RandomizerSettings(
@@ -95,9 +97,12 @@ class RandomizerSettings {
         orElse: () => RandomPoolMode.all,
       ),
       selectedTypes:
-          (json['selectedTypes'] as List<dynamic>?)?.map((e) => e.toString()).toSet() ??
-              const {},
-      selectedGens: (json['selectedGens'] as List<dynamic>?)
+          (json['selectedTypes'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toSet() ??
+          const {},
+      selectedGens:
+          (json['selectedGens'] as List<dynamic>?)
               ?.map((e) => int.tryParse(e.toString()))
               .whereType<int>()
               .toSet() ??
@@ -149,5 +154,5 @@ class RandomizerSettingsNotifier extends Notifier<RandomizerSettings> {
 
 final randomizerSettingsProvider =
     NotifierProvider<RandomizerSettingsNotifier, RandomizerSettings>(
-  RandomizerSettingsNotifier.new,
-);
+      RandomizerSettingsNotifier.new,
+    );

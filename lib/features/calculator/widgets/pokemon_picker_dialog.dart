@@ -54,9 +54,14 @@ class PokemonPickerDialog extends ConsumerWidget {
         }).toList();
 
         return Dialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 24,
+          ),
           backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           child: ConstrainedBox(
             constraints: BoxConstraints(maxHeight: screenHeight * 0.8),
             child: Column(
@@ -69,7 +74,10 @@ class PokemonPickerDialog extends ConsumerWidget {
                     children: [
                       Text(
                         'Select ${isAttacker ? 'Attacker' : 'Defender'}',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
                       IconButton(
                         icon: const Icon(Icons.close_rounded, size: 22),
@@ -80,7 +88,10 @@ class PokemonPickerDialog extends ConsumerWidget {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   child: DebouncedSearchField(
                     hintText: 'Search Pokémon by name, ID or type...',
                     initialValue: query,
@@ -93,7 +104,9 @@ class PokemonPickerDialog extends ConsumerWidget {
                     itemCount: filtered.length,
                     itemBuilder: (ctx, i) {
                       final p = filtered[i];
-                      final dexNumber = p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id;
+                      final dexNumber = p.nationalDexNumber > 0
+                          ? p.nationalDexNumber
+                          : p.id;
                       return ListTile(
                         leading: p.spriteUrl.isNotEmpty
                             ? SizedBox(
@@ -101,12 +114,17 @@ class PokemonPickerDialog extends ConsumerWidget {
                                 height: 40,
                                 child: PokemonSprite(
                                   imageUrl: p.spriteUrl,
-                                  fallbackUrl: PokemonSprite.homeArtworkUrl(dexNumber),
+                                  fallbackUrl: PokemonSprite.homeArtworkUrl(
+                                    dexNumber,
+                                  ),
                                   errorIconColor: Colors.grey,
                                   errorIconSize: 24,
                                 ),
                               )
-                            : const Icon(Icons.catching_pokemon, color: Colors.grey),
+                            : const Icon(
+                                Icons.catching_pokemon,
+                                color: Colors.grey,
+                              ),
                         title: Text(
                           p.name,
                           style: TextStyle(
@@ -117,13 +135,20 @@ class PokemonPickerDialog extends ConsumerWidget {
                         ),
                         subtitle: Text(
                           '${p.type1.toUpperCase()}${p.type2 != null ? " / ${p.type2!.toUpperCase()}" : ""}',
-                          style: const TextStyle(fontSize: 11, color: Colors.grey),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey,
+                          ),
                         ),
                         onTap: () async {
                           Navigator.pop(ctx);
                           try {
-                            final abs = await ref.read(databaseProvider).getPokemonAbilities(p.id);
-                            final defAb = abs.isNotEmpty ? abs.first.ability.name : null;
+                            final abs = await ref
+                                .read(databaseProvider)
+                                .getPokemonAbilities(p.id);
+                            final defAb = abs.isNotEmpty
+                                ? abs.first.ability.name
+                                : null;
                             if (isAttacker) {
                               viewModel.setAttacker(p, defaultAbility: defAb);
                             } else {

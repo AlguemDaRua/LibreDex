@@ -8,12 +8,13 @@ import 'package:libredex/core/widgets/result_count_label.dart';
 
 class NaturedexScreen extends StatefulWidget {
   const NaturedexScreen({super.key});
-  @override State<NaturedexScreen> createState() => _NaturedexScreenState();
+  @override
+  State<NaturedexScreen> createState() => _NaturedexScreenState();
 }
 
 class _NaturedexScreenState extends State<NaturedexScreen> {
   String _query = '';
-  
+
   // Filters
   String _neutralFilter = 'All'; // All, Neutral, Stat-changing
   String? _selectedIncreasedStat;
@@ -22,7 +23,11 @@ class _NaturedexScreenState extends State<NaturedexScreen> {
   String _sortOption = 'name_asc';
 
   static const List<String> _statsList = [
-    'Attack', 'Defense', 'Sp. Atk', 'Sp. Def', 'Speed'
+    'Attack',
+    'Defense',
+    'Sp. Atk',
+    'Sp. Def',
+    'Speed',
   ];
 
   static const List<Map<String, String>> natures = [
@@ -73,22 +78,28 @@ class _NaturedexScreenState extends State<NaturedexScreen> {
     final list = <ActiveFilterItem>[];
 
     if (_neutralFilter != 'All') {
-      list.add(ActiveFilterItem(
-        label: _neutralFilter,
-        onDeleted: () => setState(() => _neutralFilter = 'All'),
-      ));
+      list.add(
+        ActiveFilterItem(
+          label: _neutralFilter,
+          onDeleted: () => setState(() => _neutralFilter = 'All'),
+        ),
+      );
     }
     if (_selectedIncreasedStat != null) {
-      list.add(ActiveFilterItem(
-        label: 'Inc: $_selectedIncreasedStat',
-        onDeleted: () => setState(() => _selectedIncreasedStat = null),
-      ));
+      list.add(
+        ActiveFilterItem(
+          label: 'Inc: $_selectedIncreasedStat',
+          onDeleted: () => setState(() => _selectedIncreasedStat = null),
+        ),
+      );
     }
     if (_selectedDecreasedStat != null) {
-      list.add(ActiveFilterItem(
-        label: 'Dec: $_selectedDecreasedStat',
-        onDeleted: () => setState(() => _selectedDecreasedStat = null),
-      ));
+      list.add(
+        ActiveFilterItem(
+          label: 'Dec: $_selectedDecreasedStat',
+          onDeleted: () => setState(() => _selectedDecreasedStat = null),
+        ),
+      );
     }
 
     return list;
@@ -111,18 +122,33 @@ class _NaturedexScreenState extends State<NaturedexScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Neutral filter
-                  const Text('CLASSIFICATION', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
+                  const Text(
+                    'CLASSIFICATION',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.grey,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
                     children: ['All', 'Neutral', 'Stat-changing'].map((type) {
                       final isSel = _neutralFilter == type;
                       return ChoiceChip(
-                        label: Text(type.toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                        label: Text(
+                          type.toUpperCase(),
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         selected: isSel,
                         selectedColor: AppTheme.pokemonRed,
                         onSelected: (selected) {
-                          setState(() { _neutralFilter = type; });
+                          setState(() {
+                            _neutralFilter = type;
+                          });
                           setModalState(() {});
                         },
                       );
@@ -131,7 +157,14 @@ class _NaturedexScreenState extends State<NaturedexScreen> {
                   const SizedBox(height: 20),
 
                   // Increased Stat
-                  const Text('INCREASED STAT (+10%)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
+                  const Text(
+                    'INCREASED STAT (+10%)',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.grey,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 6,
@@ -139,11 +172,19 @@ class _NaturedexScreenState extends State<NaturedexScreen> {
                     children: _statsList.map((stat) {
                       final isSel = _selectedIncreasedStat == stat;
                       return ChoiceChip(
-                        label: Text(stat.toUpperCase(), style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
+                        label: Text(
+                          stat.toUpperCase(),
+                          style: const TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         selected: isSel,
                         selectedColor: Colors.teal[600],
                         onSelected: (selected) {
-                          setState(() { _selectedIncreasedStat = selected ? stat : null; });
+                          setState(() {
+                            _selectedIncreasedStat = selected ? stat : null;
+                          });
                           setModalState(() {});
                         },
                       );
@@ -152,7 +193,14 @@ class _NaturedexScreenState extends State<NaturedexScreen> {
                   const SizedBox(height: 20),
 
                   // Decreased Stat
-                  const Text('DECREASED STAT (-10%)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
+                  const Text(
+                    'DECREASED STAT (-10%)',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.grey,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 6,
@@ -160,11 +208,19 @@ class _NaturedexScreenState extends State<NaturedexScreen> {
                     children: _statsList.map((stat) {
                       final isSel = _selectedDecreasedStat == stat;
                       return ChoiceChip(
-                        label: Text(stat.toUpperCase(), style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
+                        label: Text(
+                          stat.toUpperCase(),
+                          style: const TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         selected: isSel,
                         selectedColor: Colors.red[600],
                         onSelected: (selected) {
-                          setState(() { _selectedDecreasedStat = selected ? stat : null; });
+                          setState(() {
+                            _selectedDecreasedStat = selected ? stat : null;
+                          });
                           setModalState(() {});
                         },
                       );
@@ -176,14 +232,28 @@ class _NaturedexScreenState extends State<NaturedexScreen> {
                   DexSortMenu<String>(
                     currentValue: _sortOption,
                     items: const [
-                      DropdownMenuItem(value: 'name_asc', child: Text('NAME (A - Z)')),
-                      DropdownMenuItem(value: 'name_desc', child: Text('NAME (Z - A)')),
-                      DropdownMenuItem(value: 'increased', child: Text('INCREASED STAT')),
-                      DropdownMenuItem(value: 'decreased', child: Text('DECREASED STAT')),
+                      DropdownMenuItem(
+                        value: 'name_asc',
+                        child: Text('NAME (A - Z)'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'name_desc',
+                        child: Text('NAME (Z - A)'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'increased',
+                        child: Text('INCREASED STAT'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'decreased',
+                        child: Text('DECREASED STAT'),
+                      ),
                     ],
                     onChanged: (val) {
                       if (val != null) {
-                        setState(() { _sortOption = val; });
+                        setState(() {
+                          _sortOption = val;
+                        });
                         setModalState(() {});
                       }
                     },
@@ -204,15 +274,22 @@ class _NaturedexScreenState extends State<NaturedexScreen> {
 
     // Filter list
     var visibleNatures = natures.where((nature) {
-      final matchesText = nature.values.join(" ").toLowerCase().contains(_query.toLowerCase());
+      final matchesText = nature.values
+          .join(" ")
+          .toLowerCase()
+          .contains(_query.toLowerCase());
       final isNeutral = nature['increased'] == '—';
 
       bool matchesNeutral = true;
       if (_neutralFilter == 'Neutral') matchesNeutral = isNeutral;
       if (_neutralFilter == 'Stat-changing') matchesNeutral = !isNeutral;
 
-      bool matchesInc = _selectedIncreasedStat == null || nature['increased'] == _selectedIncreasedStat;
-      bool matchesDec = _selectedDecreasedStat == null || nature['decreased'] == _selectedDecreasedStat;
+      bool matchesInc =
+          _selectedIncreasedStat == null ||
+          nature['increased'] == _selectedIncreasedStat;
+      bool matchesDec =
+          _selectedDecreasedStat == null ||
+          nature['decreased'] == _selectedDecreasedStat;
 
       return matchesText && matchesNeutral && matchesInc && matchesDec;
     }).toList();
@@ -235,7 +312,10 @@ class _NaturedexScreenState extends State<NaturedexScreen> {
     return Scaffold(
       backgroundColor: isDark ? Colors.black : const Color(0xFFF9FAFB),
       appBar: AppBar(
-        title: Text('NatureDex', style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor)),
+        title: Text(
+          'NatureDex',
+          style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor),
+        ),
         iconTheme: IconThemeData(color: primaryColor),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -255,21 +335,24 @@ class _NaturedexScreenState extends State<NaturedexScreen> {
                   children: [
                     _buildRuleCard(
                       title: 'Standard Modifiers',
-                      desc: 'Increased stats grow 10% faster (x1.1), decreased stats grow 10% slower (x0.9). Neutral Natures have no effect.',
+                      desc:
+                          'Increased stats grow 10% faster (x1.1), decreased stats grow 10% slower (x0.9). Neutral Natures have no effect.',
                       color: AppTheme.pokemonRed,
                       isDark: isDark,
                     ),
                     const SizedBox(width: 8),
                     _buildRuleCard(
                       title: 'Champions Alignments',
-                      desc: 'Supports Champions custom Alignment Stat Points, optimizing physical, special, or balanced bulk distributions.',
+                      desc:
+                          'Supports Champions custom Alignment Stat Points, optimizing physical, special, or balanced bulk distributions.',
                       color: Colors.amber,
                       isDark: isDark,
                     ),
                     const SizedBox(width: 8),
                     _buildRuleCard(
                       title: 'Legends: Z-A Rules',
-                      desc: 'Effort Level speeds and stat growths scale with Effort Grit levels rather than raw direct stat values.',
+                      desc:
+                          'Effort Level speeds and stat growths scale with Effort Grit levels rather than raw direct stat values.',
                       color: Colors.purple,
                       isDark: isDark,
                     ),
@@ -292,10 +375,13 @@ class _NaturedexScreenState extends State<NaturedexScreen> {
                   onClearAll: _clearAllFilters,
                 ),
 
-              ResultCountLabel(count: visibleNatures.length, label: 'natures found'),
+              ResultCountLabel(
+                count: visibleNatures.length,
+                label: 'natures found',
+              ),
 
               const SizedBox(height: 8),
-              
+
               // Responsive layouts for Mobile (compact cards) and Tablets (table view)
               Expanded(
                 child: LayoutBuilder(
@@ -305,24 +391,76 @@ class _NaturedexScreenState extends State<NaturedexScreen> {
                       return Column(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF141414) : const Color(0xFFEDF2F7),
-                              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                              color: isDark
+                                  ? const Color(0xFF141414)
+                                  : const Color(0xFFEDF2F7),
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(16),
+                              ),
                             ),
                             child: Row(
                               children: [
-                                Expanded(flex: 2, child: Text('NATURE NAME', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[600], fontSize: 11))),
-                                Expanded(flex: 2, child: Text('INCREASED (+10%)', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[600], fontSize: 11))),
-                                Expanded(flex: 2, child: Text('DECREASED (-10%)', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[600], fontSize: 11))),
-                                Expanded(flex: 3, child: Text('CHAMPIONS ALIGNMENT', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[600], fontSize: 11))),
+                                Expanded(
+                                  flex: 2,
+                                  child: Text(
+                                    'NATURE NAME',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.grey[600],
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 2,
+                                  child: Text(
+                                    'INCREASED (+10%)',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.grey[600],
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 2,
+                                  child: Text(
+                                    'DECREASED (-10%)',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.grey[600],
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 3,
+                                  child: Text(
+                                    'CHAMPIONS ALIGNMENT',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.grey[600],
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
                           Expanded(
                             child: ListView.separated(
                               itemCount: visibleNatures.length,
-                              separatorBuilder: (context, index) => Divider(height: 1, color: isDark ? const Color(0xFF222222) : const Color(0xFFE2E8F0)),
+                              separatorBuilder: (context, index) => Divider(
+                                height: 1,
+                                color: isDark
+                                    ? const Color(0xFF222222)
+                                    : const Color(0xFFE2E8F0),
+                              ),
                               itemBuilder: (context, index) {
                                 final nature = visibleNatures[index];
                                 final inc = nature['increased']!;
@@ -330,18 +468,38 @@ class _NaturedexScreenState extends State<NaturedexScreen> {
                                 final isNeutral = inc == '—';
 
                                 return Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                  color: isDark ? Colors.transparent : Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 14,
+                                  ),
+                                  color: isDark
+                                      ? Colors.transparent
+                                      : Colors.white,
                                   child: Row(
                                     children: [
-                                      Expanded(flex: 2, child: Text(nature['name']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14))),
+                                      Expanded(
+                                        flex: 2,
+                                        child: Text(
+                                          nature['name']!,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ),
                                       Expanded(
                                         flex: 2,
                                         child: Text(
                                           inc,
                                           style: TextStyle(
-                                            fontWeight: isNeutral ? FontWeight.normal : FontWeight.bold,
-                                            color: isNeutral ? Colors.grey : (isDark ? Colors.tealAccent : Colors.teal[700]),
+                                            fontWeight: isNeutral
+                                                ? FontWeight.normal
+                                                : FontWeight.bold,
+                                            color: isNeutral
+                                                ? Colors.grey
+                                                : (isDark
+                                                      ? Colors.tealAccent
+                                                      : Colors.teal[700]),
                                           ),
                                         ),
                                       ),
@@ -350,16 +508,28 @@ class _NaturedexScreenState extends State<NaturedexScreen> {
                                         child: Text(
                                           dec,
                                           style: TextStyle(
-                                            fontWeight: isNeutral ? FontWeight.normal : FontWeight.bold,
-                                            color: isNeutral ? Colors.grey : (isDark ? Colors.redAccent : Colors.red[700]),
+                                            fontWeight: isNeutral
+                                                ? FontWeight.normal
+                                                : FontWeight.bold,
+                                            color: isNeutral
+                                                ? Colors.grey
+                                                : (isDark
+                                                      ? Colors.redAccent
+                                                      : Colors.red[700]),
                                           ),
                                         ),
                                       ),
                                       Expanded(
                                         flex: 3,
                                         child: Text(
-                                          isNeutral ? 'Neutral Alignment' : '$inc Focused',
-                                          style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 12),
+                                          isNeutral
+                                              ? 'Neutral Alignment'
+                                              : '$inc Focused',
+                                          style: const TextStyle(
+                                            color: Colors.amber,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 12,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -373,12 +543,13 @@ class _NaturedexScreenState extends State<NaturedexScreen> {
                     } else {
                       // Compact Card Layout for Mobile Phones
                       return GridView.builder(
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 10,
-                          childAspectRatio: 1.15,
-                        ),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 10,
+                              mainAxisSpacing: 10,
+                              childAspectRatio: 1.15,
+                            ),
                         itemCount: visibleNatures.length,
                         itemBuilder: (context, index) {
                           final nature = visibleNatures[index];
@@ -389,12 +560,18 @@ class _NaturedexScreenState extends State<NaturedexScreen> {
                           return Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF121212) : Colors.white,
+                              color: isDark
+                                  ? const Color(0xFF121212)
+                                  : Colors.white,
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
                                 color: isNeutral
                                     ? Colors.grey.withValues(alpha: 0.2)
-                                    : (isDark ? Colors.tealAccent.withValues(alpha: 0.2) : Colors.teal.withValues(alpha: 0.2)),
+                                    : (isDark
+                                          ? Colors.tealAccent.withValues(
+                                              alpha: 0.2,
+                                            )
+                                          : Colors.teal.withValues(alpha: 0.2)),
                               ),
                             ),
                             child: Column(
@@ -403,33 +580,62 @@ class _NaturedexScreenState extends State<NaturedexScreen> {
                               children: [
                                 Text(
                                   nature['name']!,
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
                                 ),
                                 const SizedBox(height: 4),
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text('INC:', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                                    const Text(
+                                      'INC:',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
                                     Text(
                                       inc,
                                       style: TextStyle(
                                         fontSize: 12,
-                                        fontWeight: isNeutral ? FontWeight.normal : FontWeight.bold,
-                                        color: isNeutral ? Colors.grey : (isDark ? Colors.tealAccent : Colors.teal[700]),
+                                        fontWeight: isNeutral
+                                            ? FontWeight.normal
+                                            : FontWeight.bold,
+                                        color: isNeutral
+                                            ? Colors.grey
+                                            : (isDark
+                                                  ? Colors.tealAccent
+                                                  : Colors.teal[700]),
                                       ),
                                     ),
                                   ],
                                 ),
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text('DEC:', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                                    const Text(
+                                      'DEC:',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
                                     Text(
                                       dec,
                                       style: TextStyle(
                                         fontSize: 12,
-                                        fontWeight: isNeutral ? FontWeight.normal : FontWeight.bold,
-                                        color: isNeutral ? Colors.grey : (isDark ? Colors.redAccent : Colors.red[700]),
+                                        fontWeight: isNeutral
+                                            ? FontWeight.normal
+                                            : FontWeight.bold,
+                                        color: isNeutral
+                                            ? Colors.grey
+                                            : (isDark
+                                                  ? Colors.redAccent
+                                                  : Colors.red[700]),
                                       ),
                                     ),
                                   ],
@@ -462,7 +668,9 @@ class _NaturedexScreenState extends State<NaturedexScreen> {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF121212) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -471,13 +679,24 @@ class _NaturedexScreenState extends State<NaturedexScreen> {
             children: [
               Icon(Icons.rule_folder, color: color, size: 18),
               const SizedBox(width: 8),
-              Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: isDark ? Colors.white : Colors.black87)),
+              Text(
+                title,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 6),
           Text(
             desc,
-            style: TextStyle(fontSize: 11, color: isDark ? Colors.grey[400] : Colors.grey[600], height: 1.35),
+            style: TextStyle(
+              fontSize: 11,
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
+              height: 1.35,
+            ),
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
           ),

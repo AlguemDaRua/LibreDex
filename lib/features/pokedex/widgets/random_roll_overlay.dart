@@ -88,7 +88,25 @@ class _RandomRollOverlayState extends State<RandomRollOverlay>
     int step = 0;
     // Decelerating interval sequence (ms)
     final intervals = [
-      40, 40, 45, 50, 60, 70, 85, 100, 120, 150, 190, 240, 300, 380, 460, 560, 680, 800, 950
+      40,
+      40,
+      45,
+      50,
+      60,
+      70,
+      85,
+      100,
+      120,
+      150,
+      190,
+      240,
+      300,
+      380,
+      460,
+      560,
+      680,
+      800,
+      950,
     ];
 
     void scheduleNextStep() {
@@ -125,7 +143,8 @@ class _RandomRollOverlayState extends State<RandomRollOverlay>
   Widget build(BuildContext context) {
     final activePokemon = _shuffleList[_currentIndex];
     final typeColor = pokemonTypeColor(activePokemon.type1);
-    final bst = activePokemon.baseHp +
+    final bst =
+        activePokemon.baseHp +
         activePokemon.baseAtk +
         activePokemon.baseDef +
         activePokemon.baseSpAtk +
@@ -264,12 +283,16 @@ class _RandomRollOverlayState extends State<RandomRollOverlay>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: typeColor.withValues(alpha: 0.25),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: typeColor.withValues(alpha: 0.5)),
+                      border: Border.all(
+                        color: typeColor.withValues(alpha: 0.5),
+                      ),
                     ),
                     child: Text(
                       activePokemon.type1.toUpperCase(),
@@ -285,14 +308,19 @@ class _RandomRollOverlayState extends State<RandomRollOverlay>
                     const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: pokemonTypeColor(activePokemon.type2!)
-                            .withValues(alpha: 0.25),
+                        color: pokemonTypeColor(
+                          activePokemon.type2!,
+                        ).withValues(alpha: 0.25),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                            color: pokemonTypeColor(activePokemon.type2!)
-                                .withValues(alpha: 0.5)),
+                          color: pokemonTypeColor(
+                            activePokemon.type2!,
+                          ).withValues(alpha: 0.5),
+                        ),
                       ),
                       child: Text(
                         activePokemon.type2!.toUpperCase(),
@@ -339,7 +367,9 @@ class _RandomRollOverlayState extends State<RandomRollOverlay>
                     label: const Text(
                       'VIEW POKÉMON DETAILS',
                       style: TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 14),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
                     ),
                   ),
                 ),
@@ -360,7 +390,9 @@ class _RandomRollOverlayState extends State<RandomRollOverlay>
                     label: const Text(
                       'ROLL AGAIN',
                       style: TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 13),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                 ),

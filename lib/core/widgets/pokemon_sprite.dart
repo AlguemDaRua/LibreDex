@@ -89,7 +89,9 @@ class _PokemonSpriteState extends State<PokemonSprite> {
 
   @override
   void dispose() {
-    OfflineArtworkStore.instance.revision.removeListener(_refreshOfflineArtwork);
+    OfflineArtworkStore.instance.revision.removeListener(
+      _refreshOfflineArtwork,
+    );
     super.dispose();
   }
 
@@ -106,23 +108,23 @@ class _PokemonSpriteState extends State<PokemonSprite> {
   }
 
   Widget _errorIcon() => Icon(
-        widget.errorIcon,
-        size: widget.errorIconSize,
-        color: widget.errorIconColor,
-      );
+    widget.errorIcon,
+    size: widget.errorIconSize,
+    color: widget.errorIconColor,
+  );
 
   Widget _loading() => Center(
-        child: SizedBox(
-          width: widget.loadingIndicatorSize,
-          height: widget.loadingIndicatorSize,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            valueColor: widget.loadingColor == null
-                ? null
-                : AlwaysStoppedAnimation<Color>(widget.loadingColor!),
-          ),
-        ),
-      );
+    child: SizedBox(
+      width: widget.loadingIndicatorSize,
+      height: widget.loadingIndicatorSize,
+      child: CircularProgressIndicator(
+        strokeWidth: 2,
+        valueColor: widget.loadingColor == null
+            ? null
+            : AlwaysStoppedAnimation<Color>(widget.loadingColor!),
+      ),
+    ),
+  );
 
   Widget _networkImage() {
     if (widget.imageUrl.isEmpty) return _errorIcon();
@@ -132,8 +134,9 @@ class _PokemonSpriteState extends State<PokemonSprite> {
       imageUrl: widget.imageUrl,
       fit: widget.fit,
       maxHeightDiskCache: widget.diskCacheSize,
-      placeholder:
-          widget.loadingIndicatorSize == null ? null : (ctx, url) => _loading(),
+      placeholder: widget.loadingIndicatorSize == null
+          ? null
+          : (ctx, url) => _loading(),
       errorWidget: (ctx, url, err) {
         if (fallback != null &&
             fallback.isNotEmpty &&

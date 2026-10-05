@@ -8,7 +8,6 @@ library;
 
 import 'package:libredex/core/database/app_database.dart';
 
-
 /// Whether the comparison table shows base-level build stats or fully
 /// modified effective battle stats.
 enum ComparisonDisplayMode {
@@ -172,8 +171,21 @@ class ComparisonEntry {
       pokemon.baseSpDef +
       pokemon.baseSpd;
 
-  static const List<String> _statKeys = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
-  static const List<String> _battleStatKeys = ['atk', 'def', 'spa', 'spd', 'spe'];
+  static const List<String> _statKeys = [
+    'hp',
+    'atk',
+    'def',
+    'spa',
+    'spd',
+    'spe',
+  ];
+  static const List<String> _battleStatKeys = [
+    'atk',
+    'def',
+    'spa',
+    'spd',
+    'spe',
+  ];
 }
 
 class _Sentinel {

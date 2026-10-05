@@ -30,10 +30,7 @@ Future<void> showFirstLaunchArtworkDownloadDialog(BuildContext context) {
 
 /// Lets the user pick an artwork quality for offline use.
 class ArtworkDownloadDialog extends ConsumerStatefulWidget {
-  const ArtworkDownloadDialog({
-    super.key,
-    this.isFirstLaunchPrompt = false,
-  });
+  const ArtworkDownloadDialog({super.key, this.isFirstLaunchPrompt = false});
 
   final bool isFirstLaunchPrompt;
 
@@ -88,7 +85,11 @@ class _ArtworkDownloadDialogState extends ConsumerState<ArtworkDownloadDialog> {
       titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
       title: const Row(
         children: [
-          Icon(Icons.cloud_download_rounded, color: AppTheme.pokemonRed, size: 24),
+          Icon(
+            Icons.cloud_download_rounded,
+            color: AppTheme.pokemonRed,
+            size: 24,
+          ),
           SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -161,10 +162,15 @@ class _ArtworkDownloadDialogState extends ConsumerState<ArtworkDownloadDialog> {
           style: FilledButton.styleFrom(
             backgroundColor: AppTheme.pokemonRed,
             foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
           onPressed: _isSubmitting ? null : _startDownload,
-          child: const Text('Download', style: TextStyle(fontWeight: FontWeight.bold)),
+          child: const Text(
+            'Download',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
         ),
       ],
     );
@@ -201,14 +207,18 @@ class _QualityOption extends StatelessWidget {
             border: Border.all(
               color: selected
                   ? AppTheme.pokemonRed
-                  : (isDark ? const Color(0xFF262626) : const Color(0xFFE5E7EB)),
+                  : (isDark
+                        ? const Color(0xFF262626)
+                        : const Color(0xFFE5E7EB)),
               width: 1.5,
             ),
           ),
           child: Row(
             children: [
               Icon(
-                selected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                selected
+                    ? Icons.radio_button_checked
+                    : Icons.radio_button_unchecked,
                 size: 20,
                 color: selected ? AppTheme.pokemonRed : Colors.grey,
               ),
@@ -219,7 +229,10 @@ class _QualityOption extends StatelessWidget {
                   children: [
                     Text(
                       quality.label,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(

@@ -95,21 +95,34 @@ class _ShinySliderState extends State<ShinySlider> {
               right: 16,
               bottom: 12,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
-                  color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.85),
+                  color: (isDark ? Colors.black : Colors.white).withValues(
+                    alpha: 0.85,
+                  ),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.auto_awesome_outlined, size: 13, color: Colors.grey),
+                    const Icon(
+                      Icons.auto_awesome_outlined,
+                      size: 13,
+                      color: Colors.grey,
+                    ),
                     const SizedBox(width: 6),
                     Flexible(
                       child: Text(
                         'No shiny sprite bundled for this form',
-                        style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Colors.grey[isDark ? 400 : 600]),
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[isDark ? 400 : 600],
+                        ),
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -130,8 +143,10 @@ class _ShinySliderState extends State<ShinySlider> {
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTapDown: (details) => _updatePosition(details.globalPosition),
-          onHorizontalDragStart: (details) => _updatePosition(details.globalPosition),
-          onHorizontalDragUpdate: (details) => _updatePosition(details.globalPosition),
+          onHorizontalDragStart: (details) =>
+              _updatePosition(details.globalPosition),
+          onHorizontalDragUpdate: (details) =>
+              _updatePosition(details.globalPosition),
           child: Container(
             width: width,
             height: height,
@@ -139,7 +154,9 @@ class _ShinySliderState extends State<ShinySlider> {
               color: isDark ? const Color(0xFF121212) : const Color(0xFFF3F4F6),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB),
+                color: isDark
+                    ? const Color(0xFF1E1E1E)
+                    : const Color(0xFFE5E7EB),
                 width: 1.5,
               ),
             ),
@@ -202,20 +219,29 @@ class _ShinySliderState extends State<ShinySlider> {
                         });
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
-                          color: _position < 0.1 
-                              ? AppTheme.pokemonRed 
+                          color: _position < 0.1
+                              ? AppTheme.pokemonRed
                               : Colors.black.withValues(alpha: 0.6),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: _position < 0.1 ? Colors.white30 : Colors.transparent,
+                            color: _position < 0.1
+                                ? Colors.white30
+                                : Colors.transparent,
                             width: 1,
                           ),
                         ),
                         child: Text(
                           widget.normalLabel,
-                          style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
@@ -230,22 +256,29 @@ class _ShinySliderState extends State<ShinySlider> {
                         });
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
-                          color: _position > 0.9 
-                              ? const Color(0xFFFFD700) 
+                          color: _position > 0.9
+                              ? const Color(0xFFFFD700)
                               : Colors.black.withValues(alpha: 0.6),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: _position > 0.9 ? Colors.black26 : Colors.transparent,
+                            color: _position > 0.9
+                                ? Colors.black26
+                                : Colors.transparent,
                             width: 1,
                           ),
                         ),
                         child: Text(
                           widget.shinyLabel,
                           style: TextStyle(
-                            color: _position > 0.9 ? Colors.black87 : const Color(0xFFFFD700), 
-                            fontSize: 11, 
+                            color: _position > 0.9
+                                ? Colors.black87
+                                : const Color(0xFFFFD700),
+                            fontSize: 11,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -281,7 +314,9 @@ class _ShinySliderState extends State<ShinySlider> {
                               height: 36,
                               width: 36,
                               decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                                color: isDark
+                                    ? const Color(0xFF1E1E1E)
+                                    : Colors.white,
                                 shape: BoxShape.circle,
                                 border: Border.all(
                                   color: Colors.white,

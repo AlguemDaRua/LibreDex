@@ -33,7 +33,7 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
   String _sortOption = 'name_asc';
   int? _selectedGeneration;
   String? _selectedEffectTag;
-  
+
   bool _filterChampions = false;
   bool _filterCurrentMC = false;
   bool _filterNewInMC = false;
@@ -44,9 +44,21 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
   Set<int> _hiddenAbilityIds = {};
 
   static const List<String> _effectTags = [
-    'Weather', 'Terrain', 'Stats', 'Status', 'Damage', 'Immunity', 'Type',
-    'Speed', 'Items', 'Switching', 'Hazards', 'Healing', 'Critical Hits',
-    'Accuracy', 'Priority'
+    'Weather',
+    'Terrain',
+    'Stats',
+    'Status',
+    'Damage',
+    'Immunity',
+    'Type',
+    'Speed',
+    'Items',
+    'Switching',
+    'Hazards',
+    'Healing',
+    'Critical Hits',
+    'Accuracy',
+    'Priority',
   ];
 
   @override
@@ -66,14 +78,16 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
       final db = ref.read(databaseProvider);
       final regulation = await ref.read(championsRegulationProvider.future);
       final abilities = await db.select(db.abilityTable).get();
-      final hiddenJunctions = await (db.select(db.pokemonAbilitiesTable)
-            ..where((junction) => junction.isHidden.equals(true)))
-          .get();
+      final hiddenJunctions = await (db.select(
+        db.pokemonAbilitiesTable,
+      )..where((junction) => junction.isHidden.equals(true))).get();
       if (mounted) {
         setState(() {
           _mCAbilityIds = regulation.abilityIds.toSet();
           _newMCAbilityIds = regulation.newAbilityIds.toSet();
-          _hiddenAbilityIds = hiddenJunctions.map((junction) => junction.abilityId).toSet();
+          _hiddenAbilityIds = hiddenJunctions
+              .map((junction) => junction.abilityId)
+              .toSet();
           _allAbilities = abilities;
           _isLoading = false;
           _applyFilters();
@@ -117,12 +131,15 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
     final query = _searchQuery.trim().toLowerCase();
     var list = _allAbilities.where((a) {
       if (query.isNotEmpty) {
-        final matchesQuery = a.name.toLowerCase().contains(query) ||
+        final matchesQuery =
+            a.name.toLowerCase().contains(query) ||
             a.description.toLowerCase().contains(query);
         if (!matchesQuery) return false;
       }
 
-      if (_selectedGeneration != null && a.generation != _selectedGeneration) return false;
+      if (_selectedGeneration != null && a.generation != _selectedGeneration) {
+        return false;
+      }
 
       if (_filterChampions && !a.isChampionsAbility) return false;
       if (_filterCurrentMC && !_mCAbilityIds.contains(a.id)) return false;
@@ -170,55 +187,92 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
     final list = <ActiveFilterItem>[];
 
     if (_selectedGeneration != null) {
-      list.add(ActiveFilterItem(
-        label: 'Gen: $_selectedGeneration',
-        onDeleted: () => setState(() { _selectedGeneration = null; _applyFilters(); }),
-      ));
+      list.add(
+        ActiveFilterItem(
+          label: 'Gen: $_selectedGeneration',
+          onDeleted: () => setState(() {
+            _selectedGeneration = null;
+            _applyFilters();
+          }),
+        ),
+      );
     }
     if (_selectedEffectTag != null) {
-      list.add(ActiveFilterItem(
-        label: 'Affects: $_selectedEffectTag',
-        onDeleted: () => setState(() { _selectedEffectTag = null; _applyFilters(); }),
-      ));
+      list.add(
+        ActiveFilterItem(
+          label: 'Affects: $_selectedEffectTag',
+          onDeleted: () => setState(() {
+            _selectedEffectTag = null;
+            _applyFilters();
+          }),
+        ),
+      );
     }
     if (_filterChampions) {
-      list.add(ActiveFilterItem(
-        label: 'Champions-origin ability',
-        onDeleted: () => setState(() { _filterChampions = false; _applyFilters(); }),
-      ));
+      list.add(
+        ActiveFilterItem(
+          label: 'Champions-origin ability',
+          onDeleted: () => setState(() {
+            _filterChampions = false;
+            _applyFilters();
+          }),
+        ),
+      );
     }
     if (_filterCurrentMC) {
-      list.add(ActiveFilterItem(
-        label: 'Available in M-C',
-        onDeleted: () => setState(() { _filterCurrentMC = false; _applyFilters(); }),
-      ));
+      list.add(
+        ActiveFilterItem(
+          label: 'Available in M-C',
+          onDeleted: () => setState(() {
+            _filterCurrentMC = false;
+            _applyFilters();
+          }),
+        ),
+      );
     }
     if (_filterNewInMC) {
-      list.add(ActiveFilterItem(
-        label: 'New to M-C',
-        onDeleted: () => setState(() { _filterNewInMC = false; _applyFilters(); }),
-      ));
+      list.add(
+        ActiveFilterItem(
+          label: 'New to M-C',
+          onDeleted: () => setState(() {
+            _filterNewInMC = false;
+            _applyFilters();
+          }),
+        ),
+      );
     }
     if (_filterLegendsZA) {
-      list.add(ActiveFilterItem(
-        label: 'Legends Z-A',
-        onDeleted: () => setState(() { _filterLegendsZA = false; _applyFilters(); }),
-      ));
+      list.add(
+        ActiveFilterItem(
+          label: 'Legends Z-A',
+          onDeleted: () => setState(() {
+            _filterLegendsZA = false;
+            _applyFilters();
+          }),
+        ),
+      );
     }
     if (_filterHidden) {
-      list.add(ActiveFilterItem(
-        label: 'Hidden Abilities',
-        onDeleted: () => setState(() { _filterHidden = false; _applyFilters(); }),
-      ));
+      list.add(
+        ActiveFilterItem(
+          label: 'Hidden Abilities',
+          onDeleted: () => setState(() {
+            _filterHidden = false;
+            _applyFilters();
+          }),
+        ),
+      );
     }
     if (_sortOption != 'name_asc') {
-      list.add(ActiveFilterItem(
-        label: 'Sort: ${_sortOption.replaceAll('_', ' ')}',
-        onDeleted: () => setState(() {
-          _sortOption = 'name_asc';
-          _applyFilters();
-        }),
-      ));
+      list.add(
+        ActiveFilterItem(
+          label: 'Sort: ${_sortOption.replaceAll('_', ' ')}',
+          onDeleted: () => setState(() {
+            _sortOption = 'name_asc';
+            _applyFilters();
+          }),
+        ),
+      );
     }
 
     return list;
@@ -243,18 +297,34 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Generation
-                  const Text('GENERATION', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
+                  const Text(
+                    'GENERATION',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.grey,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 6,
                     children: List.generate(7, (idx) => idx + 3).map((gen) {
                       final isSel = _selectedGeneration == gen;
                       return ChoiceChip(
-                        label: Text('GEN $gen', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isSel ? Colors.white : Colors.grey)),
+                        label: Text(
+                          'GEN $gen',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: isSel ? Colors.white : Colors.grey,
+                          ),
+                        ),
                         selected: isSel,
                         selectedColor: AppTheme.pokemonRed,
                         onSelected: (selected) {
-                          setState(() { _selectedGeneration = selected ? gen : null; });
+                          setState(() {
+                            _selectedGeneration = selected ? gen : null;
+                          });
                           _applyFilters();
                           setModalState(() {});
                         },
@@ -264,7 +334,14 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
                   const SizedBox(height: 20),
 
                   // Effects tags
-                  const Text('ABILITIES AFFECTING', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
+                  const Text(
+                    'ABILITIES AFFECTING',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.grey,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 6,
@@ -272,11 +349,19 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
                     children: _effectTags.map((tag) {
                       final isSel = _selectedEffectTag == tag;
                       return ChoiceChip(
-                        label: Text(tag.toUpperCase(), style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
+                        label: Text(
+                          tag.toUpperCase(),
+                          style: const TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         selected: isSel,
                         selectedColor: AppTheme.pokemonRed,
                         onSelected: (selected) {
-                          setState(() { _selectedEffectTag = selected ? tag : null; });
+                          setState(() {
+                            _selectedEffectTag = selected ? tag : null;
+                          });
                           _applyFilters();
                           setModalState(() {});
                         },
@@ -286,37 +371,64 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
                   const SizedBox(height: 20),
 
                   // Custom filters
-                  const Text('SPECIAL RULES', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
+                  const Text(
+                    'SPECIAL RULES',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.grey,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF141414) : const Color(0xFFF7FAFC),
+                      color: isDark
+                          ? const Color(0xFF141414)
+                          : const Color(0xFFF7FAFC),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: isDark ? const Color(0xFF222222) : const Color(0xFFE2E8F0)),
+                      border: Border.all(
+                        color: isDark
+                            ? const Color(0xFF222222)
+                            : const Color(0xFFE2E8F0),
+                      ),
                     ),
                     child: Column(
                       children: [
-                        _buildSwitchRow('Champions-origin / custom abilities', _filterChampions, (val) {
-                          setState(() => _filterChampions = val);
-                          _applyFilters();
-                          setModalState(() {});
-                        }),
-                        _buildSwitchRow('Available in Regulation M-C', _filterCurrentMC, (val) {
-                          setState(() => _filterCurrentMC = val);
-                          _applyFilters();
-                          setModalState(() {});
-                        }),
-                        _buildSwitchRow('Newly added to M-C', _filterNewInMC, (val) {
+                        _buildSwitchRow(
+                          'Champions-origin / custom abilities',
+                          _filterChampions,
+                          (val) {
+                            setState(() => _filterChampions = val);
+                            _applyFilters();
+                            setModalState(() {});
+                          },
+                        ),
+                        _buildSwitchRow(
+                          'Available in Regulation M-C',
+                          _filterCurrentMC,
+                          (val) {
+                            setState(() => _filterCurrentMC = val);
+                            _applyFilters();
+                            setModalState(() {});
+                          },
+                        ),
+                        _buildSwitchRow('Newly added to M-C', _filterNewInMC, (
+                          val,
+                        ) {
                           setState(() => _filterNewInMC = val);
                           _applyFilters();
                           setModalState(() {});
                         }),
-                        _buildSwitchRow('Legends: Z-A origin', _filterLegendsZA, (val) {
-                          setState(() => _filterLegendsZA = val);
-                          _applyFilters();
-                          setModalState(() {});
-                        }),
+                        _buildSwitchRow(
+                          'Legends: Z-A origin',
+                          _filterLegendsZA,
+                          (val) {
+                            setState(() => _filterLegendsZA = val);
+                            _applyFilters();
+                            setModalState(() {});
+                          },
+                        ),
                         _buildSwitchRow('Hidden Ability', _filterHidden, (val) {
                           setState(() => _filterHidden = val);
                           _applyFilters();
@@ -331,16 +443,36 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
                   DexSortMenu<String>(
                     currentValue: _sortOption,
                     items: const [
-                      DropdownMenuItem(value: 'name_asc', child: Text('NAME (A - Z)')),
-                      DropdownMenuItem(value: 'name_desc', child: Text('NAME (Z - A)')),
-                      DropdownMenuItem(value: 'gen_desc', child: Text('GENERATION (LATEST FIRST)')),
-                      DropdownMenuItem(value: 'gen_asc', child: Text('GENERATION (EARLIEST FIRST)')),
-                      DropdownMenuItem(value: 'champions_first', child: Text('CHAMPIONS FIRST')),
-                      DropdownMenuItem(value: 'legends_first', child: Text('LEGENDS: Z-A FIRST')),
+                      DropdownMenuItem(
+                        value: 'name_asc',
+                        child: Text('NAME (A - Z)'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'name_desc',
+                        child: Text('NAME (Z - A)'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'gen_desc',
+                        child: Text('GENERATION (LATEST FIRST)'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'gen_asc',
+                        child: Text('GENERATION (EARLIEST FIRST)'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'champions_first',
+                        child: Text('CHAMPIONS FIRST'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'legends_first',
+                        child: Text('LEGENDS: Z-A FIRST'),
+                      ),
                     ],
                     onChanged: (val) {
                       if (val != null) {
-                        setState(() { _sortOption = val; });
+                        setState(() {
+                          _sortOption = val;
+                        });
                         _applyFilters();
                         setModalState(() {});
                       }
@@ -355,11 +487,18 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
     );
   }
 
-  Widget _buildSwitchRow(String label, bool value, ValueChanged<bool> onChanged) {
+  Widget _buildSwitchRow(
+    String label,
+    bool value,
+    ValueChanged<bool> onChanged,
+  ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        ),
         Switch(
           value: value,
           activeThumbColor: AppTheme.pokemonRed,
@@ -378,7 +517,10 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
     return Scaffold(
       backgroundColor: isDark ? Colors.black : const Color(0xFFF9FAFB),
       appBar: AppBar(
-        title: Text('AbilityDex', style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor)),
+        title: Text(
+          'AbilityDex',
+          style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor),
+        ),
         iconTheme: IconThemeData(color: primaryColor),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -386,7 +528,11 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
       body: SafeArea(
         bottom: true,
         child: _isLoading
-            ? const Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(AppTheme.pokemonRed)))
+            ? const Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation(AppTheme.pokemonRed),
+                ),
+              )
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -394,11 +540,15 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
                     searchHint: 'Search abilities by name or desc...',
                     initialSearchValue: _searchQuery,
                     onSearchChanged: (val) {
-                      setState(() { _searchQuery = val; });
+                      setState(() {
+                        _searchQuery = val;
+                      });
                       _applyFilters();
                     },
                     onClearSearch: () {
-                      setState(() { _searchQuery = ''; });
+                      setState(() {
+                        _searchQuery = '';
+                      });
                       _applyFilters();
                     },
                     onFilterPressed: _openFilterSheet,
@@ -411,26 +561,53 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
                       onClearAll: _clearAllFilters,
                     ),
 
-                  ResultCountLabel(count: _filteredAbilities.length, label: 'abilities found'),
+                  ResultCountLabel(
+                    count: _filteredAbilities.length,
+                    label: 'abilities found',
+                  ),
 
                   Expanded(
                     child: _filteredAbilities.isEmpty
-                        ? const Center(child: Text('No abilities found.', style: TextStyle(color: Colors.grey)))
+                        ? const Center(
+                            child: Text(
+                              'No abilities found.',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          )
                         : ListView.separated(
-                            padding: const EdgeInsets.only(left: AppSpacing.pagePadding, right: AppSpacing.pagePadding, top: 8, bottom: AppSpacing.bottomScrollPadding),
+                            padding: const EdgeInsets.only(
+                              left: AppSpacing.pagePadding,
+                              right: AppSpacing.pagePadding,
+                              top: 8,
+                              bottom: AppSpacing.bottomScrollPadding,
+                            ),
                             itemCount: _filteredAbilities.length,
                             separatorBuilder: (context, index) => Divider(
-                              color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB),
+                              color: isDark
+                                  ? const Color(0xFF1E1E1E)
+                                  : const Color(0xFFE5E7EB),
                               height: 1,
                             ),
                             itemBuilder: (context, index) {
                               final ab = _filteredAbilities[index];
-                              final isMCAvailable = regulation?.isAbilityAvailable(ab.id) ?? _mCAbilityIds.contains(ab.id);
-                              final isNewInMC = regulation?.isNewAbility(ab.id) ?? _newMCAbilityIds.contains(ab.id);
-                              final description = regulation?.abilityDescriptionFor(ab.id) ?? ab.description;
+                              final isMCAvailable =
+                                  regulation?.isAbilityAvailable(ab.id) ??
+                                  _mCAbilityIds.contains(ab.id);
+                              final isNewInMC =
+                                  regulation?.isNewAbility(ab.id) ??
+                                  _newMCAbilityIds.contains(ab.id);
+                              final description =
+                                  regulation?.abilityDescriptionFor(ab.id) ??
+                                  ab.description;
                               return ListTile(
-                                contentPadding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                                leading: AbilityEffectIcon(effectTags: ab.effectTagsList, size: 21),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 6,
+                                  horizontal: 8,
+                                ),
+                                leading: AbilityEffectIcon(
+                                  effectTags: ab.effectTagsList,
+                                  size: 21,
+                                ),
                                 title: Row(
                                   children: [
                                     Flexible(
@@ -438,24 +615,42 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
                                         ab.name,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 15),
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: primaryColor,
+                                          fontSize: 15,
+                                        ),
                                       ),
                                     ),
                                     if (isMCAvailable) ...[
                                       const SizedBox(width: 6),
-                                      const ContentBadge.mC(tooltip: 'Available in Regulation M-C'),
+                                      const ContentBadge.mC(
+                                        tooltip: 'Available in Regulation M-C',
+                                      ),
                                     ],
                                     if (isNewInMC) ...[
                                       const SizedBox(width: 4),
-                                      const ContentBadge.mC(isNew: true, tooltip: 'Newly added to Regulation M-C'),
+                                      const ContentBadge.mC(
+                                        isNew: true,
+                                        tooltip:
+                                            'Newly added to Regulation M-C',
+                                      ),
                                     ],
                                     if (ab.isChampionsAbility) ...[
                                       const SizedBox(width: 4),
-                                      const ContentBadge(label: 'CHAMP', color: Colors.orangeAccent, tooltip: 'Champions-origin ability'),
+                                      const ContentBadge(
+                                        label: 'CHAMP',
+                                        color: Colors.orangeAccent,
+                                        tooltip: 'Champions-origin ability',
+                                      ),
                                     ],
                                     if (ab.isLegendsZAAbility) ...[
                                       const SizedBox(width: 4),
-                                      const ContentBadge(label: 'LZA', color: Colors.purpleAccent, tooltip: 'Legends: Z-A-origin ability'),
+                                      const ContentBadge(
+                                        label: 'LZA',
+                                        color: Colors.purpleAccent,
+                                        tooltip: 'Legends: Z-A-origin ability',
+                                      ),
                                     ],
                                   ],
                                 ),
@@ -465,10 +660,19 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
                                     description,
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 12),
+                                    style: TextStyle(
+                                      color: isDark
+                                          ? Colors.grey[400]
+                                          : Colors.grey[600],
+                                      fontSize: 12,
+                                    ),
                                   ),
                                 ),
-                                trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+                                trailing: const Icon(
+                                  Icons.arrow_forward_ios,
+                                  size: 14,
+                                  color: Colors.grey,
+                                ),
                                 onTap: () => _showAbilityDetails(context, ab),
                               );
                             },
@@ -484,10 +688,8 @@ class _AbilitydexScreenState extends ConsumerState<AbilitydexScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => AbilityDetailScreen(
-          abilityId: ab.id,
-          abilityName: ab.name,
-        ),
+        builder: (context) =>
+            AbilityDetailScreen(abilityId: ab.id, abilityName: ab.name),
       ),
     );
   }

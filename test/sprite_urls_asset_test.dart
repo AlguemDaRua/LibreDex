@@ -16,52 +16,83 @@ void main() {
 
   // Keep in sync with tools/fix_sprite_urls.py.
   const brokenNormalFallbackDex = <int, int>{
-    10080: 25, 10081: 25, 10082: 25, 10083: 25, 10084: 25, 10085: 25,
-    10158: 25, 10159: 133,
-    10264: 1007, 10265: 1007, 10266: 1007, 10267: 1007,
-    10268: 1008, 10269: 1008, 10270: 1008, 10271: 1008,
+    10080: 25,
+    10081: 25,
+    10082: 25,
+    10083: 25,
+    10084: 25,
+    10085: 25,
+    10158: 25,
+    10159: 133,
+    10264: 1007,
+    10265: 1007,
+    10266: 1007,
+    10267: 1007,
+    10268: 1008,
+    10269: 1008,
+    10270: 1008,
+    10271: 1008,
   };
   final brokenShinyIds = <int>{
     ...brokenNormalFallbackDex.keys,
-    10094, 10095, 10096, 10097, 10098, 10099, 10160,
+    10094,
+    10095,
+    10096,
+    10097,
+    10098,
+    10099,
+    10160,
   };
 
   late List<dynamic> bundle;
   late Map<int, Map<String, dynamic>> byId;
 
   setUpAll(() {
-    bundle = jsonDecode(File('assets/data/pokemon.json').readAsStringSync()) as List<dynamic>;
+    bundle =
+        jsonDecode(File('assets/data/pokemon.json').readAsStringSync())
+            as List<dynamic>;
     byId = {for (final p in bundle) p['id'] as int: p as Map<String, dynamic>};
   });
 
   group('assets/data/pokemon.json sprite audit', () {
-    test('every URL follows the HOME render URL shape (or is a blank shiny)', () {
-      final normal = RegExp('^$homeBase/\\d+\\.png\$');
-      final shiny = RegExp('^$homeBase/shiny/\\d+\\.png\$');
-      for (final p in byId.values) {
-        final id = p['id'] as int;
-        final sprite = p['spriteUrl'] as String;
-        final shinySprite = p['shinySpriteUrl'] as String;
-        expect(normal.hasMatch(sprite), isTrue, reason: 'weird spriteUrl for #$id: $sprite');
-        expect(
-          shinySprite.isEmpty || shiny.hasMatch(shinySprite),
-          isTrue,
-          reason: 'weird shinySpriteUrl for #$id: $shinySprite',
-        );
-      }
-    });
+    test(
+      'every URL follows the HOME render URL shape (or is a blank shiny)',
+      () {
+        final normal = RegExp('^$homeBase/\\d+\\.png\$');
+        final shiny = RegExp('^$homeBase/shiny/\\d+\\.png\$');
+        for (final p in byId.values) {
+          final id = p['id'] as int;
+          final sprite = p['spriteUrl'] as String;
+          final shinySprite = p['shinySpriteUrl'] as String;
+          expect(
+            normal.hasMatch(sprite),
+            isTrue,
+            reason: 'weird spriteUrl for #$id: $sprite',
+          );
+          expect(
+            shinySprite.isEmpty || shiny.hasMatch(shinySprite),
+            isTrue,
+            reason: 'weird shinySpriteUrl for #$id: $shinySprite',
+          );
+        }
+      },
+    );
 
-    test('forms without an upstream render reuse their base species artwork', () {
-      for (final entry in brokenNormalFallbackDex.entries) {
-        final p = byId[entry.key];
-        expect(p, isNotNull, reason: 'form ${entry.key} missing from bundle');
-        expect(
-          p!['spriteUrl'],
-          '$homeBase/${entry.value}.png',
-          reason: '#${entry.key} (${p['name']}) must reuse dex ${entry.value} art',
-        );
-      }
-    });
+    test(
+      'forms without an upstream render reuse their base species artwork',
+      () {
+        for (final entry in brokenNormalFallbackDex.entries) {
+          final p = byId[entry.key];
+          expect(p, isNotNull, reason: 'form ${entry.key} missing from bundle');
+          expect(
+            p!['spriteUrl'],
+            '$homeBase/${entry.value}.png',
+            reason:
+                '#${entry.key} (${p['name']}) must reuse dex ${entry.value} art',
+          );
+        }
+      },
+    );
 
     test('forms with no upstream shiny render ship a blank shiny URL', () {
       for (final id in brokenShinyIds) {
@@ -69,7 +100,8 @@ void main() {
         expect(
           p['shinySpriteUrl'],
           '',
-          reason: '#$id (${p['name']}) has no shiny render upstream; '
+          reason:
+              '#$id (${p['name']}) has no shiny render upstream; '
               'the UI shows the graceful "no shiny sprite bundled" note for blanks',
         );
       }
