@@ -200,6 +200,12 @@ class PokemonGridCard extends ConsumerWidget {
                                       ? 'Newly eligible in Pokémon Champions Regulation M-C'
                                       : 'Eligible in Pokémon Champions Regulation M-C',
                                 ),
+                              if (group.length > 1)
+                                ContentBadge.forms(
+                                  count: group.length,
+                                  tooltip:
+                                      '${group.length} forms - tap to browse them',
+                                ),
                             ],
                           ),
                           Expanded(

@@ -17,6 +17,16 @@ class ContentBadge extends StatelessWidget {
     : label = isNew ? 'NEW M-C' : 'M-C',
       color = isNew ? Colors.deepOrangeAccent : Colors.deepPurpleAccent;
 
+  /// Marks a species that has more than one form, with the total count.
+  ///
+  /// The count includes the species' own row, which is how a Pokédex
+  /// presents it: Charizard is 4 forms, not 3. Rendered only when there is
+  /// more than one, so a single-form species carries no badge.
+  const ContentBadge.forms({super.key, required int count, this.tooltip})
+    : assert(count > 1, 'Use this badge only for species with several forms'),
+      label = '$count FORMS',
+      color = const Color(0xFF0284C7);
+
   @override
   Widget build(BuildContext context) {
     final badge = Container(
