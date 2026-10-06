@@ -383,25 +383,25 @@ class _RandomRollOverlayState extends State<RandomRollOverlay>
                     width: double.infinity,
                     height: 48,
                     child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: typeColor,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: typeColor,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                       ),
-                    ),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      widget.onViewDetails(_selectedWinner);
-                    },
-                    icon: const Icon(Icons.arrow_forward_rounded, size: 20),
-                    label: const Text(
-                      'VIEW POKÉMON DETAILS',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        widget.onViewDetails(_selectedWinner);
+                      },
+                      icon: const Icon(Icons.arrow_forward_rounded, size: 20),
+                      label: const Text(
+                        'VIEW POKÉMON DETAILS',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
                   ),
