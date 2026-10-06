@@ -1409,6 +1409,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
       t2: p2.type2,
       attackerAbility: state.attackerAbility,
       defenderAbility: state.defenderAbility,
+      defenderHeldItem: state.defenderHeldItem,
       moveName: activeMove.name,
       defenderTeraActive:
           !state.ruleset.isChampions && state.defenderTeraActive,

@@ -16,8 +16,8 @@ class BattleDataManifest {
   /// LibreDex Battle Engine version.
   static const String engineVersion = '1.0.0';
 
-  /// Release date of the pinned data.
-  static const String releaseDate = '2026-08-01';
+  /// Release date of the pinned data — matches Regulation M-C asOf.
+  static const String releaseDate = '2026-10-01';
 
   /// Returns a formatted manifest summary string for debugging and UI display.
   static String get summary =>

@@ -400,6 +400,7 @@ class ModifierPipeline {
       type2,
       attackerAbility: state.attacker.ability,
       defenderAbility: state.defender.ability,
+      defenderHeldItem: state.defender.heldItem,
       moveName: state.move.name,
       defenderTeraActive:
           !state.ruleset.isChampions && state.defender.teraActive,
