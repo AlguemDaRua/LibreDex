@@ -189,6 +189,8 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
 
   bool _isMythical(Pokemon p) => p.isMythical;
 
+  Color _getTypeColor(String type) => pokemonTypeColor(type);
+
   void _clearAllFilters() {
     setState(() {
       _globalShinyMode = false;
@@ -311,6 +313,9 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
       if (codeUnit == query.codeUnitAt(index)) index++;
       if (index == query.length) return true;
     }
+    return false;
+  }
+
 
   /// How well [pokemon] matches [query]. Lower is better.
   ///
@@ -359,9 +364,6 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
       if (rank < best) best = rank;
     }
     return best;
-  }
-
-    return false;
   }
 
   void _rollRandomPokemon(
