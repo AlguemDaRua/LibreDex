@@ -44,6 +44,8 @@ Use **Settings → Clear browsing artwork cache** for temporary images, **Delete
 
 Bundled game-data snapshot: **1 October 2026**. LibreDex includes Pokémon Champions Regulation Set M-C data (game version 1.2.0), alongside Champions stat rules and Legends: Z-A forms. Regulation eligibility is kept separate from a record's game origin. Start at the [documentation index](docs/README.md) for the implementation guide, full source/provenance workflow, game-support notes, migration guide, testing instructions, and release checklist.
 
+For current priorities, completed work and the list of things deliberately deferred, see the [roadmap](plans.md). Superseded audits are frozen in [`docs/ARCHIVE.md`](docs/ARCHIVE.md) and are kept for historical reasoning only.
+
 LibreDex includes full-fledged, multi-game features covering:
 - **Adaptive Navigation (new in Aug 2026)**: Bottom `NavigationBar` on phones + `NavigationRail` on tablets, single `More` overflow — no hamburger + bar duplication. Theme toggle plays the wavy reveal from the tap point.
 - **Shared Filter & Sort Framework**: Universal debouncing, search, sorting menus, active filter summaries, and result counters.

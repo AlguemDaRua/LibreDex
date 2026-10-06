@@ -2,6 +2,17 @@
 
 Start here to find the right guide. The icons are navigation cues: **🧭 overview**, **🗃 data**, **⚔️ battle rules**, **🧪 verification**, and **🚀 release**.
 
+## Where things live
+
+- **[`plans.md`](../plans.md)** *(repository root)* — **the current roadmap.** What is
+  done, what is next, and what has been deliberately deferred. Start here for anything
+  about the future.
+- **[`ARCHIVE.md`](ARCHIVE.md)** — frozen, superseded audits. Historical reasoning only;
+  do not action anything in it.
+
+Everything below this line is stable reference documentation describing how the app
+works *today*.
+
 | Guide | What it covers |
 | --- | --- |
 | [Audit implementation guide](audit-implementation.md) | Architecture, user-facing behavior, filter/count semantics, randomizer, navigation, evolution coverage, and current verification limits. |
@@ -12,6 +23,8 @@ Start here to find the right guide. The icons are navigation cues: **🧭 overvi
 | [Testing LibreDex](testing.md) | Test inventory, asset validators, commands, and the verification work still required. |
 | [Release checklist](release-checklist.md) | Pre-release data, migration, UI, accessibility, and Flutter checks. |
 | [Third-party notices](../NOTICE.md) | PokéAPI, artwork, trademark, and code-license attribution. |
+| [Roadmap](../plans.md) | Current priorities, completed work, and the explicit not-doing list. |
+| [Frozen archive](ARCHIVE.md) | Retired audits, kept for historical reasoning only. |
 
 ## 🧭 Maintenance rule of thumb
 
