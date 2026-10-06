@@ -83,7 +83,8 @@ class DamageMath {
   /// Rounding the decimal directly is off by one on the common cases: 1.3
   /// becomes 5325 rather than the 5324 the games apply, and 1.1 becomes 4506
   /// rather than 4505. Small, but it is a real difference on some rolls.
-  static int _modifierFromDouble(double value) => switch ((value * 10).round()) {
+  static int _modifierFromDouble(double value) =>
+      switch ((value * 10).round()) {
         11 => boost11,
         12 => boost12,
         13 => boost13,

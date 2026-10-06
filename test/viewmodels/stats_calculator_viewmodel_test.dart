@@ -106,7 +106,12 @@ void main() {
       expect(
         StatCalculator.calculateOtherStat(base: 100, iv: 31, ev: 4, level: 50),
         greaterThan(
-          StatCalculator.calculateOtherStat(base: 100, iv: 31, ev: 3, level: 50),
+          StatCalculator.calculateOtherStat(
+            base: 100,
+            iv: 31,
+            ev: 3,
+            level: 50,
+          ),
         ),
       );
     });
@@ -147,7 +152,8 @@ void main() {
   group('StatsCalculator notifier', () {
     late ProviderContainer container;
 
-    StatsCalculator notifier() => container.read(statsCalculatorProvider.notifier);
+    StatsCalculator notifier() =>
+        container.read(statsCalculatorProvider.notifier);
     StatsCalculatorState current() => container.read(statsCalculatorProvider);
 
     setUp(() {
