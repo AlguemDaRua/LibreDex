@@ -35,29 +35,8 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
     'fairy',
   ];
 
-  // Single source of truth — delegated to core/utils/type_utils.dart
+  // Single source of truth — colors from core/utils/type_utils.dart
   static Color _colorFor(String t) => t == 'none' ? Colors.grey : pokemonTypeColor(t);
-  static const Map<String, Color> _typeColors = {
-    'normal': Color(0xFFA8A77A),
-    'fire': Color(0xFFEE8130),
-    'water': Color(0xFF6390F0),
-    'electric': Color(0xFFF7D02C),
-    'grass': Color(0xFF7AC74C),
-    'ice': Color(0xFF96D9D6),
-    'fighting': Color(0xFFC22E28),
-    'poison': Color(0xFFA33EA1),
-    'ground': Color(0xFFE2BF65),
-    'flying': Color(0xFFA98FEE),
-    'psychic': Color(0xFFF95587),
-    'bug': Color(0xFFA6B91A),
-    'rock': Color(0xFFB6A136),
-    'ghost': Color(0xFF735797),
-    'dragon': Color(0xFF6F35FC),
-    'dark': Color(0xFF705746),
-    'steel': Color(0xFFB7B7CE),
-    'fairy': Color(0xFFD685AD),
-    'none': Colors.grey,
-  };
 
   // Type Chart Effectiveness Maps (Defending multipliers)
   static const Map<String, Map<String, List<String>>> _effectiveness = {
@@ -326,7 +305,7 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
                       final isSelected = isPrimary
                           ? _primaryType == type
                           : _secondaryType == type;
-                      final color = _typeColors[type] ?? Colors.grey;
+                      final color = _colorFor(type);
 
                       return InkWell(
                         onTap: () {
@@ -383,8 +362,8 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? Colors.white : Colors.black;
 
-    final primaryThemeColor = _typeColors[_primaryType] ?? Colors.grey;
-    final secondaryThemeColor = _typeColors[_secondaryType] ?? Colors.grey;
+    final primaryThemeColor = _colorFor(_primaryType);
+    final secondaryThemeColor = _colorFor(_secondaryType);
 
     final combinedDefense = _calculateCombinedDefense();
 
@@ -827,7 +806,7 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
             spacing: 6,
             runSpacing: 6,
             children: types.map((t) {
-              final badgeColor = _typeColors[t] ?? Colors.grey;
+              final badgeColor = _colorFor(t);
               return Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 10,
@@ -855,7 +834,7 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
   }
 
   Widget _buildOffenseCard(String type, bool isDark) {
-    final color = _typeColors[type] ?? Colors.grey;
+    final color = _colorFor(type);
     final data = _effectiveness[type] ?? {};
     final superEffectiveList = List<String>.from(data['offense_2x'] ?? []);
 
@@ -904,7 +883,7 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
               spacing: 6,
               runSpacing: 6,
               children: superEffectiveList.map((t) {
-                final badgeColor = _typeColors[t] ?? Colors.grey;
+                final badgeColor = _colorFor(t);
                 return Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
