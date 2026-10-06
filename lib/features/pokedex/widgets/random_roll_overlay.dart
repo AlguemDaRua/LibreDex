@@ -78,7 +78,7 @@ class _RandomRollOverlayState extends State<RandomRollOverlay>
     // clamp() throws when the lower bound exceeds the upper one, so the
     // pool size is floored at 1 - callers guard against an empty pool, but
     // this should not explode if one ever gets through.
-    final poolSize = widget.candidatePool.length < 1
+    final poolSize = widget.candidatePool.isEmpty
         ? 1
         : widget.candidatePool.length;
     final wanted = widget.rollCount.clamp(1, poolSize).toInt();
