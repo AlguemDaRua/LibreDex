@@ -24,12 +24,8 @@ class LibreDexApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
-      // SelectionArea makes every Text in the app selectable and copyable.
-      // Without it a screen reader can read values aloud but the user cannot
-      // copy a stat spread, an ability description or a damage roll.
-      builder: (context, child) => SelectionArea(
-        child: WavyThemeTransition(child: child ?? const SizedBox.shrink()),
-      ),
+      builder: (context, child) =>
+          WavyThemeTransition(child: child ?? const SizedBox.shrink()),
       home: const StartupGate(),
     );
   }
@@ -121,16 +117,17 @@ class _StartupScreen extends StatelessWidget {
               Semantics(
                 liveRegion: hasError,
                 child: Text(
-                hasError
-                    ? error!
-                    : 'Preparing the local reference database. Artwork and up-to-date evolution '
-                          'details load online when a connection is available.',
-                style: TextStyle(
-                  fontSize: 13,
-                  height: 1.5,
-                  color: isDark ? Colors.grey[400] : Colors.grey[600],
-                ),
-                textAlign: TextAlign.center,
+                  hasError
+                      ? error!
+                      : 'Preparing the local reference database. Artwork and '
+                          'up-to-date evolution details load online when a '
+                          'connection is available.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.5,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
+                  textAlign: TextAlign.center,
                 ),
               ),
               const SizedBox(height: 32),
