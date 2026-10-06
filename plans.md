@@ -330,6 +330,36 @@ the bundled `assets/data/pokemon_abilities.json` once. Until it resolves the
 picker shows everything rather than guessing — hiding a real form is worse
 than briefly showing a cosmetic one.
 
+### ✅ D4b — The same cosmetic-form filter, everywhere
+
+**Done 2026-10-06.** The calculator fix was the only one of its kind; two
+other pickers had the identical problem, showing all four Mimikyu and all
+eight Pikachu caps.
+
+- `cosmeticFormIds` + `pokemonAbilityIdsProvider` moved out of the calculator
+  widget into `lib/core/utils/cosmetic_forms.dart` so all three share one
+  definition.
+- **Team Builder** picker: cosmetic forms hidden.
+- **Stat Comparison** picker: cosmetic forms hidden; converted to
+  `ConsumerStatefulWidget` so it can read the provider.
+
+**Also found and fixed:** the Team Builder picker used a **raw `TextField`
+with `onChanged`** — the last undebounced search field in the app. Every
+keystroke called `setState` and refiltered all 1,302 rows. Swapped to
+`DebouncedSearchField`, which needed a new `autofocus` parameter to avoid
+losing the existing open-the-keyboard-immediately behaviour.
+
+### 🟡 D6 — ItemDex shows 61 duplicate item names
+
+**Open, low priority.** `assets/data/items.json` has 2,223 rows with **61
+duplicated names** — 'Basement Key' ×3, 'Bike' ×2, 'DNA Splicers' ×3,
+'Dropped Item' ×3, and most Z-Crystals ×2. Searching the ItemDex for 'Bike'
+shows two identical rows.
+
+Note the *calculator*'s item picker is unaffected: it uses the curated
+74-item `HeldItemsData`, not `items.json`. Moves are clean — 937 rows, zero
+duplicate names.
+
 ### 🟡 D5 — Held items the dataset cannot currently express
 
 **Open, needs a decision.** Four damage-relevant items are absent from

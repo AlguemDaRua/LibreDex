@@ -8,6 +8,9 @@ class DebouncedSearchField extends StatefulWidget {
   final VoidCallback? onClear;
   final String initialValue;
 
+  /// Whether the field takes focus as soon as it is built.
+  final bool autofocus;
+
   /// Minimum gap between two emissions.
   ///
   /// This is a throttle with a guaranteed trailing emit, not a plain trailing
@@ -27,6 +30,7 @@ class DebouncedSearchField extends StatefulWidget {
     required this.onChanged,
     this.onClear,
     this.initialValue = '',
+    this.autofocus = false,
     this.throttleDuration = const Duration(milliseconds: 100),
   });
 
@@ -112,6 +116,7 @@ class _DebouncedSearchFieldState extends State<DebouncedSearchField> {
       hint: widget.hintText,
       child: TextField(
         controller: _controller,
+        autofocus: widget.autofocus,
         onChanged: _onTextChanged,
         style: TextStyle(
           color: isDark ? Colors.white : Colors.black87,
