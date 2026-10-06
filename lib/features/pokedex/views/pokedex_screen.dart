@@ -73,6 +73,11 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
 
   Map<int, List<Map<String, dynamic>>> _pokemonAbilitiesMap = {};
   Map<int, Ability> _abilitiesIdMap = {};
+  /// True only once the ability relations have loaded successfully. The
+  /// ability filter must not be evaluated against an empty map: it would drop
+  /// every Pokemon and present that as "no results".
+  bool _relationsLoaded = false;
+  Object? _relationsError;
   String? _filterAbilityQuery;
   bool _filterHiddenAbilityOnly = false;
 
@@ -129,9 +134,23 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
         setState(() {
           _abilitiesIdMap = {for (final a in abilitiesList) a.id: a};
           _pokemonAbilitiesMap = abMap;
+          _relationsLoaded = true;
+          _relationsError = null;
         });
       }
-    } catch (_) {}
+    } catch (error, stack) {
+      // Swallowing this made a failed load indistinguishable from "no Pokemon
+      // match": both maps stayed empty, so the ability filter rejected every
+      // row. Record it and let the filter stand down instead.
+      debugPrint('Pokedex: failed to load ability relations: $error');
+      debugPrint('$stack');
+      if (mounted) {
+        setState(() {
+          _relationsLoaded = false;
+          _relationsError = error;
+        });
+      }
+    }
   }
 
   @override
@@ -151,143 +170,24 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
         p.baseSpd;
   }
 
-  bool _isUltraBeast(Pokemon p) {
-    if (p.isUltraBeast) return true;
-    final dex = p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id;
-    return dex >= 793 && dex <= 806;
-  }
+  // Species categories are data-driven, not hardcoded.
+  //
+  // `isLegendary` / `isMythical` come from the PokeAPI species table.
+  // `isParadox` / `isUltraBeast` are not modelled by PokeAPI at all, so they
+  // are maintained in the bundled assets/data/pokemon.json snapshot - fix the
+  // data, not this file.
+  //
+  // These four methods previously carried hardcoded fallback lists that
+  // silently disagreed with the data: the dex range 793-806 classified
+  // Necrozma, Magearna and Marshadow as Ultra Beasts, and Pecharunt was filed
+  // as Legendary when it is Mythical.
+  bool _isUltraBeast(Pokemon p) => p.isUltraBeast;
 
-  bool _isParadox(Pokemon p) {
-    if (p.isParadox) return true;
-    final name = p.name.toLowerCase();
-    return name.startsWith('great-tusk') ||
-        name.startsWith('scream-tail') ||
-        name.startsWith('brute-bonnet') ||
-        name.startsWith('flutter-mane') ||
-        name.startsWith('slither-wing') ||
-        name.startsWith('sandy-shocks') ||
-        name.startsWith('iron-treads') ||
-        name.startsWith('iron-bundle') ||
-        name.startsWith('iron-hands') ||
-        name.startsWith('iron-jugulis') ||
-        name.startsWith('iron-moth') ||
-        name.startsWith('iron-thorns') ||
-        name.startsWith('roaring-moon') ||
-        name.startsWith('iron-valiant') ||
-        name.startsWith('walking-wake') ||
-        name.startsWith('iron-leaves') ||
-        name.startsWith('gouging-fire') ||
-        name.startsWith('raging-bolt') ||
-        name.startsWith('iron-boulder') ||
-        name.startsWith('iron-crown');
-  }
+  bool _isParadox(Pokemon p) => p.isParadox;
 
-  bool _isLegendary(Pokemon p) {
-    if (p.isLegendary) return true;
-    final dex = p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id;
-    const legendaries = {
-      144,
-      145,
-      146,
-      150,
-      243,
-      244,
-      245,
-      249,
-      250,
-      377,
-      378,
-      379,
-      380,
-      381,
-      382,
-      383,
-      384,
-      480,
-      481,
-      482,
-      483,
-      484,
-      485,
-      486,
-      487,
-      488,
-      638,
-      639,
-      640,
-      641,
-      642,
-      643,
-      644,
-      645,
-      646,
-      716,
-      717,
-      718,
-      772,
-      773,
-      785,
-      786,
-      787,
-      788,
-      789,
-      790,
-      791,
-      792,
-      800,
-      888,
-      889,
-      890,
-      891,
-      892,
-      894,
-      895,
-      896,
-      897,
-      898,
-      1007,
-      1008,
-      1014,
-      1015,
-      1016,
-      1017,
-      1024,
-    };
-    return legendaries.contains(dex);
-  }
+  bool _isLegendary(Pokemon p) => p.isLegendary;
 
-  bool _isMythical(Pokemon p) {
-    if (p.isMythical) return true;
-    final dex = p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id;
-    const mythicals = {
-      151,
-      251,
-      385,
-      386,
-      489,
-      490,
-      491,
-      492,
-      493,
-      494,
-      647,
-      648,
-      649,
-      719,
-      720,
-      721,
-      801,
-      802,
-      807,
-      808,
-      809,
-      893,
-      1025,
-    };
-    return mythicals.contains(dex);
-  }
-
-  Color _getTypeColor(String type) => pokemonTypeColor(type);
+  bool _isMythical(Pokemon p) => p.isMythical;
 
   void _clearAllFilters() {
     setState(() {
@@ -640,7 +540,9 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
       }
 
       final abilityQuery = _filterAbilityQuery?.trim().toLowerCase() ?? '';
-      if (abilityQuery.isNotEmpty || _filterHiddenAbilityOnly) {
+      final abilityFilterActive =
+          abilityQuery.isNotEmpty || _filterHiddenAbilityOnly;
+      if (_relationsLoaded && abilityFilterActive) {
         final abList = _pokemonAbilitiesMap[pokemon.id] ?? [];
         final hasMatchingAbility = abList.any((entry) {
           final abId = entry['abilityId'] as int;
@@ -927,6 +829,11 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                       if (_hasActiveFilters)
                         SliverToBoxAdapter(
                           child: _buildActiveFiltersSummary(context),
+                        ),
+
+                      if (_relationsError != null)
+                        SliverToBoxAdapter(
+                          child: _buildRelationsErrorNotice(context),
                         ),
 
                       SliverToBoxAdapter(
@@ -2219,6 +2126,35 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  /// Shown when the ability relations failed to load. Without this the grid
+  /// simply looked empty, with nothing saying why.
+  Widget _buildRelationsErrorNotice(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.warning_amber_rounded,
+            size: 18,
+            color: Colors.orangeAccent,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Ability data failed to load, so the ability filter is inactive.',
+              style: TextStyle(
+                fontSize: 12,
+                color: isDark ? Colors.white70 : const Color(0xFF475569),
+              ),
+            ),
+          ),
+          TextButton(onPressed: _loadRelationsData, child: const Text('Retry')),
         ],
       ),
     );

@@ -269,6 +269,47 @@ genuinely critical and genuinely cheap.
 
 Do not start these until C1–C5 are closed. Each gets a Done-when before it starts.
 
+### ✅ D2 — Species categories: delete the hardcoded lists, fix the data
+
+**Done 2026-10-06.** The premise was wrong in a helpful way. The owner
+suggested the hardcoded lists existed because the API has no way to tell
+Ultra Beasts and Paradox Pokémon apart. Half right:
+
+- `isLegendary` / `isMythical` **do** come from PokéAPI
+  (`pokemon_species.csv` → `is_legendary` / `is_mythical`).
+- `isParadox` / `isUltraBeast` are **not modelled by PokéAPI at all**. They
+  exist only in the bundled `assets/data/pokemon.json` snapshot, which is a
+  checked-in file that overlay scripts patch in place — nothing regenerates
+  it from scratch, so edits there are durable.
+
+So the fix was not "move the lists to a data file"; it was **fix the data and
+delete the lists**. All four helpers are now one-liners reading the model's
+own flags (-130 lines from `pokedex_screen.dart`).
+
+Diffing the hardcoded fallbacks against the data found real bugs:
+
+| Category | Bug | Fix |
+|---|---|---|
+| Ultra Beast | fallback `dex >= 793 && dex <= 806` swept in **Necrozma, Magearna, Marshadow** — all three are Legendary/Mythical, not UBs | fallback deleted; data's 11 are correct |
+| Paradox | data was missing **Roaring Moon, Iron Valiant, Gouging Fire, Raging Bolt, Iron Boulder, Iron Crown** | 6 rows set `isParadox: true` |
+| Mythical | **Pecharunt** filed as Legendary; it is Mythical | `isLegendary: false`, `isMythical: true` |
+
+Counts are now canonical: **71 Legendary / 23 Mythical / 22 Paradox / 11 Ultra
+Beast**, with zero species disagreeing across their own forms.
+
+### ✅ D3 — `_loadRelationsData` swallowed every failure
+
+**Done 2026-10-06.** `_loadRelationsData()` pulled every ability and every
+junction row into memory on each `initState`, wrapped in `catch (_) {}`. On
+failure both maps stayed empty, so the ability filter rejected **every**
+Pokémon — the grid showed "no results" and nothing said why. A silent wrong
+answer, not a logging gap.
+
+- Errors are now logged with a stack trace and held in `_relationsError`.
+- The ability filter is gated on `_relationsLoaded`: if the data is missing the
+  filter stands down instead of returning nothing.
+- A warning strip with a **Retry** button shows when the load failed.
+
 ### 🟡 D0 — Search: responsiveness and ranking (highest value, do first)
 
 Two separate causes produced one symptom — "I have to type the whole Pokémon
