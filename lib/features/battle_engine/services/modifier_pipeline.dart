@@ -482,10 +482,13 @@ class ModifierPipeline {
     }
 
     // ── 8. Burn Penalty ─────────────────────────────────────────────────────
+    // Facade bypasses burn's physical halving (like Guts) — its doubled BP
+    // already accounts for the status. Showdown's pipeline excludes it.
     bool isBurnApplied = false;
     if (state.attacker.status == 'burn' &&
         state.move.isPhysical &&
-        attackerAbility != 'guts') {
+        attackerAbility != 'guts' &&
+        moveName != 'facade') {
       isBurnApplied = true;
       applied.add(
         const AppliedModifier(
@@ -549,34 +552,52 @@ class ModifierPipeline {
       );
     }
 
-    // Screen reduction
-    if (state.move.isPhysical &&
-        state.field.reflectActive &&
+    // Screen reduction — Reflect / Light Screen / Aurora Veil (combined).
+    // Aurora Veil is mutually exclusive with the individual screens in-game;
+    // if it is active we apply one reduction for either damage class and skip
+    // the individual screen to avoid double 0.5× stacking.
+    final bool hasAuroraVeil = state.field.auroraVeilActive;
+    if (hasAuroraVeil &&
         !state.move.isCritical &&
         attackerAbility != 'infiltrator') {
       final mult = state.field.isDoubleBattle ? (2732 / 4096) : 0.5;
       finalModifiers.add(mult);
       applied.add(
         AppliedModifier(
-          name: 'Reflect',
+          name: 'Aurora Veil',
           multiplier: mult,
           category: ModifierCategory.screen,
         ),
       );
-    }
-    if (state.move.isSpecial &&
-        state.field.lightScreenActive &&
-        !state.move.isCritical &&
-        attackerAbility != 'infiltrator') {
-      final mult = state.field.isDoubleBattle ? (2732 / 4096) : 0.5;
-      finalModifiers.add(mult);
-      applied.add(
-        AppliedModifier(
-          name: 'Light Screen',
-          multiplier: mult,
-          category: ModifierCategory.screen,
-        ),
-      );
+    } else {
+      if (state.move.isPhysical &&
+          state.field.reflectActive &&
+          !state.move.isCritical &&
+          attackerAbility != 'infiltrator') {
+        final mult = state.field.isDoubleBattle ? (2732 / 4096) : 0.5;
+        finalModifiers.add(mult);
+        applied.add(
+          AppliedModifier(
+            name: 'Reflect',
+            multiplier: mult,
+            category: ModifierCategory.screen,
+          ),
+        );
+      }
+      if (state.move.isSpecial &&
+          state.field.lightScreenActive &&
+          !state.move.isCritical &&
+          attackerAbility != 'infiltrator') {
+        final mult = state.field.isDoubleBattle ? (2732 / 4096) : 0.5;
+        finalModifiers.add(mult);
+        applied.add(
+          AppliedModifier(
+            name: 'Light Screen',
+            multiplier: mult,
+            category: ModifierCategory.screen,
+          ),
+        );
+      }
     }
 
     // Helping Hand
@@ -675,6 +696,18 @@ class ModifierPipeline {
         const AppliedModifier(
           name: 'Tinted Lens',
           multiplier: 2.0,
+          category: ModifierCategory.ability,
+        ),
+      );
+    }
+
+    // Sniper: 1.5× extra on a critical hit (total 2.25× with the base 1.5×).
+    if (attackerAbility == 'sniper' && state.move.isCritical) {
+      finalModifiers.add(1.5);
+      applied.add(
+        const AppliedModifier(
+          name: 'Sniper (Crit ×2.25)',
+          multiplier: 1.5,
           category: ModifierCategory.ability,
         ),
       );

@@ -590,11 +590,14 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
       defenderAbility: state.defenderAbility,
       contactMove: state.moveIsContact,
     );
+    final bool isSniperCrit =
+        state.attackerAbility?.toLowerCase() == 'sniper' && isCritical;
     final List<double> sandboxFinalMods = [
       if (screenMult != 1.0) screenMult,
       if (defResistMult != 1.0) defResistMult,
       if (spreadMult != 1.0) spreadMult,
       if (isAuraGuardContact) 0.5,
+      if (isSniperCrit) 1.5,
     ];
     final DamageRange sandboxRange = DamageMath.calculate(
       level: sandboxLevel,
@@ -1182,7 +1185,12 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                           Colors.blue,
                         ),
                       if (isCritical)
-                        _modChip('CRITICAL HIT ×1.5', Colors.redAccent),
+                        _modChip(
+                          state.attackerAbility?.toLowerCase() == 'sniper'
+                              ? 'CRITICAL HIT ×2.25 (Sniper)'
+                              : 'CRITICAL HIT ×1.5',
+                          Colors.redAccent,
+                        ),
                       if (spreadMult != 1.0)
                         _modChip('Spread ×0.75', Colors.indigo),
                       if (state.isDoubleBattle)
@@ -1852,65 +1860,106 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
             ),
           ],
 
-          // Variable Multi-Hit Strike Count Selector (Rock Blast, Bullet Seed, Icicle Spear, Scale Shot, etc.)
+          // Variable Multi-Hit Strike Count Selector (Rock Blast, Bullet Seed, Icicle Spear, Scale Shot, Population Bomb etc.)
           if (CombatUtils.isVariableMultiHitMove(activeMove.name)) ...[
             const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppTheme.pokemonRed.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppTheme.pokemonRed.withValues(alpha: 0.3),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
+            Builder(
+              builder: (context) {
+                final isPopBomb =
+                    activeMove.name.toLowerCase().replaceAll('-', ' ').trim() ==
+                    'population bomb';
+                final hitOptions = isPopBomb
+                    ? const [2, 3, 4, 5, 6, 7, 8, 9, 10]
+                    : const [2, 3, 4, 5];
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.pokemonRed.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppTheme.pokemonRed.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Multi-Hit Strikes',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                          color: AppTheme.pokemonRed,
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                isPopBomb
+                                    ? 'Population Bomb Strikes (up to 10×)'
+                                    : 'Multi-Hit Strikes',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  color: AppTheme.pokemonRed,
+                                ),
+                              ),
+                              Text(
+                                '${state.moveHits} strikes (${(basePowerVal.toInt() * state.moveHits)} total BP)',
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (isPopBomb)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppTheme.pokemonRed.withValues(
+                                  alpha: 0.15,
+                                ),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text(
+                                '20 BP × hits',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.pokemonRed,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
-                      Text(
-                        '${state.moveHits} strikes (${(basePowerVal.toInt() * state.moveHits)} total BP)',
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: Colors.grey,
-                        ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: hitOptions.map((h) {
+                          final isSelected = state.moveHits == h;
+                          return ChoiceChip(
+                            label: Text('$h'),
+                            selected: isSelected,
+                            onSelected: (_) => vm.updateMoveHits(h),
+                            visualDensity: VisualDensity.compact,
+                            labelStyle: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: isSelected
+                                  ? Colors.white
+                                  : (isDark ? Colors.grey : Colors.black87),
+                            ),
+                            selectedColor: AppTheme.pokemonRed,
+                          );
+                        }).toList(),
                       ),
                     ],
                   ),
-                  Row(
-                    children: [2, 3, 4, 5].map((h) {
-                      final isSelected = state.moveHits == h;
-                      return Padding(
-                        padding: const EdgeInsets.only(left: 4),
-                        child: ChoiceChip(
-                          label: Text('$h'),
-                          selected: isSelected,
-                          onSelected: (_) => vm.updateMoveHits(h),
-                          visualDensity: VisualDensity.compact,
-                          labelStyle: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: isSelected
-                                ? Colors.white
-                                : (isDark ? Colors.grey : Colors.black87),
-                          ),
-                          selectedColor: AppTheme.pokemonRed,
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
-              ),
+                );
+              },
             ),
           ],
 
@@ -2284,6 +2333,11 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                   'Reflect (Halves Physical Atk)',
                   state.reflectActive,
                   vm.toggleReflect,
+                ),
+                _buildSwitchListTile(
+                  'Aurora Veil (Halves All Damage · 0.667× Doubles)',
+                  state.auroraVeilActive,
+                  vm.toggleAuroraVeil,
                 ),
                 _buildSwitchListTile(
                   'Helping Hand (+50% damage)',
