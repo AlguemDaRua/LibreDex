@@ -294,6 +294,14 @@ name before anything appears". Both are fixed; the fix needs device confirmation
 - **Follow-up if still not right:** drop subsequence matching entirely, or gate
   it behind "no substring matches found".
 
+**Product decision (owner, 2026-10-06):** the Pokédex shows **one card per
+species, base form only** — no variants in the listing. Forms are reached from
+the Pokémon's own detail page. Implemented: the card now picks
+`form == 'normal'` explicitly (all 1025 species groups have one) instead of
+relying on `group.first` happening to be the base, and the `"N forms"` badge is
+gone. `PokemonDetailScreen(forms: group)` is unchanged, so every form is still
+one tap away.
+
 
 | # | Item | Why it matters | Target | Est. |
 |:---:|---|---|---|:---:|

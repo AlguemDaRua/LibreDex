@@ -32,7 +32,13 @@ class PokemonGridCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     if (group.isEmpty) return const SizedBox.shrink();
 
-    final pokemon = group.first;
+    // One card per species, always showing the base form - never a Mega,
+    // regional or cosmetic variant. Every form stays reachable from the detail
+    // page; the Pokedex listing itself does not surface them.
+    final pokemon = group.firstWhere(
+      (p) => p.form.toLowerCase() == 'normal',
+      orElse: () => group.first,
+    );
     final dexNum = pokemon.nationalDexNumber > 0
         ? pokemon.nationalDexNumber
         : pokemon.id;
@@ -224,17 +230,6 @@ class PokemonGridCard extends ConsumerWidget {
                               ),
                             ),
                           ),
-                          if (group.length > 1)
-                            Text(
-                              '${group.length} forms',
-                              style: TextStyle(
-                                color: isDark
-                                    ? Colors.white70
-                                    : const Color(0xFF475569),
-                                fontSize: 11,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
                         ],
                       ),
                     ),
