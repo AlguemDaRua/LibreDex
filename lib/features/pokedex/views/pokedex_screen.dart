@@ -53,6 +53,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
   final List<String> _selectedTypes = [];
   final Set<int> _selectedGenerations = {};
   bool _showLegendary = false;
+  bool _showMega = false;
   bool _showMythical = false;
   bool _showUltraBeast = false;
   bool _showParadox = false;
@@ -191,6 +192,17 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
 
   bool _isMythical(Pokemon p) => p.isMythical;
 
+  /// True for a Mega Evolution, from either source: the classic ones in the
+  /// bundled snapshot (their `form` reads "Mega" / "Mega X") and the Legends
+  /// Z-A ones the overlay flags.
+  ///
+  /// Matched on the form field rather than the name on purpose - Meganium and
+  /// Yanmega contain "mega" in their names but are not Mega Evolutions, and
+  /// their form field is plain "normal".
+  bool _isMega(Pokemon p, ChampionsCatalog? catalog) =>
+      p.form.toLowerCase().contains('mega') ||
+      (catalog?.isOverlayMega(p.id) ?? false);
+
   Color _getTypeColor(String type) => pokemonTypeColor(type);
 
   void _clearAllFilters() {
@@ -209,6 +221,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
       _abilityFilterController.clear();
       _filterHiddenAbilityOnly = false;
       _showLegendary = false;
+      _showMega = false;
       _showMythical = false;
       _showUltraBeast = false;
       _showParadox = false;
@@ -243,6 +256,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
         (_filterAbilityQuery?.trim().isNotEmpty ?? false) ||
         _filterHiddenAbilityOnly ||
         _showLegendary ||
+        _showMega ||
         _showMythical ||
         _showUltraBeast ||
         _showParadox ||
@@ -363,7 +377,15 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
       }
 
       final query = _searchQuery.trim().toLowerCase();
-      if (!_matchesSearch(
+      // Search matches the species, never its forms. A form carries its own
+      // name, regional name and Champion ability names, and any of those used
+      // to drag its whole species into the results: "mag" is a substring of
+      // "mega", so typing it surfaced every species that has a Mega alongside
+      // Magikarp. Only the row whose id equals its dex number is the species
+      // itself; every species has exactly one.
+      if (pokemon.id != dexNum) {
+        if (query.isNotEmpty) return false;
+      } else if (!_matchesSearch(
         pokemon,
         dexNum,
         query,
@@ -396,10 +418,17 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
       }
 
       final hasCategoryFilter =
-          _showLegendary || _showMythical || _showUltraBeast || _showParadox;
+          _showLegendary ||
+          _showMega ||
+          _showMythical ||
+          _showUltraBeast ||
+          _showParadox;
       if (hasCategoryFilter) {
         bool matchesCategory = false;
         if (_showLegendary && _isLegendary(pokemon)) matchesCategory = true;
+        if (_showMega && _isMega(pokemon, championsCatalog)) {
+          matchesCategory = true;
+        }
         if (_showMythical && _isMythical(pokemon)) matchesCategory = true;
         if (_showUltraBeast && _isUltraBeast(pokemon)) matchesCategory = true;
         if (_showParadox && _isParadox(pokemon)) matchesCategory = true;
@@ -659,12 +688,22 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                     evYieldDataset,
                   );
 
+                  // filteredList decides WHICH species are shown, but it only
+                  // carries the species row while searching. Groups are built
+                  // from the full list so every form still reaches the detail
+                  // page - filtering must not silently strip a species' forms.
+                  final passingDex = <int>{
+                    for (final p in filteredList)
+                      p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id,
+                  };
                   final Map<int, List<Pokemon>> groupedMap = {};
-                  for (final p in filteredList) {
+                  for (final p in pokemonList) {
                     final int dexNum = p.nationalDexNumber > 0
                         ? p.nationalDexNumber
                         : p.id;
-                    groupedMap.putIfAbsent(dexNum, () => []).add(p);
+                    if (passingDex.contains(dexNum)) {
+                      groupedMap.putIfAbsent(dexNum, () => []).add(p);
+                    }
                   }
 
                   final searchQuery = _searchQuery.trim().toLowerCase();
@@ -884,6 +923,14 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
         ActiveFilterItem(
           label: 'Legendary',
           onDeleted: () => setState(() => _showLegendary = false),
+        ),
+      );
+    }
+    if (_showMega) {
+      list.add(
+        ActiveFilterItem(
+          label: 'Mega',
+          onDeleted: () => setState(() => _showMega = false),
         ),
       );
     }
@@ -1234,6 +1281,13 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                         ) {
                           HapticFeedback.selectionClick();
                           setState(() => _showLegendary = val);
+                          setModalState(() {});
+                        }),
+                        _buildSwitchRow('Mega Evolution', _showMega, (
+                          val,
+                        ) {
+                          HapticFeedback.selectionClick();
+                          setState(() => _showMega = val);
                           setModalState(() {});
                         }),
                         _buildSwitchRow('Mythical Pokémon', _showMythical, (

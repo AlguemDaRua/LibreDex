@@ -91,7 +91,7 @@ def search(groups, q, n=8):
 if __name__ == '__main__':
     rows = collapse(load('assets/data/pokemon.json'))
     print(f"species after collapsing forms: {len(rows)}\n")
-    queries = sys.argv[2:] or ['gar', 'char', 'pika', 'garchomp', '006', 'fire', 'floette eternal']
+    queries = sys.argv[1:] or ['gar', 'char', 'pika', 'garchomp', '006', 'fire', 'floette eternal']
     for q in queries:
         top, total = search(rows, q, 8)
         print(f"query {q!r:20} {total:4} matches")
