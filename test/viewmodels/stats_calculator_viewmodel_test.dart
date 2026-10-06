@@ -312,8 +312,14 @@ void main() {
       expect(stats['spa'], 90);
       // Speed is untouched by Adamant: floor((102*2 + 31) * 50/100) + 5
       expect(stats['spe'], 122);
-      // HP ignores nature entirely.
-      expect(stats['hp'], 215);
+      // HP ignores nature entirely, and only the Attack EV was set, so HP
+      // is still at its 0-EV value.
+      expect(stats['hp'], 183);
+
+      // Adding an HP EV moves HP only - and still ignores the nature.
+      calc.updateEv('hp', 252);
+      expect(calc.getCalculatedStats(garchomp)['hp'], 215);
+      expect(calc.getCalculatedStats(garchomp)['atk'], 200);
     });
   });
 }
