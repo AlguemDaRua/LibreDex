@@ -120,7 +120,10 @@ void main() {
     test('Punching Glove is applied once', () {
       // Regression: it was applied here AND by a hardcoded block in
       // ModifierPipeline, stacking it to 1.21x.
-      expect(chain('Punching Glove', isPunching: true), [4505]);
+      //
+      // Note 4506, not the 4505 every other 1.1x item uses. Showdown carries
+      // the same inconsistency, so it is matched rather than corrected.
+      expect(chain('Punching Glove', isPunching: true), [4506]);
       expect(chain('Punching Glove', isPunching: false), isEmpty);
     });
 
