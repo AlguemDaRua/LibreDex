@@ -310,13 +310,12 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     //
     // Replacing this block with a second hand-rolled formula is what let the
     // two tabs disagree for so long. Do not reintroduce it.
-    final DamageResult sandboxResult = vm.calculateSandboxDamage();
+    final DamageResult sandboxResult = state.calculateSandboxDamage();
     final int rawMinDamage = sandboxResult.minDamage;
     final int rawMaxDamage = sandboxResult.maxDamage;
 
     // Presentation values, read back from the resolved result so this panel can
     // never display a number the engine did not produce.
-    final moveType = state.moveType.toLowerCase();
     final bool isCritical =
         state.isCriticalHit ||
         CombatUtils.alwaysCriticalHit(state.selectedMoveName ?? '');

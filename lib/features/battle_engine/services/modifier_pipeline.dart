@@ -387,6 +387,8 @@ class ModifierPipeline {
     }
 
     // ── 6. STAB Multiplier ───────────────────────────────────────────────────
+    // Also read by the STAB label below, which is emitted for both paths.
+    final hasAdaptability = attackerAbility == 'adaptability';
     double stab;
     if (sandbox != null) {
       stab = sandbox.stab;
@@ -395,7 +397,6 @@ class ModifierPipeline {
           .map((type) => type.toLowerCase())
           .toSet();
       final hasOriginalStab = originalTypes.contains(effectiveType);
-      final hasAdaptability = attackerAbility == 'adaptability';
       final teraActive =
           !state.ruleset.isChampions &&
           state.attacker.teraActive &&
@@ -417,7 +418,11 @@ class ModifierPipeline {
     if (stab != 1.0) {
       applied.add(
         AppliedModifier(
-          name: hasAdaptability ? 'Adaptability STAB' : 'STAB',
+          // In sandbox mode STAB is typed by hand, so the ability does not
+          // describe it — even when the attacker happens to have Adaptability.
+          name: (hasAdaptability && sandbox == null)
+              ? 'Adaptability STAB'
+              : 'STAB',
           multiplier: stab,
           category: ModifierCategory.stab,
         ),
