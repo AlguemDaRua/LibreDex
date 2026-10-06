@@ -385,11 +385,22 @@ the test's `overridesFor` builds overrides from
 `sandboxOverrides()`. `getAttackMultiplier` now returns only the stat
 multiplier, and a regression test pins the invariant.
 
-**Still open (precision):** the real game uses 4096-based fractions with
-pokeRound — Muscle Band 4505/4096 (1.09985), type-boost and Expert Belt
-4915/4096 (1.19995), Life Orb 5324/4096 (1.29980) — not exactly 1.1 / 1.2 /
-1.3. The codebase uses decimals throughout. Adopting the exact fractions is a
-cross-cutting change to every modifier and needs its own pass.
+**Precision — done 2026-10-06.** Base power was the last stage using
+decimals. The games never multiply by 1.1 — they multiply by 4505 and divide
+by 4096, rounding between each step. Rounding the decimal instead is off by
+one on the common values and rounds .5 the wrong way: a 95 BP move under
+Muscle Band came out **105**, the game gives **104**.
+
+`DamageMath` already had `pokeRound`/`fixedModifier` — base power just
+bypassed them. `getBasePowerChain` returns the numerators in application
+order; the pipeline applies them with `fixedModifier`. Ability and terrain
+boosts converted too. `_modifierFromDouble` snaps to the exact numerators,
+which also fixed the final-modifier path (1.3 was becoming 5325, not 5324).
+
+Found while doing this: **Punching Glove was applied twice** — once via the
+item data, once by a leftover hardcoded block in `ModifierPipeline`, giving
+1.21× instead of 1.1×. Removed. Same double-application class as the Life Orb
+bug above.
 
 ### ✅ D6 — ItemDex duplicate item names
 
