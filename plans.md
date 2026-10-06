@@ -330,6 +330,34 @@ the bundled `assets/data/pokemon_abilities.json` once. Until it resolves the
 picker shows everything rather than guessing — hiding a real form is worse
 than briefly showing a cosmetic one.
 
+### 🟡 D5 — Held items the dataset cannot currently express
+
+**Open, needs a decision.** Four damage-relevant items are absent from
+`held_items_data.dart`, and the current `HeldItem` model **cannot express any
+of them**:
+
+| Item | Real effect | Why the model can't do it |
+|---|---|---|
+| Expert Belt | ×1.2 **only on super-effective** hits | no effectiveness conditional |
+| Muscle Band | ×1.1 **physical move power** | only has `atkMultiplier` (Attack *stat*); BP and Attack enter the formula at different points, so they are not interchangeable |
+| Wise Glasses | ×1.1 **special move power** | same |
+| Punching Glove | ×1.1 **punching** moves, removes contact | no move-flag awareness |
+
+Adding them approximately would put **wrong numbers** into the component the
+owner wants 100% correct, so they are deliberately not added until the model
+gains the needed fields. Doing this properly means extending `HeldItem` and
+wiring the new fields into `ModifierPipeline` at the right stage
+(move-power vs final-modifier), then verifying against Showdown.
+
+**Already fixed (2026-10-06):** two scenarios in
+`sandbox_damage_parity_test.dart` named `Expert Belt` and `Muscle Band`, which
+do not exist. `findByName` returns `null`, every multiplier fell back to 1.0,
+and both engines trivially agreed — **2 of 12 scenarios passed while testing
+nothing**. Both now name real items (`Choice Band` covers the stat path,
+`Charcoal` covers the previously untested type-boost path and matches the
+Fire-type Flare Blitz the test uses), and a `checkItem` guard throws on any
+unknown name so this cannot silently recur.
+
 ### 🟡 D0 — Search: responsiveness and ranking (highest value, do first)
 
 Two separate causes produced one symptom — "I have to type the whole Pokémon
@@ -354,6 +382,20 @@ name before anything appears". Both are fixed; the fix needs device confirmation
   surfaces Gardevoir/Garchomp/Garbodor ahead of subsequence matches.
 - **Follow-up if still not right:** drop subsequence matching entirely, or gate
   it behind "no substring matches found".
+
+**Ordering rule (decided 2026-10-06):** results are ordered by match quality
+first — exact → name-prefix → word-prefix → substring → form → dex → type →
+token → subsequence — and **dex number within a quality tier**.
+
+Dex order was kept deliberately over alphabetical after testing both. For
+`char`, dex gives Charmander, Charmeleon, Charizard (the evolution line stays
+adjacent); alphabetical gives Charcadet, Charizard, Charjabug, Charmander,
+Charmeleon. Dex is also the canonical Pokédex order.
+
+Consequence worth knowing: for `gar`, **Gardevoir, Garchomp, Garbodor and
+Garganacl are all equally good prefix matches**, so Garchomp can legitimately
+be 2nd. No ordering rule can infer which one the user was thinking of — this
+is not hardcoding and not a bug.
 
 **Product decision (owner, 2026-10-06):** the Pokédex shows **one card per
 species, base form only** — no variants in the listing. Forms are reached from

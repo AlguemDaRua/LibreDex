@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/features/battle_engine/battle_engine.dart';
+import 'package:libredex/features/calculator/utils/held_items_data.dart';
 
 /// The raw-sandbox panel of the damage calculator used to re-implement the
 /// damage formula inside a `build()` method. It silently diverged from the duel
@@ -63,13 +64,30 @@ void main() {
     isLegendsZA: false,
   );
 
+  /// Fails loudly when a scenario names an item the dataset does not contain.
+  ///
+  /// [HeldItemsData.findByName] returns null for unknown names and every
+  /// multiplier then falls back to 1.0, so a scenario built with a
+  /// non-existent item compares two identical no-op results and passes without
+  /// testing anything. Two scenarios here were doing exactly that: 'Expert
+  /// Belt' and 'Muscle Band' are not in the dataset.
+  String checkItem(String name) {
+    if (name != 'None' && HeldItemsData.findByName(name) == null) {
+      throw StateError(
+        'Held item "$name" is not in HeldItemsData. Unknown items silently '
+        'resolve to a 1.0 multiplier, so this scenario would be a no-op.',
+      );
+    }
+    return name;
+  }
+
   PokemonState attackerState({String? ability, String heldItem = 'None'}) =>
       PokemonState.fromDatabase(
         attacker,
         level: 50,
         nature: 'adamant',
         ability: ability,
-        heldItem: heldItem,
+        heldItem: checkItem(heldItem),
       );
 
   PokemonState defenderState({
@@ -81,7 +99,7 @@ void main() {
     level: 50,
     nature: 'bold',
     ability: ability,
-    heldItem: heldItem,
+    heldItem: checkItem(heldItem),
     hpPercent: hpPercent,
   );
 
@@ -201,8 +219,9 @@ void main() {
     test('holds for items, abilities and doubles', () {
       final scenarios = <BattleState>[
         stateFor(attackerItem: 'Life Orb'),
-        stateFor(attackerItem: 'Expert Belt'),
-        stateFor(attackerItem: 'Muscle Band'),
+        stateFor(attackerItem: 'Choice Band'),
+        // Fire boost, matching Flare Blitz - covers the typeBoost path.
+        stateFor(attackerItem: 'Charcoal'),
         stateFor(defenderAbility: 'Filter'),
         stateFor(defenderAbility: 'Solid Rock'),
         stateFor(defenderAbility: 'Multiscale'),

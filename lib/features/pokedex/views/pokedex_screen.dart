@@ -768,6 +768,9 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                       final rankA = _groupSearchRank(listA, searchQuery);
                       final rankB = _groupSearchRank(listB, searchQuery);
                       if (rankA != rankB) return rankA.compareTo(rankB);
+                      // Equally good matches keep dex order, which is the
+                      // canonical Pokedex order and keeps evolution families
+                      // adjacent (Charmander, Charmeleon, Charizard).
                     }
                     switch (_sortOption) {
                       case 'id_desc':
