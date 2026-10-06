@@ -349,6 +349,48 @@ keystroke called `setState` and refiltered all 1,302 rows. Swapped to
 `DebouncedSearchField`, which needed a new `autofocus` parameter to avoid
 losing the existing open-the-keyboard-immediately behaviour.
 
+### ✅ D5 — Held items: correct placement, and reachable in the UI
+
+**Done 2026-10-06.** Two separate defects, both in the component the owner
+wants 100% correct.
+
+**(a) Items were implemented but unreachable.** `ModifierPipeline` already
+handled Expert Belt, Muscle Band and Wise Glasses, hardcoded by item name —
+but none were in `HeldItemsData.allItems`, so no user could ever select them.
+The feature existed and was invisible. All three are now in the list, plus
+Punching Glove.
+
+**(b) Power items were applied at the wrong stage of the formula.**
+
+| Stage | Items |
+|---|---|
+| base power | Muscle Band, Wise Glasses, Punching Glove, type-boosting items (Charcoal, plates…) |
+| final damage | Life Orb, Expert Belt (super-effective only), resist berries |
+
+Base power sits *inside* the formula's rounding chain; a final modifier sits
+outside it. A ×1.1 on base power and a ×1.1 on final damage give **different
+damage**. Everything except Life Orb was being applied as a final modifier, so
+Charcoal and the plates had been slightly wrong all along.
+
+Fixed by adding `physicalPowerMultiplier` / `specialPowerMultiplier` /
+`punchingPowerMultiplier` to `HeldItem`, computing them in
+`HeldItemsData.getBasePowerMultiplier()`, and applying that right after base
+power resolves — so duel and sandbox share one code path.
+
+**(c) Sandbox double-counted Life Orb and type-boost items.** The sandbox path
+built its Attack stat from `getAttackMultiplier`, which folded those in, and
+then still ran the pipeline's final modifiers. Parity never caught it because
+the test's `overridesFor` builds overrides from
+`ModifierPipeline.process().effectiveAttack`, not from the production
+`sandboxOverrides()`. `getAttackMultiplier` now returns only the stat
+multiplier, and a regression test pins the invariant.
+
+**Still open (precision):** the real game uses 4096-based fractions with
+pokeRound — Muscle Band 4505/4096 (1.09985), type-boost and Expert Belt
+4915/4096 (1.19995), Life Orb 5324/4096 (1.29980) — not exactly 1.1 / 1.2 /
+1.3. The codebase uses decimals throughout. Adopting the exact fractions is a
+cross-cutting change to every modifier and needs its own pass.
+
 ### 🟡 D6 — ItemDex shows 61 duplicate item names
 
 **Open, low priority.** `assets/data/items.json` has 2,223 rows with **61
