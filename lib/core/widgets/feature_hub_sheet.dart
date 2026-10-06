@@ -26,8 +26,10 @@ class FeatureHubSheet extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final currentTheme = ref.watch(themeModeProvider);
     final regulation = ref.watch(championsRegulationProvider).asData?.value;
+    final isTablet = Responsive.isTablet(context);
 
-    return ConstrainedBox(
+    // Tablet: center the sheet and cap width so it never feels like a stretched phone sheet.
+    Widget sheet = ConstrainedBox(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.85,
       ),
@@ -233,6 +235,16 @@ class FeatureHubSheet extends ConsumerWidget {
         ),
       ),
     );
+
+    if (isTablet) {
+      return Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 640),
+          child: sheet,
+        ),
+      );
+    }
+    return sheet;
   }
 
   Widget _buildSectionHeader(String title) {

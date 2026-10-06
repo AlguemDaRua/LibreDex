@@ -120,10 +120,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         builder: (context, constraints) {
           final isWide = constraints.maxWidth >= 700;
           if (isWide) {
+            final extended = constraints.maxWidth >= 1000;
+            final contentMaxWidth = constraints.maxWidth >= 1200
+                ? 1100.0
+                : constraints.maxWidth >= 1000
+                    ? 1000.0
+                    : 860.0;
             return Scaffold(
+              backgroundColor: isDark ? Colors.black : const Color(0xFFF9FAFB),
               body: Row(
                 children: [
                   NavigationRail(
+                    extended: extended,
                     selectedIndex: barIndex,
                     onDestinationSelected: _onRailTapped,
                     backgroundColor: isDark
@@ -136,7 +144,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     unselectedIconTheme: IconThemeData(
                       color: isDark ? Colors.grey[500] : Colors.grey[600],
                     ),
-                    labelType: NavigationRailLabelType.all,
+                    labelType: extended
+                        ? NavigationRailLabelType.none
+                        : NavigationRailLabelType.all,
+                    minWidth: extended ? 56 : 72,
+                    minExtendedWidth: 180,
+                    groupAlignment: -0.88,
                     destinations: [
                       for (final section in PrimaryNav.bottomBarSections)
                         NavigationRailDestination(
@@ -157,19 +170,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                     ],
                   ),
-                  const VerticalDivider(thickness: 1, width: 1),
+                  VerticalDivider(
+                    thickness: 1,
+                    width: 1,
+                    color: isDark ? const Color(0xFF262626) : const Color(0xFFE5E7EB),
+                  ),
                   Expanded(
                     child: Column(
                       children: [
                         const _DownloadBanner(),
                         Expanded(
-                          child: IndexedStack(
-                            index: currentIndex,
-                            children: List.generate(
-                              AppSection.values.length,
-                              (i) => _visitedIndices.contains(i)
-                                  ? _buildSection(i)
-                                  : const SizedBox.shrink(),
+                          child: Align(
+                            alignment: Alignment.topCenter,
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(maxWidth: contentMaxWidth),
+                              child: IndexedStack(
+                                index: currentIndex,
+                                children: List.generate(
+                                  AppSection.values.length,
+                                  (i) => _visitedIndices.contains(i)
+                                      ? _buildSection(i)
+                                      : const SizedBox.shrink(),
+                                ),
+                              ),
                             ),
                           ),
                         ),

@@ -61,7 +61,10 @@ class _WavyThemeTransitionState extends State<WavyThemeTransition>
     _controller =
         AnimationController(
           vsync: this,
-          duration: const Duration(milliseconds: 1150),
+          // Slightly slower than before (was 1150) — requested by users for a more
+          // deliberate, premium feel when toggling light/dark. Still respects
+          // reduce-motion and skips instantly in that mode.
+          duration: const Duration(milliseconds: 1450),
         )..addStatusListener((status) {
           if (status == AnimationStatus.completed) _releaseFrame();
         });
