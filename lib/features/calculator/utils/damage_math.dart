@@ -26,18 +26,42 @@ class MultiHitDamage {
 class DamageMath {
   DamageMath._();
 
+  /// Exact 4096-based numerators for the multipliers the games hardcode.
+  ///
+  /// Pokémon never multiplies by 1.1. It multiplies by 4505 and divides by
+  /// 4096, which is 1.09985 - close enough to matter on some base powers but
+  /// not identical to it, and the two disagree by a point on some rolls.
+  /// Reaching for the decimal instead of the fraction is what drifts.
+  static const int boost11 = 4505; // 1.1x
+  static const int boost12 = 4915; // 1.2x
+  static const int boost13 = 5324; // 1.3x
+  static const int boost15 = 6144; // 1.5x
+  static const int boostHalve = 2048; // 0.5x
+
   /// Pokémon's `pokeRound`: ties are rounded down, rather than Dart's normal
   /// floating behaviour. Values passed here are fixed-point modifier results.
-  static int _pokeRound(int numerator, int denominator) {
+  static int pokeRound(int numerator, int denominator) {
     final quotient = numerator ~/ denominator;
     final remainder = numerator % denominator;
     return remainder * 2 > denominator ? quotient + 1 : quotient;
   }
 
-  static int _fixedModifier(int value, int modifier) =>
-      _pokeRound(value * modifier, 4096);
+  /// Applies a 4096-based [modifier] to [value] with the game's rounding.
+  static int fixedModifier(int value, int modifier) =>
+      pokeRound(value * modifier, 4096);
 
-  static int _modifierFromDouble(double value) => (value * 4096).round();
+  /// Converts a decimal modifier to the exact n/4096 numerator.
+  ///
+  /// Rounding the decimal directly is off by one on the common cases: 1.3
+  /// becomes 5325 rather than the 5324 the games apply, and 1.1 becomes 4506
+  /// rather than 4505. Small, but it is a real difference on some rolls.
+  static int _modifierFromDouble(double value) => switch ((value * 10).round()) {
+        11 => boost11,
+        12 => boost12,
+        13 => boost13,
+        15 => boost15,
+        _ => (value * 4096).round(),
+      };
 
   /// Produces the exact 16-roll damage range for the subset of battle state
   /// represented by LibreDex's current UI.
@@ -67,10 +91,10 @@ class DamageMath {
     // getBaseDamage() from the Pokémon Showdown calculator / Gen IX engine.
     var base =
         (((((2 * level) ~/ 5) + 2) * basePower * attack) ~/ defense) ~/ 50 + 2;
-    base = _fixedModifier(base, _modifierFromDouble(weather));
+    base = fixedModifier(base, _modifierFromDouble(weather));
     // Gen IX Parental Bond's second strike is 25% of the base damage,
     // before random/STAB/type/final modifiers are applied.
-    if (parentalBondChild) base = _fixedModifier(base, 1024);
+    if (parentalBondChild) base = fixedModifier(base, 1024);
     if (critical) base = (base * 3) ~/ 2;
 
     final stabMod = _modifierFromDouble(stab);
@@ -78,12 +102,12 @@ class DamageMath {
     final rolls = <int>[];
     for (var random = 85; random <= 100; random++) {
       var damage = (base * random) ~/ 100;
-      if (stabMod != 4096) damage = _pokeRound(damage * stabMod, 4096);
+      if (stabMod != 4096) damage = pokeRound(damage * stabMod, 4096);
       // Type effectiveness is an ordinary multiplier after STAB.
       damage = (damage * effectiveness).floor();
       if (burned) damage ~/= 2;
       for (final modifier in finalModifiers) {
-        damage = _fixedModifier(damage, _modifierFromDouble(modifier));
+        damage = fixedModifier(damage, _modifierFromDouble(modifier));
       }
       // A damaging hit always does at least 1 after modifiers.
       damage = damage < 1 ? 1 : damage;

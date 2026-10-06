@@ -4,6 +4,7 @@ library;
 import 'package:libredex/core/utils/type_utils.dart';
 import 'package:libredex/features/calculator/models/battle_ruleset.dart';
 import 'package:libredex/features/calculator/utils/held_items_data.dart';
+import 'package:libredex/features/calculator/utils/damage_math.dart';
 import 'package:libredex/features/stat_comparison/models/stat_modifier.dart';
 import 'package:libredex/features/battle_engine/services/stat_engine.dart';
 import 'package:libredex/features/battle_engine/models/applied_modifier.dart';
@@ -189,18 +190,20 @@ class ModifierPipeline {
     // base power sits inside the formula's rounding chain and a final
     // modifier sits outside it, so the two give different damage. Applying
     // them here keeps both the duel and the sandbox on the same numbers.
-    final itemBpMultiplier = HeldItemsData.getBasePowerMultiplier(
+    // Item power boosts are 4096-based fractions applied in order, not a
+    // single decimal multiply - see HeldItemsData.getBasePowerChain.
+    final itemBpChain = HeldItemsData.getBasePowerChain(
       state.attacker.heldItem,
       moveType: state.move.type,
       damageClass: state.move.damageClass,
       isPunching: state.move.isPunching,
     );
-    if (itemBpMultiplier != 1.0) {
-      bp = (bp * itemBpMultiplier).round();
+    for (final mod in itemBpChain) {
+      bp = DamageMath.fixedModifier(bp, mod);
       applied.add(
         AppliedModifier(
           name: titleCasePokemonText(state.attacker.heldItem),
-          multiplier: itemBpMultiplier,
+          multiplier: mod / 4096,
           category: ModifierCategory.item,
         ),
       );
@@ -220,7 +223,10 @@ class ModifierPipeline {
           state.move.type,
         );
     if (typeAbilityBpMultiplier != 1.0) {
-      bp = (bp * typeAbilityBpMultiplier).round();
+      bp = DamageMath.fixedModifier(
+        bp,
+        DamageMath.boost13,
+      );
       applied.add(
         AppliedModifier(
           name: '${titleCasePokemonText(attackerAbility)} (Type Power)',
@@ -236,7 +242,10 @@ class ModifierPipeline {
       _ => 1.0,
     };
     if (terrainBpMultiplier != 1.0) {
-      bp = (bp * terrainBpMultiplier).round();
+      bp = DamageMath.fixedModifier(
+        bp,
+        DamageMath.boost13,
+      );
       applied.add(
         AppliedModifier(
           name: '${titleCasePokemonText(state.field.terrain)} Terrain',
@@ -248,7 +257,7 @@ class ModifierPipeline {
 
     // Ability BP modifiers
     if (attackerAbility == 'technician' && bp <= 60 && bp > 0) {
-      bp = (bp * 1.5).floor();
+      bp = DamageMath.fixedModifier(bp, DamageMath.boost15);
       applied.add(
         const AppliedModifier(
           name: 'Technician',
@@ -257,7 +266,7 @@ class ModifierPipeline {
         ),
       );
     } else if (attackerAbility == 'sharpness' && isSlicing) {
-      bp = (bp * 1.5).floor();
+      bp = DamageMath.fixedModifier(bp, DamageMath.boost15);
       applied.add(
         const AppliedModifier(
           name: 'Sharpness',
@@ -266,7 +275,7 @@ class ModifierPipeline {
         ),
       );
     } else if (attackerAbility == 'strong jaw' && isBiting) {
-      bp = (bp * 1.5).floor();
+      bp = DamageMath.fixedModifier(bp, DamageMath.boost15);
       applied.add(
         const AppliedModifier(
           name: 'Strong Jaw',
@@ -275,7 +284,7 @@ class ModifierPipeline {
         ),
       );
     } else if (attackerAbility == 'mega launcher' && isPulse) {
-      bp = (bp * 1.5).floor();
+      bp = DamageMath.fixedModifier(bp, DamageMath.boost15);
       applied.add(
         const AppliedModifier(
           name: 'Mega Launcher',
@@ -284,7 +293,7 @@ class ModifierPipeline {
         ),
       );
     } else if (attackerAbility == 'iron fist' && isPunching) {
-      bp = (bp * 1.2).floor();
+      bp = DamageMath.fixedModifier(bp, DamageMath.boost12);
       applied.add(
         const AppliedModifier(
           name: 'Iron Fist',
@@ -293,7 +302,7 @@ class ModifierPipeline {
         ),
       );
     } else if (attackerAbility == 'reckless' && isRecoil) {
-      bp = (bp * 1.2).floor();
+      bp = DamageMath.fixedModifier(bp, DamageMath.boost12);
       applied.add(
         const AppliedModifier(
           name: 'Reckless',
@@ -303,17 +312,8 @@ class ModifierPipeline {
       );
     }
 
-    // Punching Glove item
-    if (attackerItem == 'punching glove' && isPunching) {
-      bp = (bp * 1.1).floor();
-      applied.add(
-        const AppliedModifier(
-          name: 'Punching Glove',
-          multiplier: 1.1,
-          category: ModifierCategory.item,
-        ),
-      );
-    }
+    // Punching Glove is handled by HeldItemsData.getBasePowerChain above. It
+    // used to be applied here as well, which stacked it to 1.21x.
 
     // ── 4. Effective Attack & Defense Stats ──────────────────────────────────
     int atkVal;

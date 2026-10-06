@@ -1,5 +1,7 @@
 /// Comprehensive held items database for competitive Pokémon damage calculations.
 /// Each item defines its effect on attacker or defender stats.
+import 'damage_math.dart';
+
 class HeldItemsData {
   static const String noItem = 'None';
 
@@ -583,6 +585,56 @@ class HeldItemsData {
 
     return mult;
   }
+
+  /// The exact 4096-based numerators this item applies to base power, in the
+  /// order the games apply them. Empty means no change.
+  ///
+  /// This is what the damage pipeline should use. The games never multiply by
+  /// 1.1 - they multiply by 4505 and divide by 4096, and they round between
+  /// each step. Feeding them through [getBasePowerMultiplier] instead loses
+  /// that: a 95 BP move under Muscle Band becomes (95 * 1.1).round() = 105,
+  /// but the game gets pokeRound(95 * 4505 / 4096) = 104.
+  static List<int> getBasePowerChain(
+    String itemName, {
+    required String moveType,
+    required String damageClass,
+    required bool isPunching,
+  }) {
+    final item = findByName(itemName);
+    if (item == null) return const [];
+
+    final cls = damageClass.toLowerCase();
+    final chain = <int>[];
+
+    if (cls == 'physical' && item.physicalPowerMultiplier != 1.0) {
+      chain.add(_chainFromDecimal(item.physicalPowerMultiplier));
+    } else if (cls == 'special' && item.specialPowerMultiplier != 1.0) {
+      chain.add(_chainFromDecimal(item.specialPowerMultiplier));
+    }
+
+    if (isPunching && item.punchingPowerMultiplier != 1.0) {
+      chain.add(_chainFromDecimal(item.punchingPowerMultiplier));
+    }
+
+    if (item.typeBoostType != null &&
+        item.typeBoostType!.toLowerCase() == moveType.toLowerCase() &&
+        item.typeBoostMultiplier != 1.0) {
+      chain.add(_chainFromDecimal(item.typeBoostMultiplier));
+    }
+
+    return chain;
+  }
+
+  /// Converts a decimal multiplier to the exact n/4096 numerator the games
+  /// use. Rounding the decimal directly would give 4506 for 1.1 rather than
+  /// the 4505 the game actually applies.
+  static int _chainFromDecimal(double m) => switch ((m * 10).round()) {
+        11 => DamageMath.boost11,
+        12 => DamageMath.boost12,
+        13 => DamageMath.boost13,
+        15 => DamageMath.boost15,
+        _ => (m * 4096).round(),
+      };
 
   /// Calculate resistance multiplier from defender's held item.
   /// Resist berries apply only when the move is super-effective (mult > 1.0).

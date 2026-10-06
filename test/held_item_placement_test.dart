@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:libredex/features/calculator/utils/damage_math.dart';
 import 'package:libredex/features/calculator/utils/held_items_data.dart';
 
 /// Held items enter the damage formula at one of three stages, and mixing them
@@ -90,6 +91,50 @@ void main() {
         1.1,
         reason: 'Charcoal is a different item, so only Muscle Band applies',
       );
+    });
+  });
+
+  group('getBasePowerChain uses the game’s exact fractions', () {
+    List<int> chain(
+      String item, {
+      String type = 'fire',
+      String damageClass = 'physical',
+      bool isPunching = false,
+    }) =>
+        HeldItemsData.getBasePowerChain(
+          item,
+          moveType: type,
+          damageClass: damageClass,
+          isPunching: isPunching,
+        );
+
+    test('Muscle Band is 4505/4096, not the 4506 that 1.1 rounds to', () {
+      expect(chain('Muscle Band'), [4505]);
+    });
+
+    test('type boost is 4915/4096', () {
+      expect(chain('Charcoal'), [4915]);
+      expect(chain('Charcoal', type: 'water'), isEmpty);
+    });
+
+    test('Punching Glove is applied once', () {
+      // Regression: it was applied here AND by a hardcoded block in
+      // ModifierPipeline, stacking it to 1.21x.
+      expect(chain('Punching Glove', isPunching: true), [4505]);
+      expect(chain('Punching Glove', isPunching: false), isEmpty);
+    });
+
+    test('final-modifier and stat items contribute nothing here', () {
+      expect(chain('Life Orb'), isEmpty);
+      expect(chain('Expert Belt'), isEmpty);
+      expect(chain('Choice Band'), isEmpty);
+    });
+
+    test('a 95 BP move under Muscle Band is 104, not 105', () {
+      // The whole point of the fractions: the decimal path rounds a .5 up,
+      // the game rounds it down, so the two disagree by a point of damage.
+      expect(DamageMath.fixedModifier(95, DamageMath.boost11), 104);
+      expect((95 * 1.1).round(), 105);
     });
   });
 
