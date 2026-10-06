@@ -161,6 +161,25 @@ void main() {
     );
   }
 
+  int effectiveAttackFor(BattleState state) {
+    final attackerStats = StatEngine.computeEffectiveStats(
+      state.attacker,
+      state.ruleset,
+      isCriticalAttacker: state.move.isCritical,
+      weather: state.field.weather,
+      terrain: state.field.terrain,
+    );
+    final defenderStats = StatEngine.computeEffectiveStats(
+      state.defender,
+      state.ruleset,
+      isCriticalDefender: state.move.isCritical,
+      weather: state.field.weather,
+      terrain: state.field.terrain,
+    );
+    return ModifierPipeline.process(state, attackerStats, defenderStats)
+        .effectiveAttack;
+  }
+
   group('sandbox resolves through the shared engine', () {
     test('produces identical rolls to the duel view for the same inputs', () {
       final state = stateFor();
@@ -256,6 +275,30 @@ void main() {
         effectiveness: 1.0,
       ),
     ).maxDamage;
+
+    test('held item damage multipliers are applied exactly once', () {
+      // Regression: the sandbox path built its Attack stat from
+      // HeldItemsData.getAttackMultiplier, which folded Life Orb and
+      // type-boosting items into the stat. ModifierPipeline applies those
+      // again as final modifiers, so they counted twice - but only on the
+      // sandbox path, which is why parity never caught it.
+      final withOrb = stateFor(attackerItem: 'Life Orb');
+      final bare = stateFor(attackerItem: 'None');
+
+      expect(
+        effectiveAttackFor(withOrb),
+        equals(effectiveAttackFor(bare)),
+        reason: 'Life Orb is a final damage modifier, not an Attack stat '
+            'modifier, so holding it must not change the Attack stat',
+      );
+
+      final duel = BattleEngine.calculate(withOrb);
+      final sandboxed = SandboxDamageEngine.calculate(
+        withOrb,
+        overridesFor(withOrb),
+      );
+      expect(sandboxed.rolls, equals(duel.rolls));
+    });
 
     test('Aurora Veil halves damage', () {
       final plain = maxDamageFor(stateFor());

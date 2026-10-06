@@ -66,6 +66,21 @@ class HeldItemsData {
       universalDamageMultiplier: 1.3,
     ),
     HeldItem(
+      name: 'Expert Belt',
+      category: 'Universal Damage',
+      description: '+20% damage on super-effective hits only.',
+    ),
+    HeldItem(
+      name: 'Muscle Band',
+      category: 'Physical Power',
+      description: '+10% physical move power.',
+    ),
+    HeldItem(
+      name: 'Wise Glasses',
+      category: 'Special Power',
+      description: '+10% special move power.',
+    ),
+    HeldItem(
       name: 'Eviolite',
       category: 'Defense',
       description: '+50% Def & Sp. Def for non fully-evolved Pokémon.',
@@ -507,32 +522,21 @@ class HeldItemsData {
   }
 
   /// Calculate the attack multiplier from a held item for a given move type and isSpecial.
+  /// Multiplier an item applies to the holder's attacking STAT.
+  ///
+  /// Deliberately excludes [HeldItem.universalDamageMultiplier] and
+  /// [HeldItem.typeBoostMultiplier]: those are final damage modifiers and
+  /// ModifierPipeline applies them separately, later. Folding them in here as
+  /// well double-counted Life Orb and every type-boosting item on the sandbox
+  /// path, because that path builds its Attack stat from this method and then
+  /// still runs the pipeline's final modifiers.
   static double getAttackMultiplier(
     String itemName,
-    String moveType,
     bool isSpecial,
   ) {
     final item = findByName(itemName);
     if (item == null) return 1.0;
-
-    double mult = 1.0;
-
-    if (isSpecial) {
-      mult *= item.spAtkMultiplier;
-    } else {
-      mult *= item.atkMultiplier;
-    }
-
-    // Universal damage (Life Orb, etc.)
-    mult *= item.universalDamageMultiplier;
-
-    // Type-boosting items
-    if (item.typeBoostType != null &&
-        item.typeBoostType!.toLowerCase() == moveType.toLowerCase()) {
-      mult *= item.typeBoostMultiplier;
-    }
-
-    return mult;
+    return isSpecial ? item.spAtkMultiplier : item.atkMultiplier;
   }
 
   /// Calculate resistance multiplier from defender's held item.

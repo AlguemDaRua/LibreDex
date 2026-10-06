@@ -517,7 +517,6 @@ class DamageCalculatorState {
 
     final atkItemMult = HeldItemsData.getAttackMultiplier(
       attackerHeldItem,
-      moveType,
       isSpecial,
     );
     final defItemMult = HeldItemsData.getDefenseMultiplier(
