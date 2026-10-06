@@ -15,6 +15,7 @@ import 'package:libredex/features/pokedex/viewmodels/team_builder_provider.dart'
 import 'package:libredex/core/theme/app_spacing.dart';
 import 'package:libredex/core/theme/responsive.dart';
 import 'package:libredex/features/pokedex/views/pokemon_detail_screen.dart';
+import 'package:libredex/core/utils/debounced_query.dart';
 import 'package:libredex/core/widgets/dex_filter_bar.dart';
 import 'package:libredex/core/widgets/active_filter_summary.dart';
 import 'package:libredex/core/widgets/result_count_label.dart';
@@ -38,6 +39,11 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _abilityFilterController =
       TextEditingController();
+
+  /// The ability-compatibility search re-scans every Pokémon and both the name
+  /// and the description text of each of its abilities, so its state change is
+  /// debounced instead of running on every keystroke.
+  final DebouncedQuery _abilityQueryDebounce = DebouncedQuery();
   String _searchQuery = '';
 
   bool _globalShinyMode = false;
@@ -132,6 +138,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
   void dispose() {
     _searchController.dispose();
     _abilityFilterController.dispose();
+    _abilityQueryDebounce.dispose();
     super.dispose();
   }
 
@@ -1676,8 +1683,14 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                   TextField(
                     controller: _abilityFilterController,
                     onChanged: (val) {
-                      setState(() => _filterAbilityQuery = val);
+                      // The sheet refresh stays immediate so typing feels
+                      // responsive; the expensive full-list refilter waits for
+                      // the user to stop typing.
                       setModalState(() {});
+                      _abilityQueryDebounce.schedule(val, (value) {
+                        if (!mounted) return;
+                        setState(() => _filterAbilityQuery = value);
+                      });
                     },
                     decoration: InputDecoration(
                       hintText: 'Ability name or keyword...',

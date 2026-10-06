@@ -86,14 +86,31 @@ Verified present in the tree at `0f63c88`, not merely claimed by a prior report.
 | ✅ | **Test regression in `champions_regulation_test.dart`** | Already asserting `hasLength(151)` / `hasLength(18)` (lines 91–92). This was the #1 P0 of the previous plan; it is resolved. |
 | ✅ | CI pipeline | Java 17 + Gradle cache, Flutter cache, Python 3.12, format gate, `analyze --fatal-infos`, 5 data validators, `flutter test --coverage`, debug APK |
 | ✅ | Workflow protection | `.github/CODEOWNERS` requires @AlguemDaRua on `.github/**` |
+| ✅ | **Two damage implementations unified** | Raw sandbox now resolves through `SandboxDamageEngine` → the shared `ModifierPipeline`. The hand-rolled ~155-line copy inside `_buildRawSandboxTab` is gone. |
+| ✅ | Sandbox gains the mechanics it was missing | Aurora Veil, Multiscale/Shadow Shield, Filter/Solid Rock/Prism Armor, Ice Scales/Thick Fat/Purifying Salt, Tinted Lens, Expert Belt, Muscle Band/Wise Glasses, Life Orb and type gems, Weather Ball/Terrain Pulse, Technician/Sharpness/Iron Fist and friends |
+| ✅ | Sandbox/duel parity test | `test/sandbox_damage_parity_test.dart` — identical rolls across a weather × terrain × screen × crit matrix plus items/abilities/doubles |
+| ✅ | Index-creation hazard guarded | `app_database.dart` `beforeOpen` carries a do-not-move warning |
+| ✅ | Ability-compatibility search debounced | `pokedex_screen.dart` uses the existing `DebouncedQuery` |
+| ✅ | **Release signing configured** | `build.gradle.kts` signs from `android/key.properties` when present. **Action needed: create `key.properties` + keystore (git-ignored) before distributing.** |
 
 ---
 
 ## C. Critical path
 
+**Status at 2026-10-06:** C1, C2, C4 and C5 are done. C3 is blocked on a device
+or emulator run — the harness is described below.
+
+| # | Item | Status | Note |
+|:---:|---|:---:|---|
+| C1 | Unify the two damage paths | ✅ | Second implementation deleted; parity test added |
+| C2 | Index-creation hazard guard | ✅ | Warning comment in `beforeOpen` |
+| C3 | Instrument before optimising | ⏸ | Needs a device/emulator; procedure in C3 |
+| C4 | Debounce the undebounced field | ✅ | Scope corrected — see [§G](#g-correction-log) |
+| C5 | Release signing | ✅ | Config lands **unsigned-ready**; needs your `key.properties` |
+
 Ordered. Each item de-risks the next. Do not reorder.
 
-### 🔴 C1 — Unify the two damage paths in the calculator
+### ✅ C1 — Unify the two damage paths in the calculator
 
 **Why:** This is the most serious defect in the codebase and it is not a size problem.
 `damage_calculator_screen.dart` contains **two different damage calculators that
@@ -143,7 +160,7 @@ and it removes roughly 500 lines without anyone deciding where to put anything.
 
 ---
 
-### 🔴 C2 — Guard the index-creation hazard (5 minutes)
+### ✅ C2 — Guard the index-creation hazard (5 minutes)
 
 **Why:** A prior recommendation ("move the 17 `CREATE INDEX` statements from
 `beforeOpen` to `onUpgrade`") would cause a silent, permanent, CI-invisible regression.
@@ -161,7 +178,7 @@ comment at the block stating that they must be duplicated into `onCreate` **and*
 
 ---
 
-### 🔴 C3 — Instrument before optimising
+### ⏸ C3 — Instrument before optimising
 
 **Why:** The previous performance section proposed `ValueKey`s, `RepaintBoundary`, and
 `precacheImage`. All real, all second-order. The actual data path is:
@@ -170,49 +187,65 @@ comment at the block stating that they must be duplicated into `onCreate` **and*
 pokedexProvider  →  db.select(db.pokemonTable).watch()
                        ↑ unfiltered, unordered, 1,351 rows
    → build() → _getFilteredList()  →  145 lines of in-Dart predicate,
-                                       re-run on every keystroke and
-                                       every stream emission
+                                       re-run on every stream emission
 ```
 
 The stream is the unit of invalidation, not the row: any write to `pokemon_table`
 re-emits all 1,351 rows, which re-runs the filter, which rebuilds the grid. `ValueKey`
 does not help when every element is being handed new data anyway.
 
-**What:** Measure before choosing. Record: stream emissions per keystroke,
-`_getFilteredList` wall time at 1,351 rows, and frame times on a low-end device.
+**Status: blocked on a device or emulator run.** This is the one critical-path item
+that cannot be closed from a static read of the code, and the agent session that
+opened it had no Flutter toolchain or device available. The harness is below so it is
+a 30-minute job rather than a re-derivation.
 
-- **Done-when:** numbers committed to this file, and the chosen fix (debounce vs. SQL
-  pushdown vs. stream narrowing) is written into C4/D1 with the measurement that
-  justifies it.
-- **Effort:** ~2 h. **Risk:** none — this is the cheap way to avoid a wrong 3-day fix.
+**What to measure** (release build, low-end Android device, Pokédex tab open):
 
----
+1. Stream emissions per second while idle, and per debounced keystroke — add a
+   temporary `print` in the `pokedexProvider` stream builder.
+2. `_getFilteredList` wall time at 1,351 rows — wrap it in `Stopwatch` and log on
+   every pass.
+3. Frame times while typing — `flutter run --profile`, then the DevTools
+   performance overlay, recording the worst frame over a 20-character query.
+4. Whether the stream re-emits when unrelated tables are written (favourites, team
+   slots). If it does, `watchAllPokemon` needs narrowing regardless of the filter.
 
-### 🔴 C4 — Wire the debouncing that already exists
-
-**Why:** `DebouncedQuery` and `DebouncedSearchField` **already exist** in `lib/core/`
-and are already used in five places (`dex_filter_bar`, the three calculator picker
-dialogs, `stat_comparison_screen`). They are **not** used in any of the four screens
-that filter large lists.
-
-| Screen | Rows filtered | Debounced today? |
-|---|:---:|:---:|
-| Pokédex (search + 30 filter fields) | 1,351 | ❌ |
-| MoveDex | 937 | ❌ |
-| AbilityDex | 367 | ❌ |
-| ItemDex | 2,223 | ❌ |
-
-The Pokédex is both the largest list and the one the previous plan omitted.
-
-**What:** Swap the four raw `TextField`s for `DebouncedSearchField`.
-
-- **Done-when:** `DebouncedSearchField` appears in all four dex screens; typing a query
-  produces one filter pass per debounce interval rather than one per character.
-- **Effort:** ~2 h. **Risk:** low.
+- **Done-when:** the four numbers are recorded in this file, and the chosen fix
+  (debounce vs. SQL pushdown vs. stream narrowing vs. `select` projection) is written
+  into D1 with the measurement that justifies it.
+- **Effort:** ~30 min on device. **Risk:** none.
+- **Do not** start D1 on the assumption that debouncing is the answer — C4 already
+  showed that assumption wrong once.
 
 ---
 
-### 🔴 C5 — Release signing configuration
+
+### ✅ C4 — Debounce the one search field that was not
+
+**Why:** All four dex screens route their main search through `DexFilterBar`, which
+already wraps `DebouncedSearchField` at 300 ms. The *previous version of this plan
+claimed otherwise* — see [§G](#g-correction-log); the error was inferring from a
+direct grep for `DebouncedSearchField` and missing the indirect use.
+
+What is genuinely undebounced is narrower and worse: the **ability-compatibility
+search inside the Pokédex advanced-filter sheet**
+(`pokedex_screen.dart`, "FILTER BY ABILITY COMPATIBILITY"). Each keystroke called
+`setState`, and `_getFilteredList` then rescanned all 1,351 Pokémon, iterating each
+one's ability list and running `contains()` against both the ability **name and its
+full description text** — the most expensive per-keystroke path in the app.
+
+**Done:** that field now routes through the existing `DebouncedQuery` primitive. The
+sheet's own refresh stays immediate so typing still feels responsive; the expensive
+full-list refilter waits for the pause.
+
+- **Done-when:** ✅ `_abilityQueryDebounce` gates `_filterAbilityQuery`; typing no
+  longer triggers a filter pass per character.
+- **Effort:** ~20 min. **Risk:** low — the debounced callback is `mounted`-guarded.
+
+---
+
+
+### ✅ C5 — Release signing configuration
 
 **Why:** `android/app/build.gradle.kts:36` sets release builds to
 `signingConfigs.debug`. The app cannot be distributed as-is. This is the only item
@@ -223,6 +256,10 @@ genuinely critical and genuinely cheap.
   git-ignored keystore referenced by `key.properties`; CI can build release without
   secrets in the tree.
 - **Effort:** ~1 h. **Risk:** low (but irreversible if the keystore is lost — back it up).
+- **Status:** the *configuration* is done and the tree still builds without a
+  keystore (it falls back to the debug key and logs a warning, so CI is unaffected).
+  The **keystore itself is not and must never be committed** — create
+  `android/key.properties` locally before the first real release.
 
 ---
 
@@ -299,6 +336,9 @@ line-by-line against the tree. Recorded so nobody re-derives them.
 | "Debounce AbilityDex and ItemDex" | `DebouncedSearchField` already exists; Pokédex (largest list) was excluded | Wrong priority; infrastructure existed |
 | `battle_ruleset.dart` under `battle_engine` | It lives in `features/calculator/models/` | Minor path error |
 | — | **Two divergent damage implementations in one screen** | Missed entirely; now C1 |
+| **v2:** "Pokédex/MoveDex/AbilityDex/ItemDex search is not debounced" | All four already debounce at 300 ms via `DexFilterBar` → `DebouncedSearchField` | Wrong target. C4 was re-scoped to the one field that genuinely was not. Recorded here because the error came from inferring behaviour from a direct grep and missing an indirect call. |
+| **v2:** "Swap the four raw `TextField`s for `DebouncedSearchField`" | There were no raw search `TextField`s to swap | Task was already complete |
+
 
 ---
 

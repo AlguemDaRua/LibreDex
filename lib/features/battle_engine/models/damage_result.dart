@@ -43,6 +43,14 @@ class DamageResult {
   /// Final type effectiveness multiplier (0, 0.25, 0.5, 1, 2, 4).
   final double typeEffectiveness;
 
+  /// Why the move was blocked by a priority-blocking ability or terrain, if it
+  /// was. `null` when no priority block applied (including when the move is
+  /// stopped by Protect instead, which is reported via [modifiers]).
+  ///
+  /// Carried on the result (rather than recomputed by callers) so a UI panel
+  /// can never report a different reason than the engine applied.
+  final String? priorityBlockReason;
+
   const DamageResult({
     required this.rolls,
     required this.minDamage,
@@ -57,6 +65,7 @@ class DamageResult {
     required this.effectiveAttack,
     required this.effectiveDefense,
     required this.typeEffectiveness,
+    this.priorityBlockReason,
   });
 
   /// True if the calculation has warnings about unverified or missing mechanics.

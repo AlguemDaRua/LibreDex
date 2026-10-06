@@ -10,7 +10,6 @@ import 'package:libredex/features/pokedex/viewmodels/pokedex_viewmodel.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
 import 'package:libredex/core/data/species_data.dart';
 import 'package:libredex/features/calculator/utils/combat_utils.dart';
-import 'package:libredex/features/calculator/utils/damage_math.dart';
 import 'package:libredex/core/theme/app_spacing.dart';
 import 'package:libredex/core/data/champions_regulation.dart';
 import 'package:libredex/features/battle_engine/battle_engine.dart';
@@ -303,153 +302,30 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
     DamageCalculatorState state,
     DamageCalculatorViewModel vm,
   ) {
-    final bool isSpecial = state.moveCategory.toLowerCase() == 'special';
-    final double bp = state.movePower;
+    // Damage is resolved by the shared battle engine — the same ModifierPipeline
+    // the duel tab uses. The sandbox contributes only the four values the user
+    // types by hand (attacking stat, defending stat, STAB and effectiveness);
+    // every other mechanic — held items, abilities, weather, terrain, screens,
+    // burn, spread, criticals — is derived here exactly as it is over there.
+    //
+    // Replacing this block with a second hand-rolled formula is what let the
+    // two tabs disagree for so long. Do not reintroduce it.
+    final DamageResult sandboxResult = vm.calculateSandboxDamage();
+    final int rawMinDamage = sandboxResult.minDamage;
+    final int rawMaxDamage = sandboxResult.maxDamage;
+
+    // Presentation values, read back from the resolved result so this panel can
+    // never display a number the engine did not produce.
     final moveType = state.moveType.toLowerCase();
     final bool isCritical =
         state.isCriticalHit ||
         CombatUtils.alwaysCriticalHit(state.selectedMoveName ?? '');
-    final defenderPokemon = state.defender;
-    final priorityBlockReason = CombatUtils.priorityMoveBlockReason(
-      priority: state.movePriority,
-      attackerAbility: state.attackerAbility,
-      defenderAbility: state.defenderAbility,
-      defenderHeldItem: state.defenderHeldItem,
-      terrain: state.terrain,
-      defenderGrounded:
-          defenderPokemon != null &&
-          CombatUtils.isGrounded(
-            types: [
-              defenderPokemon.type1,
-              if (defenderPokemon.type2 != null) defenderPokemon.type2!,
-            ],
-            ability: state.defenderAbility,
-            heldItem: state.defenderHeldItem,
-          ),
-    );
-    final double simpleEffectiveness = priorityBlockReason == null
-        ? state.simpleEffectiveness
-        : 0.0;
-
-    // Integer-parity sandbox — same fixed-point path as the Duel tab & Showdown.
-    final int sandboxLevel = state.ruleset.isChampions
-        ? ChampionsRules.level
-        : state.attackerLevel;
-
-    // Stages are ignored correctly on crit (negative Atk / positive Def don't apply).
-    final double atkRaw = state.simpleAttackerStat;
-    final int atkStage = state.attackerStages['atk'] ?? 0;
-    final int effectiveAtkStage = isCritical
-        ? (atkStage < 0 ? 0 : atkStage)
-        : atkStage;
-    final double atkWithStage =
-        (atkRaw * CombatUtils.getStageMultiplier(effectiveAtkStage)).clamp(
-          1.0,
-          9999.0,
-        );
-    final double defRaw = state.simpleDefenderStat;
-    final int defStage = state.defenderStages['def'] ?? 0;
-    final int effectiveDefStage = isCritical
-        ? (defStage > 0 ? 0 : defStage)
-        : defStage;
-    final double defWithStage =
-        (defRaw * CombatUtils.getStageMultiplier(effectiveDefStage)).clamp(
-          1.0,
-          9999.0,
-        );
-
-    final double atkItemMult = HeldItemsData.getAttackMultiplier(
-      state.attackerHeldItem,
-      moveType,
-      isSpecial,
-    );
-    final double defStatItemMult = HeldItemsData.getDefenseMultiplier(
-      state.defenderHeldItem,
-      isSpecial,
-    );
-    final double defResistMult = HeldItemsData.getDefenderResistMultiplier(
-      state.defenderHeldItem,
-      moveType,
-      simpleEffectiveness,
-    );
-    final int atkFinal = (atkWithStage * atkItemMult).round().clamp(1, 9999);
-    final int defFinal = (defWithStage * defStatItemMult).round().clamp(
-      1,
-      9999,
-    );
-
-    double weatherMult = 1.0;
-    if (state.weather == 'sunny' && moveType == 'fire') weatherMult = 1.5;
-    if (state.weather == 'sunny' && moveType == 'water') weatherMult = 0.5;
-    if (state.weather == 'rainy' && moveType == 'water') weatherMult = 1.5;
-    if (state.weather == 'rainy' && moveType == 'fire') weatherMult = 0.5;
-
-    double terrainMult = 1.0;
-    if (state.terrain == 'electric' && moveType == 'electric') {
-      terrainMult = 1.3;
-    }
-    if (state.terrain == 'grassy' && moveType == 'grass') terrainMult = 1.3;
-    if (state.terrain == 'psychic' && moveType == 'psychic') terrainMult = 1.3;
-    double hhMult = state.helpingHandActive ? 1.5 : 1.0;
-    final double typeAbilityBpMult =
-        CombatUtils.typeChangingAbilityPowerMultiplier(
-          state.attackerAbility,
-          state.moveType,
-        );
-    final int finalBasePower = (bp * terrainMult * hhMult * typeAbilityBpMult)
-        .round()
-        .clamp(1, 9999);
-
-    // Screens: 0.5 singles, 2732/4096 doubles; Champions supports both formats like mainline.
-    double screenMult = 1.0;
-    if (!isCritical) {
-      final double doublesScreen = 2732 / 4096;
-      final bool isDoubles = state.isDoubleBattle;
-      if (isSpecial && state.lightScreenActive) {
-        screenMult = isDoubles ? doublesScreen : 0.5;
-      }
-      if (!isSpecial && state.reflectActive) {
-        screenMult = isDoubles ? doublesScreen : 0.5;
-      }
-    }
-    final bool burned =
-        !isSpecial &&
-        state.attackerStatus == 'burn' &&
-        state.attackerAbility?.toLowerCase() != 'guts' &&
-        state.selectedMoveName?.toLowerCase() != 'facade';
-    final moveName = state.selectedMoveName ?? 'custom move';
+    final String? priorityBlockReason = sandboxResult.priorityBlockReason;
+    final double simpleEffectiveness = sandboxResult.typeEffectiveness;
     final double spreadMult = CombatUtils.spreadMultiplier(
-      moveName,
+      state.selectedMoveName ?? '',
       state.isDoubleBattle,
     );
-    final isAuraGuardContact = CombatUtils.auraGuardReducesDamage(
-      championsRuleset: state.ruleset.isChampions,
-      defenderAbility: state.defenderAbility,
-      contactMove: state.moveIsContact,
-    );
-    final bool isSniperCrit =
-        state.attackerAbility?.toLowerCase() == 'sniper' && isCritical;
-    final List<double> sandboxFinalMods = [
-      if (screenMult != 1.0) screenMult,
-      if (defResistMult != 1.0) defResistMult,
-      if (spreadMult != 1.0) spreadMult,
-      if (isAuraGuardContact) 0.5,
-      if (isSniperCrit) 1.5,
-    ];
-    final DamageRange sandboxRange = DamageMath.calculate(
-      level: sandboxLevel,
-      basePower: finalBasePower,
-      attack: atkFinal,
-      defense: defFinal,
-      stab: state.simpleStab,
-      effectiveness: simpleEffectiveness,
-      critical: isCritical,
-      weather: weatherMult,
-      burned: burned,
-      finalModifiers: sandboxFinalMods,
-    );
-    final int rawMinDamage = sandboxRange.min;
-    final int rawMaxDamage = sandboxRange.max;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(

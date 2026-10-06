@@ -8,6 +8,7 @@ import 'package:libredex/features/stat_comparison/models/stat_modifier.dart';
 import 'package:libredex/features/battle_engine/services/stat_engine.dart';
 import 'package:libredex/features/battle_engine/models/applied_modifier.dart';
 import 'package:libredex/features/battle_engine/models/battle_state.dart';
+import 'package:libredex/features/battle_engine/models/sandbox_overrides.dart';
 import 'package:libredex/features/calculator/utils/combat_utils.dart';
 
 class ModifierPipelineResult {
@@ -24,6 +25,10 @@ class ModifierPipelineResult {
   final List<AppliedModifier> appliedModifiers;
   final List<String> warnings;
 
+  /// Why the move was blocked outright, if it was (priority ability/terrain or
+  /// Protect). Surfaced on the result so callers never recompute it.
+  final String? priorityBlockReason;
+
   const ModifierPipelineResult({
     required this.effectiveBasePower,
     required this.effectiveAttack,
@@ -37,6 +42,7 @@ class ModifierPipelineResult {
     required this.finalModifiers,
     required this.appliedModifiers,
     required this.warnings,
+    this.priorityBlockReason,
   });
 }
 
@@ -47,11 +53,18 @@ class ModifierPipeline {
       s.toLowerCase().replaceAll('-', ' ').replaceAll('_', ' ').trim();
 
   /// Executes the pipeline to determine effective parameters for damage formula.
+  ///
+  /// [sandbox] carries the four values the calculator's raw sandbox lets the
+  /// user type by hand. When supplied, those values replace the derived ones
+  /// and nothing else changes — every other mechanic (held items, abilities,
+  /// weather, terrain, screens, burn, spread) still resolves normally, which is
+  /// what keeps the sandbox equal to the duel view.
   static ModifierPipelineResult process(
     BattleState state,
     ComparisonStats attackerStats,
-    ComparisonStats defenderStats,
-  ) {
+    ComparisonStats defenderStats, {
+    SandboxOverrides? sandbox,
+  }) {
     final applied = <AppliedModifier>[];
     final warnings = <String>[];
 
@@ -85,12 +98,16 @@ class ModifierPipeline {
     }
 
     // ── 2. Determine Attacking and Defending Stat Keys ───────────────────────
-    String atkKey = state.move.isPhysical ? 'atk' : 'spa';
-    String defKey = state.move.isPhysical ? 'def' : 'spd';
+    // Shared with the raw sandbox so both resolve stage keys identically.
+    final statKeys = CombatUtils.statKeysFor(
+      moveName: state.move.name,
+      damageClass: state.move.damageClass,
+    );
+    final String atkKey = statKeys.attack;
+    final String defKey = statKeys.defense;
 
     // Move stat target overrides
     if (moveName == 'body press') {
-      atkKey = 'def';
       applied.add(
         const AppliedModifier(
           name: 'Body Press (Uses Defense)',
@@ -110,7 +127,6 @@ class ModifierPipeline {
     } else if (moveName == 'psyshock' ||
         moveName == 'psystrike' ||
         moveName == 'secret sword') {
-      defKey = 'def';
       applied.add(
         AppliedModifier(
           name: '$moveName (Targets Defense)',
@@ -121,42 +137,50 @@ class ModifierPipeline {
     }
 
     // ── 3. Base Power Calculation ───────────────────────────────────────────
-    final dynamicPower = CombatUtils.resolveDynamicBasePower(
-      moveName: state.move.name,
-      basePower: state.move.basePower.toDouble(),
-      friendship: state.attacker.friendship,
-      attackerHpPercent: state.attacker.hpPercent,
-      defenderHpPercent: state.defender.hpPercent,
-      attackerStatus: state.attacker.status,
-      defenderStatus: state.defender.status,
-      attackerHeldItem: state.attacker.heldItem,
-      defenderHeldItem: state.defender.heldItem,
-      rageFistHits: state.move.rageFistHits,
-      attackerWeightKg: state.attacker.weightKg,
-      defenderWeightKg: state.defender.weightKg,
-      attackerSpeedStat: attackerStats.speed.effectiveStat.toDouble(),
-      defenderSpeedStat: defenderStats.speed.effectiveStat.toDouble(),
-      weather: state.field.weather,
-      terrain: state.field.terrain,
-      championsRules: state.ruleset.isChampions,
-    );
-    int bp = dynamicPower.basePower.round();
-    if (dynamicPower.note != null) {
-      final bpMultiplier = state.move.basePower > 0
-          ? dynamicPower.basePower / state.move.basePower
-          : dynamicPower.basePower;
-      applied.add(
-        AppliedModifier(
-          name: dynamicPower.note!,
-          multiplier: bpMultiplier,
-          category: ModifierCategory.basePower,
-        ),
+    int bp;
+    if (sandbox != null) {
+      // The sandbox's base power is typed by hand and stays exactly what the
+      // user entered: with no Pokémon selected there is nothing to derive
+      // weight-, speed- or HP-scaled power from.
+      bp = state.move.basePower;
+    } else {
+      final dynamicPower = CombatUtils.resolveDynamicBasePower(
+        moveName: state.move.name,
+        basePower: state.move.basePower.toDouble(),
+        friendship: state.attacker.friendship,
+        attackerHpPercent: state.attacker.hpPercent,
+        defenderHpPercent: state.defender.hpPercent,
+        attackerStatus: state.attacker.status,
+        defenderStatus: state.defender.status,
+        attackerHeldItem: state.attacker.heldItem,
+        defenderHeldItem: state.defender.heldItem,
+        rageFistHits: state.move.rageFistHits,
+        attackerWeightKg: state.attacker.weightKg,
+        defenderWeightKg: state.defender.weightKg,
+        attackerSpeedStat: attackerStats.speed.effectiveStat.toDouble(),
+        defenderSpeedStat: defenderStats.speed.effectiveStat.toDouble(),
+        weather: state.field.weather,
+        terrain: state.field.terrain,
+        championsRules: state.ruleset.isChampions,
       );
-    }
-    if (bp <= 0 && !state.move.isStatus) {
-      warnings.add(
-        'Base power is 0 for an attacking move. Check move configuration.',
-      );
+      bp = dynamicPower.basePower.round();
+      if (dynamicPower.note != null) {
+        final bpMultiplier = state.move.basePower > 0
+            ? dynamicPower.basePower / state.move.basePower
+            : dynamicPower.basePower;
+        applied.add(
+          AppliedModifier(
+            name: dynamicPower.note!,
+            multiplier: bpMultiplier,
+            category: ModifierCategory.basePower,
+          ),
+        );
+      }
+      if (bp <= 0 && !state.move.isStatus) {
+        warnings.add(
+          'Base power is 0 for an attacking move. Check move configuration.',
+        );
+      }
     }
 
     // These traits come from the same move record shown in the calculator;
@@ -270,7 +294,11 @@ class ModifierPipeline {
 
     // ── 4. Effective Attack & Defense Stats ──────────────────────────────────
     int atkVal;
-    if (moveName == 'foul play') {
+    if (sandbox != null) {
+      // Stages and stat items are folded into the sandbox's typed value by the
+      // caller; the pipeline takes it from there unchanged.
+      atkVal = sandbox.attack;
+    } else if (moveName == 'foul play') {
       // Foul Play uses the target's base Attack and Attack stage, but the
       // user's item, ability and status modifiers. On a critical hit, the
       // target's negative Attack stage is ignored as the move's attack source.
@@ -300,7 +328,8 @@ class ModifierPipeline {
       atkVal = attackerStats.byKey(atkKey).effectiveStat;
     }
 
-    int defVal = defenderStats.byKey(defKey).effectiveStat;
+    final int defVal =
+        sandbox?.defense ?? defenderStats.byKey(defKey).effectiveStat;
 
     // Critical hit ignores positive defense stages and negative attack stages
     if (state.move.isCritical) {
@@ -358,26 +387,32 @@ class ModifierPipeline {
     }
 
     // ── 6. STAB Multiplier ───────────────────────────────────────────────────
-    double stab = 1.0;
-    final originalTypes = state.attacker.types
-        .map((type) => type.toLowerCase())
-        .toSet();
-    final hasOriginalStab = originalTypes.contains(effectiveType);
-    final hasAdaptability = attackerAbility == 'adaptability';
-    final teraActive =
-        !state.ruleset.isChampions &&
-        state.attacker.teraActive &&
-        state.attacker.teraType != null;
-    final teraType = state.attacker.teraType?.toLowerCase();
+    double stab;
+    if (sandbox != null) {
+      stab = sandbox.stab;
+    } else {
+      final originalTypes = state.attacker.types
+          .map((type) => type.toLowerCase())
+          .toSet();
+      final hasOriginalStab = originalTypes.contains(effectiveType);
+      final hasAdaptability = attackerAbility == 'adaptability';
+      final teraActive =
+          !state.ruleset.isChampions &&
+          state.attacker.teraActive &&
+          state.attacker.teraType != null;
+      final teraType = state.attacker.teraType?.toLowerCase();
 
-    if (teraActive && state.attacker.isTeraStellar) {
-      stab = hasOriginalStab ? (hasAdaptability ? 2.25 : 2.0) : 1.2;
-    } else if (teraActive && teraType == effectiveType) {
-      stab = hasOriginalStab
-          ? (hasAdaptability ? 2.25 : 2.0)
-          : (hasAdaptability ? 2.0 : 1.5);
-    } else if (hasOriginalStab) {
-      stab = hasAdaptability ? 2.0 : 1.5;
+      if (teraActive && state.attacker.isTeraStellar) {
+        stab = hasOriginalStab ? (hasAdaptability ? 2.25 : 2.0) : 1.2;
+      } else if (teraActive && teraType == effectiveType) {
+        stab = hasOriginalStab
+            ? (hasAdaptability ? 2.25 : 2.0)
+            : (hasAdaptability ? 2.0 : 1.5);
+      } else if (hasOriginalStab) {
+        stab = hasAdaptability ? 2.0 : 1.5;
+      } else {
+        stab = 1.0;
+      }
     }
     if (stab != 1.0) {
       applied.add(
@@ -390,22 +425,29 @@ class ModifierPipeline {
     }
 
     // ── 7. Type Effectiveness ────────────────────────────────────────────────
-    final type1 = state.defender.types.first;
-    final type2 = state.defender.types.length > 1
-        ? state.defender.types[1]
-        : null;
-    double effectiveness = CombatUtils.getTypeEffectiveness(
-      effectiveType,
-      type1,
-      type2,
-      attackerAbility: state.attacker.ability,
-      defenderAbility: state.defender.ability,
-      defenderHeldItem: state.defender.heldItem,
-      moveName: state.move.name,
-      defenderTeraActive:
-          !state.ruleset.isChampions && state.defender.teraActive,
-      defenderTeraType: state.defender.teraType,
-    );
+    double effectiveness;
+    if (sandbox != null) {
+      // Typed by hand in the sandbox. Priority blocks and Protect below can
+      // still force this to zero, exactly as they do for a derived value.
+      effectiveness = sandbox.effectiveness;
+    } else {
+      final type1 = state.defender.types.first;
+      final type2 = state.defender.types.length > 1
+          ? state.defender.types[1]
+          : null;
+      effectiveness = CombatUtils.getTypeEffectiveness(
+        effectiveType,
+        type1,
+        type2,
+        attackerAbility: state.attacker.ability,
+        defenderAbility: state.defender.ability,
+        defenderHeldItem: state.defender.heldItem,
+        moveName: state.move.name,
+        defenderTeraActive:
+            !state.ruleset.isChampions && state.defender.teraActive,
+        defenderTeraType: state.defender.teraType,
+      );
+    }
 
     final breaksProtection = CombatUtils.breaksProtect(state.move.name);
     final unseenFistProtectionHit =
@@ -788,6 +830,7 @@ class ModifierPipeline {
       finalModifiers: finalModifiers,
       appliedModifiers: applied,
       warnings: warnings,
+      priorityBlockReason: priorityBlockReason,
     );
   }
 }
