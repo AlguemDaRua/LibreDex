@@ -177,34 +177,44 @@ class _RandomizerSettingsSheetState
                             : const Color(0xFFE2E8F0),
                       ),
                     ),
-                    child: SwitchListTile(
-                      value: _instantRollOnTap,
-                      activeTrackColor: AppTheme.pokemonRed,
+                    child: Material(
+                      // The Container above paints a background; without
+                      // a Material here the tile's ink splashes and
+                      // selected colour are hidden behind it.
+                      color: Colors.transparent,
+                      clipBehavior: Clip.antiAlias,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      title: Text(
-                        'Instant Roll on Tap',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: primaryColor,
+                      child: SwitchListTile(
+                        value: _instantRollOnTap,
+                        activeTrackColor: AppTheme.pokemonRed,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
                         ),
+                        title: Text(
+                          'Instant Roll on Tap',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: primaryColor,
+                          ),
+                        ),
+                        subtitle: const Text(
+                          'Bypass parameter sheet on single tap and roll immediately',
+                          style: TextStyle(fontSize: 11, color: Colors.grey),
+                        ),
+                        secondary: Icon(
+                          Icons.bolt_rounded,
+                          color: _instantRollOnTap
+                              ? AppTheme.pokemonRed
+                              : Colors.grey,
+                        ),
+                        onChanged: (val) {
+                          HapticFeedback.selectionClick();
+                          setState(() => _instantRollOnTap = val);
+                        },
                       ),
-                      subtitle: const Text(
-                        'Bypass parameter sheet on single tap and roll immediately',
-                        style: TextStyle(fontSize: 11, color: Colors.grey),
-                      ),
-                      secondary: Icon(
-                        Icons.bolt_rounded,
-                        color: _instantRollOnTap
-                            ? AppTheme.pokemonRed
-                            : Colors.grey,
-                      ),
-                      onChanged: (val) {
-                        HapticFeedback.selectionClick();
-                        setState(() => _instantRollOnTap = val);
-                      },
                     ),
                   ),
 

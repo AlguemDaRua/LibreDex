@@ -2655,135 +2655,145 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                                     : const Color(0xFFE5E7EB),
                               ),
                             ),
-                            child: Column(
-                              children: [
-                                SwitchListTile(
-                                  contentPadding: EdgeInsets.zero,
-                                  title: Row(
-                                    children: [
-                                      const Text(
-                                        '💎 Terastallize (Tera Active)',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                      if (isTeraActive) ...[
-                                        const SizedBox(width: 8),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 6,
-                                            vertical: 2,
+                            child: Material(
+                              // The Container above paints a background;
+                              // without a Material here the tile's ink
+                              // splashes and selected colour are hidden.
+                              color: Colors.transparent,
+                              clipBehavior: Clip.antiAlias,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Column(
+                                children: [
+                                  SwitchListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    title: Row(
+                                      children: [
+                                        const Text(
+                                          '💎 Terastallize (Tera Active)',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 13,
                                           ),
-                                          decoration: BoxDecoration(
-                                            color:
-                                                (CombatUtils.typeColors[teraType
-                                                            .toLowerCase()] ??
-                                                        Colors.purple)
-                                                    .withValues(alpha: 0.2),
-                                            borderRadius: BorderRadius.circular(
-                                              4,
+                                        ),
+                                        if (isTeraActive) ...[
+                                          const SizedBox(width: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color:
+                                                  (CombatUtils.typeColors[teraType
+                                                              .toLowerCase()] ??
+                                                          Colors.purple)
+                                                      .withValues(alpha: 0.2),
+                                              borderRadius: BorderRadius.circular(
+                                                4,
+                                              ),
+                                            ),
+                                            child: Text(
+                                              teraType.toUpperCase(),
+                                              style: TextStyle(
+                                                fontSize: 9,
+                                                fontWeight: FontWeight.bold,
+                                                color:
+                                                    CombatUtils
+                                                        .typeColors[teraType
+                                                        .toLowerCase()] ??
+                                                    Colors.purple,
+                                              ),
                                             ),
                                           ),
-                                          child: Text(
-                                            teraType.toUpperCase(),
-                                            style: TextStyle(
-                                              fontSize: 9,
-                                              fontWeight: FontWeight.bold,
-                                              color:
-                                                  CombatUtils
-                                                      .typeColors[teraType
-                                                      .toLowerCase()] ??
-                                                  Colors.purple,
+                                        ],
+                                      ],
+                                    ),
+                                    subtitle: const Text(
+                                      'Applies Tera STAB (Attacker) or pure Tera typing (Defender)',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                    value: isTeraActive,
+                                    activeThumbColor: AppTheme.pokemonRed,
+                                    onChanged: (val) {
+                                      if (isAttacker) {
+                                        vm.toggleAttackerTera(val);
+                                      } else {
+                                        vm.toggleDefenderTera(val);
+                                      }
+                                    },
+                                  ),
+                                  if (isTeraActive) ...[
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        const Text(
+                                          'Tera Type: ',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: isDark
+                                                  ? const Color(0xFF1E1E1E)
+                                                  : Colors.white,
+                                              borderRadius: BorderRadius.circular(
+                                                8,
+                                              ),
+                                            ),
+                                            child: DropdownButtonHideUnderline(
+                                              child: DropdownButton<String>(
+                                                value:
+                                                    CombatUtils.allTypes.contains(
+                                                      teraType.toLowerCase(),
+                                                    )
+                                                    ? teraType.toLowerCase()
+                                                    : CombatUtils.allTypes.first,
+                                                isExpanded: true,
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: primaryColor,
+                                                  fontSize: 12,
+                                                ),
+                                                items: CombatUtils.allTypes
+                                                    .map(
+                                                      (t) => DropdownMenuItem(
+                                                        value: t,
+                                                        child: Text(
+                                                          t.toUpperCase(),
+                                                        ),
+                                                      ),
+                                                    )
+                                                    .toList(),
+                                                onChanged: (t) {
+                                                  if (t != null) {
+                                                    if (isAttacker) {
+                                                      vm.setAttackerTeraType(t);
+                                                    } else {
+                                                      vm.setDefenderTeraType(t);
+                                                    }
+                                                  }
+                                                },
+                                              ),
                                             ),
                                           ),
                                         ),
                                       ],
-                                    ],
-                                  ),
-                                  subtitle: const Text(
-                                    'Applies Tera STAB (Attacker) or pure Tera typing (Defender)',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: Colors.grey,
                                     ),
-                                  ),
-                                  value: isTeraActive,
-                                  activeThumbColor: AppTheme.pokemonRed,
-                                  onChanged: (val) {
-                                    if (isAttacker) {
-                                      vm.toggleAttackerTera(val);
-                                    } else {
-                                      vm.toggleDefenderTera(val);
-                                    }
-                                  },
-                                ),
-                                if (isTeraActive) ...[
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      const Text(
-                                        'Tera Type: ',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: isDark
-                                                ? const Color(0xFF1E1E1E)
-                                                : Colors.white,
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                          ),
-                                          child: DropdownButtonHideUnderline(
-                                            child: DropdownButton<String>(
-                                              value:
-                                                  CombatUtils.allTypes.contains(
-                                                    teraType.toLowerCase(),
-                                                  )
-                                                  ? teraType.toLowerCase()
-                                                  : CombatUtils.allTypes.first,
-                                              isExpanded: true,
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                color: primaryColor,
-                                                fontSize: 12,
-                                              ),
-                                              items: CombatUtils.allTypes
-                                                  .map(
-                                                    (t) => DropdownMenuItem(
-                                                      value: t,
-                                                      child: Text(
-                                                        t.toUpperCase(),
-                                                      ),
-                                                    ),
-                                                  )
-                                                  .toList(),
-                                              onChanged: (t) {
-                                                if (t != null) {
-                                                  if (isAttacker) {
-                                                    vm.setAttackerTeraType(t);
-                                                  } else {
-                                                    vm.setDefenderTeraType(t);
-                                                  }
-                                                }
-                                              },
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                  ],
                                 ],
-                              ],
+                              ),
                             ),
                           ),
                           const SizedBox(height: 12),
