@@ -411,6 +411,56 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
       if (codeUnit == query.codeUnitAt(index)) index++;
       if (index == query.length) return true;
     }
+
+  /// How well [pokemon] matches [query]. Lower is better.
+  ///
+  /// Without ranking, every match is equal and dex order decides what the user
+  /// sees first — so typing "gar" surfaces Magikarp and Graveler (subsequence
+  /// matches) above Garchomp. That reads as "search only works once you have
+  /// typed the whole name".
+  int _searchRank(Pokemon pokemon, String query) {
+    if (query.isEmpty) return 0;
+    final name = pokemon.name.toLowerCase();
+    final form = pokemon.form.toLowerCase();
+    final type1 = pokemon.type1.toLowerCase();
+    final type2 = pokemon.type2?.toLowerCase() ?? '';
+    final dexNum =
+        pokemon.nationalDexNumber > 0 ? pokemon.nationalDexNumber : pokemon.id;
+    final dex = dexNum.toString();
+
+    if (name == query) return 0;
+    if (name.startsWith(query)) return 1;
+    if (name.split('-').any((part) => part.startsWith(query))) return 2;
+    if (name.contains(query)) return 3;
+    if (form.contains(query)) return 4;
+    if (query == dex || query == dex.padLeft(3, '0')) return 5;
+    if (type1.contains(query) || type2.contains(query)) return 6;
+
+    // Order-free tokens ("floette eternal") still beat a bare subsequence.
+    final tokens = query
+        .split(RegExp(r'\s+'))
+        .where((t) => t.isNotEmpty)
+        .toList();
+    if (tokens.length >= 2 && tokens.every('$name $form'.contains)) return 7;
+
+    // Everything else — subsequence hits, Champions aliases, regulation
+    // aliases — shares the last band and falls back to dex order. It can
+    // therefore never outrank a real name match.
+    return 8;
+  }
+
+  /// Best rank across a species' forms, so a group is placed by its strongest
+  /// match rather than whichever form happens to be first.
+  int _groupSearchRank(List<Pokemon> forms, String query) {
+    if (forms.isEmpty) return 8;
+    var best = 8;
+    for (final form in forms) {
+      final rank = _searchRank(form, query);
+      if (rank < best) best = rank;
+    }
+    return best;
+  }
+
     return false;
   }
 
@@ -798,6 +848,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                     groupedMap.putIfAbsent(dexNum, () => []).add(p);
                   }
 
+                  final searchQuery = _searchQuery.trim().toLowerCase();
                   final List<int> sortedKeys = groupedMap.keys.toList();
                   sortedKeys.sort((a, b) {
                     final listA = groupedMap[a];
@@ -806,6 +857,13 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                     if (listB == null || listB.isEmpty) return -1;
                     final pA = listA.first;
                     final pB = listB.first;
+                    // While searching on the default sort, relevance wins: a
+                    // subsequence match must never bury the name being typed.
+                    if (searchQuery.isNotEmpty && _sortOption == 'id_asc') {
+                      final rankA = _groupSearchRank(listA, searchQuery);
+                      final rankB = _groupSearchRank(listB, searchQuery);
+                      if (rankA != rankB) return rankA.compareTo(rankB);
+                    }
                     switch (_sortOption) {
                       case 'id_desc':
                         return b.compareTo(a);

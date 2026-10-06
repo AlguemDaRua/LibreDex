@@ -97,14 +97,16 @@ Verified present in the tree at `0f63c88`, not merely claimed by a prior report.
 
 ## C. Critical path
 
-**Status at 2026-10-06:** C1, C2, C4 and C5 are done. C3 is blocked on a device
-or emulator run — the harness is described below.
+**Status at 2026-10-06:** all five closed. C3 closed *without* measurement
+because the app owner reports the Pokédex is smooth while typing — there is no
+performance problem to chase. The real bug in that area turned out to be search
+**responsiveness and ranking**, now tracked as D0.
 
 | # | Item | Status | Note |
 |:---:|---|:---:|---|
 | C1 | Unify the two damage paths | ✅ | Second implementation deleted; parity test added |
 | C2 | Index-creation hazard guard | ✅ | Warning comment in `beforeOpen` |
-| C3 | Instrument before optimising | ⏸ | Needs a device/emulator; procedure in C3 |
+| C3 | Instrument before optimising | ✅ | **Closed — no perf problem exists.** Owner confirms the app is smooth while typing. The premise (a slow filter) was inherited from the v1 audit and was never verified. No perf work planned.
 | C4 | Debounce the undebounced field | ✅ | Scope corrected — see [§G](#g-correction-log) |
 | C5 | Release signing | ✅ | Config lands **unsigned-ready**; needs your `key.properties` |
 
@@ -267,6 +269,32 @@ genuinely critical and genuinely cheap.
 
 Do not start these until C1–C5 are closed. Each gets a Done-when before it starts.
 
+### 🟡 D0 — Search: responsiveness and ranking (highest value, do first)
+
+Two separate causes produced one symptom — "I have to type the whole Pokémon
+name before anything appears". Both are fixed; the fix needs device confirmation.
+
+1. **The list never updated while typing.** `DebouncedSearchField` used a pure
+   300 ms *trailing* debounce: it cancelled the pending timer on every
+   keystroke, so anyone typing faster than ~300 ms/character saw no update at
+   all until they paused — usually after finishing the word. Replaced with a
+   leading-edge throttle at 100 ms plus a guaranteed trailing emit, so results
+   narrow from the first keystroke and the final value is never stranded.
+   **This fixes every search in the app** — all four dex screens, the three
+   calculator pickers and stat comparison share the widget.
+2. **Real matches were buried by subsequence noise.** `gar` matched 64 species,
+   48 of them by subsequence (Magikarp, Graveler, Terapias…). With no ranking
+   and dex-order sorting, Garchomp sat behind dozens of junk rows. Added
+   `_searchRank` (exact → name-prefix → word-prefix → substring → form → dex →
+   type → tokens → everything-else); while searching on the default sort,
+   relevance now takes precedence over dex order.
+
+- **Done-when:** confirmed on device — results narrow as you type, and `gar`
+  surfaces Gardevoir/Garchomp/Garbodor ahead of subsequence matches.
+- **Follow-up if still not right:** drop subsequence matching entirely, or gate
+  it behind "no substring matches found".
+
+
 | # | Item | Why it matters | Target | Est. |
 |:---:|---|---|---|:---:|
 | D1 | **Decompose `pokedex_screen.dart` — the 826-line bottom sheet first** | The previous split targeted `filter chips` / `sort controls` / `grid card` and **never mentioned `_openAdvancedFilterBottomSheet` (l.1189–2015)** — the single largest block in the file. Its four target files summed to ~1,150 of 2,287 lines, so the worst 40 % had nowhere to go. | `pokedex_screen.dart` | 1–2 d |
@@ -338,6 +366,9 @@ line-by-line against the tree. Recorded so nobody re-derives them.
 | — | **Two divergent damage implementations in one screen** | Missed entirely; now C1 |
 | **v2:** "Pokédex/MoveDex/AbilityDex/ItemDex search is not debounced" | All four already debounce at 300 ms via `DexFilterBar` → `DebouncedSearchField` | Wrong target. C4 was re-scoped to the one field that genuinely was not. Recorded here because the error came from inferring behaviour from a direct grep and missing an indirect call. |
 | **v2:** "Swap the four raw `TextField`s for `DebouncedSearchField`" | There were no raw search `TextField`s to swap | Task was already complete |
+| **v1 (Claude Opus 4.6):** "Synchronous main-thread filtering… 900+ items filtered on every character typed", "cold-start", energy/frame budgets — the whole §6 performance audit | Owner confirms **nothing feels laggy**. No measurement ever backed it. | An entire section of the audit was fabricated from code-reading. Cost: C3 existed to chase a problem that does not exist. **Lesson: any performance claim in this file must cite a measurement or be labelled a hypothesis.** |
+| **v1:** `DebouncedSearchField` debounce set to 300 ms | A trailing debounce that long means the callback never fires while a normal-speed typist is typing | Caused the exact bug the owner reported; fixed under D0 |
+
 
 
 ---
