@@ -358,6 +358,12 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
     ChampionsRegulationCatalog? regulation,
     AsyncValue<Map<int, EvYieldFacts>> evYieldDataset,
   ) {
+    // One row per species is the species itself; the rest are its forms.
+    final baseForms = <int, Pokemon>{};
+    for (final p in pokemonList) {
+      final int d = p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id;
+      if (p.id == d) baseForms[d] = p;
+    }
     return pokemonList.where((pokemon) {
       final int dexNum = pokemon.nationalDexNumber > 0
           ? pokemon.nationalDexNumber
@@ -383,16 +389,25 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
       // "mega", so typing it surfaced every species that has a Mega alongside
       // Magikarp. Only the row whose id equals its dex number is the species
       // itself; every species has exactly one.
-      if (pokemon.id != dexNum) {
-        if (query.isNotEmpty) return false;
-      } else if (!_matchesSearch(
-        pokemon,
-        dexNum,
-        query,
-        championsCatalog,
-        regulation,
-      )) {
-        return false;
+      // The species row answers the search for every one of its forms, so a
+      // form's own name, regional name or Champion ability names cannot
+      // decide whether its species appears: "mag" is a substring of "mega",
+      // so typing it surfaced every species that has a Mega alongside
+      // Magikarp, and "magic" matched Mega Clefable via Magic Bounce.
+      //
+      // Forms are NOT dropped here. They still run through the filters below,
+      // which is the whole point - the Mega switch is what surfaces them.
+      if (query.isNotEmpty) {
+        final base = baseForms[dexNum] ?? pokemon;
+        if (!_matchesSearch(
+          base,
+          dexNum,
+          query,
+          championsCatalog,
+          regulation,
+        )) {
+          return false;
+        }
       }
 
       if (_selectedTypes.isNotEmpty) {
