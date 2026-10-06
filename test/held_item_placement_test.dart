@@ -138,6 +138,29 @@ void main() {
     });
   });
 
+  group('modifier chaining', () {
+    test('final modifiers are chained, not rounded one at a time', () {
+      // 7 damage through Filter (3072) then a halving (2048): rounding after
+      // each gives 7 -> 5 -> 2, but the game combines both into 1536/4096
+      // and rounds once: round(7 * 1536 / 4096) = round(2.625) = 3.
+      expect(DamageMath.chainMods(const [3072, 2048]), 1536);
+    });
+
+    test('a lone modifier is itself', () {
+      expect(DamageMath.chainMods(const [5324]), 5324);
+      expect(DamageMath.chainMods(const []), 4096);
+    });
+
+    test('no-op modifiers are skipped rather than diluting the chain', () {
+      expect(DamageMath.chainMods(const [4096, 5324, 4096]), 5324);
+    });
+
+    test('terrain is 5325, distinct from the 5324 other 1.3x effects use', () {
+      expect(DamageMath.boostTerrain, 5325);
+      expect(DamageMath.boost13, 5324);
+    });
+  });
+
   group('dataset integrity', () {
     test('every item offered in the picker actually resolves', () {
       for (final item in HeldItemsData.allItems) {

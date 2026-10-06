@@ -38,6 +38,34 @@ class DamageMath {
   static const int boost15 = 6144; // 1.5x
   static const int boostHalve = 2048; // 0.5x
 
+  /// Terrain boosts are 5325, not the 5324 the other 1.3x effects use.
+  static const int boostTerrain = 5325;
+
+  /// Punching Glove is 4506, one more than the 4505 that every other 1.1x
+  /// item uses. Showdown carries the same quirk, so we match it.
+  static const int boostPunchingGlove = 4506;
+
+  /// Combines modifiers the way the games do: chain them into one value,
+  /// then round once.
+  ///
+  /// Rounding after each modifier instead compounds the error. 7 damage
+  /// through Filter (3072) then a halving (2048) rounds 7 -> 5 -> 2, but the
+  /// game chains those to 1536/4096 and gets round(2.625) = 3. Every stage
+  /// that can stack more than one modifier has to go through here.
+  static int chainMods(
+    List<int> mods, {
+    int lowerBound = 41,
+    int upperBound = 2097152,
+  }) {
+    var m = 4096;
+    for (final mod in mods) {
+      if (mod != 4096) {
+        m = (m * mod + 2048) >> 12;
+      }
+    }
+    return m.clamp(lowerBound, upperBound);
+  }
+
   /// Pokémon's `pokeRound`: ties are rounded down, rather than Dart's normal
   /// floating behaviour. Values passed here are fixed-point modifier results.
   static int pokeRound(int numerator, int denominator) {
@@ -98,6 +126,12 @@ class DamageMath {
     if (critical) base = (base * 3) ~/ 2;
 
     final stabMod = _modifierFromDouble(stab);
+    // Final modifiers are chained into one and applied once - see chainMods.
+    final finalMod = chainMods(
+      finalModifiers.map(_modifierFromDouble).toList(),
+      lowerBound: 1,
+      upperBound: 0x7fffffff,
+    );
     final effectiveHits = hits < 1 ? 1 : hits;
     final rolls = <int>[];
     for (var random = 85; random <= 100; random++) {
@@ -106,11 +140,12 @@ class DamageMath {
       // Type effectiveness is an ordinary multiplier after STAB.
       damage = (damage * effectiveness).floor();
       if (burned) damage ~/= 2;
-      for (final modifier in finalModifiers) {
-        damage = fixedModifier(damage, _modifierFromDouble(modifier));
-      }
+      if (finalMod != 4096) damage = pokeRound(damage * finalMod, 4096);
       // A damaging hit always does at least 1 after modifiers.
       damage = damage < 1 ? 1 : damage;
+      // 16-bit overflow: damage past 65535 wraps, as it does in the games.
+      // Reachable with a huge Attack against a tiny Defense.
+      if (damage > 65535) damage = damage % 65536;
       rolls.add(damage * effectiveHits);
     }
     return DamageRange(rolls);

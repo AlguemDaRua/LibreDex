@@ -1,7 +1,7 @@
-/// Comprehensive held items database for competitive Pokémon damage calculations.
-/// Each item defines its effect on attacker or defender stats.
 import 'damage_math.dart';
 
+/// Comprehensive held items database for competitive Pokémon damage calculations.
+/// Each item defines its effect on attacker or defender stats.
 class HeldItemsData {
   static const String noItem = 'None';
 
@@ -613,7 +613,7 @@ class HeldItemsData {
     }
 
     if (isPunching && item.punchingPowerMultiplier != 1.0) {
-      chain.add(_chainFromDecimal(item.punchingPowerMultiplier));
+      chain.add(DamageMath.boostPunchingGlove);
     }
 
     if (item.typeBoostType != null &&

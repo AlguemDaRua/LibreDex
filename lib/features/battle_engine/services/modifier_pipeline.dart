@@ -198,8 +198,11 @@ class ModifierPipeline {
       damageClass: state.move.damageClass,
       isPunching: state.move.isPunching,
     );
+    // Base power mods are chained together and rounded ONCE, the way the
+    // games do it - not rounded after each one. See DamageMath.chainMods.
+    final bpMods = <int>[];
     for (final mod in itemBpChain) {
-      bp = DamageMath.fixedModifier(bp, mod);
+      bpMods.add(mod);
       applied.add(
         AppliedModifier(
           name: titleCasePokemonText(state.attacker.heldItem),
@@ -223,10 +226,7 @@ class ModifierPipeline {
           state.move.type,
         );
     if (typeAbilityBpMultiplier != 1.0) {
-      bp = DamageMath.fixedModifier(
-        bp,
-        DamageMath.boost13,
-      );
+      bpMods.add(DamageMath.boost12);
       applied.add(
         AppliedModifier(
           name: '${titleCasePokemonText(attackerAbility)} (Type Power)',
@@ -242,10 +242,7 @@ class ModifierPipeline {
       _ => 1.0,
     };
     if (terrainBpMultiplier != 1.0) {
-      bp = DamageMath.fixedModifier(
-        bp,
-        DamageMath.boost13,
-      );
+      bpMods.add(DamageMath.boostTerrain);
       applied.add(
         AppliedModifier(
           name: '${titleCasePokemonText(state.field.terrain)} Terrain',
@@ -257,7 +254,7 @@ class ModifierPipeline {
 
     // Ability BP modifiers
     if (attackerAbility == 'technician' && bp <= 60 && bp > 0) {
-      bp = DamageMath.fixedModifier(bp, DamageMath.boost15);
+      bpMods.add(DamageMath.boost15);
       applied.add(
         const AppliedModifier(
           name: 'Technician',
@@ -266,7 +263,7 @@ class ModifierPipeline {
         ),
       );
     } else if (attackerAbility == 'sharpness' && isSlicing) {
-      bp = DamageMath.fixedModifier(bp, DamageMath.boost15);
+      bpMods.add(DamageMath.boost15);
       applied.add(
         const AppliedModifier(
           name: 'Sharpness',
@@ -275,7 +272,7 @@ class ModifierPipeline {
         ),
       );
     } else if (attackerAbility == 'strong jaw' && isBiting) {
-      bp = DamageMath.fixedModifier(bp, DamageMath.boost15);
+      bpMods.add(DamageMath.boost15);
       applied.add(
         const AppliedModifier(
           name: 'Strong Jaw',
@@ -284,7 +281,7 @@ class ModifierPipeline {
         ),
       );
     } else if (attackerAbility == 'mega launcher' && isPulse) {
-      bp = DamageMath.fixedModifier(bp, DamageMath.boost15);
+      bpMods.add(DamageMath.boost15);
       applied.add(
         const AppliedModifier(
           name: 'Mega Launcher',
@@ -293,7 +290,7 @@ class ModifierPipeline {
         ),
       );
     } else if (attackerAbility == 'iron fist' && isPunching) {
-      bp = DamageMath.fixedModifier(bp, DamageMath.boost12);
+      bpMods.add(DamageMath.boost12);
       applied.add(
         const AppliedModifier(
           name: 'Iron Fist',
@@ -302,7 +299,7 @@ class ModifierPipeline {
         ),
       );
     } else if (attackerAbility == 'reckless' && isRecoil) {
-      bp = DamageMath.fixedModifier(bp, DamageMath.boost12);
+      bpMods.add(DamageMath.boost12);
       applied.add(
         const AppliedModifier(
           name: 'Reckless',
@@ -314,6 +311,18 @@ class ModifierPipeline {
 
     // Punching Glove is handled by HeldItemsData.getBasePowerChain above. It
     // used to be applied here as well, which stacked it to 1.21x.
+    if (bpMods.isNotEmpty) {
+      bp = DamageMath.fixedModifier(
+        bp,
+        DamageMath.chainMods(bpMods),
+      );
+      // Base power never falls below 1, however hard it gets scaled down.
+      // Without this a heavily reduced move computes 0 base power, and every
+      // roll collapses to the 1-damage floor instead of scaling properly.
+      // It also wraps at 16 bits, which a boosted move can reach.
+      if (bp < 1) bp = 1;
+      if (bp > 65535) bp = bp % 65536;
+    }
 
     // ── 4. Effective Attack & Defense Stats ──────────────────────────────────
     int atkVal;
