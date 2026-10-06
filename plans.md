@@ -1,11 +1,14 @@
 # LibreDex — Roadmap
 
-**Owner:** @AlguemDaRua · **Last verified:** 2026-10-06 · **Against commit:** `0f63c88`
-**Superseded audits:** [`docs/ARCHIVE.md`](docs/ARCHIVE.md) (frozen — read only for history)
+**Owner:** @AlguemDaRua · **Last verified:** 2026-10-06 · **Against commit:** `4d58f1f`
+**Reference docs:** [`docs/reference.md`](docs/reference.md) — architecture, data, game support, testing, release
 
-This is the single living plan for LibreDex. Everything open lives here; everything
-retired lives in the archive. If a number in this file disagrees with the code, the
-code wins — re-run the commands in [§H](#h-measurement-appendix) and correct this file.
+This is the single living plan for LibreDex. Everything is either **closed** with
+evidence or **explicitly deferred** with a reason and a revisit condition — nothing
+sits in an ambiguous state.
+
+If a number in this file disagrees with the code, the code wins — re-run
+[§H](#h-measurement-appendix) and correct this file.
 
 ---
 
@@ -13,578 +16,309 @@ code wins — re-run the commands in [§H](#h-measurement-appendix) and correct 
 
 | Status | Meaning |
 |:---:|---|
-| ✅ | Shipped. Verified against the tree, with evidence in [§B](#b-completed). |
-| 🔴 | **Critical path.** Start here; these five are ordered and each de-risks the next. |
-| 🟡 | Next. Do not start before the critical path is closed. |
-| 🔵 | Later. Real, deliberate, undated. |
-| ⛔ | **Not doing.** Deferred *on purpose*, with the reason recorded. See [§F](#f-not-doing). |
+| ✅ | **Closed.** Verified against the tree, with evidence in [§B](#b-completed). |
+| ⛔ | **Not doing.** Deferred *on purpose*, reason recorded, revisit condition stated. |
 
-**One rule:** an item is not ready to start until it has a **Done-when** that a
-machine can check. An effort estimate without a Done-when is a wish.
+**Every item in this file carries one of those two marks.** There is no "in progress"
+bucket on purpose: an item that is half-done is an item that will be rediscovered
+half-undone three audits from now. Work that was started and deliberately stopped is
+recorded under [§F](#f-not-doing) with what was learned.
+
+**One rule:** an item is not ready to start until it has a **Done-when** that a machine
+can check. An effort estimate without a Done-when is a wish.
 
 **Two anti-patterns this file is designed to prevent:**
 
 1. *Report accumulation.* The God Screens survived two full audit cycles carrying the
    same recommendation ("split them") without ever getting a first commit. That is the
-   signature of a task too large to start, not of a task needing more detail. Every
-   open item below is therefore scoped so its **first commit ships in under a day** —
-   including the two large refactors, which are sequenced block-by-block rather than
-   as single monolithic changes.
-2. *Symptom-as-goal.* "227 `setState` calls" is not a defect — `setState` for a
-   `TextEditingController` is correct. Do not let a count in this file become a target.
+   signature of a task too large to start, not of a task needing more detail.
+2. *Symptom-as-goal.* "229 `setState` calls" is not a defect — `setState` for a
+   `TextEditingController` is correct. Counts in [§A](#a-measurement-basis) are context,
+   never targets.
 
 ---
 
 ## A. Measurement basis
 
-Measured at `0f63c88`. Re-derive with [§H](#h-measurement-appendix) before trusting.
+Measured at `4d58f1f`. Re-derive with [§H](#h-measurement-appendix) before trusting.
 
-| Metric | Value |
-|---|---|
-| Dart files in `lib/` | 118 |
-| Lines in `lib/` | 46,349 |
-| Of which generated (`.g.dart`) | 8,530 |
-| Test files / lines | 18 / 3,612 |
-| Test-to-source ratio | 1 : 12.8 |
-| Feature modules | 13 |
-| DB tables / explicit indexes | 5 / 17 (all created in `beforeOpen`) |
-| Bundled JSON assets | 12 files, 5.8 MB (`pokemon_moves.json` alone = 2.9 MB) |
-| God Screens | 3 files, 7,202 lines, **15.5 %** of `lib/` |
+| Metric | Value | Δ vs `0f63c88` |
+|---|---|---|
+| Dart files in `lib/` | 122 | +4 |
+| Lines in `lib/` | 47,390 | +1,041 |
+| Of which generated (`.g.dart`) | 8,530 | — |
+| Test files / lines | 26 / 5,635 | +8 / +2,023 |
+| Test declarations | 260 | +~100 |
+| Test-to-source ratio | 1 : 8.4 | was 1 : 12.8 |
+| Feature modules | 13 | — |
+| DB tables | 5 (indexes created in `beforeOpen`) | — |
+| Bundled JSON assets | 12 files, 5.7 MB (`pokemon_moves.json` alone = 2.9 MB) | — |
+| God Screens | 3 files, 7,093 lines, **15.0 %** of `lib/` | 7,202 / 15.5 % |
+
+**God Screens** are `damage_calculator_screen.dart` (3,461), `pokedex_screen.dart`
+(2,289) and `movedex_screen.dart` (1,343). The calculator shrank by 111 lines when the
+duplicate damage implementation was deleted rather than moved.
 
 **Health signals**
 
 | Signal | Count | Reading |
 |---|---|:---|
-| `Semantics` annotations | 7 | Serious a11y gap |
-| `catch (_)` silent swallows | 24 | Serious |
-| `setState` calls | 225 | Not inherently bad — see §0 |
-| `late` fields | 117 | Moderate |
-| `Color(0x…)` literals | 564 | Cosmetic / maintainability |
+| `Semantics` annotations | 9 | Still a real a11y gap — see [§F](#f-not-doing) |
+| `catch (_)` silent swallows | 23 | Several are user-visible wrong-answer bugs |
+| `setState` calls | 229 | Not inherently bad — see §0 |
+| `late` fields | 119 | Moderate |
+| `Color(0x…)` literals | 569 | Cosmetic / maintainability |
 | `ValueKey` in list builders | 1 | Second-order perf |
 | `RepaintBoundary` | 5 | Second-order perf |
 | `precacheImage` | 0 | Second-order perf |
-| `SelectionArea` | 0 | Real, cheap a11y win |
-| `Navigator.push` | **11** | See [§G](#g-correction-log) |
-| `ref.read` / `ref.watch` | 52 / 56 | Healthy — see §0 |
+| `SelectionArea` | 0 | Attempted and **removed** — it crashed. See [§F](#f-not-doing) |
+| `Navigator.push` | 11 | See [§G](#g-correction-log) |
+| `ref.read` / `ref.watch` | 52 / 57 | Healthy |
 | View/widget files importing `app_database.dart` | 18 (34 repo-wide) | Layering drift |
 
 ---
 
 ## B. Completed
 
-Verified present in the tree at `0f63c88`, not merely claimed by a prior report.
+Verified present in the tree at `4d58f1f`, with `flutter analyze` clean and
+`flutter test` passing (260 tests).
+
+### B1. Damage calculation and battle engine
 
 | ✅ | Item | Evidence |
 |:---:|---|---|
-| ✅ | Navigation redundancy removed | `app_drawer.dart` and `navigation_style_provider.dart` are gone |
-| ✅ | Single source of truth for destinations | `AppSection` enum in `lib/core/navigation/app_sections.dart` |
-| ✅ | Adaptive shell | `home_screen.dart:121` — `NavigationRail` ≥ 700 dp, `NavigationBar` below; `FeatureHubSheet` is the only overflow |
-| ✅ | Champions rule accuracy (65 → 66 SP) | `ChampionsRules.totalStatPoints = 66`; asserted at `champions_ruleset_test.dart:143` |
-| ✅ | Legends: Z-A — Mega Dimension | 49 Mega forms, IDs 10278–10326, confirmed in `forms_extra.json` |
-| ✅ | Air Balloon immunity | Threaded through `combat_utils.dart:285` (grounding), `:828`, `:979` |
-| ✅ | Regulation M-C held items | `champions_regulation_mc.json` — 151 items / 18 new |
-| ✅ | **Test regression in `champions_regulation_test.dart`** | Already asserting `hasLength(151)` / `hasLength(18)` (lines 91–92). This was the #1 P0 of the previous plan; it is resolved. |
-| ✅ | CI pipeline | Java 17 + Gradle cache, Flutter cache, Python 3.12, format gate, `analyze --fatal-infos`, 5 data validators, `flutter test --coverage`, debug APK |
-| ✅ | Workflow protection | `.github/CODEOWNERS` requires @AlguemDaRua on `.github/**` |
-| ✅ | **Two damage implementations unified** | Raw sandbox now resolves through `SandboxDamageEngine` → the shared `ModifierPipeline`. The hand-rolled ~155-line copy inside `_buildRawSandboxTab` is gone. |
-| ✅ | Sandbox gains the mechanics it was missing | Aurora Veil, Multiscale/Shadow Shield, Filter/Solid Rock/Prism Armor, Ice Scales/Thick Fat/Purifying Salt, Tinted Lens, Expert Belt, Muscle Band/Wise Glasses, Life Orb and type gems, Weather Ball/Terrain Pulse, Technician/Sharpness/Iron Fist and friends |
-| ✅ | Sandbox/duel parity test | `test/sandbox_damage_parity_test.dart` — identical rolls across a weather × terrain × screen × crit matrix plus items/abilities/doubles |
-| ✅ | Index-creation hazard guarded | `app_database.dart` `beforeOpen` carries a do-not-move warning |
-| ✅ | Ability-compatibility search debounced | `pokedex_screen.dart` uses the existing `DebouncedQuery` |
-| ✅ | **Release signing configured** | `build.gradle.kts` signs from `android/key.properties` when present. **Action needed: create `key.properties` + keystore (git-ignored) before distributing.** |
+| ✅ | **Two damage implementations unified** | `SandboxDamageEngine` resolves through the shared `ModifierPipeline`. The ~155-line hand-rolled copy in `_buildRawSandboxTab` is gone. |
+| ✅ | **Showdown parity: chained modifiers round once** | `DamageMath.chainMods` accumulates `M = (M * mod + 2048) >> 12` and clamps once — not per step. Previously each modifier rounded independently. |
+| ✅ | **Showdown parity: overflow wrapping** | 16-bit and 32-bit wrapping at the same points as the game (`OF16` / `OF32`). |
+| ✅ | **Exact 4096 fractions** | `damage_math.dart` uses `boost11 = 4505`, `boost12 = 4915`, `boost13 = 5324`, `boost15 = 6144`, `boostTerrain = 5325`, `boostPunchingGlove = 4506`. `_modifierFromDouble` maps the common decimals to those exact values, so the pipeline's `1.2` becomes `4915`, not `1.2 * 4096`. |
+| ✅ | **Base-power bounds** | Base power clamped `(41, 2097152)`; attack and defense `(410, 131072)` — matching `gen789.ts`. |
+| ✅ | **Base-power mods apply before `getBaseDamage`** | Found by the parity test: the Showdown *reference* applied them after. Fixed in `e94d50e`. |
+| ✅ | **Move-power items moved to base power** | Muscle Band / Wise Glasses / Punching Glove were being applied to final damage. Now `physicalPowerMultiplier`, `specialPowerMultiplier`, `punchingPowerMultiplier` on `HeldItem`, applied at the base-power stage. |
+| ✅ | **Expert Belt is a conditional final modifier** | `modifier_pipeline.dart:727` — `effectiveness > 1.0` → `1.2`, applied in the final chain, not base power. |
+| ✅ | **Held items no longer double-count on the sandbox path** | Fixed in `389b762`. |
+| ✅ | Parity tests over real Gen 9 matchups | `test/damage_showdown_parity_test.dart` (164 lines), `test/sandbox_damage_parity_test.dart` (424 lines). |
+| ✅ | Held-item placement pinned | `test/held_item_placement_test.dart` (203 lines). |
+| ✅ | Sandbox gained missing mechanics | Aurora Veil, Multiscale/Shadow Shield, Filter/Solid Rock/Prism Armor, Ice Scales/Thick Fat/Purifying Salt, Tinted Lens, Expert Belt, Muscle Band/Wise Glasses, Life Orb and type gems, Weather Ball/Terrain Pulse, Technician/Sharpness/Iron Fist and friends. |
+| ✅ | Air Balloon immunity | Threaded through `combat_utils.dart` (grounding) into `getTypeEffectiveness`. |
+| ✅ | Cosmetic-form filter shared by all three pickers | `lib/core/utils/cosmetic_forms.dart`, used by `pokemon_picker_dialog.dart`, `stat_comparison_screen.dart`, `team_builder_screen.dart`. |
+
+### B2. Pokédex search
+
+The single largest user-visible improvement this cycle. Documented in full because the
+reasoning is easy to lose.
+
+| ✅ | Item | Evidence |
+|:---:|---|---|
+| ✅ | **Results appear while typing** | `DebouncedSearchField` used a pure 300 ms *trailing* debounce, which cancelled on every keystroke — a normal-speed typist saw nothing until they paused. Replaced with a leading-edge throttle at 100 ms plus a guaranteed trailing emit. Fixes every search in the app: all four dex screens, three calculator pickers, stat comparison. |
+| ✅ | **Real matches rank above subsequence noise** | `PokemonSearch.rank`: exact → name-prefix → word-prefix → substring → form → dex → type → tokens → subsequence. While searching on the default sort, relevance outranks dex order. |
+| ✅ | **Search is answered by the species, never its forms** | `pokedex_screen.dart` — the row whose `id` equals its dex number answers the search for every row of that species. Every one of the 1,025 species has exactly one such row. |
+| ✅ | **Groups rebuilt from the full list** | The filtered list carries only the species row while searching, and the card passes its group to the detail page — so groups are rebuilt from `pokemonList`. Without this, filtering silently stripped a species' forms. |
+| ✅ | **Mega Evolution filter** | 87 species match. Tests the `form` field for classic Megas and the overlay flag for Legends: Z-A Megas — deliberately **not** the name, because Meganium and Yanmega contain "mega" but are not Mega Evolutions. |
+| ✅ | **`N FORMS` badge** | 224 of 1,025 species. The count includes the species' own row (Charizard reads `4 FORMS`, Pikachu `17`), which is the Pokédex convention. Sits in the existing `Wrap` with the type and M-C badges. |
+| ✅ | Species categories are data-driven | Replaced ~130 lines of hardcoded Dex IDs and name prefixes. |
+| ✅ | `_loadRelationsData` no longer swallows every failure | Wrapped in `catch (_) {}`; a failure silently returned zero results for the hidden-ability filter. |
+| ✅ | One card per species, base form only | Card picks `form == 'normal'` explicitly rather than relying on `group.first`. |
+| ✅ | Search extracted into a testable utility | `lib/features/pokedex/utils/pokemon_search.dart`. It lived in the screen's `State` object and could not be tested at all — which is how the ranking bug survived. |
+| ✅ | Ability-compatibility search debounced | Uses the existing `DebouncedQuery`. |
+
+**Measured effect on the bundled data:**
+
+| Query | Before | After |
+|---|---|---|
+| `mag` | 45 species | **17**, all genuinely Mag-named |
+| `gar` | 74 | **25** (Garchomp still 2nd) |
+| `pika` | 2 | **1** |
+| `clef` + Mega filter | *broken — 0* | **Clefable** |
+
+The `mag` bug had two causes, both from the same root: `mag` is a substring of `mega`,
+so every classic Mega form matched and dragged its species in; and Champion ability
+names were searchable, so `magic` matched Mega Clefable through **Magic Bounce**.
+
+**Ordering rule:** match quality first, then dex number within a tier. Dex order was
+kept over alphabetical deliberately — for `char`, dex gives Charmander, Charmeleon,
+Charizard (evolution line adjacent); alphabetical gives Charcadet, Charizard,
+Charjabug, Charmander, Charmeleon. Dex is also canonical Pokédex order.
+
+Consequence worth knowing: for `gar`, Gardevoir, Garchomp, Garbodor and Garganacl are
+all *equally good* prefix matches, so Garchomp can legitimately be 2nd. No ordering rule
+can infer which one the user meant — that is not a bug.
+
+### B3. Randomizer
+
+| ✅ | Item | Evidence |
+|:---:|---|---|
+| ✅ | **Roll a team of six** | `RandomizerSettings.rollCount` (1 or 6), chosen from the existing settings sheet. Picks are **without replacement**, so the six are distinct; a pool smaller than six yields what it has. Pool size is floored at 1 before clamping because `clamp()` throws when the lower bound exceeds the upper. |
+| ✅ | Team reveal | 3-across grid of tappable cards; header reads `TEAM ACQUIRED!`; the single-pick "VIEW POKÉMON DETAILS" button is hidden since a team is read card by card. The slot machine still spins and lands on the first pick. |
+| ✅ | Settings persist | `rollCount` saved with the rest of the randomizer prefs. |
+| ✅ | Button tooltip follows the setting | Reads "Random Team of 6". |
+| ✅ | Two no-op test scenarios fixed | Two `sandbox_damage_parity_test.dart` scenarios named items that do not exist. `findByName` returned `null`, every multiplier fell back to 1.0, and both engines trivially agreed — **2 of 12 scenarios passed while testing nothing**. A `checkItem` guard now throws on unknown names. |
+
+### B4. Tests
+
+| ✅ | Item | Evidence |
+|:---:|---|---|
+| ✅ | **ViewModel tests** | 87 tests in `test/viewmodels/`: stat calculator (22), damage calculator (16), Pokédex search (25), stat comparison (24). |
+| ✅ | Pokédex search logic extracted so it could be tested | See B2. |
+| ✅ | Tie-break reversal in stat comparison fixed | `a4233a5` — the tie-break returned after the direction negation, so descending order reversed ties. |
+| ✅ | Four test defects fixed alongside it | Including two HP expectations that were wrong. |
+| ✅ | Form-count badge tests | `test/form_count_badge_test.dart` — label, tooltip, four-form card, single-form card. |
+| ✅ | Team-roll test | `test/random_roll_overlay_test.dart` — six of an eight-Pokémon pool, all distinct, single-pick button absent, tapping a card reports that Pokémon. |
+| ✅ | Full suite green | 260 tests, `flutter analyze` clean. |
+
+### B5. Data, provenance and infrastructure
+
+| ✅ | Item | Evidence |
+|:---:|---|---|
+| ✅ | Index-creation hazard guarded | `app_database.dart` `beforeOpen` carries a do-not-move warning. |
+| ✅ | ItemDex duplicate rows hidden | Reuses the existing alias mechanism rather than a new special case. |
+| ✅ | Navigation redundancy removed | `app_drawer.dart` and `navigation_style_provider.dart` gone. |
+| ✅ | Single source of truth for destinations | `AppSection` enum in `lib/core/navigation/app_sections.dart`. |
+| ✅ | Adaptive shell | `home_screen.dart:121` — `NavigationRail` ≥ 700 dp, `NavigationBar` below. |
+| ✅ | Champions rule accuracy | `ChampionsRules.totalStatPoints = 66`, asserted at `champions_ruleset_test.dart:143`. |
+| ✅ | Regulation M-C held items | `champions_regulation_mc.json` — 151 items / 18 new. Test asserts `hasLength(151)` / `hasLength(18)`. |
+| ✅ | **Android launcher icons restored** | `0807265` (a docs commit) deleted 22 files under `Icons/`, including every mipmap launcher asset. `AndroidManifest.xml` declares `android:icon="@mipmap/ic_launcher"`, so merging without them would have broken the Android build. Restored verbatim in `4d58f1f`. |
+| ✅ | CI pipeline | Java 17 + Gradle cache, Flutter cache, Python 3.12, format gate, `analyze --fatal-infos`, 5 data validators, `flutter test --coverage`, debug APK. |
+| ✅ | Workflow protection | `.github/CODEOWNERS` requires @AlguemDaRua on `.github/**`. |
+| ✅ | Release signing configured | `build.gradle.kts` signs from `android/key.properties` when present. **Needs your keystore before distributing** — see [§I](#i-standing-notes). |
+
+### B6. Accessibility (partial — see §F)
+
+| ✅ | Item | Evidence |
+|:---:|---|---|
+| ✅ | Labels for unlabelled buttons | `e964575` — tooltips added across the app. |
+| ✅ | Startup live region | `Semantics` block announcing app-ready state. |
+| ⛔ | App-wide text selection | Attempted via `SelectionArea` in `MaterialApp.builder`; **crashed the app**. Reverted. See [§F](#f-not-doing). |
 
 ---
 
 ## C. Critical path
 
-**Status at 2026-10-06:** all five closed. C3 closed *without* measurement
-because the app owner reports the Pokédex is smooth while typing — there is no
-performance problem to chase. The real bug in that area turned out to be search
-**responsiveness and ranking**, now tracked as D0.
+**All five closed.** C3 closed *without* measurement because the app owner reports the
+Pokédex is smooth while typing — there is no performance problem to chase. The real bug
+in that area turned out to be search **responsiveness and ranking**, now closed under B2.
 
 | # | Item | Status | Note |
 |:---:|---|:---:|---|
-| C1 | Unify the two damage paths | ✅ | Second implementation deleted; parity test added |
-| C2 | Index-creation hazard guard | ✅ | Warning comment in `beforeOpen` |
-| C3 | Instrument before optimising | ✅ | **Closed — no perf problem exists.** Owner confirms the app is smooth while typing. The premise (a slow filter) was inherited from the v1 audit and was never verified. No perf work planned.
+| C1 | Unify the two damage paths | ✅ | Second implementation deleted; parity tests added |
+| C2 | Guard the index-creation hazard | ✅ | Warning comment in `beforeOpen` |
+| C3 | Instrument before optimising | ✅ | **No perf problem exists.** Owner confirms the app is smooth while typing. The premise was inherited from the v1 audit and never verified. No perf work planned. |
 | C4 | Debounce the undebounced field | ✅ | Scope corrected — see [§G](#g-correction-log) |
-| C5 | Release signing | ✅ | Config lands **unsigned-ready**; needs your `key.properties` |
-
-Ordered. Each item de-risks the next. Do not reorder.
-
-### ✅ C1 — Unify the two damage paths in the calculator
-
-**Why:** This is the most serious defect in the codebase and it is not a size problem.
-`damage_calculator_screen.dart` contains **two different damage calculators that
-disagree**, and the plan that catalogued this file as a "God Screen" did not see it.
-
-```mermaid
-flowchart LR
-    subgraph Screen["damage_calculator_screen.dart"]
-        S["_buildRawSandboxTab<br/>l.299–1050"]
-        D["_buildDuelCalculatorTab<br/>l.1078–2198"]
-    end
-    S -->|"~155 lines of hand-rolled math<br/>inside build()"| DM["DamageMath.calculate<br/>5 assembled modifiers"]
-    D -->|"BattleEngine.calculate<br/>l.1265"| MP["ModifierPipeline<br/>~39 named modifiers"]
-    style S fill:#ff6b6b,color:#fff
-    style DM fill:#ffd93d,color:#000
-    style D fill:#51cf66,color:#fff
-    style MP fill:#51cf66,color:#fff
-```
-
-The engine path handles Aurora Veil (with screen mutual-exclusion), Multiscale, Shadow
-Shield, Filter, Solid Rock, Prism Armor, Fluffy, Ice Scales, Puppeteer, Tinted Lens,
-Expert Belt, and Weather Ball / Terrain Pulse type shifts. The sandbox path handles
-**none** of them — it hardcodes `0.5` / `2732 / 4096` for screens and `1.5` for Sniper.
-
-Two tabs, same screen, different answers, no way for a user to tell which to trust.
-
-**Why it stayed invisible:** the >90 % engine-math coverage is real, but it tests the
-*engine*. The sandbox math lives in a `build()` method, is unreachable without a widget
-test, and has **zero** coverage.
-
-**What:** Delete the parallel implementation. Make the Sandbox a thin preset that
-constructs a `BattleState` and calls `BattleEngine.calculate`, exactly as the Duel tab
-and `DamageCalculatorViewModel.calculate()` (l.356) already do.
-
-**This is not the "split into 8 files" task.** That task relocates the duplicated math
-into a tidy new file and cements it. Deleting it is a smaller change and a better one,
-and it removes roughly 500 lines without anyone deciding where to put anything.
-
-- **Done-when:** one test runs both tabs over a matrix of field conditions (weather ×
-  terrain × screens × abilities × items) and asserts identical results;
-  `grep -c "DamageMath.calculate" lib/features/calculator/views/damage_calculator_screen.dart`
-  returns `0`.
-- **Effort:** ~1 day. **Risk:** medium — needs care around the sandbox's free-form
-  inputs (manual BP / Atk / Def / STAB / effectiveness) which the engine expects as a
-  Pokémon; plan to express them as a synthetic `BattleState`.
-- **Do this before any decomposition of this file.**
+| C5 | Release signing | ✅ | Lands **unsigned-ready**; needs your `key.properties` |
 
 ---
 
-### ✅ C2 — Guard the index-creation hazard (5 minutes)
-
-**Why:** A prior recommendation ("move the 17 `CREATE INDEX` statements from
-`beforeOpen` to `onUpgrade`") would cause a silent, permanent, CI-invisible regression.
-**`onUpgrade` does not run on fresh installs.** Ship that change literally and every new
-user gets a database with no indexes at all — on the tables those 17 indexes were
-designed for.
-
-**What:** Leave the statements in `beforeOpen` (`app_database.dart:182–232`) and add a
-comment at the block stating that they must be duplicated into `onCreate` **and**
-`onUpgrade` if they are ever moved, never into `onUpgrade` alone.
-
-- **Done-when:** the comment is present and a reviewer can see it without opening git
-  history.
-- **Effort:** 5 min. **Risk:** none.
-
----
-
-### ⏸ C3 — Instrument before optimising
-
-**Why:** The previous performance section proposed `ValueKey`s, `RepaintBoundary`, and
-`precacheImage`. All real, all second-order. The actual data path is:
-
-```
-pokedexProvider  →  db.select(db.pokemonTable).watch()
-                       ↑ unfiltered, unordered, 1,351 rows
-   → build() → _getFilteredList()  →  145 lines of in-Dart predicate,
-                                       re-run on every stream emission
-```
-
-The stream is the unit of invalidation, not the row: any write to `pokemon_table`
-re-emits all 1,351 rows, which re-runs the filter, which rebuilds the grid. `ValueKey`
-does not help when every element is being handed new data anyway.
-
-**Status: blocked on a device or emulator run.** This is the one critical-path item
-that cannot be closed from a static read of the code, and the agent session that
-opened it had no Flutter toolchain or device available. The harness is below so it is
-a 30-minute job rather than a re-derivation.
-
-**What to measure** (release build, low-end Android device, Pokédex tab open):
-
-1. Stream emissions per second while idle, and per debounced keystroke — add a
-   temporary `print` in the `pokedexProvider` stream builder.
-2. `_getFilteredList` wall time at 1,351 rows — wrap it in `Stopwatch` and log on
-   every pass.
-3. Frame times while typing — `flutter run --profile`, then the DevTools
-   performance overlay, recording the worst frame over a 20-character query.
-4. Whether the stream re-emits when unrelated tables are written (favourites, team
-   slots). If it does, `watchAllPokemon` needs narrowing regardless of the filter.
-
-- **Done-when:** the four numbers are recorded in this file, and the chosen fix
-  (debounce vs. SQL pushdown vs. stream narrowing vs. `select` projection) is written
-  into D1 with the measurement that justifies it.
-- **Effort:** ~30 min on device. **Risk:** none.
-- **Do not** start D1 on the assumption that debouncing is the answer — C4 already
-  showed that assumption wrong once.
-
----
-
-
-### ✅ C4 — Debounce the one search field that was not
-
-**Why:** All four dex screens route their main search through `DexFilterBar`, which
-already wraps `DebouncedSearchField` at 300 ms. The *previous version of this plan
-claimed otherwise* — see [§G](#g-correction-log); the error was inferring from a
-direct grep for `DebouncedSearchField` and missing the indirect use.
-
-What is genuinely undebounced is narrower and worse: the **ability-compatibility
-search inside the Pokédex advanced-filter sheet**
-(`pokedex_screen.dart`, "FILTER BY ABILITY COMPATIBILITY"). Each keystroke called
-`setState`, and `_getFilteredList` then rescanned all 1,351 Pokémon, iterating each
-one's ability list and running `contains()` against both the ability **name and its
-full description text** — the most expensive per-keystroke path in the app.
-
-**Done:** that field now routes through the existing `DebouncedQuery` primitive. The
-sheet's own refresh stays immediate so typing still feels responsive; the expensive
-full-list refilter waits for the pause.
-
-- **Done-when:** ✅ `_abilityQueryDebounce` gates `_filterAbilityQuery`; typing no
-  longer triggers a filter pass per character.
-- **Effort:** ~20 min. **Risk:** low — the debounced callback is `mounted`-guarded.
-
----
-
-
-### ✅ C5 — Release signing configuration
-
-**Why:** `android/app/build.gradle.kts:36` sets release builds to
-`signingConfigs.debug`. The app cannot be distributed as-is. This is the only item
-carried over unchanged from the previous plan's critical phase, and it is still
-genuinely critical and genuinely cheap.
-
-- **Done-when:** `flutter build apk --release` produces a signed APK from a
-  git-ignored keystore referenced by `key.properties`; CI can build release without
-  secrets in the tree.
-- **Effort:** ~1 h. **Risk:** low (but irreversible if the keystore is lost — back it up).
-- **Status:** the *configuration* is done and the tree still builds without a
-  keystore (it falls back to the debug key and logs a warning, so CI is unaffected).
-  The **keystore itself is not and must never be committed** — create
-  `android/key.properties` locally before the first real release.
-
----
-
-## D. Next
-
-Do not start these until C1–C5 are closed. Each gets a Done-when before it starts.
-
-### ✅ D2 — Species categories: delete the hardcoded lists, fix the data
-
-**Done 2026-10-06.** The premise was wrong in a helpful way. The owner
-suggested the hardcoded lists existed because the API has no way to tell
-Ultra Beasts and Paradox Pokémon apart. Half right:
-
-- `isLegendary` / `isMythical` **do** come from PokéAPI
-  (`pokemon_species.csv` → `is_legendary` / `is_mythical`).
-- `isParadox` / `isUltraBeast` are **not modelled by PokéAPI at all**. They
-  exist only in the bundled `assets/data/pokemon.json` snapshot, which is a
-  checked-in file that overlay scripts patch in place — nothing regenerates
-  it from scratch, so edits there are durable.
-
-So the fix was not "move the lists to a data file"; it was **fix the data and
-delete the lists**. All four helpers are now one-liners reading the model's
-own flags (-130 lines from `pokedex_screen.dart`).
-
-Diffing the hardcoded fallbacks against the data found real bugs:
-
-| Category | Bug | Fix |
-|---|---|---|
-| Ultra Beast | fallback `dex >= 793 && dex <= 806` swept in **Necrozma, Magearna, Marshadow** — all three are Legendary/Mythical, not UBs | fallback deleted; data's 11 are correct |
-| Paradox | data was missing **Roaring Moon, Iron Valiant, Gouging Fire, Raging Bolt, Iron Boulder, Iron Crown** | 6 rows set `isParadox: true` |
-| Mythical | **Pecharunt** filed as Legendary; it is Mythical | `isLegendary: false`, `isMythical: true` |
-
-Counts are now canonical: **71 Legendary / 23 Mythical / 22 Paradox / 11 Ultra
-Beast**, with zero species disagreeing across their own forms.
-
-### ✅ D3 — `_loadRelationsData` swallowed every failure
-
-**Done 2026-10-06.** `_loadRelationsData()` pulled every ability and every
-junction row into memory on each `initState`, wrapped in `catch (_) {}`. On
-failure both maps stayed empty, so the ability filter rejected **every**
-Pokémon — the grid showed "no results" and nothing said why. A silent wrong
-answer, not a logging gap.
-
-- Errors are now logged with a stack trace and held in `_relationsError`.
-- The ability filter is gated on `_relationsLoaded`: if the data is missing the
-  filter stands down instead of returning nothing.
-- A warning strip with a **Retry** button shows when the load failed.
-
-### ✅ D4 — Calculator picker: hide forms that cannot change a result
-
-**Done 2026-10-06.** Owner's ask: the picker listed every Mimikyu (four
-interchangeable entries) and they only want "versions that matter".
-
-A form matters in a damage calculator iff it differs from its species' base
-form in **base stats, typing, or abilities**. Ability had to be part of the
-test: 10 forms have identical stats but a different ability, and those change
-damage — Meowstic-Female (Prankster), Greninja-Battle-Bond (Battle Bond),
-Rockruff-Own-Tempo, Zygarde-Power-Construct, Basculin-White-Striped,
-Toxtricity-Low-Key, two Squawkabilly plumages.
-
-Result: **82 cosmetic forms hidden**, 1302 rows → 1220. Mimikyu collapses
-4 → 1. Megas, regional variants, Rotom and Aegislash-Blade are all retained.
-
-Abilities are not on the `Pokemon` row, so `pokemonAbilityIdsProvider` loads
-the bundled `assets/data/pokemon_abilities.json` once. Until it resolves the
-picker shows everything rather than guessing — hiding a real form is worse
-than briefly showing a cosmetic one.
-
-### ✅ D4b — The same cosmetic-form filter, everywhere
-
-**Done 2026-10-06.** The calculator fix was the only one of its kind; two
-other pickers had the identical problem, showing all four Mimikyu and all
-eight Pikachu caps.
-
-- `cosmeticFormIds` + `pokemonAbilityIdsProvider` moved out of the calculator
-  widget into `lib/core/utils/cosmetic_forms.dart` so all three share one
-  definition.
-- **Team Builder** picker: cosmetic forms hidden.
-- **Stat Comparison** picker: cosmetic forms hidden; converted to
-  `ConsumerStatefulWidget` so it can read the provider.
-
-**Also found and fixed:** the Team Builder picker used a **raw `TextField`
-with `onChanged`** — the last undebounced search field in the app. Every
-keystroke called `setState` and refiltered all 1,302 rows. Swapped to
-`DebouncedSearchField`, which needed a new `autofocus` parameter to avoid
-losing the existing open-the-keyboard-immediately behaviour.
-
-### ✅ D5 — Held items: correct placement, and reachable in the UI
-
-**Done 2026-10-06.** Two separate defects, both in the component the owner
-wants 100% correct.
-
-**(a) Items were implemented but unreachable.** `ModifierPipeline` already
-handled Expert Belt, Muscle Band and Wise Glasses, hardcoded by item name —
-but none were in `HeldItemsData.allItems`, so no user could ever select them.
-The feature existed and was invisible. All three are now in the list, plus
-Punching Glove.
-
-**(b) Power items were applied at the wrong stage of the formula.**
-
-| Stage | Items |
-|---|---|
-| base power | Muscle Band, Wise Glasses, Punching Glove, type-boosting items (Charcoal, plates…) |
-| final damage | Life Orb, Expert Belt (super-effective only), resist berries |
-
-Base power sits *inside* the formula's rounding chain; a final modifier sits
-outside it. A ×1.1 on base power and a ×1.1 on final damage give **different
-damage**. Everything except Life Orb was being applied as a final modifier, so
-Charcoal and the plates had been slightly wrong all along.
-
-Fixed by adding `physicalPowerMultiplier` / `specialPowerMultiplier` /
-`punchingPowerMultiplier` to `HeldItem`, computing them in
-`HeldItemsData.getBasePowerMultiplier()`, and applying that right after base
-power resolves — so duel and sandbox share one code path.
-
-**(c) Sandbox double-counted Life Orb and type-boost items.** The sandbox path
-built its Attack stat from `getAttackMultiplier`, which folded those in, and
-then still ran the pipeline's final modifiers. Parity never caught it because
-the test's `overridesFor` builds overrides from
-`ModifierPipeline.process().effectiveAttack`, not from the production
-`sandboxOverrides()`. `getAttackMultiplier` now returns only the stat
-multiplier, and a regression test pins the invariant.
-
-**Precision — done 2026-10-06.** Base power was the last stage using
-decimals. The games never multiply by 1.1 — they multiply by 4505 and divide
-by 4096, rounding between each step. Rounding the decimal instead is off by
-one on the common values and rounds .5 the wrong way: a 95 BP move under
-Muscle Band came out **105**, the game gives **104**.
-
-`DamageMath` already had `pokeRound`/`fixedModifier` — base power just
-bypassed them. `getBasePowerChain` returns the numerators in application
-order; the pipeline applies them with `fixedModifier`. Ability and terrain
-boosts converted too. `_modifierFromDouble` snaps to the exact numerators,
-which also fixed the final-modifier path (1.3 was becoming 5325, not 5324).
-
-Found while doing this: **Punching Glove was applied twice** — once via the
-item data, once by a leftover hardcoded block in `ModifierPipeline`, giving
-1.21× instead of 1.1×. Removed. Same double-application class as the Life Orb
-bug above.
-
-### ✅ D6 — ItemDex duplicate item names
-
-**Done 2026-10-06.** `items.json` re-issues the same item under a fresh id
-across game versions, so 61 names appeared more than once — "Bike" ×2,
-"Basement Key" ×3, "DNA Splicers" ×3, "Dropped Item" ×3, most Z-Crystals ×2.
-Searching the ItemDex for "Bike" showed two identical rows.
-
-The model already had an `aliasOf` mechanism for this, but only **one** row in
-the whole dataset used it, so 60 duplicate names still showed.
-
-`_decodeItems` now picks the lowest id as canonical for each name and points
-the rest at it, reusing `aliasOf`. Duplicates vanish from ordinary browsing but
-stay reachable by id or via the aliases filter — the existing UI filter needed
-no change. 2,223 rows → 2,150 visible, zero duplicate names.
-
-
-
-**Open, low priority.** `assets/data/items.json` has 2,223 rows with **61
-duplicated names** — 'Basement Key' ×3, 'Bike' ×2, 'DNA Splicers' ×3,
-'Dropped Item' ×3, and most Z-Crystals ×2. Searching the ItemDex for 'Bike'
-shows two identical rows.
-
-Note the *calculator*'s item picker is unaffected: it uses the curated
-74-item `HeldItemsData`, not `items.json`. Moves are clean — 937 rows, zero
-duplicate names.
-
-### 🟡 D5 — Held items the dataset cannot currently express
-
-**Open, needs a decision.** Four damage-relevant items are absent from
-`held_items_data.dart`, and the current `HeldItem` model **cannot express any
-of them**:
-
-| Item | Real effect | Why the model can't do it |
-|---|---|---|
-| Expert Belt | ×1.2 **only on super-effective** hits | no effectiveness conditional |
-| Muscle Band | ×1.1 **physical move power** | only has `atkMultiplier` (Attack *stat*); BP and Attack enter the formula at different points, so they are not interchangeable |
-| Wise Glasses | ×1.1 **special move power** | same |
-| Punching Glove | ×1.1 **punching** moves, removes contact | no move-flag awareness |
-
-Adding them approximately would put **wrong numbers** into the component the
-owner wants 100% correct, so they are deliberately not added until the model
-gains the needed fields. Doing this properly means extending `HeldItem` and
-wiring the new fields into `ModifierPipeline` at the right stage
-(move-power vs final-modifier), then verifying against Showdown.
-
-**Already fixed (2026-10-06):** two scenarios in
-`sandbox_damage_parity_test.dart` named `Expert Belt` and `Muscle Band`, which
-do not exist. `findByName` returns `null`, every multiplier fell back to 1.0,
-and both engines trivially agreed — **2 of 12 scenarios passed while testing
-nothing**. Both now name real items (`Choice Band` covers the stat path,
-`Charcoal` covers the previously untested type-boost path and matches the
-Fire-type Flare Blitz the test uses), and a `checkItem` guard throws on any
-unknown name so this cannot silently recur.
-
-### 🟡 D0 — Search: responsiveness and ranking (highest value, do first)
-
-Two separate causes produced one symptom — "I have to type the whole Pokémon
-name before anything appears". Both are fixed; the fix needs device confirmation.
-
-1. **The list never updated while typing.** `DebouncedSearchField` used a pure
-   300 ms *trailing* debounce: it cancelled the pending timer on every
-   keystroke, so anyone typing faster than ~300 ms/character saw no update at
-   all until they paused — usually after finishing the word. Replaced with a
-   leading-edge throttle at 100 ms plus a guaranteed trailing emit, so results
-   narrow from the first keystroke and the final value is never stranded.
-   **This fixes every search in the app** — all four dex screens, the three
-   calculator pickers and stat comparison share the widget.
-2. **Real matches were buried by subsequence noise.** `gar` matched 64 species,
-   48 of them by subsequence (Magikarp, Graveler, Terapias…). With no ranking
-   and dex-order sorting, Garchomp sat behind dozens of junk rows. Added
-   `_searchRank` (exact → name-prefix → word-prefix → substring → form → dex →
-   type → tokens → everything-else); while searching on the default sort,
-   relevance now takes precedence over dex order.
-
-- **Done-when:** confirmed on device — results narrow as you type, and `gar`
-  surfaces Gardevoir/Garchomp/Garbodor ahead of subsequence matches.
-- **Follow-up if still not right:** drop subsequence matching entirely, or gate
-  it behind "no substring matches found".
-
-**Ordering rule (decided 2026-10-06):** results are ordered by match quality
-first — exact → name-prefix → word-prefix → substring → form → dex → type →
-token → subsequence — and **dex number within a quality tier**.
-
-Dex order was kept deliberately over alphabetical after testing both. For
-`char`, dex gives Charmander, Charmeleon, Charizard (the evolution line stays
-adjacent); alphabetical gives Charcadet, Charizard, Charjabug, Charmander,
-Charmeleon. Dex is also the canonical Pokédex order.
-
-Consequence worth knowing: for `gar`, **Gardevoir, Garchomp, Garbodor and
-Garganacl are all equally good prefix matches**, so Garchomp can legitimately
-be 2nd. No ordering rule can infer which one the user was thinking of — this
-is not hardcoding and not a bug.
-
-**Product decision (owner, 2026-10-06):** the Pokédex shows **one card per
-species, base form only** — no variants in the listing. Forms are reached from
-the Pokémon's own detail page. Implemented: the card now picks
-`form == 'normal'` explicitly (all 1025 species groups have one) instead of
-relying on `group.first` happening to be the base, and the `"N forms"` badge is
-gone. `PokemonDetailScreen(forms: group)` is unchanged, so every form is still
-one tap away.
-
-
-| # | Item | Why it matters | Target | Est. |
-|:---:|---|---|---|:---:|
-| D1 | **Decompose `pokedex_screen.dart` — the 826-line bottom sheet first** | The previous split targeted `filter chips` / `sort controls` / `grid card` and **never mentioned `_openAdvancedFilterBottomSheet` (l.1189–2015)** — the single largest block in the file. Its four target files summed to ~1,150 of 2,287 lines, so the worst 40 % had nowhere to go. | `pokedex_screen.dart` | 1–2 d |
-| D2 | **Move classification ID sets to data** | `_isLegendary` / `_isMythical` / `_isParadox` / `_isUltraBeast` (l.147–285) hardcode ~130 lines of National-Dex IDs and name prefixes in Dart. This is data wearing a code costume; it belongs in `assets/data/`, versioned alongside the other 12 JSON files. | `pokedex_screen.dart`, `assets/data/` | 3 h |
-| D3 | **Replace the in-memory relation maps** | `_loadRelationsData()` (l.109) pulls all 367 abilities **and every row of `pokemon_abilities_table`** into two `Map`s on every `initState`, to power one filter. It is wrapped in `catch (_) {}` — if it fails, the hidden-ability filter silently returns zero results. Fix the design (`JOIN` in SQL), not just the logging. | `pokedex_screen.dart` | 3 h |
-| D4 | **Feature repositories for the 18 view/widget files** | 18 files under `views/`/`widgets/` import `app_database.dart`; several run real queries (`abilitydex_screen.dart:80`, `calculator/views/damage_calculator_screen.dart:97,124`, `move_detail_screen.dart:100`). Note the distinction: importing a Drift *data class* for typing is fine; running `db.select()` in a widget is not. | `abilitydex`, `movedex`, `itemdex`, `stat_comparison`, `calculator` | 1 d |
-| D5 | **Accessibility baseline** | 7 `Semantics` in 46k lines. Start where it is cheapest and highest-traffic: `TypePill`, `StatTile`, `PokemonGridCard`, type-chart matrix cells. Add `SelectionArea` around `MaterialApp.builder` (15 min, whole-app win). | `core/widgets/`, `main.dart` | 4 h |
-| D6 | **Silent-failure audit** | 24 `catch (_)`. Triage by blast radius, not by count — D3 above is one of them and is a user-visible wrong-answer bug, not a logging gap. Add `FlutterError.onError` + `ErrorWidget.builder` in `main.dart`. | 12 files | 3 h |
-| D7 | **ViewModel unit tests** | **Done 2026-10-06.** 87 tests across four files in `test/viewmodels/`: stat calculator (22), damage calculator (16), Pokédex search (25) and stat comparison (24). The Pokédex search logic was extracted into `PokemonSearch` first - it lived in the screen's State object and could not be tested at all, which is how the ranking bug survived. | `test/viewmodels/` | done |
-| D8 | **Release-readiness hygiene** | Gradle JVM args `-Xmx8G -XX:MaxMetaspaceSize=4G` → `-Xmx4G -XX:MaxMetaspaceSize=1G` (OOMs on CI runners); `proguard-rules.pro` for Drift/SQLite3/Dio; `network_security_config.xml`. | `android/` | 2 h |
+## D. Next — all closed or explicitly deferred
+
+Every item that was on this list is now either ✅ with evidence above or ⛔ with a
+reason in [§F](#f-not-doing). Nothing remains open.
+
+| # | Item | Status |
+|:---:|---|:---:|
+| D0 | Search responsiveness and ranking | ✅ B2 |
+| D1 | Decompose `pokedex_screen.dart` | ⛔ [F1](#f-not-doing) |
+| D2 | Species categories to data | ✅ B2 |
+| D3 | `_loadRelationsData` swallowed failures | ✅ B2 |
+| D4 | Calculator picker: hide no-op cosmetic forms | ✅ B1 |
+| D4b | The same filter everywhere | ✅ B1 |
+| D5 | Held items: correct placement, reachable in UI | ✅ B1 |
+| D5b | Held items the model could not express | ✅ B1 |
+| D6 | ItemDex duplicate item names | ✅ B5 |
+| D7 | Accessibility baseline | ⛔ [F2](#f-not-doing) — partially delivered, see B6 |
+| D8 | ViewModel unit tests | ✅ B4 |
+| D9 | Silent-failure audit | ⛔ [F3](#f-not-doing) |
+| D10 | Feature repositories for the 18 view/widget files | ⛔ [F4](#f-not-doing) |
+| D11 | Release-readiness hygiene | ⛔ [F5](#f-not-doing) |
+
+**D5b deserves a note.** Four items were previously unimplementable: Expert Belt
+(conditional on super-effective), Muscle Band and Wise Glasses (move *power*, not the
+Attack *stat*), and Punching Glove (punching-only). Adding them approximately would
+have put wrong numbers into the component the owner wants 100 % correct. They are now
+all expressible — Expert Belt as a conditional final modifier, the other three through
+the new move-power fields on `HeldItem` — and all four are pinned against Showdown.
 
 ---
 
 ## E. Later
 
-Real work, deliberately undated. Pull one in when the critical path and D-block are
-green — not before.
+Real work, deliberately undated. Pull one in when a concrete need appears.
 
 | # | Item | Note |
 |:---:|---|---|
-| E1 | `go_router` / declarative routing | Only if deep linking becomes a product requirement. See [§F](#f-not-doing). |
-| E2 | SQLite FTS5 search | Only after search moves into SQL. There are currently **zero** `LIKE` queries in the codebase — search is `_isSubsequence()` over an in-memory list. FTS5 today would index a query pattern that does not exist. |
-| E3 | Localisation (i18n / ARB) | Large, mechanical, and much easier once D-block settles the UI structure. |
-| E4 | iOS support | `Icons/ios/` (22 files) and `Icons/web/` are **already staged** in the repo for this. |
-| E5 | Golden / visual regression tests | Needs a stable UI first — E5 after D1. |
-| E6 | `OfflineArtworkStore` → Riverpod provider | Currently `OfflineArtworkStore.instance` (static) with a manual `_persistQueue` chain. Worth doing when it needs to be mockable in a test. |
-| E7 | Design tokens — extract 564 `Color(0x…)` literals into `AppTheme` semantics | Cosmetic; do it opportunistically file-by-file rather than as a campaign. |
-| E8 | Integration test (`integration_test/app_flow_test.dart`) | Highest-value test investment after D7. |
-| E9 | Binary asset compression (`pokemon_moves.json`, 2.9 MB) | Prefer `--split-per-abi` + App Bundle first; measure before adding CBOR complexity to the seed path. |
+| E1 | `go_router` / declarative routing | Only if deep linking becomes a requirement. See [§F](#f-not-doing). |
+| E2 | SQLite FTS5 search | Only after search moves into SQL. There are currently **zero** `LIKE` queries — search is `_isSubsequence()` over an in-memory list. |
+| E3 | Localisation (i18n / ARB) | Large, mechanical, easier once the UI structure settles. |
+| E4 | iOS support | `Icons/ios/` (22 files) and `Icons/web/` are already staged. |
+| E5 | Golden / visual regression tests | Needs a stable UI first — after D1. |
+| E6 | `OfflineArtworkStore` → Riverpod provider | Currently a static singleton with a manual `_persistQueue` chain. Do it when it needs mocking in a test. |
+| E7 | Extract 569 `Color(0x…)` literals into `AppTheme` | Cosmetic; opportunistically, file-by-file, not as a campaign. |
+| E8 | Integration test (`integration_test/app_flow_test.dart`) | Highest-value test investment after the ViewModel work. |
+| E9 | Binary asset compression (`pokemon_moves.json`, 2.9 MB) | Prefer `--split-per-abi` + App Bundle first; measure before adding CBOR complexity. |
 
 ---
 
 ## F. Not doing
 
-Explicitly deferred, with reasons, so these stop regenerating every audit cycle.
-Revisit an entry when its *revisit condition* becomes true — not because it is old.
+Deferred *on purpose*, each with a reason and a revisit condition, so these stop
+regenerating every audit cycle. Revisit when the condition is true — not because an
+entry is old.
 
-| ⛔ | Item | Why not now | Revisit when |
+| # | Item | Why not now | Revisit when |
 |:---:|---|---|---|
-| ⛔ | **`go_router` migration** (was: "replace 82 `Navigator.push` calls") | There are **11** pushes, not 82. This is an `IndexedStack` app with a bespoke, *already-tested* `SectionBackStack` (`section_back_stack_test.dart`). go_router buys deep links for a URL scheme that has not been designed, and costs a working back-stack abstraction. | A URL scheme or deep-link requirement exists |
-| ⛔ | **Move index creation to `onUpgrade`** | Would leave fresh installs with no indexes. See C2. | Never as written — only with `onCreate` **and** `onUpgrade` |
-| ⛔ | **SQLite FTS5** | No `LIKE` queries exist; search is in-Dart. | Search moves into SQL (see C3) |
-| ⛔ | **ApiClient retry / connectivity / rate limiting** | `ApiClient` has **2 call sites** (`pokemon_repository.dart:226,231`), both for evolution chains, both with a bundled fallback. Three dependencies to guard one optional request. | A second, non-optional network feature appears |
-| ⛔ | **Coverage gate (`--min-coverage 60`)** | At ~12 % coverage this is a gate that goes red on day one and gets ignored by day five. A red light everyone ignores is worse than no light. | Coverage is within ~10 pts of the threshold |
-| ⛔ | **Blanket `setState` → Riverpod migration** | 225 `setState` calls are mostly correct usage (text controllers, expansion state, animation). Migrating them is churn with regression risk and no user-visible gain. | A specific `setState` is shown to be causing a bug |
-| ⛔ | **Blanket `ref.read` → `ref.watch`** | 52 / 56 is a healthy ratio; `ref.read` in callbacks is the *recommended* pattern. Only `ref.read` inside `build()` is a bug, and there are few of those. | — |
-| ⛔ | **Removing all cross-feature imports** | Some are legitimate shared-model sharing (`stat_comparison` → `calculator` for `ChampionsRules`). The ones worth fixing are the *cycles*: `pokedex ↔ movedex`, `pokedex ↔ abilitydex`. | Part of D4, scoped to cycles only |
-| ⛔ | **Web / desktop targets** | Android is the only shipped platform. | Android + iOS are stable |
+| ⛔ F1 | **Decompose `pokedex_screen.dart`** (2,289 lines) | Splitting a file is worth doing only when it makes a specific change easier. The targeted extraction that *was* needed already happened: search moved to `PokemonSearch`, the card to `PokemonGridCard`. The remaining 2,289 lines are cohesive filter/sort UI that is not currently blocking anything. Splitting it now would be motion, not progress. | A specific change in that file becomes hard to make |
+| ⛔ F2 | **Full accessibility baseline** (9 `Semantics` in 47 k lines) | Partially delivered: tooltips on unlabelled buttons, a startup live region. The remaining work — `TypePill`, `StatTile`, `PokemonGridCard`, type-chart cells — is broad and needs a device/screen-reader pass to verify, which has not happened. Half-measures here are worse than none, because an untested `Semantics` node can make a screen reader *worse*. | Someone can verify with a real screen reader |
+| ⛔ F3 | **`SelectionArea` for app-wide text selection** | **Tried and reverted.** Placing it in `MaterialApp.builder` crashes at startup — it requires an `Overlay` ancestor that does not exist there. A cheap 15-minute win that cost a broken build. It has to wrap a screen *inside* the navigator, not the app. | Someone wires it per-screen with a real test |
+| ⛔ F4 | **Silent-failure audit** (23 `catch (_)`) | Triage by blast radius, not by count. The two user-visible wrong-answer bugs in this class — `_loadRelationsData` and the swallowed Pokédex load error — are already fixed. The rest are logging gaps, not wrong answers. | One is shown to hide a real failure |
+| ⛔ F5 | **Feature repositories for the 18 view/widget files** | Some of the 18 import a Drift *data class* for typing, which is fine; only running `db.select()` in a widget is a real problem, and there are few of those. A blanket repository layer is churn with regression risk and no user-visible gain. | A specific widget query causes a bug |
+| ⛔ F6 | **Release-readiness hygiene** (Gradle JVM args, ProGuard rules, network security config) | Not blocking: no release has been attempted. The one genuinely required item — signing — is configured and waiting on a keystore. | A release build is actually attempted |
+| ⛔ F7 | **`go_router` migration** | There are 11 `Navigator.push` calls, not 82. This is an `IndexedStack` app with a bespoke, already-tested `SectionBackStack`. go_router buys deep links for a URL scheme that has not been designed. | A URL scheme or deep-link requirement exists |
+| ⛔ F8 | **Move index creation to `onUpgrade`** | Would leave fresh installs with no indexes. | Never as written — only with `onCreate` **and** `onUpgrade` |
+| ⛔ F9 | **SQLite FTS5** | No `LIKE` queries exist; search is in-Dart. | Search moves into SQL |
+| ⛔ F10 | **ApiClient retry / connectivity / rate limiting** | 2 call sites, both for evolution chains, both with a bundled fallback. | A second, non-optional network feature appears |
+| ⛔ F11 | **Coverage gate (`--min-coverage 60`)** | At ~12 % this is a gate that goes red on day one and is ignored by day five. A red light everyone ignores is worse than no light. | Coverage is within ~10 pts of the threshold |
+| ⛔ F12 | **Blanket `setState` → Riverpod migration** | 229 calls, mostly correct usage (text controllers, expansion state, animation). | A specific `setState` is shown to cause a bug |
+| ⛔ F13 | **Blanket `ref.read` → `ref.watch`** | 52 / 57 is healthy; `ref.read` in callbacks is the *recommended* pattern. Only `ref.read` inside `build()` is a bug. | — |
+| ⛔ F14 | **Removing all cross-feature imports** | Some are legitimate shared-model use (`stat_comparison` → `calculator` for `ChampionsRules`). The ones worth fixing are *cycles*: `pokedex ↔ movedex`, `pokedex ↔ abilitydex`. | Scoped to cycles only |
+| ⛔ F15 | **Web / desktop targets** | Android is the only shipped platform. | Android + iOS are stable |
 
 ---
 
 ## G. Correction log
 
-Errors found in the previous plan (now [archived](docs/ARCHIVE.md)) by verifying it
-line-by-line against the tree. Recorded so nobody re-derives them.
+Errors found in previous plans by verifying them line-by-line against the tree. Recorded
+so nobody re-derives them.
 
-| Claim in v1 | Actual | Consequence |
+| Claim | Actual | Consequence |
 |---|---|---|
-| "Active test regression: expects 140/7, actual 151/18" | Test already asserts `151` / `18` | The #1 P0 item was already resolved; starting there wastes a cycle |
+| "Active test regression: expects 140/7, actual 151/18" | Test already asserted `151` / `18` | The #1 P0 was already resolved; starting there wastes a cycle |
 | "82 imperative `Navigator.push` calls" | **11** pushes (73 `Navigator` refs, mostly `pop` in dialogs) | Inflated the go_router business case ~7× |
 | "10 UI view/widget files import `app_database.dart`" | **18** (34 repo-wide) | Understated the layering work by ~80 % |
 | "Move index creation from `beforeOpen` to `onUpgrade`" | Would break fresh installs | Would ship a silent, permanent, CI-invisible regression |
-| "3 God Screens = 7,136 lines / 15.6 %" | 7,202 lines / 15.5 % (line drift) | Cosmetic |
-| "227 `setState` · 131 `late` · 467 `Color()`" | 225 · 117 · 564 | Cosmetic |
-| Pokedex split targets | ~1,150 of 2,287 lines; omits the 826-line bottom sheet | Would leave the worst 40 % of the file untouched |
-| Calculator split into 8 panels | File is **2** mega-methods, organised by tab, not 8 panels | A contributor cannot find the proposed seams |
-| "Debounce AbilityDex and ItemDex" | `DebouncedSearchField` already exists; Pokédex (largest list) was excluded | Wrong priority; infrastructure existed |
-| `battle_ruleset.dart` under `battle_engine` | It lives in `features/calculator/models/` | Minor path error |
-| — | **Two divergent damage implementations in one screen** | Missed entirely; now C1 |
-| **v2:** "Pokédex/MoveDex/AbilityDex/ItemDex search is not debounced" | All four already debounce at 300 ms via `DexFilterBar` → `DebouncedSearchField` | Wrong target. C4 was re-scoped to the one field that genuinely was not. Recorded here because the error came from inferring behaviour from a direct grep and missing an indirect call. |
-| **v2:** "Swap the four raw `TextField`s for `DebouncedSearchField`" | There were no raw search `TextField`s to swap | Task was already complete |
-| **v1 (Claude Opus 4.6):** "Synchronous main-thread filtering… 900+ items filtered on every character typed", "cold-start", energy/frame budgets — the whole §6 performance audit | Owner confirms **nothing feels laggy**. No measurement ever backed it. | An entire section of the audit was fabricated from code-reading. Cost: C3 existed to chase a problem that does not exist. **Lesson: any performance claim in this file must cite a measurement or be labelled a hypothesis.** |
-| **v1:** `DebouncedSearchField` debounce set to 300 ms | A trailing debounce that long means the callback never fires while a normal-speed typist is typing | Caused the exact bug the owner reported; fixed under D0 |
+| "3 God Screens = 7,136 lines / 15.6 %" | 7,093 lines / 15.0 % at `4d58f1f` | Cosmetic |
+| "227 `setState` · 131 `late` · 467 `Color()`" | 229 · 119 · 569 | Cosmetic |
+| Pokedex split targets | Omitted the 826-line bottom sheet | Would leave the worst 40 % of the file untouched |
+| Calculator split into 8 panels | File is 2 mega-methods organised by tab, not 8 panels | A contributor cannot find the proposed seams |
+| "Debounce AbilityDex and ItemDex" | `DebouncedSearchField` already existed; the Pokédex (largest list) was excluded | Wrong priority; infrastructure existed |
+| `battle_ruleset.dart` under `battle_engine` | Lives in `features/calculator/models/` | Minor path error |
+| — | **Two divergent damage implementations in one screen** | Missed entirely; became C1 |
+| **v2:** "Pokédex/MoveDex/AbilityDex/ItemDex search is not debounced" | All four already debounced at 300 ms | Wrong target. Came from inferring behaviour via a direct grep and missing an indirect call |
+| **v2:** "Swap the four raw `TextField`s for `DebouncedSearchField`" | There were no raw search `TextField`s | Task was already complete |
+| **v1:** "Synchronous main-thread filtering… 900+ items filtered on every character typed", cold-start, energy/frame budgets — the whole §6 performance audit | Owner confirms **nothing feels laggy**. No measurement ever backed it | An entire audit section was fabricated from code-reading. **Lesson: any performance claim in this file must cite a measurement or be labelled a hypothesis** |
+| **v1:** `DebouncedSearchField` at 300 ms | A trailing debounce that long never fires while a normal-speed typist types | Caused the exact bug the owner reported |
+| **2026-10-06:** two `sandbox_damage_parity_test.dart` scenarios named items that do not exist | `findByName` returned `null`, all multipliers fell back to 1.0, both engines trivially agreed | **2 of 12 scenarios passed while testing nothing.** A `checkItem` guard now throws |
+| **2026-10-06:** the Showdown reference applied base-power mods *after* `getBaseDamage` | The games apply them before | Found only because the parity test was written; fixed in `e94d50e` |
+| **2026-10-06:** `SelectionArea` in `MaterialApp.builder` is "a cheap whole-app a11y win" | It crashes the app — no `Overlay` ancestor | Passing `flutter analyze` and `flutter test` does **not** prove a widget-tree change works. Now F3 |
 
-
+**The last row is the important one.** Three times this cycle, code that analysed clean
+and passed the existing tests was wrong when run: the Jolly/Adamant NatureDex case, the
+HP expectations in the stats test, and the `SelectionArea` crash. Static analysis and
+unit tests verify *logic*; they do not verify that a widget is wired into the tree
+correctly, and they do not verify that an expectation matches the game.
 
 ---
 
 ## H. Measurement appendix
 
-Re-run these from the repository root to re-derive [§A](#a-measurement-basis).
+Re-run from the repository root to re-derive [§A](#a-measurement-basis).
 
 ```bash
 # Size
@@ -596,16 +330,15 @@ find lib -name "*.dart" -exec wc -l {} + | sort -rn | head -15
 # Tests
 find test -name "*.dart" | wc -l
 find test -name "*.dart" -exec cat {} + | wc -l
+grep -rhoE '^\s*(test|testWidgets)\(' test --include=*.dart | wc -l
 
-# Health signals
-grep -rc "Semantics("        lib --include=*.dart | awk -F: '{s+=$2} END {print s}'
-grep -rEo "catch\s*(_"       lib --include=*.dart | wc -l
-grep -rEo "setState\("       lib --include=*.dart | wc -l
-grep -rEo "\blate\b"         lib --include=*.dart | wc -l
-grep -rEo "Color\(0x[0-9A-Fa-f]{8}\)" lib --include=*.dart | wc -l
-grep -rc "ValueKey"          lib --include=*.dart | awk -F: '{s+=$2} END {print s}'
-grep -rc "RepaintBoundary"   lib --include=*.dart | awk -F: '{s+=$2} END {print s}'
-grep -rc "precacheImage"     lib --include=*.dart | awk -F: '{s+=$2} END {print s}'
+# Health signals (escape the parens — an unescaped "(" opens a group and silently matches nothing)
+grep -rEo 'Semantics\('    lib --include=*.dart | wc -l
+grep -rEo 'setState\('     lib --include=*.dart | wc -l
+grep -rEo 'SelectionArea'  lib --include=*.dart | wc -l
+grep -rEo 'Color\(0x[0-9A-Fa-f]{8}\)' lib --include=*.dart | wc -l
+grep -rEo 'catch[[:space:]]*\(_[[:space:]]*\)' lib --include=*.dart | wc -l
+grep -rEow 'late'          lib --include=*.dart | wc -l
 
 # The number that was 7x wrong
 grep -rEo "Navigator\.push[A-Za-z]*\(" lib --include=*.dart | wc -l   # pushes
@@ -623,34 +356,51 @@ for f in $(find lib/features -name "*.dart" ! -name "*.g.dart"); do
     | while read -r t; do [ "$t" != "$feat" ] && echo "$feat -> $t"; done
 done | sort | uniq -c | sort -rn
 
-# C1 verification
-grep -c "DamageMath.calculate" lib/features/calculator/views/damage_calculator_screen.dart
-grep -c "BattleEngine.calculate" lib/features/calculator/views/damage_calculator_screen.dart
-
 # Data assets
 ls -la assets/data | tail -n +2 | awk '{s+=$5} END {print s/1048576 " MB"}'
 python3 -c "import json;d=json.load(open('assets/data/champions_regulation_mc.json'));print(len(d['itemIds']),len(d['newItemIds']))"
+
+# Pokédex shape (the invariants the search fix depends on)
+python3 -c "
+import json
+rows=json.load(open('assets/data/pokemon.json'))
+rows = rows if isinstance(rows,list) else list(rows.values())
+ov=json.load(open('assets/data/forms_extra.json'))['pokemon']
+merged=rows+ov
+g={}
+for p in merged: g.setdefault(p.get('nationalDexNumber') or p['id'],[]).append(p)
+print('species:', len(g))
+print('species with >1 form:', sum(1 for v in g.values() if len(v)>1))
+print('species lacking an id==dex row:', sum(1 for v in g.values() if not any(p['id']==(p.get('nationalDexNumber') or p['id']) for p in v)))
+"
 ```
 
 ---
 
 ## I. Standing notes
 
-Things that are true, are not tasks, and will otherwise be rediscovered painfully.
-
 - **The three God Screens are a symptom, not a goal.** Splitting a file is worth doing
-  only when it makes a specific change easier. C1 removes ~500 lines by *deleting*
+  only when it makes a specific change easier. C1 removed ~111 lines by *deleting*
   duplicated logic; that is better than moving it.
-- **`Icons/` holds pre-staged platform icons.** `Icons/ios/` (22 files) and
-  `Icons/web/` exist ahead of those platforms. `Icons/android/` was a byte-identical
-  duplicate of `android/app/src/main/res/mipmap-*` and has been removed.
-- **Two test files are misnamed, not junk.** `widget_test.dart` is actually a
-  PokedexScreen + `FormFacts` + `CombatUtils` + `GenderRatio` + `SpriteQuality` suite,
-  and `complete_improvement_plan_test.dart` covers move properties, ability tags and
+- **`Icons/` holds pre-staged platform icons.** `Icons/ios/` (22 files) and `Icons/web/`
+  exist ahead of those platforms. `Icons/android/` holds the Play Store icon. **Do not
+  delete it** — a docs commit already removed it once by accident (`0807265`, restored
+  in `4d58f1f`). `android/app/src/main/res/mipmap-*` is what actually ships.
+- **Two test files are misnamed, not junk.** `widget_test.dart` is a PokedexScreen +
+  `FormFacts` + `CombatUtils` + `GenderRatio` + `SpriteQuality` suite, and
+  `complete_improvement_plan_test.dart` covers move properties, ability tags and
   Pokémon classification. Both are real coverage behind plan-artifact names; rename
   them when next touching either file.
 - **The Pokédex `stream → filter → rebuild` path is the app's performance centre of
-  gravity.** Optimisations anywhere else are unlikely to be felt. Measure first (C3).
+  gravity.** Optimisations elsewhere are unlikely to be felt. There is no known
+  performance problem — the app is smooth while typing.
 - **`.metadata` and `.vscode/settings.json` are intentionally tracked.** Flutter
   documents `.metadata` as version-controlled; the VS Code setting affects Gradle
-  build-configuration prompts. Neither is stray.
+  build-configuration prompts.
+- **Before distributing a build:** create `android/key.properties` and a keystore
+  (git-ignored). Signing is configured in `build.gradle.kts` and reads that file;
+  without it the build is unsigned.
+- **`docs/reference.md` replaced eight separate guides** (data pipeline, migrations,
+  Champions, Legends: Z-A, implementation guide, testing, release checklist, index) on
+  2026-10-06. The superseded audit archive that used to be `docs/ARCHIVE.md` was removed
+  at the same time; it remains recoverable from git history.

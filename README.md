@@ -42,9 +42,12 @@ Use **Settings → Clear browsing artwork cache** for temporary images, **Delete
 
 ## Features & data snapshot
 
-Bundled game-data snapshot: **1 October 2026**. LibreDex includes Pokémon Champions Regulation Set M-C data (game version 1.2.0), alongside Champions stat rules and Legends: Z-A forms. Regulation eligibility is kept separate from a record's game origin. Start at the [documentation index](docs/README.md) for the implementation guide, full source/provenance workflow, game-support notes, migration guide, testing instructions, and release checklist.
+Bundled game-data snapshot: **1 October 2026**. LibreDex includes Pokémon Champions Regulation Set M-C data (game version 1.2.0), alongside Champions stat rules and Legends: Z-A forms. Regulation eligibility is kept separate from a record's game origin.
 
-For current priorities, completed work and the list of things deliberately deferred, see the [roadmap](plans.md). Superseded audits are frozen in [`docs/ARCHIVE.md`](docs/ARCHIVE.md) and are kept for historical reasoning only.
+**Documentation:** [`docs/reference.md`](docs/reference.md) covers architecture, data
+provenance, the database, game support, filter semantics, battle calculations, testing
+and the release checklist. [`plans.md`](plans.md) is the roadmap — what is done, what is
+next, and what has been deliberately deferred.
 
 LibreDex includes full-fledged, multi-game features covering:
 - **Adaptive Navigation (new in Aug 2026)**: Bottom `NavigationBar` on phones + `NavigationRail` on tablets, single `More` overflow — no hamburger + bar duplication. Theme toggle plays the wavy reveal from the tap point.
@@ -53,8 +56,8 @@ LibreDex includes full-fledged, multi-game features covering:
 - **Expanded MoveDex**: 22 property switches share data-backed predicates, filter chips, and reset behavior; includes priority/contact traits, move classes, and source/rule filters.
 - **AbilityDex Metadata**: Hidden-ability flags live on Pokémon–ability junctions; AbilityDex filters abilities used in a hidden slot, and detail pages identify the exact Pokémon rows.
 - **ItemDex Provenance & Offline Artwork**: Category/role/origin filters, explicit aliases, source-backed generation (unknown stays unknown), and bulk downloads counted by unique stored artwork.
-- **Random Pokémon**: Choose the full catalog, active Pokédex results, or custom type/generation/BST/evolution criteria; settings persist locally.
-- **Responsive Pokédex Counts**: Cards group matching forms by National Dex; the result count reports unique species, while MoveDex/AbilityDex/ItemDex counts report filtered records.
+- **Random Pokémon**: Choose the full catalog, active Pokédex results, or custom type/generation/BST/evolution criteria; roll a single pick or a team of six distinct Pokémon. Settings persist locally.
+- **Responsive Pokédex Counts**: Cards group matching forms by National Dex; the result count reports unique species, while MoveDex/AbilityDex/ItemDex counts report filtered records. Search matches species only — forms stay reachable from the detail page, the Mega Evolution filter, or the `N FORMS` badge on a card.
 - **NatureDex Alignments**: Supports both Pokémon Champions' 66 Stat Points / 21 Alignments (Singles & Doubles, Regulation M-C) and Legends: Z-A Effort Level rules.
 - **Damage Calculator**: One shared battle-engine damage result per duel view, data-backed move priority/contact metadata, critical-stage handling, level 50 Champions rules, and a separate raw sandbox formula.
 
