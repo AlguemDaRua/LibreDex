@@ -472,7 +472,6 @@ class FeatureHubSheet extends ConsumerWidget {
     required BuildContext context,
     required WidgetRef ref,
     required AppSection section,
-    String? subtitle,
     required Color color,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;

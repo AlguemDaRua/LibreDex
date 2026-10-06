@@ -481,7 +481,7 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(width: 8),
           Switch.adaptive(
             value: enabled,
-            activeColor: AppTheme.pokemonRed,
+            activeThumbColor: AppTheme.pokemonRed,
             onChanged: (v) => ref.read(liveEvolutionDataProvider.notifier).setEnabled(v),
           ),
         ],

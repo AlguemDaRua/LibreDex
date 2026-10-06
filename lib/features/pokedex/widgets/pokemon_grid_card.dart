@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/data/champions_regulation.dart';
 import 'package:libredex/core/database/app_database.dart';
-import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/utils/type_utils.dart';
 import 'package:libredex/core/widgets/content_badge.dart';
 import 'package:libredex/core/widgets/pokemon_sprite.dart';

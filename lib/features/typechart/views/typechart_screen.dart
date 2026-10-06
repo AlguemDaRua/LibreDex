@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:libredex/core/theme/app_spacing.dart';
 import 'package:libredex/core/utils/type_utils.dart';
-import 'package:libredex/features/pokedex/models/type_efficiency_calculator.dart';
 
 class TypeChartScreen extends StatefulWidget {
   const TypeChartScreen({super.key});
