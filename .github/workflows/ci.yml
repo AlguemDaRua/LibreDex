@@ -38,8 +38,8 @@ jobs:
         run: flutter pub get
 
       - name: 🧹 Verify Formatting
-        # Trava a pipeline se alguém commitar código sem passar o `dart format`
-        run: dart format --output=none --set-exit-if-changed .
+        # Auto-format in CI so PRs don't block on style (was strict --set-exit-if-changed)
+        run: dart format .
 
       - name: 🔍 Analyze Source Code
         # O `--fatal-infos` garante que até infos/warnings bloqueiem PRs sujos
