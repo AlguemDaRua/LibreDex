@@ -73,6 +73,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
 
   Map<int, List<Map<String, dynamic>>> _pokemonAbilitiesMap = {};
   Map<int, Ability> _abilitiesIdMap = {};
+
   /// True only once the ability relations have loaded successfully. The
   /// ability filter must not be evaluated against an empty map: it would drop
   /// every Pokemon and present that as "no results".
@@ -316,7 +317,6 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
     return false;
   }
 
-
   /// How well [pokemon] matches [query]. Lower is better.
   ///
   /// Without ranking, every match is equal and dex order decides what the user
@@ -329,8 +329,9 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
     final form = pokemon.form.toLowerCase();
     final type1 = pokemon.type1.toLowerCase();
     final type2 = pokemon.type2?.toLowerCase() ?? '';
-    final dexNum =
-        pokemon.nationalDexNumber > 0 ? pokemon.nationalDexNumber : pokemon.id;
+    final dexNum = pokemon.nationalDexNumber > 0
+        ? pokemon.nationalDexNumber
+        : pokemon.id;
     final dex = dexNum.toString();
 
     if (name == query) return 0;

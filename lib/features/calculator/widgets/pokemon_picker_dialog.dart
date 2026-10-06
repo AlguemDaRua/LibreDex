@@ -15,8 +15,9 @@ import 'package:libredex/core/widgets/debounced_search_field.dart';
 /// ability changes damage even when its stats are identical - Meowstic-Female
 /// has Prankster, Greninja-Battle-Bond has Battle Bond, Rockruff-Own-Tempo
 /// evolves into a different Lycanroc - so ability must be part of the test.
-final pokemonAbilityIdsProvider =
-    FutureProvider<Map<int, Set<int>>>((ref) async {
+final pokemonAbilityIdsProvider = FutureProvider<Map<int, Set<int>>>((
+  ref,
+) async {
   final raw = await rootBundle.loadString('assets/data/pokemon_abilities.json');
   final decoded = json.decode(raw) as List<dynamic>;
   final map = <int, Set<int>>{};
@@ -58,7 +59,8 @@ Set<int> cosmeticFormIds(List<Pokemon> all, Map<int, Set<int>> abilities) {
     );
     for (final p in group) {
       if (p.id == base.id) continue;
-      final identical = p.baseHp == base.baseHp &&
+      final identical =
+          p.baseHp == base.baseHp &&
           p.baseAtk == base.baseAtk &&
           p.baseDef == base.baseDef &&
           p.baseSpAtk == base.baseSpAtk &&

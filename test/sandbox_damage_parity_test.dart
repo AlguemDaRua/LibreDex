@@ -188,7 +188,8 @@ void main() {
               expect(
                 sandboxed.rolls,
                 equals(duel.rolls),
-                reason: 'diverged at weather=$weather terrain=$terrain '
+                reason:
+                    'diverged at weather=$weather terrain=$terrain '
                     'reflect=$reflect critical=$critical',
               );
             }
@@ -343,7 +344,8 @@ void main() {
       expect(
         source.contains('DamageMath.calculate'),
         isFalse,
-        reason: 'The raw sandbox must resolve through SandboxDamageEngine, '
+        reason:
+            'The raw sandbox must resolve through SandboxDamageEngine, '
             'not a hand-rolled DamageMath call that can drift from the '
             'duel view.',
       );

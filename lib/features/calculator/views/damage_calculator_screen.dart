@@ -2690,9 +2690,8 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                                                               .toLowerCase()] ??
                                                           Colors.purple)
                                                       .withValues(alpha: 0.2),
-                                              borderRadius: BorderRadius.circular(
-                                                4,
-                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
                                             ),
                                             child: Text(
                                               teraType.toUpperCase(),
@@ -2748,18 +2747,21 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                                               color: isDark
                                                   ? const Color(0xFF1E1E1E)
                                                   : Colors.white,
-                                              borderRadius: BorderRadius.circular(
-                                                8,
-                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
                                             ),
                                             child: DropdownButtonHideUnderline(
                                               child: DropdownButton<String>(
                                                 value:
-                                                    CombatUtils.allTypes.contains(
-                                                      teraType.toLowerCase(),
-                                                    )
+                                                    CombatUtils.allTypes
+                                                        .contains(
+                                                          teraType
+                                                              .toLowerCase(),
+                                                        )
                                                     ? teraType.toLowerCase()
-                                                    : CombatUtils.allTypes.first,
+                                                    : CombatUtils
+                                                          .allTypes
+                                                          .first,
                                                 isExpanded: true,
                                                 style: TextStyle(
                                                   fontWeight: FontWeight.bold,

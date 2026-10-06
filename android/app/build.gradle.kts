@@ -3,10 +3,11 @@ import java.util.Properties
 
 plugins {
     id("com.android.application")
-    id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
+
+apply(plugin = "kotlin-android")
 
 // Release signing is optional so that a plain checkout still builds. Create
 // android/key.properties (git-ignored, never committed) with:

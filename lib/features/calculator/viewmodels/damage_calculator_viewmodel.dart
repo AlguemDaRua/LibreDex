@@ -495,8 +495,7 @@ class DamageCalculatorState {
   SandboxOverrides sandboxOverrides() {
     final moveName = selectedMoveName ?? '';
     final isSpecial = moveCategory.toLowerCase() == 'special';
-    final isCritical =
-        isCriticalHit || CombatUtils.alwaysCriticalHit(moveName);
+    final isCritical = isCriticalHit || CombatUtils.alwaysCriticalHit(moveName);
     final keys = CombatUtils.statKeysFor(
       moveName: moveName,
       damageClass: moveCategory,
