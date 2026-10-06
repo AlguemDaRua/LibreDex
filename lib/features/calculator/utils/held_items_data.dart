@@ -74,11 +74,19 @@ class HeldItemsData {
       name: 'Muscle Band',
       category: 'Physical Power',
       description: '+10% physical move power.',
+      physicalPowerMultiplier: 1.1,
     ),
     HeldItem(
       name: 'Wise Glasses',
       category: 'Special Power',
       description: '+10% special move power.',
+      specialPowerMultiplier: 1.1,
+    ),
+    HeldItem(
+      name: 'Punching Glove',
+      category: 'Physical Power',
+      description: '+10% punching move power; removes contact.',
+      punchingPowerMultiplier: 1.1,
     ),
     HeldItem(
       name: 'Eviolite',
@@ -539,6 +547,43 @@ class HeldItemsData {
     return isSpecial ? item.spAtkMultiplier : item.atkMultiplier;
   }
 
+  /// Multiplier an item applies to the move's BASE POWER.
+  ///
+  /// Muscle Band, Wise Glasses, Punching Glove and the type-boosting items
+  /// modify base power - they do not touch the Attack stat and they are not
+  /// final damage modifiers. Base power sits inside the damage formula's
+  /// rounding chain while a final modifier sits outside it, so the two are
+  /// not interchangeable: applying these at the end gives different damage.
+  static double getBasePowerMultiplier(
+    String itemName, {
+    required String moveType,
+    required String damageClass,
+    required bool isPunching,
+  }) {
+    final item = findByName(itemName);
+    if (item == null) return 1.0;
+
+    final cls = damageClass.toLowerCase();
+    double mult = 1.0;
+
+    if (cls == 'physical') {
+      mult *= item.physicalPowerMultiplier;
+    } else if (cls == 'special') {
+      mult *= item.specialPowerMultiplier;
+    }
+
+    if (isPunching) {
+      mult *= item.punchingPowerMultiplier;
+    }
+
+    if (item.typeBoostType != null &&
+        item.typeBoostType!.toLowerCase() == moveType.toLowerCase()) {
+      mult *= item.typeBoostMultiplier;
+    }
+
+    return mult;
+  }
+
   /// Calculate resistance multiplier from defender's held item.
   /// Resist berries apply only when the move is super-effective (mult > 1.0).
   static double getDefenderResistMultiplier(
@@ -582,6 +627,11 @@ class HeldItem {
   final double spDefMultiplier;
   final double universalDamageMultiplier;
 
+  // Move-power multipliers (applied to base power, never to the Attack stat)
+  final double physicalPowerMultiplier;
+  final double specialPowerMultiplier;
+  final double punchingPowerMultiplier;
+
   // Type-specific damage boost (attacker)
   final String? typeBoostType;
   final double typeBoostMultiplier;
@@ -600,6 +650,9 @@ class HeldItem {
     this.defMultiplier = 1.0,
     this.spDefMultiplier = 1.0,
     this.universalDamageMultiplier = 1.0,
+    this.physicalPowerMultiplier = 1.0,
+    this.specialPowerMultiplier = 1.0,
+    this.punchingPowerMultiplier = 1.0,
     this.typeBoostType,
     this.typeBoostMultiplier = 1.0,
     this.resistType,

@@ -183,6 +183,29 @@ class ModifierPipeline {
       }
     }
 
+    // ── Item base-power boosts ──────────────────────────────────────────────
+    // Muscle Band, Wise Glasses, Punching Glove and the type-boosting items
+    // modify the move's base power. They are NOT final damage modifiers:
+    // base power sits inside the formula's rounding chain and a final
+    // modifier sits outside it, so the two give different damage. Applying
+    // them here keeps both the duel and the sandbox on the same numbers.
+    final itemBpMultiplier = HeldItemsData.getBasePowerMultiplier(
+      state.attacker.heldItem,
+      moveType: state.move.type,
+      damageClass: state.move.damageClass,
+      isPunching: state.move.isPunching,
+    );
+    if (itemBpMultiplier != 1.0) {
+      bp = (bp * itemBpMultiplier).round();
+      applied.add(
+        AppliedModifier(
+          name: titleCasePokemonText(state.attacker.heldItem),
+          multiplier: itemBpMultiplier,
+          category: ModifierCategory.item,
+        ),
+      );
+    }
+
     // These traits come from the same move record shown in the calculator;
     // keep ability/item modifiers independent of fragile name matching.
     final isPunching = state.move.isPunching;
@@ -690,17 +713,6 @@ class ModifierPipeline {
         ),
       );
     }
-    if (attackerHeldItemData?.typeBoostType?.toLowerCase() == effectiveType) {
-      final typeBoostMultiplier = attackerHeldItemData!.typeBoostMultiplier;
-      finalModifiers.add(typeBoostMultiplier);
-      applied.add(
-        AppliedModifier(
-          name: titleCasePokemonText(attackerItem),
-          multiplier: typeBoostMultiplier,
-          category: ModifierCategory.item,
-        ),
-      );
-    }
 
     // Expert Belt
     if (attackerItem == 'expert belt' && effectiveness > 1.0) {
@@ -709,27 +721,6 @@ class ModifierPipeline {
         const AppliedModifier(
           name: 'Expert Belt',
           multiplier: 1.2,
-          category: ModifierCategory.item,
-        ),
-      );
-    }
-
-    // Muscle Band / Wise Glasses
-    if (attackerItem == 'muscle band' && state.move.isPhysical) {
-      finalModifiers.add(1.1);
-      applied.add(
-        const AppliedModifier(
-          name: 'Muscle Band',
-          multiplier: 1.1,
-          category: ModifierCategory.item,
-        ),
-      );
-    } else if (attackerItem == 'wise glasses' && state.move.isSpecial) {
-      finalModifiers.add(1.1);
-      applied.add(
-        const AppliedModifier(
-          name: 'Wise Glasses',
-          multiplier: 1.1,
           category: ModifierCategory.item,
         ),
       );
