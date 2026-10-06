@@ -14,6 +14,9 @@ class RandomizerSettings {
   final bool fullyEvolvedOnly;
   final bool instantRollOnTap;
 
+  /// How many Pokémon a roll returns: 1 for a single pick, 6 for a team.
+  final int rollCount;
+
   const RandomizerSettings({
     this.poolMode = RandomPoolMode.all,
     this.selectedTypes = const <String>{},
@@ -22,6 +25,7 @@ class RandomizerSettings {
     this.maxBst = 780,
     this.fullyEvolvedOnly = false,
     this.instantRollOnTap = false,
+    this.rollCount = 1,
   });
 
   bool get isCustomActive =>
@@ -36,6 +40,7 @@ class RandomizerSettings {
     int? maxBst,
     bool? fullyEvolvedOnly,
     bool? instantRollOnTap,
+    int? rollCount,
   }) {
     return RandomizerSettings(
       poolMode: poolMode ?? this.poolMode,
@@ -45,6 +50,7 @@ class RandomizerSettings {
       maxBst: maxBst ?? this.maxBst,
       fullyEvolvedOnly: fullyEvolvedOnly ?? this.fullyEvolvedOnly,
       instantRollOnTap: instantRollOnTap ?? this.instantRollOnTap,
+      rollCount: rollCount ?? this.rollCount,
     );
   }
 
@@ -88,6 +94,7 @@ class RandomizerSettings {
     'maxBst': maxBst,
     'fullyEvolvedOnly': fullyEvolvedOnly,
     'instantRollOnTap': instantRollOnTap,
+    'rollCount': rollCount,
   };
 
   factory RandomizerSettings.fromJson(Map<String, dynamic> json) {
@@ -111,6 +118,10 @@ class RandomizerSettings {
       maxBst: (json['maxBst'] as num?)?.toInt() ?? 780,
       fullyEvolvedOnly: json['fullyEvolvedOnly'] as bool? ?? false,
       instantRollOnTap: json['instantRollOnTap'] as bool? ?? false,
+      // Clamped: a stored value above the pool size would otherwise ask for
+      // more Pokémon than exist, and 0 would roll an empty team.
+      // clamp() returns num, hence the trailing toInt().
+      rollCount: ((json['rollCount'] as num?)?.toInt() ?? 1).clamp(1, 6).toInt(),
     );
   }
 }

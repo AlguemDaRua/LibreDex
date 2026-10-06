@@ -41,6 +41,7 @@ class _RandomizerSettingsSheetState
   late double _maxBst;
   late bool _fullyEvolvedOnly;
   late bool _instantRollOnTap;
+  late int _rollCount;
 
   @override
   void initState() {
@@ -53,6 +54,7 @@ class _RandomizerSettingsSheetState
     _maxBst = settings.maxBst.toDouble();
     _fullyEvolvedOnly = settings.fullyEvolvedOnly;
     _instantRollOnTap = settings.instantRollOnTap;
+    _rollCount = settings.rollCount;
   }
 
   void _saveAndApply() {
@@ -64,6 +66,7 @@ class _RandomizerSettingsSheetState
       maxBst: _maxBst.round(),
       fullyEvolvedOnly: _fullyEvolvedOnly,
       instantRollOnTap: _instantRollOnTap,
+      rollCount: _rollCount,
     );
     ref.read(randomizerSettingsProvider.notifier).updateSettings(newSettings);
   }
@@ -78,6 +81,7 @@ class _RandomizerSettingsSheetState
       _maxBst = 780;
       _fullyEvolvedOnly = false;
       _instantRollOnTap = false;
+      _rollCount = 1;
     });
     ref.read(randomizerSettingsProvider.notifier).reset();
   }
@@ -163,6 +167,50 @@ class _RandomizerSettingsSheetState
                   vertical: 8,
                 ),
                 children: [
+                  // Roll Size
+                  const Text(
+                    'ROLL SIZE',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey,
+                      letterSpacing: 1.1,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 18),
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0xFF1E1E1E)
+                          : const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isDark
+                            ? const Color(0xFF2B2B2B)
+                            : const Color(0xFFE2E8F0),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        for (final option in const [1, 6])
+                          Expanded(
+                            child: _RollCountOption(
+                              count: option,
+                              isSelected: _rollCount == option,
+                              isDark: isDark,
+                              primaryColor: primaryColor,
+                              onTap: () {
+                                HapticFeedback.selectionClick();
+                                setState(() => _rollCount = option);
+                              },
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+
                   // Quick Random Toggle
                   Container(
                     margin: const EdgeInsets.only(bottom: 18),
@@ -557,6 +605,65 @@ class _RandomizerSettingsSheetState
               size: 20,
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RollCountOption extends StatelessWidget {
+  final int count;
+  final bool isSelected;
+  final bool isDark;
+  final Color primaryColor;
+  final VoidCallback onTap;
+
+  const _RollCountOption({
+    required this.count,
+    required this.isSelected,
+    required this.isDark,
+    required this.primaryColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final label = count == 1 ? 'Single' : 'Team of 6';
+    final hint = count == 1 ? 'Roll one Pokémon' : 'Roll a full team';
+    return Material(
+      color: isSelected ? AppTheme.pokemonRed : Colors.transparent,
+      borderRadius: BorderRadius.circular(12),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Column(
+            children: [
+              Icon(
+                count == 1 ? Icons.person_rounded : Icons.groups_rounded,
+                size: 20,
+                color: isSelected ? Colors.white : Colors.grey,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: isSelected ? Colors.white : primaryColor,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                hint,
+                style: TextStyle(
+                  fontSize: 10,
+                  color: isSelected ? Colors.white70 : Colors.grey,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

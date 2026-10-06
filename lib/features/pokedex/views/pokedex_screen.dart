@@ -339,6 +339,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
     RandomRollOverlay.show(
       context,
       candidatePool: pool,
+      rollCount: settings.rollCount,
       onViewDetails: (selectedPokemon) {
         Navigator.push(
           context,
@@ -557,12 +558,17 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
               if (list.isEmpty) return const SizedBox.shrink();
               final randomSettings = ref.watch(randomizerSettingsProvider);
               final isCustomized = randomSettings.isCustomActive;
+              final rollLabel = switch (randomSettings.rollCount) {
+                1 => 'Random Pokémon',
+                6 => 'Random Team of 6',
+                _ => 'Random ${randomSettings.rollCount} Pokémon',
+              };
               final tooltipText = switch (randomSettings.poolMode) {
-                RandomPoolMode.all => 'Random Pokémon (Hold to customize)',
+                RandomPoolMode.all => '$rollLabel (Hold to customize)',
                 RandomPoolMode.activeFilters =>
-                  'Random Pokémon: Active Filters (Hold to customize)',
+                  '$rollLabel: Active Filters (Hold to customize)',
                 RandomPoolMode.custom =>
-                  'Random Pokémon: Custom Rules (Hold to customize)',
+                  '$rollLabel: Custom Rules (Hold to customize)',
               };
 
               return Stack(

@@ -12,16 +12,21 @@ class RandomRollOverlay extends StatefulWidget {
   final List<Pokemon> candidatePool;
   final ValueChanged<Pokemon> onViewDetails;
 
+  /// How many Pokémon the roll returns. 6 renders a team instead of a cover.
+  final int rollCount;
+
   const RandomRollOverlay({
     super.key,
     required this.candidatePool,
     required this.onViewDetails,
+    this.rollCount = 1,
   });
 
   static Future<void> show(
     BuildContext context, {
     required List<Pokemon> candidatePool,
     required ValueChanged<Pokemon> onViewDetails,
+    int rollCount = 1,
   }) {
     return showDialog(
       context: context,
@@ -30,6 +35,7 @@ class RandomRollOverlay extends StatefulWidget {
       builder: (ctx) => RandomRollOverlay(
         candidatePool: candidatePool,
         onViewDetails: onViewDetails,
+        rollCount: rollCount,
       ),
     );
   }
@@ -42,6 +48,8 @@ class _RandomRollOverlayState extends State<RandomRollOverlay>
     with SingleTickerProviderStateMixin {
   late List<Pokemon> _shuffleList;
   late Pokemon _selectedWinner;
+  /// Every pick for this roll. One entry for a single roll, six for a team.
+  late List<Pokemon> _winners;
   int _currentIndex = 0;
   bool _isSpinning = true;
   late AnimationController _animController;
@@ -64,9 +72,26 @@ class _RandomRollOverlayState extends State<RandomRollOverlay>
       _currentIndex = 0;
     });
 
-    // Pick final winner
-    _selectedWinner =
-        widget.candidatePool[_rand.nextInt(widget.candidatePool.length)];
+    // Pick the winners. They are distinct so a roll of 6 reads as a team
+    // rather than the same Pokémon six times; a pool smaller than the count
+    // simply yields what it has.
+    // clamp() throws when the lower bound exceeds the upper one, so the
+    // pool size is floored at 1 - callers guard against an empty pool, but
+    // this should not explode if one ever gets through.
+    final poolSize = widget.candidatePool.length < 1
+        ? 1
+        : widget.candidatePool.length;
+    final wanted = widget.rollCount.clamp(1, poolSize).toInt();
+    final picks = <Pokemon>[];
+    final used = <int>{};
+    while (picks.length < wanted && used.length < poolSize) {
+      final index = _rand.nextInt(widget.candidatePool.length);
+      if (used.add(index)) picks.add(widget.candidatePool[index]);
+    }
+    _winners = picks;
+
+    // The slot machine lands on the first pick.
+    _selectedWinner = picks.first;
 
     // Generate 18 teaser items ending with winner
     final teasers = <Pokemon>[];
@@ -194,7 +219,7 @@ class _RandomRollOverlayState extends State<RandomRollOverlay>
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        _isSpinning ? 'RANDOMIZING...' : 'TARGET ACQUIRED!',
+                        _isSpinning ? 'RANDOMIZING...' : _revealTitle,
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w900,
@@ -213,8 +238,11 @@ class _RandomRollOverlayState extends State<RandomRollOverlay>
               ),
               const SizedBox(height: 16),
 
-              // Main Stage Card
-              Stack(
+              // Main Stage Card - single pick; a team reveals a grid below.
+              if (!_isSpinning && _winners.length > 1)
+                _buildTeamGrid()
+              else
+                Stack(
                 alignment: Alignment.center,
                 children: [
                   // Outer animated aura glow
@@ -266,7 +294,8 @@ class _RandomRollOverlayState extends State<RandomRollOverlay>
               ),
               const SizedBox(height: 16),
 
-              // Pokemon Name & Type info
+              // Pokemon Name & Type info - a team labels itself in the grid.
+              if (_isSpinning || _winners.length <= 1) ...[
               Text(
                 activePokemon.name.toUpperCase(),
                 style: const TextStyle(
@@ -344,14 +373,16 @@ class _RandomRollOverlayState extends State<RandomRollOverlay>
                   ),
                 ],
               ),
+              ],
               const SizedBox(height: 24),
 
               // Action Buttons
               if (!_isSpinning) ...[
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton.icon(
+                if (_winners.length <= 1)
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: typeColor,
                       foregroundColor: Colors.white,
@@ -371,10 +402,10 @@ class _RandomRollOverlayState extends State<RandomRollOverlay>
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
                       ),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 10),
+                if (_winners.length <= 1) const SizedBox(height: 10),
                 SizedBox(
                   width: double.infinity,
                   height: 42,
@@ -412,6 +443,83 @@ class _RandomRollOverlayState extends State<RandomRollOverlay>
                   ),
                 ),
               ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String get _revealTitle => switch (_winners.length) {
+    1 => 'TARGET ACQUIRED!',
+    6 => 'TEAM ACQUIRED!',
+    _ => '${_winners.length} TARGETS ACQUIRED!',
+  };
+
+  /// The team reveal: every pick as its own tappable card.
+  Widget _buildTeamGrid() {
+    return GridView.count(
+      shrinkWrap: true,
+      crossAxisCount: 3,
+      mainAxisSpacing: 10,
+      crossAxisSpacing: 10,
+      childAspectRatio: 0.78,
+      physics: const NeverScrollableScrollPhysics(),
+      children: [
+        for (final pick in _winners)
+          _TeamCard(
+            pokemon: pick,
+            onTap: () {
+              Navigator.of(context).pop();
+              widget.onViewDetails(pick);
+            },
+          ),
+      ],
+    );
+  }
+}
+
+class _TeamCard extends StatelessWidget {
+  final Pokemon pokemon;
+  final VoidCallback onTap;
+
+  const _TeamCard({required this.pokemon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final typeColor = pokemonTypeColor(pokemon.type1);
+    return Material(
+      color: typeColor.withValues(alpha: 0.12),
+      borderRadius: BorderRadius.circular(14),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: typeColor.withValues(alpha: 0.55)),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 56,
+                height: 56,
+                child: PokemonSprite(imageUrl: pokemon.spriteUrl),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                pokemon.name,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
             ],
           ),
         ),
