@@ -88,8 +88,8 @@ void main() {
     expect(catalog.newMoveIds, hasLength(14));
     expect(catalog.abilityIds, hasLength(216));
     expect(catalog.newAbilityIds, hasLength(15));
-    expect(catalog.itemIds, hasLength(140));
-    expect(catalog.newItemIds, hasLength(7));
+    expect(catalog.itemIds, hasLength(151));
+    expect(catalog.newItemIds, hasLength(18));
 
     expect(catalog.isMoveAvailable(756), isTrue); // Court Change
     expect(catalog.isNewMove(892), isTrue); // Double Shock
