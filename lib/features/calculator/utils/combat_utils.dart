@@ -744,6 +744,7 @@ class CombatUtils {
     String? t2, {
     String? attackerAbility,
     String? defenderAbility,
+    String? defenderHeldItem,
     String? moveName,
     bool defenderTeraActive = false,
     String? defenderTeraType,
@@ -818,9 +819,14 @@ class CombatUtils {
       mult *= getSingleTypeMultiplier(move, type2);
     }
 
-    // ── Defender Ability Immunities ──
+    // ── Defender Ability & Item Immunities ──
     if (defAbility == 'well baked body' || defAbility == 'flash fire') {
       if (move == 'fire') return 0.0;
+    }
+    // Air Balloon (held item) grants Ground immunity until popped — model as
+    // 0× while the defender's held item is Air Balloon (single-turn calculator).
+    if (_normalizeName(defenderHeldItem ?? '') == 'air balloon') {
+      if (move == 'ground') return 0.0;
     }
     if (defAbility == 'levitate' || defAbility == 'earth eater') {
       if (move == 'ground') return 0.0;
@@ -923,6 +929,7 @@ class CombatUtils {
     String? t2,
     String? attackerAbility,
     String? defenderAbility,
+    String? defenderHeldItem,
     String? moveName,
     bool defenderTeraActive = false,
     String? defenderTeraType,
@@ -968,6 +975,10 @@ class CombatUtils {
     if ((defAbility == 'well baked body' || defAbility == 'flash fire') &&
         move == 'fire') {
       return '🔥 Well-Baked Body / Flash Fire: IMMUNE (0x)';
+    }
+    if (_normalizeName(defenderHeldItem ?? '') == 'air balloon' &&
+        move == 'ground') {
+      return '🎈 Air Balloon: IMMUNE (0x)';
     }
     if ((defAbility == 'levitate' || defAbility == 'earth eater') &&
         move == 'ground') {

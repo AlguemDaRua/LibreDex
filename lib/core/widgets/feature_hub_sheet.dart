@@ -4,6 +4,7 @@ import 'package:libredex/core/data/champions_regulation.dart';
 import 'package:libredex/core/navigation/app_sections.dart';
 import 'package:libredex/core/navigation/navigation_provider.dart';
 import 'package:libredex/core/theme/app_theme.dart';
+import 'package:libredex/core/theme/responsive.dart';
 import 'package:libredex/core/theme/theme_provider.dart';
 import 'package:libredex/core/theme/theme_switcher.dart';
 
@@ -25,8 +26,10 @@ class FeatureHubSheet extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final currentTheme = ref.watch(themeModeProvider);
     final regulation = ref.watch(championsRegulationProvider).asData?.value;
+    final isTablet = Responsive.isTablet(context);
 
-    return ConstrainedBox(
+    // Tablet: center the sheet and cap width so it never feels like a stretched phone sheet.
+    Widget sheet = ConstrainedBox(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.85,
       ),
@@ -157,131 +160,70 @@ class FeatureHubSheet extends ConsumerWidget {
                       const SizedBox(height: 10),
                       _buildRegulationOverviewCard(regulation, isDark),
                       const SizedBox(height: 12),
+                      // Responsive columns: 3 on tablet, 2 on phone — every rotation perfect
                       GridView.count(
-                        crossAxisCount: 2,
+                        crossAxisCount: Responsive.hubColumns(context),
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         mainAxisSpacing: 10,
                         crossAxisSpacing: 10,
-                        childAspectRatio: 2.3,
+                        childAspectRatio: Responsive.isTablet(context) ? 3.6 : 3.2,
                         children: [
-                          _buildHubTile(
-                            context: context,
-                            ref: ref,
-                            section: AppSection.pokedex,
-                            subtitle: 'Roster eligibility & new Pokémon',
-                            color: const Color(0xFFE3350D),
-                          ),
-                          _buildHubTile(
-                            context: context,
-                            ref: ref,
-                            section: AppSection.movedex,
-                            subtitle: 'M-C moves, PP & patch notes',
-                            color: const Color(0xFFF7D02C),
-                          ),
-                          _buildHubTile(
-                            context: context,
-                            ref: ref,
-                            section: AppSection.abilitydex,
-                            subtitle: 'Eligible abilities & effects',
-                            color: const Color(0xFFA78BFA),
-                          ),
-                          _buildHubTile(
-                            context: context,
-                            ref: ref,
-                            section: AppSection.itemdex,
-                            subtitle: 'M-C held items & artwork',
-                            color: const Color(0xFF34D399),
-                          ),
+                          _buildHubTile(context: context, ref: ref, section: AppSection.pokedex, color: const Color(0xFFE3350D)),
+                          _buildHubTile(context: context, ref: ref, section: AppSection.movedex, color: const Color(0xFFF7D02C)),
+                          _buildHubTile(context: context, ref: ref, section: AppSection.abilitydex, color: const Color(0xFFA78BFA)),
+                          _buildHubTile(context: context, ref: ref, section: AppSection.itemdex, color: const Color(0xFF34D399)),
                         ],
                       ),
 
                       const SizedBox(height: 20),
 
-                      // REFERENCE DATABASES SECTION
-                      _buildSectionHeader('REFERENCE DATABASES'),
+                      _buildSectionHeader('REFERENCE'),
                       const SizedBox(height: 10),
                       GridView.count(
-                        crossAxisCount: 2,
+                        crossAxisCount: Responsive.hubColumns(context),
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         mainAxisSpacing: 10,
                         crossAxisSpacing: 10,
-                        childAspectRatio: 2.3,
+                        childAspectRatio: Responsive.isTablet(context) ? 3.6 : 3.2,
                         children: [
-                          _buildHubTile(
-                            context: context,
-                            ref: ref,
-                            section: AppSection.naturedex,
-                            subtitle: 'Natures & stat modifiers',
-                            color: const Color(0xFFF59E0B),
-                          ),
-                          _buildHubTile(
-                            context: context,
-                            ref: ref,
-                            section: AppSection.typeChart,
-                            subtitle: 'Type strengths & weaknesses',
-                            color: const Color(0xFF60A5FA),
-                          ),
+                          _buildHubTile(context: context, ref: ref, section: AppSection.naturedex, color: const Color(0xFFF59E0B)),
+                          _buildHubTile(context: context, ref: ref, section: AppSection.typeChart, color: const Color(0xFF60A5FA)),
                         ],
                       ),
 
                       const SizedBox(height: 20),
 
-                      // COMPETITIVE TOOLS SECTION
-                      _buildSectionHeader('TEAM & BATTLE TOOLS'),
+                      _buildSectionHeader('TEAM & BATTLE'),
                       const SizedBox(height: 10),
                       GridView.count(
-                        crossAxisCount: 2,
+                        crossAxisCount: Responsive.hubColumns(context),
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         mainAxisSpacing: 10,
                         crossAxisSpacing: 10,
-                        childAspectRatio: 2.3,
+                        childAspectRatio: Responsive.isTablet(context) ? 3.6 : 3.2,
                         children: [
-                          _buildHubTile(
-                            context: context,
-                            ref: ref,
-                            section: AppSection.teamBuilder,
-                            subtitle: 'Build & export teams',
-                            color: const Color(0xFFEC4899),
-                          ),
-                          _buildHubTile(
-                            context: context,
-                            ref: ref,
-                            section: AppSection.calculator,
-                            subtitle: 'Mainline & Champions damage',
-                            color: const Color(0xFF10B981),
-                          ),
-                          _buildHubTile(
-                            context: context,
-                            ref: ref,
-                            section: AppSection.statCompare,
-                            subtitle: 'Side-by-side base stats',
-                            color: const Color(0xFF8B5CF6),
-                          ),
+                          _buildHubTile(context: context, ref: ref, section: AppSection.teamBuilder, color: const Color(0xFFEC4899)),
+                          _buildHubTile(context: context, ref: ref, section: AppSection.calculator, color: const Color(0xFF10B981)),
+                          _buildHubTile(context: context, ref: ref, section: AppSection.statCompare, color: const Color(0xFF8B5CF6)),
                         ],
                       ),
 
                       const SizedBox(height: 20),
 
-                      _buildSectionHeader('APP & PREFERENCES'),
+                      _buildSectionHeader('APP'),
                       const SizedBox(height: 10),
                       GridView.count(
-                        crossAxisCount: 2,
+                        crossAxisCount: Responsive.hubColumns(context),
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         mainAxisSpacing: 10,
                         crossAxisSpacing: 10,
-                        childAspectRatio: 2.3,
+                        childAspectRatio: Responsive.isTablet(context) ? 3.6 : 3.2,
                         children: [
-                          _buildHubTile(
-                            context: context,
-                            ref: ref,
-                            section: AppSection.settings,
-                            subtitle: 'Artwork, theme & app options',
-                            color: const Color(0xFF6B7280),
-                          ),
+                          _buildHubTile(context: context, ref: ref, section: AppSection.settings, color: const Color(0xFF6B7280)),
                         ],
                       ),
                     ],
@@ -293,6 +235,16 @@ class FeatureHubSheet extends ConsumerWidget {
         ),
       ),
     );
+
+    if (isTablet) {
+      return Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 640),
+          child: sheet,
+        ),
+      );
+    }
+    return sheet;
   }
 
   Widget _buildSectionHeader(String title) {
@@ -396,14 +348,26 @@ class FeatureHubSheet extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          Text(
-            'Browse regulation eligibility and M-C-specific move, ability and item data. Availability is separate from game origin: older content can be eligible without being new to Pokémon Champions.',
-            style: TextStyle(
-              color: isDark ? Colors.grey[300] : const Color(0xFF4B4655),
-              fontSize: 11,
-              height: 1.35,
-            ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(Icons.info_outline_rounded, size: 12, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  'Eligibility ≠ origin · M-C moves, abilities & items',
+                  style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 10, fontWeight: FontWeight.w700),
+                ),
+              ),
+              Tooltip(
+                message: 'Browse regulation eligibility and M-C-specific data. Availability is separate from game origin: older content can be eligible without being new to Champions.',
+                triggerMode: TooltipTriggerMode.tap,
+                decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(10)),
+                textStyle: const TextStyle(fontSize: 12, color: Colors.white, height: 1.35),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Icon(Icons.help_outline_rounded, size: 14, color: Colors.grey[500]),
+              ),
+            ],
           ),
           if (period.isNotEmpty) ...[
             const SizedBox(height: 8),
@@ -520,7 +484,6 @@ class FeatureHubSheet extends ConsumerWidget {
     required BuildContext context,
     required WidgetRef ref,
     required AppSection section,
-    required String subtitle,
     required Color color,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -545,11 +508,7 @@ class FeatureHubSheet extends ConsumerWidget {
                 : (isDark ? const Color(0xFF181818) : const Color(0xFFF3F4F6)),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isSelected
-                  ? color
-                  : (isDark
-                        ? const Color(0xFF262626)
-                        : const Color(0xFFE5E7EB)),
+              color: isSelected ? color : (isDark ? const Color(0xFF262626) : const Color(0xFFE5E7EB)),
               width: isSelected ? 1.5 : 1,
             ),
           ),
@@ -565,31 +524,15 @@ class FeatureHubSheet extends ConsumerWidget {
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      section.hubTitle,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                        color: isDark ? Colors.white : Colors.black87,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 1),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                child: Text(
+                  section.hubTitle,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],

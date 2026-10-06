@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:libredex/core/theme/app_spacing.dart';
+import 'package:libredex/core/utils/type_utils.dart';
 
 class TypeChartScreen extends StatefulWidget {
   const TypeChartScreen({super.key});
@@ -33,27 +34,8 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
     'fairy',
   ];
 
-  static const Map<String, Color> _typeColors = {
-    'normal': Color(0xFFA8A77A),
-    'fire': Color(0xFFEE8130),
-    'water': Color(0xFF6390F0),
-    'electric': Color(0xFFF7D02C),
-    'grass': Color(0xFF7AC74C),
-    'ice': Color(0xFF96D9D6),
-    'fighting': Color(0xFFC22E28),
-    'poison': Color(0xFFA33EA1),
-    'ground': Color(0xFFE2BF65),
-    'flying': Color(0xFFA98FEE),
-    'psychic': Color(0xFFF95587),
-    'bug': Color(0xFFA6B91A),
-    'rock': Color(0xFFB6A136),
-    'ghost': Color(0xFF735797),
-    'dragon': Color(0xFF6F35FC),
-    'dark': Color(0xFF705746),
-    'steel': Color(0xFFB7B7CE),
-    'fairy': Color(0xFFD685AD),
-    'none': Colors.grey,
-  };
+  // Single source of truth — colors from core/utils/type_utils.dart
+  static Color _colorFor(String t) => t == 'none' ? Colors.grey : pokemonTypeColor(t);
 
   // Type Chart Effectiveness Maps (Defending multipliers)
   static const Map<String, Map<String, List<String>>> _effectiveness = {
@@ -322,7 +304,7 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
                       final isSelected = isPrimary
                           ? _primaryType == type
                           : _secondaryType == type;
-                      final color = _typeColors[type] ?? Colors.grey;
+                      final color = _colorFor(type);
 
                       return InkWell(
                         onTap: () {
@@ -379,8 +361,8 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? Colors.white : Colors.black;
 
-    final primaryThemeColor = _typeColors[_primaryType] ?? Colors.grey;
-    final secondaryThemeColor = _typeColors[_secondaryType] ?? Colors.grey;
+    final primaryThemeColor = _colorFor(_primaryType);
+    final secondaryThemeColor = _colorFor(_secondaryType);
 
     final combinedDefense = _calculateCombinedDefense();
 
@@ -679,11 +661,7 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
                   bottom: AppSpacing.bottomScrollPadding,
                 ),
                 children: [
-                  _buildSectionHeader(
-                    'DEFENSIVE COVERAGE',
-                    'Incoming damage multipliers',
-                    isDark,
-                  ),
+                  _buildSectionHeader('DEFENSE', hint: 'Incoming multipliers — 0× / 0.25× / 0.5× / 1× / 2× / 4×', isDark: isDark),
                   const SizedBox(height: 10),
 
                   // Weaknesses 4x
@@ -736,12 +714,7 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
 
                   const SizedBox(height: 32),
 
-                  // Offensive reference sections
-                  _buildSectionHeader(
-                    'OFFENSIVE EFFECTIVENESS',
-                    'Super Effective (2x) attacks when using',
-                    isDark,
-                  ),
+                  _buildSectionHeader('OFFENSE', hint: '2× super-effective targets for your selected type(s)', isDark: isDark),
                   const SizedBox(height: 12),
 
                   _buildOffenseCard(_primaryType, isDark),
@@ -761,21 +734,27 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String title, String subtitle, bool isDark) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildSectionHeader(String title, {String? hint, required bool isDark}) {
+    return Row(
       children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w900,
-            color: isDark ? Colors.grey[350] : Colors.grey[800],
-            letterSpacing: 0.8,
-          ),
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(color: const Color(0xFFE3350D).withValues(alpha: 0.12), shape: BoxShape.circle),
+          child: const Icon(Icons.shield_rounded, size: 12, color: Color(0xFFE3350D)),
         ),
-        const SizedBox(height: 2),
-        Text(subtitle, style: TextStyle(fontSize: 11, color: Colors.grey[500])),
+        const SizedBox(width: 8),
+        Text(title, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: isDark ? Colors.grey[300] : Colors.grey[800], letterSpacing: 0.8)),
+        if (hint != null) ...[
+          const SizedBox(width: 6),
+          Tooltip(
+            message: hint,
+            triggerMode: TooltipTriggerMode.tap,
+            decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(10)),
+            textStyle: const TextStyle(fontSize: 12, color: Colors.white, height: 1.35),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Icon(Icons.info_outline_rounded, size: 14, color: Colors.grey[500]),
+          ),
+        ],
       ],
     );
   }
@@ -826,7 +805,7 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
             spacing: 6,
             runSpacing: 6,
             children: types.map((t) {
-              final badgeColor = _typeColors[t] ?? Colors.grey;
+              final badgeColor = _colorFor(t);
               return Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 10,
@@ -854,7 +833,7 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
   }
 
   Widget _buildOffenseCard(String type, bool isDark) {
-    final color = _typeColors[type] ?? Colors.grey;
+    final color = _colorFor(type);
     final data = _effectiveness[type] ?? {};
     final superEffectiveList = List<String>.from(data['offense_2x'] ?? []);
 
@@ -903,7 +882,7 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
               spacing: 6,
               runSpacing: 6,
               children: superEffectiveList.map((t) {
-                final badgeColor = _typeColors[t] ?? Colors.grey;
+                final badgeColor = _colorFor(t);
                 return Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,

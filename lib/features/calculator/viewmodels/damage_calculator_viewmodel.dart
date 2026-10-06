@@ -69,6 +69,7 @@ class DamageCalculatorState {
   final String terrain;
   final bool reflectActive;
   final bool lightScreenActive;
+  final bool auroraVeilActive;
   final bool helpingHandActive;
   final bool trickRoomActive;
   final bool defenderProtected;
@@ -132,6 +133,7 @@ class DamageCalculatorState {
     this.terrain = 'none',
     this.reflectActive = false,
     this.lightScreenActive = false,
+    this.auroraVeilActive = false,
     this.helpingHandActive = false,
     this.trickRoomActive = false,
     this.defenderProtected = false,
@@ -190,6 +192,7 @@ class DamageCalculatorState {
     String? terrain,
     bool? reflectActive,
     bool? lightScreenActive,
+    bool? auroraVeilActive,
     bool? helpingHandActive,
     bool? trickRoomActive,
     bool? defenderProtected,
@@ -256,6 +259,7 @@ class DamageCalculatorState {
       terrain: terrain ?? this.terrain,
       reflectActive: reflectActive ?? this.reflectActive,
       lightScreenActive: lightScreenActive ?? this.lightScreenActive,
+      auroraVeilActive: auroraVeilActive ?? this.auroraVeilActive,
       helpingHandActive: helpingHandActive ?? this.helpingHandActive,
       trickRoomActive: trickRoomActive ?? this.trickRoomActive,
       defenderProtected: defenderProtected ?? this.defenderProtected,
@@ -329,6 +333,7 @@ class DamageCalculatorState {
       terrain: terrain,
       reflectActive: reflectActive,
       lightScreenActive: lightScreenActive,
+      auroraVeilActive: auroraVeilActive,
       helpingHandActive: helpingHandActive,
       trickRoomActive: trickRoomActive,
       defenderProtected: defenderProtected,
@@ -608,6 +613,12 @@ class DamageCalculatorViewModel extends _$DamageCalculatorViewModel {
       actualPower = 50.0 + (hits * 50.0);
     }
     final isVariableMulti = CombatUtils.isVariableMultiHitMove(name);
+    final normalizedName = name.toLowerCase().replaceAll('-', ' ').trim();
+    // Population Bomb naturally hits 10 times (20 BP ×10 = 200); other
+    // variable multi-hit moves are 2–5.
+    final defaultHits = normalizedName == 'population bomb'
+        ? 10
+        : (isVariableMulti ? 3 : 1);
     state = state.copyWith(
       selectedMoveName: name,
       moveType: type,
@@ -620,7 +631,7 @@ class DamageCalculatorViewModel extends _$DamageCalculatorViewModel {
       moveIsSlicing: isSlicing,
       moveIsRecoil: isRecoil,
       movePower: actualPower,
-      moveHits: isVariableMulti ? 3 : 1,
+      moveHits: defaultHits,
     );
   }
 
@@ -644,6 +655,8 @@ class DamageCalculatorViewModel extends _$DamageCalculatorViewModel {
   void toggleReflect(bool val) => state = state.copyWith(reflectActive: val);
   void toggleLightScreen(bool val) =>
       state = state.copyWith(lightScreenActive: val);
+  void toggleAuroraVeil(bool val) =>
+      state = state.copyWith(auroraVeilActive: val);
   void toggleHelpingHand(bool val) =>
       state = state.copyWith(helpingHandActive: val);
   void toggleDefenderProtected(bool val) =>

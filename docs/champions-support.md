@@ -14,7 +14,7 @@ The bundled, ID-based catalog is [`assets/data/champions_regulation_mc.json`](..
 | Pokémon roster records/forms | 345 | 35 local IDs: 29 non-Mega records/forms + 6 Mega forms |
 | Moves | 510 | 14 |
 | Abilities | 216 | 15 |
-| Items | 140 | 7 |
+| Items | 151 | 18 |
 
 The official announcement says **24 newly available Pokémon** and **six new Mega Evolutions**. Do not compare that headline number directly with a local ID count: the catalog tracks forms as separate IDs. In this snapshot, `newPokemonIds` contains 29 non-Mega records across 23 National Dex numbers; the exact local eligibility is the ID array, not a name-count guess.
 
@@ -39,7 +39,7 @@ The 14 moves newly included in the M-C move pool are **Milk Drink, Shift Gear, Z
 
 The 15 abilities newly included in the pool are **Run Away, Liquid Ooze, Rattled, Grass Pelt, Emergency Exit, Stakeout, Psychic Surge, Grassy Surge, Libero, Punk Rock, Steely Spirit, Seed Sower, Thermal Exchange, Guard Dog,** and **Aura Guard**. These names were resolved from the catalog IDs against `abilities.json`; Aura Guard is the exception, custom local ability ID `314`, supplied through `forms_extra.json` and backed by the official Champions announcement. “New to M-C” means a pool delta, not that every listed ability was invented for Champions. Standard ability records remain shared with the wider Pokédex.
 
-The seven items newly included are **Leek** (236), **Salamencite** (810), **Absolite Z** (2265), **Garchompite Z** (2267), **Lucarionite Z** (2268), **Golisopite** (2272), and **Baxcalibrite** (2275). Baxcalibrite is also an example of the label boundary: the [official Z-A Battle Club page](https://legends.pokemon.com/en-gb/news/battle-club-ranked-battles) gives it as a ranked-battle reward, while the M-C catalog separately makes it eligible in M-C.
+The 18 items newly included are the six Mega Stones (**Salamencite** 810, **Absolite Z** 2265, **Garchompite Z** 2267, **Lucarionite Z** 2268, **Golisopite** 2272, **Baxcalibrite** 2275) plus 12 held items (**Leek** 236, **Rocky Helmet** 583, **Air Balloon** 584, **Red Card** 585, **Binding Band** 587, **Eject Button** 590, **Normal Gem** 669, **Terrain Extender** 896, **Electric Seed** 898, **Psychic Seed** 899, **Misty Seed** 900, **Grassy Seed** 901). Baxcalibrite is also an example of the label boundary: the [official Z-A Battle Club page](https://legends.pokemon.com/en-gb/news/battle-club-ranked-battles) gives it as a ranked-battle reward, while the M-C catalog separately makes it eligible in M-C. Air Balloon's Ground immunity is modeled in the damage engine (`getTypeEffectiveness` + badge).
 
 ## 📝 Version 1.2.0 M-C adjustments
 

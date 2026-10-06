@@ -10,6 +10,7 @@ import 'package:libredex/core/storage/offline_artwork_store.dart';
 import 'package:libredex/core/theme/app_spacing.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/widgets/artwork_download_dialog.dart';
+import 'package:libredex/core/widgets/info_tooltip.dart';
 import 'package:libredex/features/pokedex/repositories/deep_sync_repository.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
 import 'package:libredex/features/pokedex/repositories/sync_repository.dart';
@@ -46,99 +47,44 @@ class SettingsScreen extends ConsumerWidget {
             bottom: AppSpacing.bottomScrollPadding,
           ),
           children: [
-            // ─── Section: Navigation & Layout ────────────────────────────────────
-            _buildSectionHeader('NAVIGATION & LAYOUT', isDark),
+            // ─── NAVIGATION — icon says it, ⓘ reveals the rest ─────────────────────
+            _buildSectionHeader('NAVIGATION & LAYOUT', isDark, icon: Icons.explore_rounded),
             const SizedBox(height: 12),
 
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF121212) : Colors.white,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isDark
-                      ? const Color(0xFF222222)
-                      : const Color(0xFFE5E7EB),
+                  color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB),
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.explore_rounded,
-                        color: AppTheme.pokemonRed,
-                        size: 22,
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Adaptive Navigation',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: primaryColor,
-                          fontSize: 15,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.pokemonRed.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Text(
-                          'AUTO',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w900,
-                            color: AppTheme.pokemonRed,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'LibreDex now uses a single adaptive bar: bottom navigation on phones and a side rail on tablets. Tap More to see all 10 tools in one hub. No duplicate hamburger + bottom bar.',
-                    style: TextStyle(
-                      color: isDark ? Colors.grey[400] : Colors.grey[600],
-                      fontSize: 12,
-                      height: 1.45,
+                  const Icon(Icons.explore_rounded, color: AppTheme.pokemonRed, size: 20),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'Adaptive Navigation',
+                      style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.phone_iphone_rounded,
-                        size: 14,
-                        color: Colors.grey[500],
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Phone: bottom bar (Pokédex · Teams · Moves · Calc · More)',
-                        style: TextStyle(fontSize: 11, color: Colors.grey[500]),
-                      ),
-                    ],
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppTheme.pokemonRed.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      'AUTO',
+                      style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: AppTheme.pokemonRed),
+                    ),
                   ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.tablet_rounded,
-                        size: 14,
-                        color: Colors.grey[500],
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Tablet: side rail · same 5 items',
-                        style: TextStyle(fontSize: 11, color: Colors.grey[500]),
-                      ),
-                    ],
+                  const SizedBox(width: 6),
+                  const InfoTooltip(
+                    message:
+                        'Single adaptive bar — bottom on phones, side rail on tablets. Tap More for all 10 tools. No duplicate hamburger + bottom bar. Phone: Pokédex · Teams · Moves · Calc · More → Hub.',
                   ),
                 ],
               ),
@@ -146,51 +92,32 @@ class SettingsScreen extends ConsumerWidget {
 
             const SizedBox(height: 24),
 
-            // ─── Section: Data & storage ─────────────────────────────────────────
-            _buildSectionHeader('DATA & STORAGE', isDark),
+            // ─── DATA & STORAGE ──────────────────────────────────────────────────
+            _buildSectionHeader('DATA & STORAGE', isDark, icon: Icons.storage_rounded),
             const SizedBox(height: 12),
 
-            // Storage overview
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF121212) : Colors.white,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isDark
-                      ? const Color(0xFF222222)
-                      : const Color(0xFFE5E7EB),
+                  color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB),
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.storage_rounded,
-                        color: AppTheme.pokemonRed,
-                        size: 22,
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Local data and online artwork',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: primaryColor,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Reference data is bundled with LibreDex and copied into a local database on this device. Artwork loads from the internet by default and is cached as you browse. Download the artwork collection below to keep a separate, durable offline library. Evolution details check PokéAPI when online and fall back to bundled records when it is not.',
-                    style: TextStyle(
-                      color: isDark ? Colors.grey[400] : Colors.grey[600],
-                      fontSize: 12,
-                      height: 1.5,
+                  const Icon(Icons.storage_rounded, color: AppTheme.pokemonRed, size: 20),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'Local database & artwork',
+                      style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
                     ),
+                  ),
+                  const InfoTooltip(
+                    message:
+                        'Reference data is bundled and copied locally. Artwork loads online and is cached as you browse. Download a durable offline library below if you want. Evolution checks PokéAPI online, bundled offline.',
                   ),
                 ],
               ),
@@ -284,7 +211,7 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: 32),
 
             // ─── Section: Diagnostics & Auditing ───────────────────────────
-            _buildSectionHeader('DIAGNOSTICS & AUDITING', isDark),
+            _buildSectionHeader('DIAGNOSTICS & AUDITING', isDark, icon: Icons.analytics_outlined),
             const SizedBox(height: 12),
 
             Container(
@@ -432,7 +359,7 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: 32),
 
             // ─── Section: Application Info ─────────────────────────────────
-            _buildSectionHeader('APPLICATION INFO', isDark),
+            _buildSectionHeader('APPLICATION INFO', isDark, icon: Icons.info_outline_rounded),
             const SizedBox(height: 12),
 
             Container(
@@ -513,15 +440,13 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSectionHeader(String title, bool isDark) {
-    return Text(
-      title,
-      style: TextStyle(
-        fontSize: 11,
-        fontWeight: FontWeight.w900,
-        color: Colors.grey[500],
-        letterSpacing: 0.8,
-      ),
+  Widget _buildSectionHeader(String title, bool isDark, {IconData icon = Icons.settings_outlined}) {
+    return Row(
+      children: [
+        Icon(icon, size: 13, color: Colors.grey[500]),
+        const SizedBox(width: 6),
+        Text(title, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.grey[500], letterSpacing: 0.8)),
+      ],
     );
   }
 
@@ -532,34 +457,34 @@ class SettingsScreen extends ConsumerWidget {
     WidgetRef ref,
   ) {
     return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF121212) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB),
         ),
       ),
-      child: SwitchListTile.adaptive(
-        value: enabled,
-        onChanged: (value) =>
-            ref.read(liveEvolutionDataProvider.notifier).setEnabled(value),
-        activeThumbColor: AppTheme.pokemonRed,
-        secondary: const Icon(
-          Icons.account_tree_outlined,
-          color: AppTheme.pokemonRed,
-        ),
-        title: Text(
-          'Use live evolution data',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: primaryColor,
-            fontSize: 14,
+      child: Row(
+        children: [
+          const Icon(Icons.account_tree_outlined, color: AppTheme.pokemonRed, size: 20),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              'Live evolution data',
+              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+            ),
           ),
-        ),
-        subtitle: const Text(
-          'When off, evolution pages use only the bundled records and make no PokéAPI request.',
-          style: TextStyle(fontSize: 11, color: Colors.grey, height: 1.35),
-        ),
+          const InfoTooltip(
+            message: 'When off, evolution pages use only bundled records — no PokéAPI request.',
+          ),
+          const SizedBox(width: 8),
+          Switch.adaptive(
+            value: enabled,
+            activeThumbColor: AppTheme.pokemonRed,
+            onChanged: (v) => ref.read(liveEvolutionDataProvider.notifier).setEnabled(v),
+          ),
+        ],
       ),
     );
   }
@@ -636,6 +561,7 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
+  // Icon-first, no storytelling paragraph — hint lives in ⓘ tooltip.
   Widget _buildActionTile({
     required bool isDark,
     required Color primaryColor,
@@ -646,47 +572,36 @@ class SettingsScreen extends ConsumerWidget {
   }) {
     return Material(
       color: isDark ? const Color(0xFF121212) : Colors.white,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(14),
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         onTap: onTap,
         child: Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB),
             ),
           ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 4,
-            ),
-            leading: Icon(icon, color: AppTheme.pokemonRed, size: 22),
-            title: Text(
-              title,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: primaryColor,
-                fontSize: 14,
-              ),
-            ),
-            subtitle: Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Text(
-                subtitle,
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: Colors.grey,
-                  height: 1.4,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              Icon(icon, color: AppTheme.pokemonRed, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: primaryColor,
+                    fontSize: 13,
+                  ),
                 ),
               ),
-            ),
-            trailing: const Icon(
-              Icons.arrow_forward_ios_rounded,
-              size: 14,
-              color: Colors.grey,
-            ),
+              InfoTooltip(message: subtitle),
+              const SizedBox(width: 6),
+              const Icon(Icons.chevron_right_rounded, size: 18, color: Colors.grey),
+            ],
           ),
         ),
       ),

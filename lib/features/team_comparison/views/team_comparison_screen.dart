@@ -107,9 +107,8 @@ class _TeamComparisonScreenState extends ConsumerState<TeamComparisonScreen> {
               child: SectionHeader(
                 icon: Icons.groups_2_outlined,
                 title: 'Foe Team',
-                subtitle: foeTeam.isEmpty
-                    ? 'Tap to add foe Pokémon — info only'
-                    : '${foeTeam.length}/6 foe',
+                subtitle: foeTeam.isEmpty ? null : '${foeTeam.length}/6',
+                hint: foeTeam.isEmpty ? 'Tap a slot to add a foe Pokémon — info only, no simulation.' : null,
               ),
             ),
           ),
@@ -150,8 +149,8 @@ class _TeamComparisonScreenState extends ConsumerState<TeamComparisonScreen> {
               sliver: SliverToBoxAdapter(
                 child: SectionHeader(
                   icon: Icons.compare_arrows_rounded,
-                  title: 'Head-to-Head (info)',
-                  subtitle: 'Which STABs hit which side — type chart only',
+                  title: 'Head-to-Head',
+                  hint: 'Which STABs hit which side — type chart only, no turns.',
                 ),
               ),
             ),
