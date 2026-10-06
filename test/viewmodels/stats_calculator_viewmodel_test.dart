@@ -302,13 +302,16 @@ void main() {
 
       calc.updateLevel(50);
       calc.updateEv('atk', 252);
-      calc.updateNature('jolly');
+      // Adamant is +Attack / -Sp. Atk. Jolly would boost Speed instead.
+      calc.updateNature('adamant');
 
       final stats = calc.getCalculatedStats(garchomp);
       // floor((130*2 + 31 + 63) * 50/100) + 5 = 182, then * 1.1
       expect(stats['atk'], 200);
-      // Jolly cuts Sp. Atk: floor((80*2 + 31) * 50/100) + 5 = 100, * 0.9
+      // Adamant cuts Sp. Atk: floor((80*2 + 31) * 50/100) + 5 = 100, * 0.9
       expect(stats['spa'], 90);
+      // Speed is untouched by Adamant: floor((102*2 + 31) * 50/100) + 5
+      expect(stats['spe'], 122);
       // HP ignores nature entirely.
       expect(stats['hp'], 215);
     });

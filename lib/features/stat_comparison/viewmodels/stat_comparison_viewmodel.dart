@@ -102,13 +102,15 @@ class StatComparisonState {
     computed.sort((a, b) {
       final aVal = _sortValue(a.entry, a.stats, col);
       final bVal = _sortValue(b.entry, b.stats, col);
-      int cmp = aVal.compareTo(bVal);
+      final cmp = aVal.compareTo(bVal);
       if (cmp == 0) {
-        // Tie: preserve original list order, then alphabetical
-        cmp = a.index.compareTo(b.index);
-        if (cmp == 0) {
-          cmp = a.entry.pokemon.name.compareTo(b.entry.pokemon.name);
-        }
+        // Tie: preserve original list order, then alphabetical. This must not
+        // be flipped by the sort direction - only the value comparison is
+        // directional. Negating it here reversed the tied rows on every
+        // descending sort, so switching direction appeared to shuffle them.
+        final byIndex = a.index.compareTo(b.index);
+        if (byIndex != 0) return byIndex;
+        return a.entry.pokemon.name.compareTo(b.entry.pokemon.name);
       }
       return sortDirection == SortDirection.descending ? -cmp : cmp;
     });

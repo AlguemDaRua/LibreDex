@@ -278,9 +278,6 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
         regulation: regulation,
       );
 
-  int _searchRank(Pokemon pokemon, String query) =>
-      PokemonSearch.rank(pokemon, query);
-
   int _groupSearchRank(List<Pokemon> forms, String query) =>
       PokemonSearch.groupRank(forms, query);
 

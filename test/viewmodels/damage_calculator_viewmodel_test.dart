@@ -31,6 +31,8 @@ DamageCalculatorState sandboxState({
     defenderStages: defenderStages ??
         const {'atk': 0, 'def': 0, 'spa': 0, 'spd': 0, 'spe': 0},
     defenderHeldItem: defenderItem,
+    attackerSps: const {'hp': 0, 'atk': 0, 'def': 0, 'spa': 0, 'spd': 0, 'spe': 0},
+    defenderSps: const {'hp': 0, 'atk': 0, 'def': 0, 'spa': 0, 'spd': 0, 'spe': 0},
     selectedMoveName: moveName,
     moveCategory: category,
     isCriticalHit: isCriticalHit,

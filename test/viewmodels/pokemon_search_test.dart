@@ -100,8 +100,11 @@ void main() {
     });
 
     test('a prefix match beats a mid-name match', () {
+      // "Bulbagar" contains "gar" but does not start with it.
+      // "Magikarp" shares no substring at all, so it falls to the last band.
       expect(PokemonSearch.rank(dexEntry(445, 'Garchomp'), 'gar'), 1);
-      expect(PokemonSearch.rank(dexEntry(129, 'Magikarp'), 'gar'), 3);
+      expect(PokemonSearch.rank(dexEntry(999, 'Bulbagar'), 'gar'), 3);
+      expect(PokemonSearch.rank(dexEntry(129, 'Magikarp'), 'gar'), 8);
     });
 
     test('a real name match outranks a subsequence hit', () {
