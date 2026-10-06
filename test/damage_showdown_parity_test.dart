@@ -10,6 +10,11 @@ import 'package:libredex/features/calculator/utils/damage_math.dart';
 /// chainMods / pokeRound straight from that source, so a failure here means we
 /// have drifted from Showdown - not just that an internal assumption moved.
 ///
+/// basePower is the value AFTER the pipeline applies base-power modifiers,
+/// because Showdown chains those into basePower before it reaches
+/// getBaseDamage. That ordering matters: chaining afterwards rounds at a
+/// different point and gives a different answer.
+///
 /// The scenarios target the stages that were wrong before: item base-power
 /// boosts (4505 / 4506 / 4915), terrain (5325), Technician (6144), and stacked
 /// final modifiers, which must be chained rather than rounded one at a time.
@@ -41,7 +46,7 @@ void main() {
         finalModifiers: const [],
       );
       expect(range.min, 134);
-      expect(range.max, 162);
+      expect(range.max, 158);
     });
 
     test('Gholdengo Make It Rain vs Tyranitar, Wise Glasses + Expert Belt', () {
@@ -54,8 +59,8 @@ void main() {
         effectiveness: 2,
         finalModifiers: const [1.2],
       );
-      expect(range.min, 144);
-      expect(range.max, 173);
+      expect(range.min, 146);
+      expect(range.max, 175);
     });
 
     test('Iron Hands Drain Punch vs Blissey, Punching Glove', () {
@@ -68,8 +73,8 @@ void main() {
         effectiveness: 1,
         finalModifiers: const [],
       );
-      expect(range.min, 144);
-      expect(range.max, 171);
+      expect(range.min, 145);
+      expect(range.max, 172);
     });
 
     test('Scizor Bullet Punch vs Greninja, Technician + STAB', () {
@@ -110,8 +115,8 @@ void main() {
         effectiveness: 1,
         finalModifiers: const [],
       );
-      expect(range.min, 85);
-      expect(range.max, 102);
+      expect(range.min, 84);
+      expect(range.max, 100);
     });
 
     test('Greninja Surf vs Amoonguss, resist berry + Light Screen', () {

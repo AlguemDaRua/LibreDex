@@ -25,10 +25,14 @@ def getBaseDamage(level, bp, atk, dfn):
 
 def showdown(level, bp, atk, dfn, bpMods, stabMod, eff, burned=False,
              finalMods=(), weatherMod=4096, crit=False):
+    # Base power modifiers are applied to the move's base power BEFORE it
+    # reaches getBaseDamage - Showdown chains bpMods into basePower and only
+    # then computes base damage. Applying them afterwards gives a different
+    # answer, because the intermediate rounding happens at a different point.
+    bp = OF16(max(1, pokeRound((bp * chainMods(list(bpMods), 41, 2097152)) / 4096)))
     b = getBaseDamage(level, bp, atk, dfn)
     b = pokeRound(OF32(b * weatherMod) / 4096)
     if crit: b = math.floor(OF32(b * 1.5))
-    b = OF16(max(1, pokeRound((b * chainMods(list(bpMods), 41, 2097152)) / 4096)))
     fm = chainMods(list(finalMods), 1, 0x7fffffff)
     rolls = []
     for i in range(16):
