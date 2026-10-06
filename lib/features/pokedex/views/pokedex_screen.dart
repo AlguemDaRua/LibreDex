@@ -900,7 +900,8 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                               sliver: SliverGrid(
                                 gridDelegate:
                                     SliverGridDelegateWithMaxCrossAxisExtent(
-                                      maxCrossAxisExtent: Responsive.gridMaxExtent(context),
+                                      maxCrossAxisExtent:
+                                          Responsive.gridMaxExtent(context),
                                       crossAxisSpacing: 10,
                                       mainAxisSpacing: 10,
                                       childAspectRatio: 0.80,
@@ -1211,12 +1212,27 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                       _buildSectionLabel('TYPES'),
                       const SizedBox(width: 6),
                       Tooltip(
-                        message: '1 type = matches either type slot · 2 types = exact dual-type match.',
+                        message:
+                            '1 type = matches either type slot · 2 types = exact dual-type match.',
                         triggerMode: TooltipTriggerMode.tap,
-                        decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(10)),
-                        textStyle: const TextStyle(fontSize: 12, color: Colors.white, height: 1.35),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        child: const Icon(Icons.info_outline_rounded, size: 14, color: Colors.grey),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1A1A1A),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        textStyle: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.white,
+                          height: 1.35,
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        child: const Icon(
+                          Icons.info_outline_rounded,
+                          size: 14,
+                          color: Colors.grey,
+                        ),
                       ),
                     ],
                   ),
@@ -1385,12 +1401,27 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                       _buildSectionLabel('REGULATION M-C'),
                       const SizedBox(width: 6),
                       Tooltip(
-                        message: 'Eligibility ≠ origin. Regulation says who can compete; origin is where it debuted.',
+                        message:
+                            'Eligibility ≠ origin. Regulation says who can compete; origin is where it debuted.',
                         triggerMode: TooltipTriggerMode.tap,
-                        decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(10)),
-                        textStyle: const TextStyle(fontSize: 12, color: Colors.white, height: 1.35),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        child: const Icon(Icons.info_outline_rounded, size: 14, color: Colors.grey),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1A1A1A),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        textStyle: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.white,
+                          height: 1.35,
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        child: const Icon(
+                          Icons.info_outline_rounded,
+                          size: 14,
+                          color: Colors.grey,
+                        ),
                       ),
                     ],
                   ),

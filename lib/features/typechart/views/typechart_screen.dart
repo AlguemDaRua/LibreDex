@@ -35,7 +35,8 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
   ];
 
   // Single source of truth — colors from core/utils/type_utils.dart
-  static Color _colorFor(String t) => t == 'none' ? Colors.grey : pokemonTypeColor(t);
+  static Color _colorFor(String t) =>
+      t == 'none' ? Colors.grey : pokemonTypeColor(t);
 
   // Type Chart Effectiveness Maps (Defending multipliers)
   static const Map<String, Map<String, List<String>>> _effectiveness = {
@@ -661,7 +662,12 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
                   bottom: AppSpacing.bottomScrollPadding,
                 ),
                 children: [
-                  _buildSectionHeader('DEFENSE', hint: 'Incoming multipliers — 0× / 0.25× / 0.5× / 1× / 2× / 4×', isDark: isDark),
+                  _buildSectionHeader(
+                    'DEFENSE',
+                    hint:
+                        'Incoming multipliers — 0× / 0.25× / 0.5× / 1× / 2× / 4×',
+                    isDark: isDark,
+                  ),
                   const SizedBox(height: 10),
 
                   // Weaknesses 4x
@@ -714,7 +720,12 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
 
                   const SizedBox(height: 32),
 
-                  _buildSectionHeader('OFFENSE', hint: '2× super-effective targets for your selected type(s)', isDark: isDark),
+                  _buildSectionHeader(
+                    'OFFENSE',
+                    hint:
+                        '2× super-effective targets for your selected type(s)',
+                    isDark: isDark,
+                  ),
                   const SizedBox(height: 12),
 
                   _buildOffenseCard(_primaryType, isDark),
@@ -734,25 +745,55 @@ class _TypeChartScreenState extends State<TypeChartScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String title, {String? hint, required bool isDark}) {
+  Widget _buildSectionHeader(
+    String title, {
+    String? hint,
+    required bool isDark,
+  }) {
     return Row(
       children: [
         Container(
           padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(color: const Color(0xFFE3350D).withValues(alpha: 0.12), shape: BoxShape.circle),
-          child: const Icon(Icons.shield_rounded, size: 12, color: Color(0xFFE3350D)),
+          decoration: BoxDecoration(
+            color: const Color(0xFFE3350D).withValues(alpha: 0.12),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.shield_rounded,
+            size: 12,
+            color: Color(0xFFE3350D),
+          ),
         ),
         const SizedBox(width: 8),
-        Text(title, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: isDark ? Colors.grey[300] : Colors.grey[800], letterSpacing: 0.8)),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w900,
+            color: isDark ? Colors.grey[300] : Colors.grey[800],
+            letterSpacing: 0.8,
+          ),
+        ),
         if (hint != null) ...[
           const SizedBox(width: 6),
           Tooltip(
             message: hint,
             triggerMode: TooltipTriggerMode.tap,
-            decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(10)),
-            textStyle: const TextStyle(fontSize: 12, color: Colors.white, height: 1.35),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1A1A1A),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            textStyle: const TextStyle(
+              fontSize: 12,
+              color: Colors.white,
+              height: 1.35,
+            ),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Icon(Icons.info_outline_rounded, size: 14, color: Colors.grey[500]),
+            child: Icon(
+              Icons.info_outline_rounded,
+              size: 14,
+              color: Colors.grey[500],
+            ),
           ),
         ],
       ],

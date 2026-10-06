@@ -167,12 +167,34 @@ class FeatureHubSheet extends ConsumerWidget {
                         physics: const NeverScrollableScrollPhysics(),
                         mainAxisSpacing: 10,
                         crossAxisSpacing: 10,
-                        childAspectRatio: Responsive.isTablet(context) ? 3.6 : 3.2,
+                        childAspectRatio: Responsive.isTablet(context)
+                            ? 3.6
+                            : 3.2,
                         children: [
-                          _buildHubTile(context: context, ref: ref, section: AppSection.pokedex, color: const Color(0xFFE3350D)),
-                          _buildHubTile(context: context, ref: ref, section: AppSection.movedex, color: const Color(0xFFF7D02C)),
-                          _buildHubTile(context: context, ref: ref, section: AppSection.abilitydex, color: const Color(0xFFA78BFA)),
-                          _buildHubTile(context: context, ref: ref, section: AppSection.itemdex, color: const Color(0xFF34D399)),
+                          _buildHubTile(
+                            context: context,
+                            ref: ref,
+                            section: AppSection.pokedex,
+                            color: const Color(0xFFE3350D),
+                          ),
+                          _buildHubTile(
+                            context: context,
+                            ref: ref,
+                            section: AppSection.movedex,
+                            color: const Color(0xFFF7D02C),
+                          ),
+                          _buildHubTile(
+                            context: context,
+                            ref: ref,
+                            section: AppSection.abilitydex,
+                            color: const Color(0xFFA78BFA),
+                          ),
+                          _buildHubTile(
+                            context: context,
+                            ref: ref,
+                            section: AppSection.itemdex,
+                            color: const Color(0xFF34D399),
+                          ),
                         ],
                       ),
 
@@ -186,10 +208,22 @@ class FeatureHubSheet extends ConsumerWidget {
                         physics: const NeverScrollableScrollPhysics(),
                         mainAxisSpacing: 10,
                         crossAxisSpacing: 10,
-                        childAspectRatio: Responsive.isTablet(context) ? 3.6 : 3.2,
+                        childAspectRatio: Responsive.isTablet(context)
+                            ? 3.6
+                            : 3.2,
                         children: [
-                          _buildHubTile(context: context, ref: ref, section: AppSection.naturedex, color: const Color(0xFFF59E0B)),
-                          _buildHubTile(context: context, ref: ref, section: AppSection.typeChart, color: const Color(0xFF60A5FA)),
+                          _buildHubTile(
+                            context: context,
+                            ref: ref,
+                            section: AppSection.naturedex,
+                            color: const Color(0xFFF59E0B),
+                          ),
+                          _buildHubTile(
+                            context: context,
+                            ref: ref,
+                            section: AppSection.typeChart,
+                            color: const Color(0xFF60A5FA),
+                          ),
                         ],
                       ),
 
@@ -203,11 +237,28 @@ class FeatureHubSheet extends ConsumerWidget {
                         physics: const NeverScrollableScrollPhysics(),
                         mainAxisSpacing: 10,
                         crossAxisSpacing: 10,
-                        childAspectRatio: Responsive.isTablet(context) ? 3.6 : 3.2,
+                        childAspectRatio: Responsive.isTablet(context)
+                            ? 3.6
+                            : 3.2,
                         children: [
-                          _buildHubTile(context: context, ref: ref, section: AppSection.teamBuilder, color: const Color(0xFFEC4899)),
-                          _buildHubTile(context: context, ref: ref, section: AppSection.calculator, color: const Color(0xFF10B981)),
-                          _buildHubTile(context: context, ref: ref, section: AppSection.statCompare, color: const Color(0xFF8B5CF6)),
+                          _buildHubTile(
+                            context: context,
+                            ref: ref,
+                            section: AppSection.teamBuilder,
+                            color: const Color(0xFFEC4899),
+                          ),
+                          _buildHubTile(
+                            context: context,
+                            ref: ref,
+                            section: AppSection.calculator,
+                            color: const Color(0xFF10B981),
+                          ),
+                          _buildHubTile(
+                            context: context,
+                            ref: ref,
+                            section: AppSection.statCompare,
+                            color: const Color(0xFF8B5CF6),
+                          ),
                         ],
                       ),
 
@@ -221,9 +272,16 @@ class FeatureHubSheet extends ConsumerWidget {
                         physics: const NeverScrollableScrollPhysics(),
                         mainAxisSpacing: 10,
                         crossAxisSpacing: 10,
-                        childAspectRatio: Responsive.isTablet(context) ? 3.6 : 3.2,
+                        childAspectRatio: Responsive.isTablet(context)
+                            ? 3.6
+                            : 3.2,
                         children: [
-                          _buildHubTile(context: context, ref: ref, section: AppSection.settings, color: const Color(0xFF6B7280)),
+                          _buildHubTile(
+                            context: context,
+                            ref: ref,
+                            section: AppSection.settings,
+                            color: const Color(0xFF6B7280),
+                          ),
                         ],
                       ),
                     ],
@@ -351,21 +409,44 @@ class FeatureHubSheet extends ConsumerWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              Icon(Icons.info_outline_rounded, size: 12, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+              Icon(
+                Icons.info_outline_rounded,
+                size: 12,
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
                   'Eligibility ≠ origin · M-C moves, abilities & items',
-                  style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 10, fontWeight: FontWeight.w700),
+                  style: TextStyle(
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
               Tooltip(
-                message: 'Browse regulation eligibility and M-C-specific data. Availability is separate from game origin: older content can be eligible without being new to Champions.',
+                message:
+                    'Browse regulation eligibility and M-C-specific data. Availability is separate from game origin: older content can be eligible without being new to Champions.',
                 triggerMode: TooltipTriggerMode.tap,
-                decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(10)),
-                textStyle: const TextStyle(fontSize: 12, color: Colors.white, height: 1.35),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                child: Icon(Icons.help_outline_rounded, size: 14, color: Colors.grey[500]),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A1A1A),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 12,
+                  color: Colors.white,
+                  height: 1.35,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                child: Icon(
+                  Icons.help_outline_rounded,
+                  size: 14,
+                  color: Colors.grey[500],
+                ),
               ),
             ],
           ),
@@ -508,7 +589,11 @@ class FeatureHubSheet extends ConsumerWidget {
                 : (isDark ? const Color(0xFF181818) : const Color(0xFFF3F4F6)),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isSelected ? color : (isDark ? const Color(0xFF262626) : const Color(0xFFE5E7EB)),
+              color: isSelected
+                  ? color
+                  : (isDark
+                        ? const Color(0xFF262626)
+                        : const Color(0xFFE5E7EB)),
               width: isSelected ? 1.5 : 1,
             ),
           ),

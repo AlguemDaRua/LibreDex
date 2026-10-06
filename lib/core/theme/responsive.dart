@@ -5,11 +5,14 @@ import 'package:flutter/material.dart';
 class Responsive {
   Responsive._();
   static bool isTablet(BuildContext c) => MediaQuery.of(c).size.width >= 700;
-  static bool isWideTablet(BuildContext c) => MediaQuery.of(c).size.width >= 1000;
-  static bool isLandscape(BuildContext c) => MediaQuery.of(c).orientation == Orientation.landscape;
+  static bool isWideTablet(BuildContext c) =>
+      MediaQuery.of(c).size.width >= 1000;
+  static bool isLandscape(BuildContext c) =>
+      MediaQuery.of(c).orientation == Orientation.landscape;
 
   /// Extended rail on large tablets feels native (labels beside icons).
-  static bool useExtendedRail(BuildContext c) => MediaQuery.of(c).size.width >= 1000;
+  static bool useExtendedRail(BuildContext c) =>
+      MediaQuery.of(c).size.width >= 1000;
 
   /// Centered content so lines/grid never stretch edge-to-edge on 12.9" tablets.
   static double contentMaxWidth(BuildContext c) {
@@ -38,7 +41,7 @@ class Responsive {
 
   static int hubColumns(BuildContext c) => isTablet(c) ? 3 : 2;
   static EdgeInsets sheetPadding(BuildContext c) => EdgeInsets.symmetric(
-        horizontal: isTablet(c) ? 24 : 16,
-        vertical: isTablet(c) ? 20 : 16,
-      );
+    horizontal: isTablet(c) ? 24 : 16,
+    vertical: isTablet(c) ? 20 : 16,
+  );
 }
