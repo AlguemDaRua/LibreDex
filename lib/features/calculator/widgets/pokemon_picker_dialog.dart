@@ -1,10 +1,77 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/core/widgets/pokemon_sprite.dart';
 import 'package:libredex/features/calculator/viewmodels/damage_calculator_viewmodel.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
 import 'package:libredex/core/widgets/debounced_search_field.dart';
+
+/// Bundled pokemon -> ability junctions, loaded once.
+///
+/// Needed to tell cosmetic forms apart from real ones. A form with a different
+/// ability changes damage even when its stats are identical - Meowstic-Female
+/// has Prankster, Greninja-Battle-Bond has Battle Bond, Rockruff-Own-Tempo
+/// evolves into a different Lycanroc - so ability must be part of the test.
+final pokemonAbilityIdsProvider =
+    FutureProvider<Map<int, Set<int>>>((ref) async {
+  final raw = await rootBundle.loadString('assets/data/pokemon_abilities.json');
+  final decoded = json.decode(raw) as List<dynamic>;
+  final map = <int, Set<int>>{};
+  for (final entry in decoded) {
+    final row = entry as Map<String, dynamic>;
+    final pokemonId = row['pokemonId'] as int;
+    map.putIfAbsent(pokemonId, () => <int>{}).add(row['abilityId'] as int);
+  }
+  return map;
+});
+
+bool _sameAbilities(Set<int>? a, Set<int>? b) {
+  if (a == null || b == null) return a == b;
+  if (a.length != b.length) return false;
+  return a.containsAll(b);
+}
+
+/// Ids of forms that can never change a damage result, because they match
+/// their species' base form on base stats, typing and abilities alike.
+///
+/// These are cosmetic variants - Pikachu in eight different caps, the four
+/// interchangeable Mimikyu, most Gigantamax forms. They are noise in a
+/// calculator: picking one gives the same answer as picking the base form.
+/// Forms that actually differ (Megas, regional variants, Rotom, Toxtricity)
+/// are kept.
+Set<int> cosmeticFormIds(List<Pokemon> all, Map<int, Set<int>> abilities) {
+  final byDex = <int, List<Pokemon>>{};
+  for (final p in all) {
+    final dex = p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id;
+    byDex.putIfAbsent(dex, () => []).add(p);
+  }
+
+  final cosmetic = <int>{};
+  for (final group in byDex.values) {
+    if (group.length < 2) continue;
+    final base = group.firstWhere(
+      (p) => p.form.toLowerCase() == 'normal',
+      orElse: () => group.first,
+    );
+    for (final p in group) {
+      if (p.id == base.id) continue;
+      final identical = p.baseHp == base.baseHp &&
+          p.baseAtk == base.baseAtk &&
+          p.baseDef == base.baseDef &&
+          p.baseSpAtk == base.baseSpAtk &&
+          p.baseSpDef == base.baseSpDef &&
+          p.baseSpd == base.baseSpd &&
+          p.type1 == base.type1 &&
+          p.type2 == base.type2 &&
+          _sameAbilities(abilities[p.id], abilities[base.id]);
+      if (identical) cosmetic.add(p.id);
+    }
+  }
+  return cosmetic;
+}
 
 /// Searchable modal dialog for selecting an attacker or defender Pokémon.
 class PokemonPickerDialog extends ConsumerWidget {
@@ -41,11 +108,20 @@ class PokemonPickerDialog extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final screenHeight = MediaQuery.of(context).size.height;
+    final abilitiesAsync = ref.watch(pokemonAbilityIdsProvider);
+    // Until the ability junctions arrive we show everything rather than
+    // guessing: hiding a real form would be worse than briefly showing a
+    // cosmetic one.
+    final cosmetic = abilitiesAsync.maybeWhen(
+      data: (abilities) => cosmeticFormIds(pokemonList, abilities),
+      orElse: () => const <int>{},
+    );
     var query = '';
 
     return StatefulBuilder(
       builder: (ctx, setState) {
         final filtered = pokemonList.where((p) {
+          if (cosmetic.contains(p.id)) return false;
           final q = query.toLowerCase();
           return p.name.toLowerCase().contains(q) ||
               p.id.toString().contains(q) ||

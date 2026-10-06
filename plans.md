@@ -310,6 +310,26 @@ answer, not a logging gap.
   filter stands down instead of returning nothing.
 - A warning strip with a **Retry** button shows when the load failed.
 
+### ✅ D4 — Calculator picker: hide forms that cannot change a result
+
+**Done 2026-10-06.** Owner's ask: the picker listed every Mimikyu (four
+interchangeable entries) and they only want "versions that matter".
+
+A form matters in a damage calculator iff it differs from its species' base
+form in **base stats, typing, or abilities**. Ability had to be part of the
+test: 10 forms have identical stats but a different ability, and those change
+damage — Meowstic-Female (Prankster), Greninja-Battle-Bond (Battle Bond),
+Rockruff-Own-Tempo, Zygarde-Power-Construct, Basculin-White-Striped,
+Toxtricity-Low-Key, two Squawkabilly plumages.
+
+Result: **82 cosmetic forms hidden**, 1302 rows → 1220. Mimikyu collapses
+4 → 1. Megas, regional variants, Rotom and Aegislash-Blade are all retained.
+
+Abilities are not on the `Pokemon` row, so `pokemonAbilityIdsProvider` loads
+the bundled `assets/data/pokemon_abilities.json` once. Until it resolves the
+picker shows everything rather than guessing — hiding a real form is worse
+than briefly showing a cosmetic one.
+
 ### 🟡 D0 — Search: responsiveness and ranking (highest value, do first)
 
 Two separate causes produced one symptom — "I have to type the whole Pokémon
