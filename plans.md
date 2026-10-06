@@ -391,7 +391,22 @@ pokeRound — Muscle Band 4505/4096 (1.09985), type-boost and Expert Belt
 1.3. The codebase uses decimals throughout. Adopting the exact fractions is a
 cross-cutting change to every modifier and needs its own pass.
 
-### 🟡 D6 — ItemDex shows 61 duplicate item names
+### ✅ D6 — ItemDex duplicate item names
+
+**Done 2026-10-06.** `items.json` re-issues the same item under a fresh id
+across game versions, so 61 names appeared more than once — "Bike" ×2,
+"Basement Key" ×3, "DNA Splicers" ×3, "Dropped Item" ×3, most Z-Crystals ×2.
+Searching the ItemDex for "Bike" showed two identical rows.
+
+The model already had an `aliasOf` mechanism for this, but only **one** row in
+the whole dataset used it, so 60 duplicate names still showed.
+
+`_decodeItems` now picks the lowest id as canonical for each name and points
+the rest at it, reusing `aliasOf`. Duplicates vanish from ordinary browsing but
+stay reachable by id or via the aliases filter — the existing UI filter needed
+no change. 2,223 rows → 2,150 visible, zero duplicate names.
+
+
 
 **Open, low priority.** `assets/data/items.json` has 2,223 rows with **61
 duplicated names** — 'Basement Key' ×3, 'Bike' ×2, 'DNA Splicers' ×3,
