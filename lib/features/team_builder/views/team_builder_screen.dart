@@ -135,12 +135,12 @@ class TeamBuilderScreen extends ConsumerWidget {
               children: [
                 IconButton(
                   tooltip: 'Import Showdown Paste',
-                  icon: const Icon(Icons.file_upload_outlined),
+                  icon: const Icon(Icons.file_download_outlined),
                   onPressed: () => _showImportDialog(context, ref, pokemon),
                 ),
                 IconButton(
                   tooltip: 'Export Showdown Text',
-                  icon: const Icon(Icons.file_download_outlined),
+                  icon: const Icon(Icons.file_upload_outlined),
                   onPressed: () {
                     final byId = {for (final p in pokemon) p.id: p};
                     final team = slots
