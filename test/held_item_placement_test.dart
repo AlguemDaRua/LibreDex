@@ -45,13 +45,12 @@ void main() {
       String type = 'fire',
       String damageClass = 'physical',
       bool isPunching = false,
-    }) =>
-        HeldItemsData.getBasePowerMultiplier(
-          item,
-          moveType: type,
-          damageClass: damageClass,
-          isPunching: isPunching,
-        );
+    }) => HeldItemsData.getBasePowerMultiplier(
+      item,
+      moveType: type,
+      damageClass: damageClass,
+      isPunching: isPunching,
+    );
 
     test('Muscle Band boosts physical only', () {
       expect(bp('Muscle Band'), 1.1);
@@ -100,13 +99,12 @@ void main() {
       String type = 'fire',
       String damageClass = 'physical',
       bool isPunching = false,
-    }) =>
-        HeldItemsData.getBasePowerChain(
-          item,
-          moveType: type,
-          damageClass: damageClass,
-          isPunching: isPunching,
-        );
+    }) => HeldItemsData.getBasePowerChain(
+      item,
+      moveType: type,
+      damageClass: damageClass,
+      isPunching: isPunching,
+    );
 
     test('Muscle Band is 4505/4096, not the 4506 that 1.1 rounds to', () {
       expect(chain('Muscle Band'), [4505]);
@@ -170,7 +168,8 @@ void main() {
         expect(
           HeldItemsData.findByName(item.name),
           isNotNull,
-          reason: '"${item.name}" is in allItems but findByName returns null. '
+          reason:
+              '"${item.name}" is in allItems but findByName returns null. '
               'Unknown items silently resolve to a 1.0 multiplier, so any '
               'test or screen using one would be a no-op.',
         );
@@ -187,7 +186,8 @@ void main() {
         expect(
           HeldItemsData.findByName(name),
           isNotNull,
-          reason: '$name is handled by the pipeline but was missing from the '
+          reason:
+              '$name is handled by the pipeline but was missing from the '
               'item list, so no user could ever select it',
         );
       }

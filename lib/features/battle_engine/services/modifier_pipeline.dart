@@ -312,10 +312,7 @@ class ModifierPipeline {
     // Punching Glove is handled by HeldItemsData.getBasePowerChain above. It
     // used to be applied here as well, which stacked it to 1.21x.
     if (bpMods.isNotEmpty) {
-      bp = DamageMath.fixedModifier(
-        bp,
-        DamageMath.chainMods(bpMods),
-      );
+      bp = DamageMath.fixedModifier(bp, DamageMath.chainMods(bpMods));
       // Base power never falls below 1, however hard it gets scaled down.
       // Without this a heavily reduced move computes 0 base power, and every
       // roll collapses to the 1-damage floor instead of scaling properly.

@@ -91,8 +91,13 @@ void main() {
 
     test('Shedinja always has 1 HP', () {
       expect(
-        StatCalculator.calculateHp(base: 1, iv: 31, ev: 252, level: 100,
-            isShedinja: true),
+        StatCalculator.calculateHp(
+          base: 1,
+          iv: 31,
+          ev: 252,
+          level: 100,
+          isShedinja: true,
+        ),
         1,
       );
     });
@@ -120,7 +125,14 @@ void main() {
   group('StatsCalculatorState', () {
     final base = StatsCalculatorState(
       level: 50,
-      ivs: const {'hp': 31, 'atk': 31, 'def': 31, 'spa': 31, 'spd': 31, 'spe': 31},
+      ivs: const {
+        'hp': 31,
+        'atk': 31,
+        'def': 31,
+        'spa': 31,
+        'spd': 31,
+        'spe': 31,
+      },
       evs: const {'hp': 0, 'atk': 0, 'def': 0, 'spa': 0, 'spd': 0, 'spe': 0},
       nature: 'serious',
     );
@@ -128,9 +140,18 @@ void main() {
     test('totalEvs sums every stat', () {
       expect(base.totalEvs, 0);
       expect(
-        base.copyWith(evs: const {
-          'hp': 252, 'atk': 252, 'def': 4, 'spa': 0, 'spd': 0, 'spe': 0,
-        }).totalEvs,
+        base
+            .copyWith(
+              evs: const {
+                'hp': 252,
+                'atk': 252,
+                'def': 4,
+                'spa': 0,
+                'spd': 0,
+                'spe': 0,
+              },
+            )
+            .totalEvs,
         508,
       );
     });
@@ -220,10 +241,25 @@ void main() {
     tearDown(() => container.dispose());
 
     test('neutral natures leave every stat alone', () {
-      for (final nature in ['serious', 'hardy', 'docile', 'bashful', 'quirky']) {
-        for (final stat in ['Attack', 'Defense', 'Sp. Atk', 'Sp. Def', 'Speed']) {
-          expect(calc.getNatureMultiplier(nature, stat), 1.0,
-              reason: '$nature should not change $stat');
+      for (final nature in [
+        'serious',
+        'hardy',
+        'docile',
+        'bashful',
+        'quirky',
+      ]) {
+        for (final stat in [
+          'Attack',
+          'Defense',
+          'Sp. Atk',
+          'Sp. Def',
+          'Speed',
+        ]) {
+          expect(
+            calc.getNatureMultiplier(nature, stat),
+            1.0,
+            reason: '$nature should not change $stat',
+          );
         }
       }
     });
@@ -235,9 +271,26 @@ void main() {
 
     test('each non-neutral nature boosts exactly one and cuts exactly one', () {
       const natures = [
-        'adamant', 'bold', 'brave', 'calm', 'careful', 'gentle', 'hasty',
-        'impish', 'jolly', 'lax', 'lonely', 'mild', 'modest', 'naive',
-        'naughty', 'quiet', 'rash', 'relaxed', 'sassy', 'timid',
+        'adamant',
+        'bold',
+        'brave',
+        'calm',
+        'careful',
+        'gentle',
+        'hasty',
+        'impish',
+        'jolly',
+        'lax',
+        'lonely',
+        'mild',
+        'modest',
+        'naive',
+        'naughty',
+        'quiet',
+        'rash',
+        'relaxed',
+        'sassy',
+        'timid',
       ];
       const stats = ['Attack', 'Defense', 'Sp. Atk', 'Sp. Def', 'Speed'];
 
@@ -255,8 +308,11 @@ void main() {
         expect(boosted.length, 1, reason: '$nature should boost one stat');
         expect(hindered.length, 1, reason: '$nature should hinder one stat');
         expect(neutral.length, 3, reason: '$nature should leave three alone');
-        expect(boosted.single, isNot(hindered.single),
-            reason: '$nature boosts and hinders the same stat');
+        expect(
+          boosted.single,
+          isNot(hindered.single),
+          reason: '$nature boosts and hinders the same stat',
+        );
       }
     });
 
@@ -264,17 +320,36 @@ void main() {
       // 20 non-neutral natures, each a distinct (boosted, hindered) pair.
       // Missing one would silently make that nature neutral in the UI.
       const natures = [
-        'adamant', 'bold', 'brave', 'calm', 'careful', 'gentle', 'hasty',
-        'impish', 'jolly', 'lax', 'lonely', 'mild', 'modest', 'naive',
-        'naughty', 'quiet', 'rash', 'relaxed', 'sassy', 'timid',
+        'adamant',
+        'bold',
+        'brave',
+        'calm',
+        'careful',
+        'gentle',
+        'hasty',
+        'impish',
+        'jolly',
+        'lax',
+        'lonely',
+        'mild',
+        'modest',
+        'naive',
+        'naughty',
+        'quiet',
+        'rash',
+        'relaxed',
+        'sassy',
+        'timid',
       ];
       const stats = ['Attack', 'Defense', 'Sp. Atk', 'Sp. Def', 'Speed'];
       final pairs = <String>{};
       for (final nature in natures) {
-        final boosted = stats
-            .singleWhere((s) => calc.getNatureMultiplier(nature, s) > 1.0);
-        final hindered = stats
-            .singleWhere((s) => calc.getNatureMultiplier(nature, s) < 1.0);
+        final boosted = stats.singleWhere(
+          (s) => calc.getNatureMultiplier(nature, s) > 1.0,
+        );
+        final hindered = stats.singleWhere(
+          (s) => calc.getNatureMultiplier(nature, s) < 1.0,
+        );
         pairs.add('$boosted>$hindered');
       }
       expect(pairs.length, 20, reason: 'a duplicate pair means a wrong nature');
@@ -282,20 +357,52 @@ void main() {
 
     test('every nature name the UI offers is recognised', () {
       const natures = [
-        'serious', 'hardy', 'docile', 'bashful', 'quirky',
-        'adamant', 'bold', 'brave', 'calm', 'careful', 'gentle', 'hasty',
-        'impish', 'jolly', 'lax', 'lonely', 'mild', 'modest', 'naive',
-        'naughty', 'quiet', 'rash', 'relaxed', 'sassy', 'timid',
+        'serious',
+        'hardy',
+        'docile',
+        'bashful',
+        'quirky',
+        'adamant',
+        'bold',
+        'brave',
+        'calm',
+        'careful',
+        'gentle',
+        'hasty',
+        'impish',
+        'jolly',
+        'lax',
+        'lonely',
+        'mild',
+        'modest',
+        'naive',
+        'naughty',
+        'quiet',
+        'rash',
+        'relaxed',
+        'sassy',
+        'timid',
       ];
       for (final nature in natures) {
-        final values = ['Attack', 'Defense', 'Sp. Atk', 'Sp. Def', 'Speed']
-            .map((s) => calc.getNatureMultiplier(nature, s))
-            .toList();
-        expect(values.any((v) => v != 1.0) || nature == 'serious' ||
-            nature == 'hardy' || nature == 'docile' || nature == 'bashful' ||
-            nature == 'quirky', isTrue,
-            reason: '$nature is recognised as neutral but is not in the '
-                'neutral list - it is probably misspelled');
+        final values = [
+          'Attack',
+          'Defense',
+          'Sp. Atk',
+          'Sp. Def',
+          'Speed',
+        ].map((s) => calc.getNatureMultiplier(nature, s)).toList();
+        expect(
+          values.any((v) => v != 1.0) ||
+              nature == 'serious' ||
+              nature == 'hardy' ||
+              nature == 'docile' ||
+              nature == 'bashful' ||
+              nature == 'quirky',
+          isTrue,
+          reason:
+              '$nature is recognised as neutral but is not in the '
+              'neutral list - it is probably misspelled',
+        );
       }
     });
   });

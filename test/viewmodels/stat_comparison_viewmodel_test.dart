@@ -5,13 +5,7 @@ import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/features/stat_comparison/models/comparison_entry.dart';
 import 'package:libredex/features/stat_comparison/viewmodels/stat_comparison_viewmodel.dart';
 
-Pokemon mon(
-  int id,
-  String name, {
-  int atk = 50,
-  int spe = 50,
-  int hp = 50,
-}) =>
+Pokemon mon(int id, String name, {int atk = 50, int spe = 50, int hp = 50}) =>
     Pokemon(
       id: id,
       name: name,
@@ -44,14 +38,16 @@ final mid = mon(3, 'MidMon', spe: 80);
 void main() {
   group('StatComparisonState', () {
     test('count ignores empty slots', () {
-      final state = StatComparisonState(entries: [
-        ComparisonEntry.defaults(fast),
-        null,
-        ComparisonEntry.defaults(slow),
-        null,
-        null,
-        null,
-      ]);
+      final state = StatComparisonState(
+        entries: [
+          ComparisonEntry.defaults(fast),
+          null,
+          ComparisonEntry.defaults(slow),
+          null,
+          null,
+          null,
+        ],
+      );
       expect(state.count, 2);
       expect(state.isEmpty, isFalse);
     });
@@ -86,14 +82,16 @@ void main() {
 
   group('computedEntries', () {
     test('skips null slots but keeps the original index', () {
-      final state = StatComparisonState(entries: [
-        null,
-        ComparisonEntry.defaults(fast),
-        null,
-        ComparisonEntry.defaults(slow),
-        null,
-        null,
-      ]);
+      final state = StatComparisonState(
+        entries: [
+          null,
+          ComparisonEntry.defaults(fast),
+          null,
+          ComparisonEntry.defaults(slow),
+          null,
+          null,
+        ],
+      );
       final computed = state.computedEntries();
       expect(computed.length, 2);
       expect(computed.first.index, 1);
@@ -101,39 +99,43 @@ void main() {
     });
 
     test('preserves slot order when unsorted', () {
-      final state = StatComparisonState(entries: [
+      final state = StatComparisonState(
+        entries: [
+          ComparisonEntry.defaults(slow),
+          ComparisonEntry.defaults(fast),
+          ComparisonEntry.defaults(mid),
+          null,
+          null,
+          null,
+        ],
+      );
+      expect(state.sortedEntries().map((e) => e.entry.pokemon.name).toList(), [
+        'SlowMon',
+        'FastMon',
+        'MidMon',
+      ]);
+    });
+  });
+
+  group('sortedEntries', () {
+    StatComparisonState withThree() => StatComparisonState(
+      entries: [
         ComparisonEntry.defaults(slow),
         ComparisonEntry.defaults(fast),
         ComparisonEntry.defaults(mid),
         null,
         null,
         null,
-      ]);
-      expect(
-        state.sortedEntries().map((e) => e.entry.pokemon.name).toList(),
-        ['SlowMon', 'FastMon', 'MidMon'],
-      );
-    });
-  });
-
-  group('sortedEntries', () {
-    StatComparisonState withThree() => StatComparisonState(
-          entries: [
-            ComparisonEntry.defaults(slow),
-            ComparisonEntry.defaults(fast),
-            ComparisonEntry.defaults(mid),
-            null,
-            null,
-            null,
-          ],
-        );
+      ],
+    );
 
     test('defaults to descending', () {
       final state = withThree().copyWith(sortColumn: SortColumn.spe);
-      expect(
-        state.sortedEntries().map((e) => e.entry.pokemon.name).toList(),
-        ['FastMon', 'MidMon', 'SlowMon'],
-      );
+      expect(state.sortedEntries().map((e) => e.entry.pokemon.name).toList(), [
+        'FastMon',
+        'MidMon',
+        'SlowMon',
+      ]);
     });
 
     test('honours ascending', () {
@@ -141,10 +143,11 @@ void main() {
         sortColumn: SortColumn.spe,
         sortDirection: SortDirection.ascending,
       );
-      expect(
-        state.sortedEntries().map((e) => e.entry.pokemon.name).toList(),
-        ['SlowMon', 'MidMon', 'FastMon'],
-      );
+      expect(state.sortedEntries().map((e) => e.entry.pokemon.name).toList(), [
+        'SlowMon',
+        'MidMon',
+        'FastMon',
+      ]);
     });
 
     test('ties fall back to slot order, keeping the list stable', () {
@@ -161,10 +164,11 @@ void main() {
         ],
         sortColumn: SortColumn.spe,
       );
-      expect(
-        state.sortedEntries().map((e) => e.entry.pokemon.name).toList(),
-        ['A', 'B', 'C'],
-      );
+      expect(state.sortedEntries().map((e) => e.entry.pokemon.name).toList(), [
+        'A',
+        'B',
+        'C',
+      ]);
     });
 
     test('every sort column produces a value without throwing', () {
@@ -260,9 +264,7 @@ void main() {
 
     test('loadFromTeam replaces everything and caps at six', () {
       notifier().addPokemon(fast);
-      notifier().loadFromTeam([
-        for (var i = 0; i < 9; i++) mon(i, 'Team$i'),
-      ]);
+      notifier().loadFromTeam([for (var i = 0; i < 9; i++) mon(i, 'Team$i')]);
       expect(current().count, 6);
       expect(current().entries[0]?.pokemon.name, 'Team0');
     });
@@ -272,10 +274,11 @@ void main() {
       notifier().addPokemon(slow);
       notifier().addPokemon(mid);
       notifier().reorder(2, 0);
-      expect(
-        current().entries.map((e) => e?.pokemon.name).take(3).toList(),
-        ['MidMon', 'FastMon', 'SlowMon'],
-      );
+      expect(current().entries.map((e) => e?.pokemon.name).take(3).toList(), [
+        'MidMon',
+        'FastMon',
+        'SlowMon',
+      ]);
     });
 
     test('toggleSort cycles descending, ascending, then off', () {

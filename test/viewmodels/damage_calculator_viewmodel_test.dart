@@ -21,18 +21,62 @@ DamageCalculatorState sandboxState({
   double defense = 100,
 }) {
   return DamageCalculatorState(
-    attackerIvs: const {'hp': 31, 'atk': 31, 'def': 31, 'spa': 31, 'spd': 31, 'spe': 31},
-    attackerEvs: const {'hp': 0, 'atk': 0, 'def': 0, 'spa': 0, 'spd': 0, 'spe': 0},
-    attackerStages: attackerStages ??
+    attackerIvs: const {
+      'hp': 31,
+      'atk': 31,
+      'def': 31,
+      'spa': 31,
+      'spd': 31,
+      'spe': 31,
+    },
+    attackerEvs: const {
+      'hp': 0,
+      'atk': 0,
+      'def': 0,
+      'spa': 0,
+      'spd': 0,
+      'spe': 0,
+    },
+    attackerStages:
+        attackerStages ??
         const {'atk': 0, 'def': 0, 'spa': 0, 'spd': 0, 'spe': 0},
     attackerHeldItem: attackerItem,
-    defenderIvs: const {'hp': 31, 'atk': 31, 'def': 31, 'spa': 31, 'spd': 31, 'spe': 31},
-    defenderEvs: const {'hp': 0, 'atk': 0, 'def': 0, 'spa': 0, 'spd': 0, 'spe': 0},
-    defenderStages: defenderStages ??
+    defenderIvs: const {
+      'hp': 31,
+      'atk': 31,
+      'def': 31,
+      'spa': 31,
+      'spd': 31,
+      'spe': 31,
+    },
+    defenderEvs: const {
+      'hp': 0,
+      'atk': 0,
+      'def': 0,
+      'spa': 0,
+      'spd': 0,
+      'spe': 0,
+    },
+    defenderStages:
+        defenderStages ??
         const {'atk': 0, 'def': 0, 'spa': 0, 'spd': 0, 'spe': 0},
     defenderHeldItem: defenderItem,
-    attackerSps: const {'hp': 0, 'atk': 0, 'def': 0, 'spa': 0, 'spd': 0, 'spe': 0},
-    defenderSps: const {'hp': 0, 'atk': 0, 'def': 0, 'spa': 0, 'spd': 0, 'spe': 0},
+    attackerSps: const {
+      'hp': 0,
+      'atk': 0,
+      'def': 0,
+      'spa': 0,
+      'spd': 0,
+      'spe': 0,
+    },
+    defenderSps: const {
+      'hp': 0,
+      'atk': 0,
+      'def': 0,
+      'spa': 0,
+      'spd': 0,
+      'spe': 0,
+    },
     selectedMoveName: moveName,
     moveCategory: category,
     isCriticalHit: isCriticalHit,
@@ -69,24 +113,27 @@ void main() {
       );
       // Choice Band does nothing for a special move.
       expect(
-        sandboxState(attackerItem: 'Choice Band', category: 'special')
-            .sandboxOverrides()
-            .attack,
+        sandboxState(
+          attackerItem: 'Choice Band',
+          category: 'special',
+        ).sandboxOverrides().attack,
         100,
       );
       expect(
-        sandboxState(attackerItem: 'Choice Specs', category: 'special')
-            .sandboxOverrides()
-            .attack,
+        sandboxState(
+          attackerItem: 'Choice Specs',
+          category: 'special',
+        ).sandboxOverrides().attack,
         150,
       );
     });
 
     test('defensive items reach the Defense stat', () {
       expect(
-        sandboxState(defenderItem: 'Assault Vest', category: 'special')
-            .sandboxOverrides()
-            .defense,
+        sandboxState(
+          defenderItem: 'Assault Vest',
+          category: 'special',
+        ).sandboxOverrides().defense,
         150,
       );
       // Assault Vest is special-only.
@@ -106,21 +153,39 @@ void main() {
   group('sandboxOverrides applies stat stages', () {
     test('a negative attack stage halves the stat', () {
       final o = sandboxState(
-        attackerStages: const {'atk': -2, 'def': 0, 'spa': 0, 'spd': 0, 'spe': 0},
+        attackerStages: const {
+          'atk': -2,
+          'def': 0,
+          'spa': 0,
+          'spd': 0,
+          'spe': 0,
+        },
       ).sandboxOverrides();
       expect(o.attack, 50);
     });
 
     test('a positive attack stage doubles the stat', () {
       final o = sandboxState(
-        attackerStages: const {'atk': 2, 'def': 0, 'spa': 0, 'spd': 0, 'spe': 0},
+        attackerStages: const {
+          'atk': 2,
+          'def': 0,
+          'spa': 0,
+          'spd': 0,
+          'spe': 0,
+        },
       ).sandboxOverrides();
       expect(o.attack, 200);
     });
 
     test('a critical hit ignores the attacker’s negative stages', () {
       final o = sandboxState(
-        attackerStages: const {'atk': -2, 'def': 0, 'spa': 0, 'spd': 0, 'spe': 0},
+        attackerStages: const {
+          'atk': -2,
+          'def': 0,
+          'spa': 0,
+          'spd': 0,
+          'spe': 0,
+        },
         isCriticalHit: true,
       ).sandboxOverrides();
       expect(o.attack, 100);
@@ -128,7 +193,13 @@ void main() {
 
     test('a critical hit ignores the defender’s positive stages', () {
       final o = sandboxState(
-        defenderStages: const {'atk': 0, 'def': 2, 'spa': 0, 'spd': 0, 'spe': 0},
+        defenderStages: const {
+          'atk': 0,
+          'def': 2,
+          'spa': 0,
+          'spd': 0,
+          'spe': 0,
+        },
         isCriticalHit: true,
       ).sandboxOverrides();
       expect(o.defense, 100);
@@ -136,7 +207,13 @@ void main() {
 
     test('a critical hit still respects a negative defensive stage', () {
       final o = sandboxState(
-        defenderStages: const {'atk': 0, 'def': -2, 'spa': 0, 'spd': 0, 'spe': 0},
+        defenderStages: const {
+          'atk': 0,
+          'def': -2,
+          'spa': 0,
+          'spd': 0,
+          'spe': 0,
+        },
         isCriticalHit: true,
       ).sandboxOverrides();
       expect(o.defense, 50);
@@ -146,8 +223,20 @@ void main() {
   group('sandboxOverrides picks the right stat pair', () {
     test('a physical move uses Attack against Defense', () {
       final o = sandboxState(
-        attackerStages: const {'atk': 2, 'def': 0, 'spa': 0, 'spd': 0, 'spe': 0},
-        defenderStages: const {'atk': 0, 'def': 2, 'spa': 0, 'spd': 0, 'spe': 0},
+        attackerStages: const {
+          'atk': 2,
+          'def': 0,
+          'spa': 0,
+          'spd': 0,
+          'spe': 0,
+        },
+        defenderStages: const {
+          'atk': 0,
+          'def': 2,
+          'spa': 0,
+          'spd': 0,
+          'spe': 0,
+        },
       ).sandboxOverrides();
       expect(o.attack, 200);
       expect(o.defense, 200);
@@ -156,8 +245,20 @@ void main() {
     test('a special move uses Sp. Atk against Sp. Def', () {
       final o = sandboxState(
         category: 'special',
-        attackerStages: const {'atk': 0, 'def': 0, 'spa': 2, 'spd': 0, 'spe': 0},
-        defenderStages: const {'atk': 0, 'def': 0, 'spa': 0, 'spd': 2, 'spe': 0},
+        attackerStages: const {
+          'atk': 0,
+          'def': 0,
+          'spa': 2,
+          'spd': 0,
+          'spe': 0,
+        },
+        defenderStages: const {
+          'atk': 0,
+          'def': 0,
+          'spa': 0,
+          'spd': 2,
+          'spe': 0,
+        },
       ).sandboxOverrides();
       expect(o.attack, 200);
       expect(o.defense, 200);
@@ -167,7 +268,13 @@ void main() {
       final o = sandboxState(
         category: 'special',
         moveName: 'Psyshock',
-        defenderStages: const {'atk': 0, 'def': 2, 'spa': 0, 'spd': 2, 'spe': 0},
+        defenderStages: const {
+          'atk': 0,
+          'def': 2,
+          'spa': 0,
+          'spd': 2,
+          'spe': 0,
+        },
       ).sandboxOverrides();
       // Defense is doubled, Sp. Def is also doubled, but Psyshock reads Def.
       expect(o.defense, 200);
@@ -176,7 +283,13 @@ void main() {
     test('Body Press uses the Defense stage for the attack stat', () {
       final o = sandboxState(
         moveName: 'Body Press',
-        attackerStages: const {'atk': 2, 'def': -2, 'spa': 0, 'spd': 0, 'spe': 0},
+        attackerStages: const {
+          'atk': 2,
+          'def': -2,
+          'spa': 0,
+          'spd': 0,
+          'spe': 0,
+        },
       ).sandboxOverrides();
       // Attack is +2 but Body Press reads Defense, which is -2.
       expect(o.attack, 50);
@@ -186,7 +299,13 @@ void main() {
   group('sandboxOverrides clamps', () {
     test('a stat never falls below 1', () {
       final o = sandboxState(
-        attackerStages: const {'atk': -6, 'def': 0, 'spa': 0, 'spd': 0, 'spe': 0},
+        attackerStages: const {
+          'atk': -6,
+          'def': 0,
+          'spa': 0,
+          'spd': 0,
+          'spe': 0,
+        },
         attack: 1,
       ).sandboxOverrides();
       expect(o.attack, greaterThanOrEqualTo(1));

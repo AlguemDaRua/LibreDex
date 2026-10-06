@@ -120,8 +120,8 @@ class _StartupScreen extends StatelessWidget {
                   hasError
                       ? error!
                       : 'Preparing the local reference database. Artwork and '
-                          'up-to-date evolution details load online when a '
-                          'connection is available.',
+                            'up-to-date evolution details load online when a '
+                            'connection is available.',
                   style: TextStyle(
                     fontSize: 13,
                     height: 1.5,

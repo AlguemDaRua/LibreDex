@@ -291,7 +291,7 @@ class _AbilityDetailScreenState extends ConsumerState<AbilityDetailScreen> {
                                 suffixIcon: _pokemonQuery.isEmpty
                                     ? null
                                     : IconButton(
-                                      tooltip: 'Clear search',
+                                        tooltip: 'Clear search',
                                         icon: const Icon(Icons.clear),
                                         onPressed: () {
                                           _pokemonSearchController.clear();

@@ -9,38 +9,35 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  Pokemon makePokemon(int id, String name, {String form = 'normal'}) =>
-      Pokemon(
-        id: id,
-        name: name,
-        form: form,
-        type1: 'fire',
-        type2: null,
-        baseHp: 78,
-        baseAtk: 84,
-        baseDef: 78,
-        baseSpAtk: 109,
-        baseSpDef: 85,
-        baseSpd: 100,
-        isLegendary: false,
-        isMythical: false,
-        isParadox: false,
-        isUltraBeast: false,
-        spriteUrl: '',
-        shinySpriteUrl: '',
-        nationalDexNumber: 6,
-        generation: 1,
-        evolutionStage: 2,
-        isChampions: false,
-        isLegendsZA: false,
-      );
+  Pokemon makePokemon(int id, String name, {String form = 'normal'}) => Pokemon(
+    id: id,
+    name: name,
+    form: form,
+    type1: 'fire',
+    type2: null,
+    baseHp: 78,
+    baseAtk: 84,
+    baseDef: 78,
+    baseSpAtk: 109,
+    baseSpDef: 85,
+    baseSpd: 100,
+    isLegendary: false,
+    isMythical: false,
+    isParadox: false,
+    isUltraBeast: false,
+    spriteUrl: '',
+    shinySpriteUrl: '',
+    nationalDexNumber: 6,
+    generation: 1,
+    evolutionStage: 2,
+    isChampions: false,
+    isLegendsZA: false,
+  );
 
   group('ContentBadge.forms', () {
     testWidgets('labels the count of forms', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(body: ContentBadge.forms(count: 4)),
-        ),
+        const MaterialApp(home: Scaffold(body: ContentBadge.forms(count: 4))),
       );
 
       expect(find.text('4 FORMS'), findsOneWidget);

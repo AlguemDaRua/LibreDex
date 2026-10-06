@@ -9,31 +9,30 @@ Pokemon dexEntry(
   String form = 'normal',
   String type1 = 'normal',
   String? type2,
-}) =>
-    Pokemon(
-      id: id,
-      name: name,
-      form: form,
-      type1: type1,
-      type2: type2,
-      baseHp: 50,
-      baseAtk: 50,
-      baseDef: 50,
-      baseSpAtk: 50,
-      baseSpDef: 50,
-      baseSpd: 50,
-      isLegendary: false,
-      isMythical: false,
-      isParadox: false,
-      isUltraBeast: false,
-      spriteUrl: '',
-      shinySpriteUrl: '',
-      nationalDexNumber: id,
-      generation: 1,
-      evolutionStage: 1,
-      isChampions: false,
-      isLegendsZA: false,
-    );
+}) => Pokemon(
+  id: id,
+  name: name,
+  form: form,
+  type1: type1,
+  type2: type2,
+  baseHp: 50,
+  baseAtk: 50,
+  baseDef: 50,
+  baseSpAtk: 50,
+  baseSpDef: 50,
+  baseSpd: 50,
+  isLegendary: false,
+  isMythical: false,
+  isParadox: false,
+  isUltraBeast: false,
+  spriteUrl: '',
+  shinySpriteUrl: '',
+  nationalDexNumber: id,
+  generation: 1,
+  evolutionStage: 1,
+  isChampions: false,
+  isLegendsZA: false,
+);
 
 void main() {
   group('matching', () {
@@ -123,8 +122,11 @@ void main() {
       // so dex order inside the band is what separates them. That keeps
       // evolution families adjacent in the results.
       for (final name in ['Gardevoir', 'Garchomp', 'Garbodor', 'Garganacl']) {
-        expect(PokemonSearch.rank(dexEntry(1, name), 'gar'), 1,
-            reason: '$name should rank as a prefix match');
+        expect(
+          PokemonSearch.rank(dexEntry(1, name), 'gar'),
+          1,
+          reason: '$name should rank as a prefix match',
+        );
       }
     });
 

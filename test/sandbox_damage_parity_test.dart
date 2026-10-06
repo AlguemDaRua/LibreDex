@@ -176,8 +176,11 @@ void main() {
       weather: state.field.weather,
       terrain: state.field.terrain,
     );
-    return ModifierPipeline.process(state, attackerStats, defenderStats)
-        .effectiveAttack;
+    return ModifierPipeline.process(
+      state,
+      attackerStats,
+      defenderStats,
+    ).effectiveAttack;
   }
 
   group('sandbox resolves through the shared engine', () {
@@ -288,7 +291,8 @@ void main() {
       expect(
         effectiveAttackFor(withOrb),
         equals(effectiveAttackFor(bare)),
-        reason: 'Life Orb is a final damage modifier, not an Attack stat '
+        reason:
+            'Life Orb is a final damage modifier, not an Attack stat '
             'modifier, so holding it must not change the Attack stat',
       );
 

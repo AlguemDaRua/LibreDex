@@ -540,10 +540,7 @@ class HeldItemsData {
   /// well double-counted Life Orb and every type-boosting item on the sandbox
   /// path, because that path builds its Attack stat from this method and then
   /// still runs the pipeline's final modifiers.
-  static double getAttackMultiplier(
-    String itemName,
-    bool isSpecial,
-  ) {
+  static double getAttackMultiplier(String itemName, bool isSpecial) {
     final item = findByName(itemName);
     if (item == null) return 1.0;
     return isSpecial ? item.spAtkMultiplier : item.atkMultiplier;
@@ -629,12 +626,12 @@ class HeldItemsData {
   /// use. Rounding the decimal directly would give 4506 for 1.1 rather than
   /// the 4505 the game actually applies.
   static int _chainFromDecimal(double m) => switch ((m * 10).round()) {
-        11 => DamageMath.boost11,
-        12 => DamageMath.boost12,
-        13 => DamageMath.boost13,
-        15 => DamageMath.boost15,
-        _ => (m * 4096).round(),
-      };
+    11 => DamageMath.boost11,
+    12 => DamageMath.boost12,
+    13 => DamageMath.boost13,
+    15 => DamageMath.boost15,
+    _ => (m * 4096).round(),
+  };
 
   /// Calculate resistance multiplier from defender's held item.
   /// Resist berries apply only when the move is super-effective (mult > 1.0).

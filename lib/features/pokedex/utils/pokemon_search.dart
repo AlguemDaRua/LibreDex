@@ -27,7 +27,8 @@ class PokemonSearch {
     final form = pokemon.form.toLowerCase();
     final type1 = pokemon.type1.toLowerCase();
     final type2 = pokemon.type2?.toLowerCase() ?? '';
-    final dex = '${pokemon.nationalDexNumber > 0 ? pokemon.nationalDexNumber : pokemon.id}';
+    final dex =
+        '${pokemon.nationalDexNumber > 0 ? pokemon.nationalDexNumber : pokemon.id}';
 
     return name.contains(q) ||
         form.contains(q) ||
@@ -54,8 +55,10 @@ class PokemonSearch {
   /// True when every whitespace-separated token of [query] appears somewhere
   /// in the name or form, in any order. Only applies to multi-word queries.
   static bool matchesTokens(String query, String name, String form) {
-    final tokens =
-        query.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
+    final tokens = query
+        .split(RegExp(r'\s+'))
+        .where((t) => t.isNotEmpty)
+        .toList();
     if (tokens.length < 2) return false;
     final haystack = '$name $form';
     return tokens.every(haystack.contains);
@@ -100,8 +103,7 @@ class PokemonSearch {
     if (type1.contains(q) || type2.contains(q)) return 6;
 
     // Order-free tokens ("floette eternal") still beat a bare subsequence.
-    final tokens =
-        q.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
+    final tokens = q.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
     if (tokens.length >= 2 && tokens.every('$name $form'.contains)) return 7;
 
     // Everything else - subsequence hits, Champions aliases, regulation

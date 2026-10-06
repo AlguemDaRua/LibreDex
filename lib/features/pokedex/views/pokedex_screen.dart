@@ -284,13 +284,12 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
     String query,
     ChampionsCatalog? champions,
     ChampionsRegulationCatalog? regulation,
-  ) =>
-      PokemonSearch.matches(
-        pokemon,
-        query,
-        champions: champions,
-        regulation: regulation,
-      );
+  ) => PokemonSearch.matches(
+    pokemon,
+    query,
+    champions: champions,
+    regulation: regulation,
+  );
 
   int _groupSearchRank(List<Pokemon> forms, String query) =>
       PokemonSearch.groupRank(forms, query);
@@ -1304,9 +1303,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                           setState(() => _showLegendary = val);
                           setModalState(() {});
                         }),
-                        _buildSwitchRow('Mega Evolution', _showMega, (
-                          val,
-                        ) {
+                        _buildSwitchRow('Mega Evolution', _showMega, (val) {
                           HapticFeedback.selectionClick();
                           setState(() => _showMega = val);
                           setModalState(() {});

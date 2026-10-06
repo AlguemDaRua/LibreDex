@@ -48,6 +48,7 @@ class _RandomRollOverlayState extends State<RandomRollOverlay>
     with SingleTickerProviderStateMixin {
   late List<Pokemon> _shuffleList;
   late Pokemon _selectedWinner;
+
   /// Every pick for this roll. One entry for a single roll, six for a team.
   late List<Pokemon> _winners;
   int _currentIndex = 0;
@@ -243,136 +244,136 @@ class _RandomRollOverlayState extends State<RandomRollOverlay>
                 _buildTeamGrid()
               else
                 Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Outer animated aura glow
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    width: 210,
-                    height: 210,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: RadialGradient(
-                        colors: [
-                          (_isSpinning ? AppTheme.pokemonRed : typeColor)
-                              .withValues(alpha: 0.35),
-                          Colors.transparent,
+                  alignment: Alignment.center,
+                  children: [
+                    // Outer animated aura glow
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      width: 210,
+                      height: 210,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          colors: [
+                            (_isSpinning ? AppTheme.pokemonRed : typeColor)
+                                .withValues(alpha: 0.35),
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // Pokeball icon background watermark
+                    Opacity(
+                      opacity: _isSpinning ? 0.12 : 0.22,
+                      child: Icon(
+                        Icons.catching_pokemon_rounded,
+                        size: 170,
+                        color: _isSpinning ? Colors.white : typeColor,
+                      ),
+                    ),
+
+                    // Sprite Display
+                    AnimatedScale(
+                      scale: _isSpinning ? 0.95 : 1.15,
+                      duration: const Duration(milliseconds: 350),
+                      curve: Curves.elasticOut,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            width: 140,
+                            height: 140,
+                            child: PokemonSprite(
+                              imageUrl: activePokemon.spriteUrl,
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                  ),
-
-                  // Pokeball icon background watermark
-                  Opacity(
-                    opacity: _isSpinning ? 0.12 : 0.22,
-                    child: Icon(
-                      Icons.catching_pokemon_rounded,
-                      size: 170,
-                      color: _isSpinning ? Colors.white : typeColor,
-                    ),
-                  ),
-
-                  // Sprite Display
-                  AnimatedScale(
-                    scale: _isSpinning ? 0.95 : 1.15,
-                    duration: const Duration(milliseconds: 350),
-                    curve: Curves.elasticOut,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(
-                          width: 140,
-                          height: 140,
-                          child: PokemonSprite(
-                            imageUrl: activePokemon.spriteUrl,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
               const SizedBox(height: 16),
 
               // Pokemon Name & Type info - a team labels itself in the grid.
               if (_isSpinning || _winners.length <= 1) ...[
-              Text(
-                activePokemon.name.toUpperCase(),
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1,
-                  color: Colors.white,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 6),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: typeColor.withValues(alpha: 0.25),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: typeColor.withValues(alpha: 0.5),
-                      ),
-                    ),
-                    child: Text(
-                      activePokemon.type1.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: typeColor,
-                      ),
-                    ),
+                Text(
+                  activePokemon.name.toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1,
+                    color: Colors.white,
                   ),
-                  if (activePokemon.type2 != null &&
-                      activePokemon.type2!.isNotEmpty) ...[
-                    const SizedBox(width: 6),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 6),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 10,
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: pokemonTypeColor(
-                          activePokemon.type2!,
-                        ).withValues(alpha: 0.25),
+                        color: typeColor.withValues(alpha: 0.25),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: pokemonTypeColor(
-                            activePokemon.type2!,
-                          ).withValues(alpha: 0.5),
+                          color: typeColor.withValues(alpha: 0.5),
                         ),
                       ),
                       child: Text(
-                        activePokemon.type2!.toUpperCase(),
+                        activePokemon.type1.toUpperCase(),
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
-                          color: pokemonTypeColor(activePokemon.type2!),
+                          color: typeColor,
                         ),
                       ),
                     ),
-                  ],
-                  const SizedBox(width: 10),
-                  Text(
-                    'BST: $bst',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey,
+                    if (activePokemon.type2 != null &&
+                        activePokemon.type2!.isNotEmpty) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: pokemonTypeColor(
+                            activePokemon.type2!,
+                          ).withValues(alpha: 0.25),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: pokemonTypeColor(
+                              activePokemon.type2!,
+                            ).withValues(alpha: 0.5),
+                          ),
+                        ),
+                        child: Text(
+                          activePokemon.type2!.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: pokemonTypeColor(activePokemon.type2!),
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(width: 10),
+                    Text(
+                      'BST: $bst',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey,
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
               ],
               const SizedBox(height: 24),
 

@@ -121,8 +121,9 @@ class RandomizerSettings {
       // Clamped: a stored value above the pool size would otherwise ask for
       // more Pokémon than exist, and 0 would roll an empty team.
       // clamp() returns num, hence the trailing toInt().
-      rollCount:
-          ((json['rollCount'] as num?)?.toInt() ?? 1).clamp(1, 6).toInt(),
+      rollCount: ((json['rollCount'] as num?)?.toInt() ?? 1)
+          .clamp(1, 6)
+          .toInt(),
     );
   }
 }

@@ -20,7 +20,6 @@ import 'package:libredex/features/calculator/utils/damage_math.dart';
 /// final modifiers, which must be chained rather than rounded one at a time.
 void main() {
   group('damage matches Showdown', () {
-
     test('Garchomp Earthquake vs Tyranitar, Life Orb, super-effective', () {
       final range = DamageMath.calculate(
         level: 50,
@@ -147,18 +146,21 @@ void main() {
       expect(range.max, 42);
     });
 
-    test('Landorus-T Earthquake vs Scizor, 4x with Life Orb and Expert Belt', () {
-      final range = DamageMath.calculate(
-        level: 50,
-        basePower: 100,
-        attack: 197,
-        defense: 152,
-        stab: 1.5,
-        effectiveness: 4,
-        finalModifiers: const [1.2],
-      );
-      expect(range.min, 360);
-      expect(range.max, 422);
-    });
+    test(
+      'Landorus-T Earthquake vs Scizor, 4x with Life Orb and Expert Belt',
+      () {
+        final range = DamageMath.calculate(
+          level: 50,
+          basePower: 100,
+          attack: 197,
+          defense: 152,
+          stab: 1.5,
+          effectiveness: 4,
+          finalModifiers: const [1.2],
+        );
+        expect(range.min, 360);
+        expect(range.max, 422);
+      },
+    );
   });
 }

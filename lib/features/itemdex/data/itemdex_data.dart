@@ -12,10 +12,11 @@ final itemDexProvider = FutureProvider<List<ItemDexEntry>>((ref) async {
 
 List<ItemDexEntry> _decodeItems(String raw) {
   final rows = jsonDecode(raw) as List<dynamic>;
-  final entries = rows
-      .map((row) => ItemDexEntry.fromJson(row as Map<String, dynamic>))
-      .toList()
-    ..sort((a, b) => a.name.compareTo(b.name));
+  final entries =
+      rows
+          .map((row) => ItemDexEntry.fromJson(row as Map<String, dynamic>))
+          .toList()
+        ..sort((a, b) => a.name.compareTo(b.name));
 
   // Upstream re-issues the same item under a fresh id across game versions, so
   // the bundled data contains rows that share a name - "Bike" twice, "Basement
