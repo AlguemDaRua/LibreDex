@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: ☕ Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: '17'
@@ -38,8 +38,8 @@ jobs:
         run: flutter pub get
 
       - name: 🧹 Verify Formatting
-        # Auto-format in CI so PRs don't block on style (was strict --set-exit-if-changed)
-        run: dart format .
+        # Trava a pipeline se houver arquivos fora do padrão do dart format
+        run: dart format --output=none --set-exit-if-changed .
 
       - name: 🔍 Analyze Source Code
         # O `--fatal-infos` garante que até infos/warnings bloqueiem PRs sujos
@@ -55,8 +55,8 @@ jobs:
           python3 tools/validate_move_properties.py
 
       - name: 🧪 Run Tests & Coverage
-        # Roda todos os testes — allow failure in this polish PR to unblock merge (fix forward in main)
-        run: flutter test --coverage || echo "tests failed — will fix forward"
+        # Roda todos os testes de UI, Widgets e lógica com cobertura
+        run: flutter test --coverage
 
       - name: 📈 Upload Coverage Report
         uses: actions/upload-artifact@v4

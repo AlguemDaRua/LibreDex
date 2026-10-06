@@ -1,0 +1,7 @@
+# Define que qualquer alteração na pasta .github (ações, pipelines e regras)
+# exige aprovação manual do dono do repositório, impedindo que robôs/agentes
+# alterem as pipelines para burlar os testes.
+
+* @AlguemDaRua
+.github/ @AlguemDaRua
+.github/workflows/ @AlguemDaRua
