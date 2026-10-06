@@ -12,11 +12,12 @@ import 'package:libredex/core/data/species_data.dart';
 import 'package:libredex/features/calculator/utils/combat_utils.dart';
 import 'package:libredex/features/calculator/utils/damage_math.dart';
 import 'package:libredex/core/theme/app_spacing.dart';
-import 'package:libredex/core/data/battle_data_manifest.dart';
 import 'package:libredex/core/data/champions_regulation.dart';
 import 'package:libredex/features/battle_engine/battle_engine.dart';
 import 'package:libredex/features/calculator/viewmodels/damage_calculator_viewmodel.dart';
 import 'package:libredex/features/calculator/views/damage_summary_card.dart';
+import 'package:libredex/features/calculator/widgets/calculator_helpers.dart';
+import 'package:libredex/features/calculator/widgets/ruleset_bar.dart';
 import 'package:libredex/features/calculator/widgets/item_ability_picker_dialog.dart';
 import 'package:libredex/features/calculator/widgets/move_picker_dialog.dart';
 import 'package:libredex/features/calculator/widgets/pokemon_picker_dialog.dart';
@@ -192,7 +193,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
       ),
       body: Column(
         children: [
-          _buildRulesetBar(isDark, state, vm),
+          RulesetBar(isDark: isDark, state: state, vm: vm),
           Expanded(
             child: pokedexAsync.when(
               data: (pokemonList) {
@@ -293,170 +294,6 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
   }
 
   /// Mainline / Pokémon Champions ruleset switcher pinned above both tabs.
-  ///
-  /// Champions is an additional mode: the mainline calculator keeps working
-  /// exactly as before, and both setups survive the toggle. Persisted via
-  /// SharedPreferences in the view model.
-  Widget _buildRulesetBar(
-    bool isDark,
-    DamageCalculatorState state,
-    DamageCalculatorViewModel vm,
-  ) {
-    final isChampions = state.ruleset.isChampions;
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF111111) : Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isChampions
-              ? Colors.deepPurpleAccent.withValues(alpha: 0.45)
-              : (isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB)),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              for (final ruleset in BattleRuleset.values) ...[
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => vm.setRuleset(ruleset),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 160),
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      decoration: BoxDecoration(
-                        color: state.ruleset == ruleset
-                            ? (ruleset.isChampions
-                                  ? Colors.deepPurpleAccent
-                                  : AppTheme.pokemonRed)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            ruleset.isChampions
-                                ? Icons.emoji_events_rounded
-                                : Icons.videogame_asset_rounded,
-                            size: 14,
-                            color: state.ruleset == ruleset
-                                ? Colors.white
-                                : Colors.grey,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            ruleset.label.toUpperCase(),
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 0.4,
-                              color: state.ruleset == ruleset
-                                  ? Colors.white
-                                  : Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                icon: const Icon(
-                  Icons.verified_outlined,
-                  size: 18,
-                  color: Colors.blueAccent,
-                ),
-                tooltip: 'Engine Parity & Data Manifest',
-                onPressed: () => _showManifestDialog(context),
-              ),
-            ],
-          ),
-          if (isChampions) ...[
-            const SizedBox(height: 6),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 6),
-              child: Text(
-                'Champions uses 66 Stat Points instead of EVs and its own fixed stat formula.',
-                style: TextStyle(
-                  fontSize: 10.5,
-                  height: 1.35,
-                  color: Colors.grey,
-                  fontWeight: FontWeight.w600,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  void _showManifestDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.verified, color: Colors.blueAccent),
-            SizedBox(width: 8),
-            Text(
-              'Battle Engine Manifest',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (final entry in BattleDataManifest.details.entries)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      entry.key,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        entry.value,
-                        textAlign: TextAlign.end,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
-
   // ── 1. Pure Raw Move Power & Damage Sandbox (No Pokémon Required) ────────
 
   Widget _buildRawSandboxTab(
@@ -663,9 +500,8 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
           const SizedBox(height: 16),
 
           // Move Parameters Card
-          _buildDropdownHeader('MOVE PARAMETERS'),
-          _buildCardWrapper(
-            isDark,
+          DropdownHeader('MOVE PARAMETERS'),
+          CardWrapper(isDark: isDark, child:
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -822,9 +658,8 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
           const SizedBox(height: 16),
 
           // Raw Stats & Stage Boosts
-          _buildDropdownHeader('ATTACKER & DEFENDER STATS'),
-          _buildCardWrapper(
-            isDark,
+          DropdownHeader('ATTACKER & DEFENDER STATS'),
+          CardWrapper(isDark: isDark, child:
             Column(
               children: [
                 Row(
@@ -960,9 +795,8 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
           const SizedBox(height: 16),
 
           // Multipliers & Flags
-          _buildDropdownHeader('STAB & TYPE EFFECTIVENESS'),
-          _buildCardWrapper(
-            isDark,
+          DropdownHeader('STAB & TYPE EFFECTIVENESS'),
+          CardWrapper(isDark: isDark, child:
             Row(
               children: [
                 Expanded(
@@ -1745,7 +1579,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
           const SizedBox(height: 12),
 
           // Attacker Move Selector
-          _buildDropdownHeader('ATTACKER MOVE (TAP TO SEARCH ALL MOVES)'),
+          DropdownHeader('ATTACKER MOVE (TAP TO SEARCH ALL MOVES)'),
           const SizedBox(height: 6),
           GestureDetector(
             onTap: () => _showMovePicker(context, vm),
@@ -2178,7 +2012,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
           const SizedBox(height: 16),
 
           // Battlefield Tweaks
-          _buildDropdownHeader('BATTLEFIELD TWEAKS & FLAGS'),
+          DropdownHeader('BATTLEFIELD TWEAKS & FLAGS'),
           const SizedBox(height: 8),
           Container(
             padding: const EdgeInsets.all(8),
@@ -2193,21 +2027,9 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
             ),
             child: Column(
               children: [
-                _buildSwitchListTile(
-                  '⚔ Double Battle (Spread 0.75× / Screens 0.667×)',
-                  state.isDoubleBattle,
-                  vm.toggleDoubleBattle,
-                ),
-                _buildSwitchListTile(
-                  '💥 Critical Hit (1.5x, Ignores Defense Boosts)',
-                  state.isCriticalHit,
-                  vm.toggleCriticalHit,
-                ),
-                _buildSwitchListTile(
-                  '🛡 Defender used Protect / Detect',
-                  state.defenderProtected,
-                  vm.toggleDefenderProtected,
-                ),
+                CalculatorSwitchTile(title: '⚔ Double Battle (Spread 0.75× / Screens 0.667×)', value: state.isDoubleBattle, onChanged: vm.toggleDoubleBattle,),
+                CalculatorSwitchTile(title: '💥 Critical Hit (1.5x, Ignores Defense Boosts)', value: state.isCriticalHit, onChanged: vm.toggleCriticalHit,),
+                CalculatorSwitchTile(title: '🛡 Defender used Protect / Detect', value: state.defenderProtected, onChanged: vm.toggleDefenderProtected,),
                 const Divider(),
                 Padding(
                   padding: const EdgeInsets.symmetric(
@@ -2325,31 +2147,11 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                   ),
                 ),
                 const Divider(),
-                _buildSwitchListTile(
-                  'Light Screen (Halves Sp. Atk)',
-                  state.lightScreenActive,
-                  vm.toggleLightScreen,
-                ),
-                _buildSwitchListTile(
-                  'Reflect (Halves Physical Atk)',
-                  state.reflectActive,
-                  vm.toggleReflect,
-                ),
-                _buildSwitchListTile(
-                  'Aurora Veil (Halves All Damage · 0.667× Doubles)',
-                  state.auroraVeilActive,
-                  vm.toggleAuroraVeil,
-                ),
-                _buildSwitchListTile(
-                  'Helping Hand (+50% damage)',
-                  state.helpingHandActive,
-                  vm.toggleHelpingHand,
-                ),
-                _buildSwitchListTile(
-                  'Trick Room Active',
-                  state.trickRoomActive,
-                  vm.toggleTrickRoom,
-                ),
+                CalculatorSwitchTile(title: 'Light Screen (Halves Sp. Atk)', value: state.lightScreenActive, onChanged: vm.toggleLightScreen,),
+                CalculatorSwitchTile(title: 'Reflect (Halves Physical Atk)', value: state.reflectActive, onChanged: vm.toggleReflect,),
+                CalculatorSwitchTile(title: 'Aurora Veil (Halves All Damage · 0.667× Doubles)', value: state.auroraVeilActive, onChanged: vm.toggleAuroraVeil,),
+                CalculatorSwitchTile(title: 'Helping Hand (+50% damage)', value: state.helpingHandActive, onChanged: vm.toggleHelpingHand,),
+                CalculatorSwitchTile(title: 'Trick Room Active', value: state.trickRoomActive, onChanged: vm.toggleTrickRoom,),
               ],
             ),
           ),
@@ -2392,55 +2194,6 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
           fontSize: 10,
           fontWeight: FontWeight.bold,
         ),
-      ),
-    );
-  }
-
-  Widget _buildDropdownHeader(String label) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4.0, bottom: 4.0),
-      child: Text(
-        label,
-        style: const TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w900,
-          color: Colors.grey,
-          letterSpacing: 0.5,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCardWrapper(bool isDark, Widget child) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF121212) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE2E8F0),
-          width: 1.2,
-        ),
-      ),
-      child: child,
-    );
-  }
-
-  Widget _buildSwitchListTile(
-    String title,
-    bool val,
-    ValueChanged<bool> onChanged,
-  ) {
-    return Material(
-      color: Colors.transparent,
-      child: SwitchListTile(
-        title: Text(
-          title,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-        ),
-        value: val,
-        activeThumbColor: AppTheme.pokemonRed,
-        onChanged: onChanged,
       ),
     );
   }

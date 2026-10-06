@@ -7,16 +7,13 @@ import 'package:libredex/core/data/ev_yield_data.dart';
 import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/widgets/app_state_widgets.dart';
-import 'package:libredex/core/widgets/content_badge.dart';
 import 'package:libredex/features/calculator/utils/combat_utils.dart';
 import 'package:libredex/features/pokedex/utils/pokemon_data_helpers.dart';
 import 'package:libredex/features/pokedex/viewmodels/favorites_provider.dart';
 import 'package:libredex/features/pokedex/viewmodels/pokedex_viewmodel.dart';
 import 'package:libredex/features/pokedex/viewmodels/team_builder_provider.dart';
-import 'package:libredex/features/pokedex/views/pokemon_detail_screen.dart';
 import 'package:libredex/core/theme/app_spacing.dart';
 import 'package:libredex/core/theme/responsive.dart';
-import 'package:libredex/core/widgets/pokemon_sprite.dart';
 import 'package:libredex/core/widgets/dex_filter_bar.dart';
 import 'package:libredex/core/widgets/active_filter_summary.dart';
 import 'package:libredex/core/widgets/filter_group.dart';
@@ -26,6 +23,7 @@ import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
 import 'package:libredex/core/utils/pokemon_properties.dart';
 import 'package:libredex/core/utils/type_utils.dart';
 import 'package:libredex/features/pokedex/viewmodels/randomizer_settings_provider.dart';
+import 'package:libredex/features/pokedex/widgets/pokemon_grid_card.dart';
 import 'package:libredex/features/pokedex/widgets/random_roll_overlay.dart';
 import 'package:libredex/features/pokedex/widgets/randomizer_settings_sheet.dart';
 
@@ -913,11 +911,12 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                                 ) {
                                   final group =
                                       groupedMap[sortedKeys[index]] ?? [];
-                                  return _buildPokemonCard(
-                                    group,
-                                    isDark,
-                                    favoriteDexNumbers,
-                                    regulation,
+                                  return PokemonGridCard(
+                                    group: group,
+                                    isDark: isDark,
+                                    globalShinyMode: _globalShinyMode,
+                                    showShinyOnly: _showShinyOnly,
+                                    regulation: regulation,
                                   );
                                 }, childCount: sortedKeys.length),
                               ),
@@ -928,230 +927,6 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                 loading: () => _buildLoadingState(),
                 error: (error, _) => _buildErrorState(error.toString()),
               ),
-      ),
-    );
-  }
-
-  Widget _buildPokemonCard(
-    List<Pokemon> group,
-    bool isDark,
-    Set<int> favoriteDexNumbers,
-    ChampionsRegulationCatalog? regulation,
-  ) {
-    if (group.isEmpty) return const SizedBox.shrink();
-
-    // The grid shows one species card, then passes every bundled form forward.
-    final pokemon = group.first;
-    final int dexNum = pokemon.nationalDexNumber > 0
-        ? pokemon.nationalDexNumber
-        : pokemon.id;
-    final typeColor = _getTypeColor(pokemon.type1);
-    final secondaryColor = pokemon.type2 == null
-        ? typeColor
-        : _getTypeColor(pokemon.type2!);
-    final isFavorite = favoriteDexNumbers.contains(dexNum);
-    final isAvailableInMC =
-        regulation != null &&
-        group.any((form) => regulation.isPokemonEligible(form.id));
-    final isNewInMC =
-        regulation != null &&
-        group.any((form) => regulation.isNewPokemon(form.id));
-    final imageUrl =
-        ((_showShinyOnly || _globalShinyMode) &&
-            pokemon.shinySpriteUrl.isNotEmpty)
-        ? pokemon.shinySpriteUrl
-        : pokemon.spriteUrl;
-
-    return RepaintBoundary(
-      child: Semantics(
-        button: true,
-        label: 'Open ${pokemon.name}, number $dexNum',
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(26),
-            boxShadow: [
-              BoxShadow(
-                color: typeColor.withValues(alpha: isDark ? 0.18 : 0.20),
-                blurRadius: 22,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: Ink(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(26),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: isDark
-                      ? [
-                          Color.alphaBlend(
-                            typeColor.withValues(alpha: 0.25),
-                            const Color(0xFF080808),
-                          ),
-                          const Color(0xFF0E0E12),
-                        ]
-                      : [
-                          typeColor.withValues(alpha: 0.22),
-                          secondaryColor.withValues(alpha: 0.10),
-                          Colors.white,
-                        ],
-                ),
-                border: Border.all(
-                  color: typeColor.withValues(alpha: isDark ? 0.35 : 0.22),
-                ),
-              ),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(26),
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => PokemonDetailScreen(forms: group),
-                    ),
-                  );
-                },
-                child: Stack(
-                  children: [
-                    Positioned(
-                      right: -18,
-                      bottom: -22,
-                      child: Icon(
-                        Icons.catching_pokemon,
-                        size: 112,
-                        color: Colors.white.withValues(
-                          alpha: isDark ? 0.035 : 0.34,
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      top: 6,
-                      right: 6,
-                      child: IconButton.filledTonal(
-                        visualDensity: VisualDensity.compact,
-                        iconSize: 18,
-                        tooltip: isFavorite
-                            ? 'Remove favorite'
-                            : 'Add favorite',
-                        onPressed: () => ref
-                            .read(favoritePokemonProvider.notifier)
-                            .toggle(dexNum),
-                        icon: Icon(
-                          isFavorite
-                              ? Icons.star_rounded
-                              : Icons.star_border_rounded,
-                        ),
-                        style: IconButton.styleFrom(
-                          backgroundColor: Colors.black.withValues(
-                            alpha: isDark ? 0.22 : 0.08,
-                          ),
-                          foregroundColor: isFavorite
-                              ? Colors.amber
-                              : (isDark
-                                    ? Colors.white70
-                                    : const Color(0xFF475569)),
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(14),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '#${dexNum.toString().padLeft(3, '0')}',
-                            style: TextStyle(
-                              color: typeColor,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 12,
-                              letterSpacing: 0.7,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            pokemon.name,
-                            style: TextStyle(
-                              color: isDark
-                                  ? Colors.white
-                                  : const Color(0xFF111827),
-                              fontWeight: FontWeight.w900,
-                              fontSize: 19,
-                              letterSpacing: -0.3,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 5,
-                            runSpacing: 5,
-                            children: [
-                              _buildTypeBadge(pokemon.type1, typeColor),
-                              if (pokemon.type2 != null)
-                                _buildTypeBadge(pokemon.type2!, secondaryColor),
-                              if (isAvailableInMC)
-                                ContentBadge.mC(
-                                  isNew: isNewInMC,
-                                  tooltip: isNewInMC
-                                      ? 'Newly eligible in Pokémon Champions Regulation M-C'
-                                      : 'Eligible in Pokémon Champions Regulation M-C',
-                                ),
-                            ],
-                          ),
-                          Expanded(
-                            child: Center(
-                              child: Hero(
-                                tag: 'pokemon_${pokemon.id}',
-                                child: imageUrl.isNotEmpty
-                                    ? PokemonSprite(
-                                        imageUrl: imageUrl,
-                                        // Shiny mode falls back to the
-                                        // normal render if the shiny one
-                                        // cannot be fetched.
-                                        fallbackUrl:
-                                            imageUrl == pokemon.spriteUrl
-                                            ? null
-                                            : pokemon.spriteUrl,
-                                        loadingIndicatorSize: 26,
-                                        errorIconSize: 58,
-                                        errorIconColor: typeColor.withValues(
-                                          alpha: 0.36,
-                                        ),
-                                        diskCacheSize: 240,
-                                      )
-                                    : Icon(
-                                        Icons.catching_pokemon,
-                                        size: 58,
-                                        color: typeColor.withValues(
-                                          alpha: 0.36,
-                                        ),
-                                      ),
-                              ),
-                            ),
-                          ),
-                          if (group.length > 1)
-                            Text(
-                              '${group.length} forms',
-                              style: TextStyle(
-                                color: isDark
-                                    ? Colors.white70
-                                    : const Color(0xFF475569),
-                                fontSize: 11,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -1408,25 +1183,6 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
     }
 
     return ActiveFilterSummary(items: list, onClearAll: _clearAllFilters);
-  }
-
-  Widget _buildTypeBadge(String type, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
-      ),
-      child: Text(
-        type[0].toUpperCase() + type.substring(1),
-        style: TextStyle(
-          color: color,
-          fontSize: 9,
-          fontWeight: FontWeight.w900,
-        ),
-      ),
-    );
   }
 
   void _openAdvancedFilterBottomSheet(BuildContext context) {
