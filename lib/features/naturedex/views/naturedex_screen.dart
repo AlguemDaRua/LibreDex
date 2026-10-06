@@ -338,21 +338,24 @@ class _NaturedexScreenState extends State<NaturedexScreen> {
                       icon: Icons.rule_rounded,
                       label: '1.1× / 0.9×',
                       color: AppTheme.pokemonRed,
-                      tooltip: 'Standard: increased stat ×1.1, decreased ×0.9. Neutral has no effect.',
+                      tooltip:
+                          'Standard: increased stat ×1.1, decreased ×0.9. Neutral has no effect.',
                       isDark: isDark,
                     ),
                     _buildCompactRuleChip(
                       icon: Icons.emoji_events_rounded,
                       label: 'Alignments',
                       color: Colors.amber,
-                      tooltip: 'Champions Alignments & 66 Stat Points — doubles-optimized distributions.',
+                      tooltip:
+                          'Champions Alignments & 66 Stat Points — doubles-optimized distributions.',
                       isDark: isDark,
                     ),
                     _buildCompactRuleChip(
                       icon: Icons.auto_awesome_rounded,
                       label: 'Effort Lv.',
                       color: Colors.purple,
-                      tooltip: 'Legends: Z-A uses Effort Levels & Grit scales, not raw values.',
+                      tooltip:
+                          'Legends: Z-A uses Effort Levels & Grit scales, not raw values.',
                       isDark: isDark,
                     ),
                   ],
@@ -674,16 +677,34 @@ class _NaturedexScreenState extends State<NaturedexScreen> {
         children: [
           Icon(icon, size: 14, color: color),
           const SizedBox(width: 6),
-          Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: color)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
           const SizedBox(width: 4),
           Tooltip(
             message: tooltip,
             triggerMode: TooltipTriggerMode.tap,
             showDuration: const Duration(seconds: 4),
-            decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(10)),
-            textStyle: const TextStyle(fontSize: 12, color: Colors.white, height: 1.35),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1A1A1A),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            textStyle: const TextStyle(
+              fontSize: 12,
+              color: Colors.white,
+              height: 1.35,
+            ),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Icon(Icons.info_outline_rounded, size: 12, color: color.withValues(alpha: 0.8)),
+            child: Icon(
+              Icons.info_outline_rounded,
+              size: 12,
+              color: color.withValues(alpha: 0.8),
+            ),
           ),
         ],
       ),

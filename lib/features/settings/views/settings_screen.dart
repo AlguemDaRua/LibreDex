@@ -48,7 +48,11 @@ class SettingsScreen extends ConsumerWidget {
           ),
           children: [
             // ─── NAVIGATION — icon says it, ⓘ reveals the rest ─────────────────────
-            _buildSectionHeader('NAVIGATION & LAYOUT', isDark, icon: Icons.explore_rounded),
+            _buildSectionHeader(
+              'NAVIGATION & LAYOUT',
+              isDark,
+              icon: Icons.explore_rounded,
+            ),
             const SizedBox(height: 12),
 
             Container(
@@ -57,28 +61,44 @@ class SettingsScreen extends ConsumerWidget {
                 color: isDark ? const Color(0xFF121212) : Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB),
+                  color: isDark
+                      ? const Color(0xFF222222)
+                      : const Color(0xFFE5E7EB),
                 ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.explore_rounded, color: AppTheme.pokemonRed, size: 20),
+                  const Icon(
+                    Icons.explore_rounded,
+                    color: AppTheme.pokemonRed,
+                    size: 20,
+                  ),
                   const SizedBox(width: 10),
                   const Expanded(
                     child: Text(
                       'Adaptive Navigation',
-                      style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: AppTheme.pokemonRed.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Text(
                       'AUTO',
-                      style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: AppTheme.pokemonRed),
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w900,
+                        color: AppTheme.pokemonRed,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 6),
@@ -93,7 +113,11 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: 24),
 
             // ─── DATA & STORAGE ──────────────────────────────────────────────────
-            _buildSectionHeader('DATA & STORAGE', isDark, icon: Icons.storage_rounded),
+            _buildSectionHeader(
+              'DATA & STORAGE',
+              isDark,
+              icon: Icons.storage_rounded,
+            ),
             const SizedBox(height: 12),
 
             Container(
@@ -102,17 +126,26 @@ class SettingsScreen extends ConsumerWidget {
                 color: isDark ? const Color(0xFF121212) : Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isDark ? const Color(0xFF222222) : const Color(0xFFE5E7EB),
+                  color: isDark
+                      ? const Color(0xFF222222)
+                      : const Color(0xFFE5E7EB),
                 ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.storage_rounded, color: AppTheme.pokemonRed, size: 20),
+                  const Icon(
+                    Icons.storage_rounded,
+                    color: AppTheme.pokemonRed,
+                    size: 20,
+                  ),
                   const SizedBox(width: 10),
                   const Expanded(
                     child: Text(
                       'Local database & artwork',
-                      style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                   const InfoTooltip(
@@ -211,7 +244,11 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: 32),
 
             // ─── Section: Diagnostics & Auditing ───────────────────────────
-            _buildSectionHeader('DIAGNOSTICS & AUDITING', isDark, icon: Icons.analytics_outlined),
+            _buildSectionHeader(
+              'DIAGNOSTICS & AUDITING',
+              isDark,
+              icon: Icons.analytics_outlined,
+            ),
             const SizedBox(height: 12),
 
             Container(
@@ -359,7 +396,11 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: 32),
 
             // ─── Section: Application Info ─────────────────────────────────
-            _buildSectionHeader('APPLICATION INFO', isDark, icon: Icons.info_outline_rounded),
+            _buildSectionHeader(
+              'APPLICATION INFO',
+              isDark,
+              icon: Icons.info_outline_rounded,
+            ),
             const SizedBox(height: 12),
 
             Container(
@@ -440,12 +481,24 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSectionHeader(String title, bool isDark, {IconData icon = Icons.settings_outlined}) {
+  Widget _buildSectionHeader(
+    String title,
+    bool isDark, {
+    IconData icon = Icons.settings_outlined,
+  }) {
     return Row(
       children: [
         Icon(icon, size: 13, color: Colors.grey[500]),
         const SizedBox(width: 6),
-        Text(title, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.grey[500], letterSpacing: 0.8)),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w900,
+            color: Colors.grey[500],
+            letterSpacing: 0.8,
+          ),
+        ),
       ],
     );
   }
@@ -467,7 +520,11 @@ class SettingsScreen extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.account_tree_outlined, color: AppTheme.pokemonRed, size: 20),
+          const Icon(
+            Icons.account_tree_outlined,
+            color: AppTheme.pokemonRed,
+            size: 20,
+          ),
           const SizedBox(width: 12),
           const Expanded(
             child: Text(
@@ -476,13 +533,15 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const InfoTooltip(
-            message: 'When off, evolution pages use only bundled records — no PokéAPI request.',
+            message:
+                'When off, evolution pages use only bundled records — no PokéAPI request.',
           ),
           const SizedBox(width: 8),
           Switch.adaptive(
             value: enabled,
             activeThumbColor: AppTheme.pokemonRed,
-            onChanged: (v) => ref.read(liveEvolutionDataProvider.notifier).setEnabled(v),
+            onChanged: (v) =>
+                ref.read(liveEvolutionDataProvider.notifier).setEnabled(v),
           ),
         ],
       ),
@@ -600,7 +659,11 @@ class SettingsScreen extends ConsumerWidget {
               ),
               InfoTooltip(message: subtitle),
               const SizedBox(width: 6),
-              const Icon(Icons.chevron_right_rounded, size: 18, color: Colors.grey),
+              const Icon(
+                Icons.chevron_right_rounded,
+                size: 18,
+                color: Colors.grey,
+              ),
             ],
           ),
         ),

@@ -501,8 +501,9 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
 
           // Move Parameters Card
           DropdownHeader('MOVE PARAMETERS'),
-          CardWrapper(isDark: isDark, child:
-            Column(
+          CardWrapper(
+            isDark: isDark,
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
@@ -659,8 +660,9 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
 
           // Raw Stats & Stage Boosts
           DropdownHeader('ATTACKER & DEFENDER STATS'),
-          CardWrapper(isDark: isDark, child:
-            Column(
+          CardWrapper(
+            isDark: isDark,
+            child: Column(
               children: [
                 Row(
                   children: [
@@ -796,8 +798,9 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
 
           // Multipliers & Flags
           DropdownHeader('STAB & TYPE EFFECTIVENESS'),
-          CardWrapper(isDark: isDark, child:
-            Row(
+          CardWrapper(
+            isDark: isDark,
+            child: Row(
               children: [
                 Expanded(
                   child: Column(
@@ -2027,9 +2030,21 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
             ),
             child: Column(
               children: [
-                CalculatorSwitchTile(title: '⚔ Double Battle (Spread 0.75× / Screens 0.667×)', value: state.isDoubleBattle, onChanged: vm.toggleDoubleBattle,),
-                CalculatorSwitchTile(title: '💥 Critical Hit (1.5x, Ignores Defense Boosts)', value: state.isCriticalHit, onChanged: vm.toggleCriticalHit,),
-                CalculatorSwitchTile(title: '🛡 Defender used Protect / Detect', value: state.defenderProtected, onChanged: vm.toggleDefenderProtected,),
+                CalculatorSwitchTile(
+                  title: '⚔ Double Battle (Spread 0.75× / Screens 0.667×)',
+                  value: state.isDoubleBattle,
+                  onChanged: vm.toggleDoubleBattle,
+                ),
+                CalculatorSwitchTile(
+                  title: '💥 Critical Hit (1.5x, Ignores Defense Boosts)',
+                  value: state.isCriticalHit,
+                  onChanged: vm.toggleCriticalHit,
+                ),
+                CalculatorSwitchTile(
+                  title: '🛡 Defender used Protect / Detect',
+                  value: state.defenderProtected,
+                  onChanged: vm.toggleDefenderProtected,
+                ),
                 const Divider(),
                 Padding(
                   padding: const EdgeInsets.symmetric(
@@ -2147,11 +2162,31 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                   ),
                 ),
                 const Divider(),
-                CalculatorSwitchTile(title: 'Light Screen (Halves Sp. Atk)', value: state.lightScreenActive, onChanged: vm.toggleLightScreen,),
-                CalculatorSwitchTile(title: 'Reflect (Halves Physical Atk)', value: state.reflectActive, onChanged: vm.toggleReflect,),
-                CalculatorSwitchTile(title: 'Aurora Veil (Halves All Damage · 0.667× Doubles)', value: state.auroraVeilActive, onChanged: vm.toggleAuroraVeil,),
-                CalculatorSwitchTile(title: 'Helping Hand (+50% damage)', value: state.helpingHandActive, onChanged: vm.toggleHelpingHand,),
-                CalculatorSwitchTile(title: 'Trick Room Active', value: state.trickRoomActive, onChanged: vm.toggleTrickRoom,),
+                CalculatorSwitchTile(
+                  title: 'Light Screen (Halves Sp. Atk)',
+                  value: state.lightScreenActive,
+                  onChanged: vm.toggleLightScreen,
+                ),
+                CalculatorSwitchTile(
+                  title: 'Reflect (Halves Physical Atk)',
+                  value: state.reflectActive,
+                  onChanged: vm.toggleReflect,
+                ),
+                CalculatorSwitchTile(
+                  title: 'Aurora Veil (Halves All Damage · 0.667× Doubles)',
+                  value: state.auroraVeilActive,
+                  onChanged: vm.toggleAuroraVeil,
+                ),
+                CalculatorSwitchTile(
+                  title: 'Helping Hand (+50% damage)',
+                  value: state.helpingHandActive,
+                  onChanged: vm.toggleHelpingHand,
+                ),
+                CalculatorSwitchTile(
+                  title: 'Trick Room Active',
+                  value: state.trickRoomActive,
+                  onChanged: vm.toggleTrickRoom,
+                ),
               ],
             ),
           ),

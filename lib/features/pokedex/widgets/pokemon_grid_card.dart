@@ -33,14 +33,24 @@ class PokemonGridCard extends ConsumerWidget {
     if (group.isEmpty) return const SizedBox.shrink();
 
     final pokemon = group.first;
-    final dexNum = pokemon.nationalDexNumber > 0 ? pokemon.nationalDexNumber : pokemon.id;
+    final dexNum = pokemon.nationalDexNumber > 0
+        ? pokemon.nationalDexNumber
+        : pokemon.id;
     final typeColor = pokemonTypeColor(pokemon.type1);
-    final secondaryColor = pokemon.type2 == null ? typeColor : pokemonTypeColor(pokemon.type2!);
+    final secondaryColor = pokemon.type2 == null
+        ? typeColor
+        : pokemonTypeColor(pokemon.type2!);
     final favoriteDexNumbers = ref.watch(favoritePokemonProvider);
     final isFavorite = favoriteDexNumbers.contains(dexNum);
-    final isAvailableInMC = regulation != null && group.any((form) => regulation!.isPokemonEligible(form.id));
-    final isNewInMC = regulation != null && group.any((form) => regulation!.isNewPokemon(form.id));
-    final imageUrl = ((showShinyOnly || globalShinyMode) && pokemon.shinySpriteUrl.isNotEmpty)
+    final isAvailableInMC =
+        regulation != null &&
+        group.any((form) => regulation!.isPokemonEligible(form.id));
+    final isNewInMC =
+        regulation != null &&
+        group.any((form) => regulation!.isNewPokemon(form.id));
+    final imageUrl =
+        ((showShinyOnly || globalShinyMode) &&
+            pokemon.shinySpriteUrl.isNotEmpty)
         ? pokemon.shinySpriteUrl
         : pokemon.spriteUrl;
 
@@ -69,7 +79,10 @@ class PokemonGridCard extends ConsumerWidget {
                   end: Alignment.bottomRight,
                   colors: isDark
                       ? [
-                          Color.alphaBlend(typeColor.withValues(alpha: 0.25), const Color(0xFF080808)),
+                          Color.alphaBlend(
+                            typeColor.withValues(alpha: 0.25),
+                            const Color(0xFF080808),
+                          ),
                           const Color(0xFF0E0E12),
                         ]
                       : [
@@ -78,20 +91,33 @@ class PokemonGridCard extends ConsumerWidget {
                           Colors.white,
                         ],
                 ),
-                border: Border.all(color: typeColor.withValues(alpha: isDark ? 0.35 : 0.22)),
+                border: Border.all(
+                  color: typeColor.withValues(alpha: isDark ? 0.35 : 0.22),
+                ),
               ),
               child: InkWell(
                 borderRadius: BorderRadius.circular(26),
                 onTap: () {
                   HapticFeedback.lightImpact();
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => PokemonDetailScreen(forms: group)));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PokemonDetailScreen(forms: group),
+                    ),
+                  );
                 },
                 child: Stack(
                   children: [
                     Positioned(
                       right: -18,
                       bottom: -22,
-                      child: Icon(Icons.catching_pokemon, size: 112, color: Colors.white.withValues(alpha: isDark ? 0.035 : 0.34)),
+                      child: Icon(
+                        Icons.catching_pokemon,
+                        size: 112,
+                        color: Colors.white.withValues(
+                          alpha: isDark ? 0.035 : 0.34,
+                        ),
+                      ),
                     ),
                     Positioned(
                       top: 6,
@@ -99,12 +125,26 @@ class PokemonGridCard extends ConsumerWidget {
                       child: IconButton.filledTonal(
                         visualDensity: VisualDensity.compact,
                         iconSize: 18,
-                        tooltip: isFavorite ? 'Remove favorite' : 'Add favorite',
-                        onPressed: () => ref.read(favoritePokemonProvider.notifier).toggle(dexNum),
-                        icon: Icon(isFavorite ? Icons.star_rounded : Icons.star_border_rounded),
+                        tooltip: isFavorite
+                            ? 'Remove favorite'
+                            : 'Add favorite',
+                        onPressed: () => ref
+                            .read(favoritePokemonProvider.notifier)
+                            .toggle(dexNum),
+                        icon: Icon(
+                          isFavorite
+                              ? Icons.star_rounded
+                              : Icons.star_border_rounded,
+                        ),
                         style: IconButton.styleFrom(
-                          backgroundColor: Colors.black.withValues(alpha: isDark ? 0.22 : 0.08),
-                          foregroundColor: isFavorite ? Colors.amber : (isDark ? Colors.white70 : const Color(0xFF475569)),
+                          backgroundColor: Colors.black.withValues(
+                            alpha: isDark ? 0.22 : 0.08,
+                          ),
+                          foregroundColor: isFavorite
+                              ? Colors.amber
+                              : (isDark
+                                    ? Colors.white70
+                                    : const Color(0xFF475569)),
                         ),
                       ),
                     ),
@@ -113,24 +153,40 @@ class PokemonGridCard extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('#${dexNum.toString().padLeft(3, '0')}',
-                              style: TextStyle(color: typeColor, fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 0.7)),
+                          Text(
+                            '#${dexNum.toString().padLeft(3, '0')}',
+                            style: TextStyle(
+                              color: typeColor,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 12,
+                              letterSpacing: 0.7,
+                            ),
+                          ),
                           const SizedBox(height: 4),
-                          Text(pokemon.name,
-                              style: TextStyle(
-                                  color: isDark ? Colors.white : const Color(0xFF111827),
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 19,
-                                  letterSpacing: -0.3),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis),
+                          Text(
+                            pokemon.name,
+                            style: TextStyle(
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF111827),
+                              fontWeight: FontWeight.w900,
+                              fontSize: 19,
+                              letterSpacing: -0.3,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                           const SizedBox(height: 8),
                           Wrap(
                             spacing: 5,
                             runSpacing: 5,
                             children: [
                               _TypeBadge(type: pokemon.type1, color: typeColor),
-                              if (pokemon.type2 != null) _TypeBadge(type: pokemon.type2!, color: secondaryColor),
+                              if (pokemon.type2 != null)
+                                _TypeBadge(
+                                  type: pokemon.type2!,
+                                  color: secondaryColor,
+                                ),
                               if (isAvailableInMC)
                                 ContentBadge.mC(
                                   isNew: isNewInMC,
@@ -147,22 +203,38 @@ class PokemonGridCard extends ConsumerWidget {
                                 child: imageUrl.isNotEmpty
                                     ? PokemonSprite(
                                         imageUrl: imageUrl,
-                                        fallbackUrl: imageUrl == pokemon.spriteUrl ? null : pokemon.spriteUrl,
+                                        fallbackUrl:
+                                            imageUrl == pokemon.spriteUrl
+                                            ? null
+                                            : pokemon.spriteUrl,
                                         loadingIndicatorSize: 26,
                                         errorIconSize: 58,
-                                        errorIconColor: typeColor.withValues(alpha: 0.36),
+                                        errorIconColor: typeColor.withValues(
+                                          alpha: 0.36,
+                                        ),
                                         diskCacheSize: 240,
                                       )
-                                    : Icon(Icons.catching_pokemon, size: 58, color: typeColor.withValues(alpha: 0.36)),
+                                    : Icon(
+                                        Icons.catching_pokemon,
+                                        size: 58,
+                                        color: typeColor.withValues(
+                                          alpha: 0.36,
+                                        ),
+                                      ),
                               ),
                             ),
                           ),
                           if (group.length > 1)
-                            Text('${group.length} forms',
-                                style: TextStyle(
-                                    color: isDark ? Colors.white70 : const Color(0xFF475569),
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w800)),
+                            Text(
+                              '${group.length} forms',
+                              style: TextStyle(
+                                color: isDark
+                                    ? Colors.white70
+                                    : const Color(0xFF475569),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
                         ],
                       ),
                     ),
@@ -186,10 +258,18 @@ class _TypeBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: Text(
         type.toUpperCase(),
-        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 9, letterSpacing: 0.5),
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w900,
+          fontSize: 9,
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }

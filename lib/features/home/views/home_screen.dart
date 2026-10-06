@@ -124,8 +124,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             final contentMaxWidth = constraints.maxWidth >= 1200
                 ? 1100.0
                 : constraints.maxWidth >= 1000
-                    ? 1000.0
-                    : 860.0;
+                ? 1000.0
+                : 860.0;
             return Scaffold(
               backgroundColor: isDark ? Colors.black : const Color(0xFFF9FAFB),
               body: Row(
@@ -173,7 +173,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   VerticalDivider(
                     thickness: 1,
                     width: 1,
-                    color: isDark ? const Color(0xFF262626) : const Color(0xFFE5E7EB),
+                    color: isDark
+                        ? const Color(0xFF262626)
+                        : const Color(0xFFE5E7EB),
                   ),
                   Expanded(
                     child: Column(
@@ -183,7 +185,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           child: Align(
                             alignment: Alignment.topCenter,
                             child: ConstrainedBox(
-                              constraints: BoxConstraints(maxWidth: contentMaxWidth),
+                              constraints: BoxConstraints(
+                                maxWidth: contentMaxWidth,
+                              ),
                               child: IndexedStack(
                                 index: currentIndex,
                                 children: List.generate(

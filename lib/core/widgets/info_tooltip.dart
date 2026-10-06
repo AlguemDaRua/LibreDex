@@ -22,7 +22,11 @@ class InfoTooltip extends StatelessWidget {
       triggerMode: TooltipTriggerMode.tap,
       showDuration: const Duration(seconds: 4),
       preferBelow: true,
-      textStyle: const TextStyle(fontSize: 12, color: Colors.white, height: 1.35),
+      textStyle: const TextStyle(
+        fontSize: 12,
+        color: Colors.white,
+        height: 1.35,
+      ),
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(10),
@@ -35,17 +39,35 @@ class InfoTooltip extends StatelessWidget {
             showDialog<void>(
               context: context,
               builder: (ctx) => AlertDialog(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 title: const Row(
                   children: [
-                    Icon(Icons.info_outline_rounded, size: 18, color: Colors.grey),
+                    Icon(
+                      Icons.info_outline_rounded,
+                      size: 18,
+                      color: Colors.grey,
+                    ),
                     SizedBox(width: 8),
-                    Text('Info', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
+                    Text(
+                      'Info',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   ],
                 ),
-                content: Text(message, style: const TextStyle(fontSize: 13, height: 1.45)),
+                content: Text(
+                  message,
+                  style: const TextStyle(fontSize: 13, height: 1.45),
+                ),
                 actions: [
-                  TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Got it')),
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Got it'),
+                  ),
                 ],
               ),
             );
@@ -92,7 +114,9 @@ class CompactTile extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB)),
+            border: Border.all(
+              color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE5E7EB),
+            ),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           child: Row(
@@ -114,7 +138,11 @@ class CompactTile extends StatelessWidget {
                 const SizedBox(width: 4),
               ],
               trailing ??
-                  const Icon(Icons.chevron_right_rounded, size: 18, color: Colors.grey),
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    size: 18,
+                    color: Colors.grey,
+                  ),
             ],
           ),
         ),

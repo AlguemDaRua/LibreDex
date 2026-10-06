@@ -14,10 +14,10 @@ jobs:
 
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: ☕ Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: 'zulu'
           java-version: '17'
@@ -30,7 +30,7 @@ jobs:
           cache: true # Cache agressivo para acelerar os builds seguintes
 
       - name: 🐍 Setup Python (Para Validação de Dados)
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
@@ -38,8 +38,8 @@ jobs:
         run: flutter pub get
 
       - name: 🧹 Verify Formatting
-        # Auto-format in CI so PRs don't block on style (was strict --set-exit-if-changed)
-        run: dart format .
+        # Trava a pipeline se houver arquivos fora do padrão do dart format
+        run: dart format --output=none --set-exit-if-changed .
 
       - name: 🔍 Analyze Source Code
         # O `--fatal-infos` garante que até infos/warnings bloqueiem PRs sujos
@@ -55,11 +55,11 @@ jobs:
           python3 tools/validate_move_properties.py
 
       - name: 🧪 Run Tests & Coverage
-        # Roda todos os testes — allow failure in this polish PR to unblock merge (fix forward in main)
-        run: flutter test --coverage || echo "tests failed — will fix forward"
+        # Roda todos os testes de UI, Widgets e lógica com cobertura
+        run: flutter test --coverage
 
       - name: 📈 Upload Coverage Report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: always() # Garante que o report suba mesmo se algum teste falhar
         with:
           name: flutter-coverage
