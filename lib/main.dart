@@ -145,9 +145,9 @@ class _StartupScreen extends StatelessWidget {
                   label: const Text('Try again'),
                 )
               else
-                const Semantics(
+                Semantics(
                   label: 'Preparing the local reference database',
-                  child: CircularProgressIndicator(
+                  child: const CircularProgressIndicator(
                     valueColor: AlwaysStoppedAnimation(AppTheme.pokemonRed),
                   ),
                 ),
