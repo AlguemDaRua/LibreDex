@@ -15,10 +15,12 @@ import 'package:libredex/features/pokedex/viewmodels/team_builder_provider.dart'
 import 'package:libredex/core/theme/app_spacing.dart';
 import 'package:libredex/core/theme/responsive.dart';
 import 'package:libredex/features/pokedex/views/pokemon_detail_screen.dart';
+import 'package:libredex/core/utils/debounced_query.dart';
 import 'package:libredex/core/widgets/dex_filter_bar.dart';
 import 'package:libredex/core/widgets/active_filter_summary.dart';
 import 'package:libredex/core/widgets/result_count_label.dart';
 import 'package:libredex/core/widgets/dex_filter_sheet.dart';
+import 'package:libredex/features/pokedex/utils/pokemon_search.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
 import 'package:libredex/core/utils/pokemon_properties.dart';
 import 'package:libredex/core/utils/type_utils.dart';
@@ -38,6 +40,11 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _abilityFilterController =
       TextEditingController();
+
+  /// The ability-compatibility search re-scans every Pokémon and both the name
+  /// and the description text of each of its abilities, so its state change is
+  /// debounced instead of running on every keystroke.
+  final DebouncedQuery _abilityQueryDebounce = DebouncedQuery();
   String _searchQuery = '';
 
   bool _globalShinyMode = false;
@@ -46,6 +53,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
   final List<String> _selectedTypes = [];
   final Set<int> _selectedGenerations = {};
   bool _showLegendary = false;
+  bool _showMega = false;
   bool _showMythical = false;
   bool _showUltraBeast = false;
   bool _showParadox = false;
@@ -67,6 +75,12 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
 
   Map<int, List<Map<String, dynamic>>> _pokemonAbilitiesMap = {};
   Map<int, Ability> _abilitiesIdMap = {};
+
+  /// True only once the ability relations have loaded successfully. The
+  /// ability filter must not be evaluated against an empty map: it would drop
+  /// every Pokemon and present that as "no results".
+  bool _relationsLoaded = false;
+  Object? _relationsError;
   String? _filterAbilityQuery;
   bool _filterHiddenAbilityOnly = false;
 
@@ -123,15 +137,30 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
         setState(() {
           _abilitiesIdMap = {for (final a in abilitiesList) a.id: a};
           _pokemonAbilitiesMap = abMap;
+          _relationsLoaded = true;
+          _relationsError = null;
         });
       }
-    } catch (_) {}
+    } catch (error, stack) {
+      // Swallowing this made a failed load indistinguishable from "no Pokemon
+      // match": both maps stayed empty, so the ability filter rejected every
+      // row. Record it and let the filter stand down instead.
+      debugPrint('Pokedex: failed to load ability relations: $error');
+      debugPrint('$stack');
+      if (mounted) {
+        setState(() {
+          _relationsLoaded = false;
+          _relationsError = error;
+        });
+      }
+    }
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     _abilityFilterController.dispose();
+    _abilityQueryDebounce.dispose();
     super.dispose();
   }
 
@@ -144,141 +173,35 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
         p.baseSpd;
   }
 
-  bool _isUltraBeast(Pokemon p) {
-    if (p.isUltraBeast) return true;
-    final dex = p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id;
-    return dex >= 793 && dex <= 806;
-  }
+  // Species categories are data-driven, not hardcoded.
+  //
+  // `isLegendary` / `isMythical` come from the PokeAPI species table.
+  // `isParadox` / `isUltraBeast` are not modelled by PokeAPI at all, so they
+  // are maintained in the bundled assets/data/pokemon.json snapshot - fix the
+  // data, not this file.
+  //
+  // These four methods previously carried hardcoded fallback lists that
+  // silently disagreed with the data: the dex range 793-806 classified
+  // Necrozma, Magearna and Marshadow as Ultra Beasts, and Pecharunt was filed
+  // as Legendary when it is Mythical.
+  bool _isUltraBeast(Pokemon p) => p.isUltraBeast;
 
-  bool _isParadox(Pokemon p) {
-    if (p.isParadox) return true;
-    final name = p.name.toLowerCase();
-    return name.startsWith('great-tusk') ||
-        name.startsWith('scream-tail') ||
-        name.startsWith('brute-bonnet') ||
-        name.startsWith('flutter-mane') ||
-        name.startsWith('slither-wing') ||
-        name.startsWith('sandy-shocks') ||
-        name.startsWith('iron-treads') ||
-        name.startsWith('iron-bundle') ||
-        name.startsWith('iron-hands') ||
-        name.startsWith('iron-jugulis') ||
-        name.startsWith('iron-moth') ||
-        name.startsWith('iron-thorns') ||
-        name.startsWith('roaring-moon') ||
-        name.startsWith('iron-valiant') ||
-        name.startsWith('walking-wake') ||
-        name.startsWith('iron-leaves') ||
-        name.startsWith('gouging-fire') ||
-        name.startsWith('raging-bolt') ||
-        name.startsWith('iron-boulder') ||
-        name.startsWith('iron-crown');
-  }
+  bool _isParadox(Pokemon p) => p.isParadox;
 
-  bool _isLegendary(Pokemon p) {
-    if (p.isLegendary) return true;
-    final dex = p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id;
-    const legendaries = {
-      144,
-      145,
-      146,
-      150,
-      243,
-      244,
-      245,
-      249,
-      250,
-      377,
-      378,
-      379,
-      380,
-      381,
-      382,
-      383,
-      384,
-      480,
-      481,
-      482,
-      483,
-      484,
-      485,
-      486,
-      487,
-      488,
-      638,
-      639,
-      640,
-      641,
-      642,
-      643,
-      644,
-      645,
-      646,
-      716,
-      717,
-      718,
-      772,
-      773,
-      785,
-      786,
-      787,
-      788,
-      789,
-      790,
-      791,
-      792,
-      800,
-      888,
-      889,
-      890,
-      891,
-      892,
-      894,
-      895,
-      896,
-      897,
-      898,
-      1007,
-      1008,
-      1014,
-      1015,
-      1016,
-      1017,
-      1024,
-    };
-    return legendaries.contains(dex);
-  }
+  bool _isLegendary(Pokemon p) => p.isLegendary;
 
-  bool _isMythical(Pokemon p) {
-    if (p.isMythical) return true;
-    final dex = p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id;
-    const mythicals = {
-      151,
-      251,
-      385,
-      386,
-      489,
-      490,
-      491,
-      492,
-      493,
-      494,
-      647,
-      648,
-      649,
-      719,
-      720,
-      721,
-      801,
-      802,
-      807,
-      808,
-      809,
-      893,
-      1025,
-    };
-    return mythicals.contains(dex);
-  }
+  bool _isMythical(Pokemon p) => p.isMythical;
+
+  /// True for a Mega Evolution, from either source: the classic ones in the
+  /// bundled snapshot (their `form` reads "Mega" / "Mega X") and the Legends
+  /// Z-A ones the overlay flags.
+  ///
+  /// Matched on the form field rather than the name on purpose - Meganium and
+  /// Yanmega contain "mega" in their names but are not Mega Evolutions, and
+  /// their form field is plain "normal".
+  bool _isMega(Pokemon p, ChampionsCatalog? catalog) =>
+      p.form.toLowerCase().contains('mega') ||
+      (catalog?.isOverlayMega(p.id) ?? false);
 
   Color _getTypeColor(String type) => pokemonTypeColor(type);
 
@@ -298,6 +221,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
       _abilityFilterController.clear();
       _filterHiddenAbilityOnly = false;
       _showLegendary = false;
+      _showMega = false;
       _showMythical = false;
       _showUltraBeast = false;
       _showParadox = false;
@@ -332,6 +256,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
         (_filterAbilityQuery?.trim().isNotEmpty ?? false) ||
         _filterHiddenAbilityOnly ||
         _showLegendary ||
+        _showMega ||
         _showMythical ||
         _showUltraBeast ||
         _showParadox ||
@@ -351,61 +276,23 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
         _sortOption != 'id_asc';
   }
 
+  // Search matching and ranking live in PokemonSearch so they can be tested
+  // directly rather than only through the screen.
   bool _matchesSearch(
     Pokemon pokemon,
     int dexNum,
     String query,
     ChampionsCatalog? champions,
     ChampionsRegulationCatalog? regulation,
-  ) {
-    if (query.isEmpty) return true;
-    final name = pokemon.name.toLowerCase();
-    final form = pokemon.form.toLowerCase();
-    final type1 = pokemon.type1.toLowerCase();
-    final type2 = pokemon.type2?.toLowerCase() ?? '';
-    final dex = dexNum.toString();
+  ) => PokemonSearch.matches(
+    pokemon,
+    query,
+    champions: champions,
+    regulation: regulation,
+  );
 
-    return name.contains(query) ||
-        form.contains(query) ||
-        type1.contains(query) ||
-        type2.contains(query) ||
-        dex.contains(query) ||
-        dex.padLeft(3, '0').contains(query) ||
-        // Champions / Legends Z-A forms also answer to alias searches such
-        // as "champions", "mega raichu x", "raichu x", "legends za",
-        // "eternal", "floette eternal" or a Champions ability name.
-        (champions?.matchesSearch(pokemon.id, query) ?? false) ||
-        (regulation?.matchesPokemonSearch(
-              pokemon.id,
-              query,
-              aliases: '$name $form $type1 $type2 $dex',
-            ) ??
-            false) ||
-        // Order-free token search, so "floette eternal" still finds the
-        // "Eternal Flower Floette" display name (and "raichu x" the Mega).
-        _matchesTokens(query, name, form) ||
-        _isSubsequence(query, name.replaceAll('-', ''));
-  }
-
-  bool _matchesTokens(String query, String name, String form) {
-    final tokens = query
-        .split(RegExp(r'\s+'))
-        .where((t) => t.isNotEmpty)
-        .toList();
-    if (tokens.length < 2) return false;
-    final haystack = '$name $form';
-    return tokens.every(haystack.contains);
-  }
-
-  bool _isSubsequence(String query, String text) {
-    if (query.length < 3) return false;
-    var index = 0;
-    for (final codeUnit in text.codeUnits) {
-      if (codeUnit == query.codeUnitAt(index)) index++;
-      if (index == query.length) return true;
-    }
-    return false;
-  }
+  int _groupSearchRank(List<Pokemon> forms, String query) =>
+      PokemonSearch.groupRank(forms, query);
 
   void _rollRandomPokemon(
     List<Pokemon> allList,
@@ -451,6 +338,7 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
     RandomRollOverlay.show(
       context,
       candidatePool: pool,
+      rollCount: settings.rollCount,
       onViewDetails: (selectedPokemon) {
         Navigator.push(
           context,
@@ -470,6 +358,12 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
     ChampionsRegulationCatalog? regulation,
     AsyncValue<Map<int, EvYieldFacts>> evYieldDataset,
   ) {
+    // One row per species is the species itself; the rest are its forms.
+    final baseForms = <int, Pokemon>{};
+    for (final p in pokemonList) {
+      final int d = p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id;
+      if (p.id == d) baseForms[d] = p;
+    }
     return pokemonList.where((pokemon) {
       final int dexNum = pokemon.nationalDexNumber > 0
           ? pokemon.nationalDexNumber
@@ -489,14 +383,31 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
       }
 
       final query = _searchQuery.trim().toLowerCase();
-      if (!_matchesSearch(
-        pokemon,
-        dexNum,
-        query,
-        championsCatalog,
-        regulation,
-      )) {
-        return false;
+      // Search matches the species, never its forms. A form carries its own
+      // name, regional name and Champion ability names, and any of those used
+      // to drag its whole species into the results: "mag" is a substring of
+      // "mega", so typing it surfaced every species that has a Mega alongside
+      // Magikarp. Only the row whose id equals its dex number is the species
+      // itself; every species has exactly one.
+      // The species row answers the search for every one of its forms, so a
+      // form's own name, regional name or Champion ability names cannot
+      // decide whether its species appears: "mag" is a substring of "mega",
+      // so typing it surfaced every species that has a Mega alongside
+      // Magikarp, and "magic" matched Mega Clefable via Magic Bounce.
+      //
+      // Forms are NOT dropped here. They still run through the filters below,
+      // which is the whole point - the Mega switch is what surfaces them.
+      if (query.isNotEmpty) {
+        final base = baseForms[dexNum] ?? pokemon;
+        if (!_matchesSearch(
+          base,
+          dexNum,
+          query,
+          championsCatalog,
+          regulation,
+        )) {
+          return false;
+        }
       }
 
       if (_selectedTypes.isNotEmpty) {
@@ -522,10 +433,17 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
       }
 
       final hasCategoryFilter =
-          _showLegendary || _showMythical || _showUltraBeast || _showParadox;
+          _showLegendary ||
+          _showMega ||
+          _showMythical ||
+          _showUltraBeast ||
+          _showParadox;
       if (hasCategoryFilter) {
         bool matchesCategory = false;
         if (_showLegendary && _isLegendary(pokemon)) matchesCategory = true;
+        if (_showMega && _isMega(pokemon, championsCatalog)) {
+          matchesCategory = true;
+        }
         if (_showMythical && _isMythical(pokemon)) matchesCategory = true;
         if (_showUltraBeast && _isUltraBeast(pokemon)) matchesCategory = true;
         if (_showParadox && _isParadox(pokemon)) matchesCategory = true;
@@ -583,7 +501,9 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
       }
 
       final abilityQuery = _filterAbilityQuery?.trim().toLowerCase() ?? '';
-      if (abilityQuery.isNotEmpty || _filterHiddenAbilityOnly) {
+      final abilityFilterActive =
+          abilityQuery.isNotEmpty || _filterHiddenAbilityOnly;
+      if (_relationsLoaded && abilityFilterActive) {
         final abList = _pokemonAbilitiesMap[pokemon.id] ?? [];
         final hasMatchingAbility = abList.any((entry) {
           final abId = entry['abilityId'] as int;
@@ -637,12 +557,17 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
               if (list.isEmpty) return const SizedBox.shrink();
               final randomSettings = ref.watch(randomizerSettingsProvider);
               final isCustomized = randomSettings.isCustomActive;
+              final rollLabel = switch (randomSettings.rollCount) {
+                1 => 'Random Pokémon',
+                6 => 'Random Team of 6',
+                _ => 'Random ${randomSettings.rollCount} Pokémon',
+              };
               final tooltipText = switch (randomSettings.poolMode) {
-                RandomPoolMode.all => 'Random Pokémon (Hold to customize)',
+                RandomPoolMode.all => '$rollLabel (Hold to customize)',
                 RandomPoolMode.activeFilters =>
-                  'Random Pokémon: Active Filters (Hold to customize)',
+                  '$rollLabel: Active Filters (Hold to customize)',
                 RandomPoolMode.custom =>
-                  'Random Pokémon: Custom Rules (Hold to customize)',
+                  '$rollLabel: Custom Rules (Hold to customize)',
               };
 
               return Stack(
@@ -783,14 +708,25 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                     evYieldDataset,
                   );
 
+                  // filteredList decides WHICH species are shown, but it only
+                  // carries the species row while searching. Groups are built
+                  // from the full list so every form still reaches the detail
+                  // page - filtering must not silently strip a species' forms.
+                  final passingDex = <int>{
+                    for (final p in filteredList)
+                      p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id,
+                  };
                   final Map<int, List<Pokemon>> groupedMap = {};
-                  for (final p in filteredList) {
+                  for (final p in pokemonList) {
                     final int dexNum = p.nationalDexNumber > 0
                         ? p.nationalDexNumber
                         : p.id;
-                    groupedMap.putIfAbsent(dexNum, () => []).add(p);
+                    if (passingDex.contains(dexNum)) {
+                      groupedMap.putIfAbsent(dexNum, () => []).add(p);
+                    }
                   }
 
+                  final searchQuery = _searchQuery.trim().toLowerCase();
                   final List<int> sortedKeys = groupedMap.keys.toList();
                   sortedKeys.sort((a, b) {
                     final listA = groupedMap[a];
@@ -799,6 +735,16 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                     if (listB == null || listB.isEmpty) return -1;
                     final pA = listA.first;
                     final pB = listB.first;
+                    // While searching on the default sort, relevance wins: a
+                    // subsequence match must never bury the name being typed.
+                    if (searchQuery.isNotEmpty && _sortOption == 'id_asc') {
+                      final rankA = _groupSearchRank(listA, searchQuery);
+                      final rankB = _groupSearchRank(listB, searchQuery);
+                      if (rankA != rankB) return rankA.compareTo(rankB);
+                      // Equally good matches keep dex order, which is the
+                      // canonical Pokedex order and keeps evolution families
+                      // adjacent (Charmander, Charmeleon, Charizard).
+                    }
                     switch (_sortOption) {
                       case 'id_desc':
                         return b.compareTo(a);
@@ -862,6 +808,11 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                       if (_hasActiveFilters)
                         SliverToBoxAdapter(
                           child: _buildActiveFiltersSummary(context),
+                        ),
+
+                      if (_relationsError != null)
+                        SliverToBoxAdapter(
+                          child: _buildRelationsErrorNotice(context),
                         ),
 
                       SliverToBoxAdapter(
@@ -992,6 +943,14 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
         ActiveFilterItem(
           label: 'Legendary',
           onDeleted: () => setState(() => _showLegendary = false),
+        ),
+      );
+    }
+    if (_showMega) {
+      list.add(
+        ActiveFilterItem(
+          label: 'Mega',
+          onDeleted: () => setState(() => _showMega = false),
         ),
       );
     }
@@ -1344,6 +1303,11 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                           setState(() => _showLegendary = val);
                           setModalState(() {});
                         }),
+                        _buildSwitchRow('Mega Evolution', _showMega, (val) {
+                          HapticFeedback.selectionClick();
+                          setState(() => _showMega = val);
+                          setModalState(() {});
+                        }),
                         _buildSwitchRow('Mythical Pokémon', _showMythical, (
                           val,
                         ) {
@@ -1676,8 +1640,14 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
                   TextField(
                     controller: _abilityFilterController,
                     onChanged: (val) {
-                      setState(() => _filterAbilityQuery = val);
+                      // The sheet refresh stays immediate so typing feels
+                      // responsive; the expensive full-list refilter waits for
+                      // the user to stop typing.
                       setModalState(() {});
+                      _abilityQueryDebounce.schedule(val, (value) {
+                        if (!mounted) return;
+                        setState(() => _filterAbilityQuery = value);
+                      });
                     },
                     decoration: InputDecoration(
                       hintText: 'Ability name or keyword...',
@@ -2148,6 +2118,35 @@ class _PokedexScreenState extends ConsumerState<PokedexScreen> {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  /// Shown when the ability relations failed to load. Without this the grid
+  /// simply looked empty, with nothing saying why.
+  Widget _buildRelationsErrorNotice(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.warning_amber_rounded,
+            size: 18,
+            color: Colors.orangeAccent,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Ability data failed to load, so the ability filter is inactive.',
+              style: TextStyle(
+                fontSize: 12,
+                color: isDark ? Colors.white70 : const Color(0xFF475569),
+              ),
+            ),
+          ),
+          TextButton(onPressed: _loadRelationsData, child: const Text('Retry')),
         ],
       ),
     );

@@ -175,6 +175,11 @@ class AppDatabase extends _$AppDatabase {
   MigrationStrategy get migration {
     return MigrationStrategy(
       beforeOpen: (details) async {
+        // ⚠ DO NOT move the CREATE INDEX block below into `onUpgrade` alone.
+        // `onUpgrade` does not run on a fresh install, so every new user would
+        // get a database with no indexes at all and the dex screens would fall
+        // back to full table scans. If these ever need to move, they must be
+        // duplicated into BOTH `onCreate` and `onUpgrade`.
         // Enable Foreign Key support and reverse-lookup indexes used by the
         // MoveDex and AbilityDex detail pages.
         await customStatement('PRAGMA foreign_keys = ON');

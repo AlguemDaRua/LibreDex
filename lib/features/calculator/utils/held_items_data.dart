@@ -1,3 +1,5 @@
+import 'damage_math.dart';
+
 /// Comprehensive held items database for competitive Pokémon damage calculations.
 /// Each item defines its effect on attacker or defender stats.
 class HeldItemsData {
@@ -64,6 +66,29 @@ class HeldItemsData {
       category: 'Universal Damage',
       description: '+30% damage dealt, user loses 1/10 HP per hit.',
       universalDamageMultiplier: 1.3,
+    ),
+    HeldItem(
+      name: 'Expert Belt',
+      category: 'Universal Damage',
+      description: '+20% damage on super-effective hits only.',
+    ),
+    HeldItem(
+      name: 'Muscle Band',
+      category: 'Physical Power',
+      description: '+10% physical move power.',
+      physicalPowerMultiplier: 1.1,
+    ),
+    HeldItem(
+      name: 'Wise Glasses',
+      category: 'Special Power',
+      description: '+10% special move power.',
+      specialPowerMultiplier: 1.1,
+    ),
+    HeldItem(
+      name: 'Punching Glove',
+      category: 'Physical Power',
+      description: '+10% punching move power; removes contact.',
+      punchingPowerMultiplier: 1.1,
     ),
     HeldItem(
       name: 'Eviolite',
@@ -507,26 +532,49 @@ class HeldItemsData {
   }
 
   /// Calculate the attack multiplier from a held item for a given move type and isSpecial.
-  static double getAttackMultiplier(
-    String itemName,
-    String moveType,
-    bool isSpecial,
-  ) {
+  /// Multiplier an item applies to the holder's attacking STAT.
+  ///
+  /// Deliberately excludes [HeldItem.universalDamageMultiplier] and
+  /// [HeldItem.typeBoostMultiplier]: those are final damage modifiers and
+  /// ModifierPipeline applies them separately, later. Folding them in here as
+  /// well double-counted Life Orb and every type-boosting item on the sandbox
+  /// path, because that path builds its Attack stat from this method and then
+  /// still runs the pipeline's final modifiers.
+  static double getAttackMultiplier(String itemName, bool isSpecial) {
+    final item = findByName(itemName);
+    if (item == null) return 1.0;
+    return isSpecial ? item.spAtkMultiplier : item.atkMultiplier;
+  }
+
+  /// Multiplier an item applies to the move's BASE POWER.
+  ///
+  /// Muscle Band, Wise Glasses, Punching Glove and the type-boosting items
+  /// modify base power - they do not touch the Attack stat and they are not
+  /// final damage modifiers. Base power sits inside the damage formula's
+  /// rounding chain while a final modifier sits outside it, so the two are
+  /// not interchangeable: applying these at the end gives different damage.
+  static double getBasePowerMultiplier(
+    String itemName, {
+    required String moveType,
+    required String damageClass,
+    required bool isPunching,
+  }) {
     final item = findByName(itemName);
     if (item == null) return 1.0;
 
+    final cls = damageClass.toLowerCase();
     double mult = 1.0;
 
-    if (isSpecial) {
-      mult *= item.spAtkMultiplier;
-    } else {
-      mult *= item.atkMultiplier;
+    if (cls == 'physical') {
+      mult *= item.physicalPowerMultiplier;
+    } else if (cls == 'special') {
+      mult *= item.specialPowerMultiplier;
     }
 
-    // Universal damage (Life Orb, etc.)
-    mult *= item.universalDamageMultiplier;
+    if (isPunching) {
+      mult *= item.punchingPowerMultiplier;
+    }
 
-    // Type-boosting items
     if (item.typeBoostType != null &&
         item.typeBoostType!.toLowerCase() == moveType.toLowerCase()) {
       mult *= item.typeBoostMultiplier;
@@ -534,6 +582,56 @@ class HeldItemsData {
 
     return mult;
   }
+
+  /// The exact 4096-based numerators this item applies to base power, in the
+  /// order the games apply them. Empty means no change.
+  ///
+  /// This is what the damage pipeline should use. The games never multiply by
+  /// 1.1 - they multiply by 4505 and divide by 4096, and they round between
+  /// each step. Feeding them through [getBasePowerMultiplier] instead loses
+  /// that: a 95 BP move under Muscle Band becomes (95 * 1.1).round() = 105,
+  /// but the game gets pokeRound(95 * 4505 / 4096) = 104.
+  static List<int> getBasePowerChain(
+    String itemName, {
+    required String moveType,
+    required String damageClass,
+    required bool isPunching,
+  }) {
+    final item = findByName(itemName);
+    if (item == null) return const [];
+
+    final cls = damageClass.toLowerCase();
+    final chain = <int>[];
+
+    if (cls == 'physical' && item.physicalPowerMultiplier != 1.0) {
+      chain.add(_chainFromDecimal(item.physicalPowerMultiplier));
+    } else if (cls == 'special' && item.specialPowerMultiplier != 1.0) {
+      chain.add(_chainFromDecimal(item.specialPowerMultiplier));
+    }
+
+    if (isPunching && item.punchingPowerMultiplier != 1.0) {
+      chain.add(DamageMath.boostPunchingGlove);
+    }
+
+    if (item.typeBoostType != null &&
+        item.typeBoostType!.toLowerCase() == moveType.toLowerCase() &&
+        item.typeBoostMultiplier != 1.0) {
+      chain.add(_chainFromDecimal(item.typeBoostMultiplier));
+    }
+
+    return chain;
+  }
+
+  /// Converts a decimal multiplier to the exact n/4096 numerator the games
+  /// use. Rounding the decimal directly would give 4506 for 1.1 rather than
+  /// the 4505 the game actually applies.
+  static int _chainFromDecimal(double m) => switch ((m * 10).round()) {
+    11 => DamageMath.boost11,
+    12 => DamageMath.boost12,
+    13 => DamageMath.boost13,
+    15 => DamageMath.boost15,
+    _ => (m * 4096).round(),
+  };
 
   /// Calculate resistance multiplier from defender's held item.
   /// Resist berries apply only when the move is super-effective (mult > 1.0).
@@ -578,6 +676,11 @@ class HeldItem {
   final double spDefMultiplier;
   final double universalDamageMultiplier;
 
+  // Move-power multipliers (applied to base power, never to the Attack stat)
+  final double physicalPowerMultiplier;
+  final double specialPowerMultiplier;
+  final double punchingPowerMultiplier;
+
   // Type-specific damage boost (attacker)
   final String? typeBoostType;
   final double typeBoostMultiplier;
@@ -596,6 +699,9 @@ class HeldItem {
     this.defMultiplier = 1.0,
     this.spDefMultiplier = 1.0,
     this.universalDamageMultiplier = 1.0,
+    this.physicalPowerMultiplier = 1.0,
+    this.specialPowerMultiplier = 1.0,
+    this.punchingPowerMultiplier = 1.0,
     this.typeBoostType,
     this.typeBoostMultiplier = 1.0,
     this.resistType,

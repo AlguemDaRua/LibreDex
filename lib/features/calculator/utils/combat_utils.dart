@@ -297,6 +297,27 @@ class CombatUtils {
       contactMove;
 
   /// Moves that hit all adjacent foes/allies in doubles and therefore do
+  /// Which stat keys a move draws its attacking and defending stats from.
+  ///
+  /// Shared by the modifier pipeline and the calculator's raw sandbox so the
+  /// two can never disagree about which stat stage applies to a given move.
+  /// Status moves fall through to the special pair, matching the pipeline's
+  /// existing behaviour.
+  static ({String attack, String defense}) statKeysFor({
+    required String moveName,
+    required String damageClass,
+  }) {
+    final name = _normalizeName(moveName);
+    final isPhysical = damageClass.toLowerCase() == 'physical';
+    var attack = isPhysical ? 'atk' : 'spa';
+    var defense = isPhysical ? 'def' : 'spd';
+    if (name == 'body press') attack = 'def';
+    if (name == 'psyshock' || name == 'psystrike' || name == 'secret sword') {
+      defense = 'def';
+    }
+    return (attack: attack, defense: defense);
+  }
+
   /// 0.75× damage per target (Showdown `isSpread` / `spreadDamage`).
   /// Accurate Gen IX list — singles ignores it, doubles applies 0.75.
   static bool isSpreadMove(String moveName) => const {

@@ -96,6 +96,21 @@ class ItemDexEntry {
     this.aliasOf,
   });
 
+  /// Returns a copy of this entry pointing at [canonicalId] as the canonical
+  /// item, so the UI can hide it during ordinary browsing.
+  ItemDexEntry withAliasOf(int? canonicalId) => ItemDexEntry(
+    id: id,
+    name: name,
+    category: category,
+    subcategory: subcategory,
+    shortEffect: shortEffect,
+    description: description,
+    tags: tags,
+    generation: generation,
+    dlcSource: dlcSource,
+    aliasOf: canonicalId,
+  );
+
   factory ItemDexEntry.fromJson(Map<String, dynamic> json) {
     return ItemDexEntry(
       id: json['id'] as int,

@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/features/battle_engine/battle_engine.dart';
 import 'package:libredex/features/calculator/utils/combat_utils.dart';
+import 'package:libredex/features/calculator/utils/held_items_data.dart';
 
 part 'damage_calculator_viewmodel.g.dart';
 
@@ -354,6 +355,193 @@ class DamageCalculatorState {
     final bState = toBattleState();
     if (bState == null) return null;
     return BattleEngine.calculate(bState);
+  }
+
+  // ── Raw sandbox ───────────────────────────────────────────────────────────
+
+  /// Types a synthetic side carries. Real types are used when a Pokémon is
+  /// selected so groundedness and ability-driven type changes behave as they do
+  /// in the duel view; otherwise a neutral single type keeps the pipeline's
+  /// type lookups well-defined.
+  static List<String> _typesOf(Pokemon? p) {
+    if (p == null) return const ['normal'];
+    return [p.type1, if (p.type2 != null && p.type2!.isNotEmpty) p.type2!];
+  }
+
+  /// Build a [BattleState] for the raw sandbox, which runs without a selected
+  /// Pokémon. Every numeric stat is overridden by [sandboxOverrides]; the
+  /// synthetic species exists only to carry the non-numeric fields the pipeline
+  /// still reads (types, ability, held item, status, HP percentage).
+  BattleState toSandboxBattleState() {
+    const base = <String, int>{
+      'hp': 100,
+      'atk': 100,
+      'def': 100,
+      'spa': 100,
+      'spd': 100,
+      'spe': 100,
+    };
+    const ivs = <String, int>{
+      'hp': 31,
+      'atk': 31,
+      'def': 31,
+      'spa': 31,
+      'spd': 31,
+      'spe': 31,
+    };
+    const empty = <String, int>{
+      'hp': 0,
+      'atk': 0,
+      'def': 0,
+      'spa': 0,
+      'spd': 0,
+      'spe': 0,
+    };
+
+    PokemonState side({
+      required String name,
+      required List<String> types,
+      required Map<String, int> stages,
+      required String heldItem,
+      required String? ability,
+      required String status,
+      required double hpPercent,
+      required int level,
+      required String nature,
+    }) {
+      return PokemonState(
+        id: 0,
+        name: name,
+        types: types,
+        baseStats: base,
+        level: level,
+        nature: nature,
+        ivs: ivs,
+        evs: empty,
+        sps: empty,
+        stages: stages,
+        heldItem: heldItem,
+        ability: ability,
+        status: status,
+        hpPercent: hpPercent,
+      );
+    }
+
+    // Guaranteed-crit moves override the UI toggle, exactly as the duel view
+    // does — otherwise the sandbox would drop the 1.5× crit multiplier that
+    // Flower Trick, Wicked Blow and friends always carry.
+    final isCritical =
+        isCriticalHit || CombatUtils.alwaysCriticalHit(selectedMoveName ?? '');
+
+    return BattleState(
+      attacker: side(
+        name: 'Sandbox Attacker',
+        types: _typesOf(attacker),
+        stages: attackerStages,
+        heldItem: attackerHeldItem,
+        ability: attackerAbility,
+        status: attackerStatus,
+        hpPercent: attackerHpPercent,
+        level: attackerLevel,
+        nature: attackerNature,
+      ),
+      defender: side(
+        name: 'Sandbox Defender',
+        types: _typesOf(defender),
+        stages: defenderStages,
+        heldItem: defenderHeldItem,
+        ability: defenderAbility,
+        status: defenderStatus,
+        hpPercent: defenderHpPercent,
+        level: defenderLevel,
+        nature: defenderNature,
+      ),
+      move: MoveState(
+        name: selectedMoveName ?? '',
+        type: moveType,
+        basePower: movePower.round(),
+        damageClass: moveCategory,
+        priority: movePriority,
+        isCritical: isCritical,
+        isContact: moveIsContact,
+        isPunching: moveIsPunching,
+        isBiting: moveIsBiting,
+        isPulse: moveIsPulse,
+        isSlicing: moveIsSlicing,
+        isRecoil: moveIsRecoil,
+        hits: 1,
+        rageFistHits: rageFistHits,
+      ),
+      field: FieldState(
+        weather: weather,
+        terrain: terrain,
+        reflectActive: reflectActive,
+        lightScreenActive: lightScreenActive,
+        auroraVeilActive: auroraVeilActive,
+        helpingHandActive: helpingHandActive,
+        trickRoomActive: trickRoomActive,
+        defenderProtected: defenderProtected,
+        isDoubleBattle: isDoubleBattle,
+      ),
+      ruleset: ruleset,
+    );
+  }
+
+  /// The four values the sandbox user types by hand.
+  ///
+  /// Stat stages and stat-modifying held items are folded in here — the same
+  /// point at which the duel view's stat engine hands its numbers to the
+  /// pipeline — so the pipeline receives a directly comparable effective stat.
+  SandboxOverrides sandboxOverrides() {
+    final moveName = selectedMoveName ?? '';
+    final isSpecial = moveCategory.toLowerCase() == 'special';
+    final isCritical = isCriticalHit || CombatUtils.alwaysCriticalHit(moveName);
+    final keys = CombatUtils.statKeysFor(
+      moveName: moveName,
+      damageClass: moveCategory,
+    );
+
+    // A critical hit ignores the attacker's negative stages and the
+    // defender's positive stages; StatEngine applies the same rule.
+    final atkStage = attackerStages[keys.attack] ?? 0;
+    final effectiveAtkStage = isCritical && atkStage < 0 ? 0 : atkStage;
+    final double atkWithStage =
+        (simpleAttackerStat * CombatUtils.getStageMultiplier(effectiveAtkStage))
+            .clamp(1.0, 9999.0);
+
+    final defStage = defenderStages[keys.defense] ?? 0;
+    final effectiveDefStage = isCritical && defStage > 0 ? 0 : defStage;
+    final double defWithStage =
+        (simpleDefenderStat * CombatUtils.getStageMultiplier(effectiveDefStage))
+            .clamp(1.0, 9999.0);
+
+    final atkItemMult = HeldItemsData.getAttackMultiplier(
+      attackerHeldItem,
+      isSpecial,
+    );
+    final defItemMult = HeldItemsData.getDefenseMultiplier(
+      defenderHeldItem,
+      isSpecial,
+    );
+
+    return SandboxOverrides(
+      attack: (atkWithStage * atkItemMult).round().clamp(1, 9999),
+      defense: (defWithStage * defItemMult).round().clamp(1, 9999),
+      stab: simpleStab,
+      effectiveness: simpleEffectiveness,
+    );
+  }
+
+  /// Calculate sandbox damage through the shared battle engine.
+  ///
+  /// This is the single implementation behind the raw sandbox panel; it exists
+  /// so the panel cannot drift from the duel view the way the previous
+  /// hand-rolled formula did.
+  DamageResult calculateSandboxDamage() {
+    return SandboxDamageEngine.calculate(
+      toSandboxBattleState(),
+      sandboxOverrides(),
+    );
   }
 }
 

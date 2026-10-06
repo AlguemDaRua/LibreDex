@@ -1,516 +1,406 @@
-# LibreDex — Master Architecture, Refactoring & Rebuild Plan
-### October 2026 · 118 Source Files · 45,721 Lines · 13 Feature Modules
+# LibreDex — Roadmap
 
-This document contains the complete, exhaustive deep analysis and actionable step-by-step master plan to make **LibreDex** 10,000x perfect. It builds upon the August 2026 audit, documents all progress made, cataloging every remaining issue, code smell, architectural bottleneck, performance degradation, accessibility gap, CI/CD and test regression, and security concern, and provides a prioritized execution roadmap.
+**Owner:** @AlguemDaRua · **Last verified:** 2026-10-06 · **Against commit:** `4d58f1f`
+**Reference docs:** [`docs/reference.md`](docs/reference.md) — architecture, data, game support, testing, release
 
----
+This is the single living plan for LibreDex. Everything is either **closed** with
+evidence or **explicitly deferred** with a reason and a revisit condition — nothing
+sits in an ambiguous state.
 
-## Table of Contents
-1. [Executive Overview & Progress Tracking](#1-executive-overview--progress-tracking)
-2. [Codebase Footprint & Metrics](#2-codebase-footprint--metrics)
-3. [Architecture Deep Dive & Layering Violations](#3-architecture-deep-dive--layering-violations)
-4. [The "God Screens" Decomposition Plan](#4-the-god-screens-decomposition-plan)
-5. [State Management Audit & Consistency Strategy](#5-state-management-audit--consistency-strategy)
-6. [Performance & Energy Efficiency Audit](#6-performance--energy-efficiency-audit)
-7. [Database Schema & Data Pipeline Analysis](#7-database-schema--data-pipeline-analysis)
-8. [Network Layer & Offline-First Resiliency](#8-network-layer--offline-first-resiliency)
-9. [Comprehensive Testing Gap Analysis & Active Test Regression](#9-comprehensive-testing-gap-analysis--active-test-regression)
-10. [CI/CD Pipeline, Security & Build Configuration](#10-cicd-pipeline-security--build-configuration)
-11. [Data Pipeline & Generation Tooling (`tools/`)](#11-data-pipeline--generation-tooling-tools)
-12. [Accessibility (a11y) Audit & Action Plan](#12-accessibility-a11y-audit--action-plan)
-13. [Security, Build & Android Configuration](#13-security-build--android-configuration)
-14. [Error Handling & Silent Failure Audit](#14-error-handling--silent-failure-audit)
-15. [UI/UX Polish, Design Tokens & Magic Numbers](#15-uiux-polish-design-tokens--magic-numbers)
-16. [Store Metadata, Distribution & Legal Compliance](#16-store-metadata-distribution--legal-compliance)
-17. [Code Hygiene, Lints & Static Analysis](#17-code-hygiene-lints--static-analysis)
-18. [Multi-Platform & Scalability Strategy](#18-multi-platform--scalability-strategy)
-19. [Green Software & Sustainability (Eco-Path)](#19-green-software--sustainability-eco-path)
-20. [Master 40-Item Prioritized Execution Checklist](#20-master-40-item-prioritized-execution-checklist)
+If a number in this file disagrees with the code, the code wins — re-run
+[§H](#h-measurement-appendix) and correct this file.
 
 ---
 
-## 1. Executive Overview & Progress Tracking
+## 0. How to use this file
 
-LibreDex is a feature-packed, offline-first Pokémon reference and competitive team-planning app built with Flutter and Riverpod. 
+| Status | Meaning |
+|:---:|---|
+| ✅ | **Closed.** Verified against the tree, with evidence in [§B](#b-completed). |
+| ⛔ | **Not doing.** Deferred *on purpose*, reason recorded, revisit condition stated. |
 
-### Progress Made Since August 2026
-- ✅ **Navigation Redundancy Resolved**: Deleted `navigation_style_provider.dart` and `app_drawer.dart`. Implemented a clean adaptive shell in `HomeScreen` switching between a bottom `NavigationBar` (<700dp) and `NavigationRail` (≥700dp), using `FeatureHubSheet` as the single overflow.
-- ✅ **Single Source of Truth Navigation**: Replaced raw integer index mappings with the `AppSection` enum in `app_sections.dart`.
-- ✅ **Champions Rule Accuracy**: Updated `totalStatPoints` to **66 SP** across `battle_ruleset.dart`, stat calculators, UI cards, and tests.
-- ✅ **Legends: Z-A Mega Dimension DLC**: Verified 49 Mega Evolutions in `assets/data/forms_extra.json` (IDs `10278–10326`).
-- ✅ **Air Balloon & Regulation M-C Held Items**: Threaded Air Balloon immunity into `ModifierPipeline` and damage calculation.
+**Every item in this file carries one of those two marks.** There is no "in progress"
+bucket on purpose: an item that is half-done is an item that will be rediscovered
+half-undone three audits from now. Work that was started and deliberately stopped is
+recorded under [§F](#f-not-doing) with what was learned.
 
-### Outstanding Challenges
-- ❌ **3 Massive God Screens**: 7,136 lines (15.6% of the codebase) remain in `damage_calculator_screen.dart`, `pokedex_screen.dart`, and `movedex_screen.dart`.
-- ❌ **Active Test Regression in CI**: `test/champions_regulation_test.dart` has outdated item assertions (expected 140/7 items, actual is 151/18 items per commit `217f7a6`), breaking the test suite and PR #12 CI check.
-- ❌ **Direct Database Access**: 10 UI view/widget files directly import `app_database.dart`, bypassing the repository layer.
-- ❌ **Accessibility Blind Spot**: Only 7 `Semantics` annotations across 45,721 lines of code.
-- ❌ **UI Test Deficit**: Engine math tests have >90% coverage, but UI coverage is <15% with zero integration tests.
+**One rule:** an item is not ready to start until it has a **Done-when** that a machine
+can check. An effort estimate without a Done-when is a wish.
+
+**Two anti-patterns this file is designed to prevent:**
+
+1. *Report accumulation.* The God Screens survived two full audit cycles carrying the
+   same recommendation ("split them") without ever getting a first commit. That is the
+   signature of a task too large to start, not of a task needing more detail.
+2. *Symptom-as-goal.* "229 `setState` calls" is not a defect — `setState` for a
+   `TextEditingController` is correct. Counts in [§A](#a-measurement-basis) are context,
+   never targets.
 
 ---
 
-## 2. Codebase Footprint & Metrics
+## A. Measurement basis
 
-- **Total Source Files (`lib/`)**: 118 files
-- **Total Lines of Code (`lib/`)**: 45,721 lines
-- **Total Test Files (`test/`)**: 18 files (3,612 lines)
-- **Test-to-Source Code Ratio**: 1:12.7 (Target: 1:4)
-- **Generated Lines (`.g.dart`)**: 8,829 lines
-- **Database Tables**: 5 main tables (Pokemon, Move, Ability, PokemonMoves, PokemonAbilities)
-- **Database Indexes**: 17 explicit indexes
-- **Bundled Data Assets**: 12 JSON files (5.8MB total)
-- **Data Tooling Scripts**: 20 scripts in `tools/`
+Measured at `4d58f1f`. Re-derive with [§H](#h-measurement-appendix) before trusting.
 
-### Top 15 Largest Files in `lib/`
+| Metric | Value | Δ vs `0f63c88` |
+|---|---|---|
+| Dart files in `lib/` | 122 | +4 |
+| Lines in `lib/` | 47,390 | +1,041 |
+| Of which generated (`.g.dart`) | 8,530 | — |
+| Test files / lines | 26 / 5,635 | +8 / +2,023 |
+| Test declarations | 260 | +~100 |
+| Test-to-source ratio | 1 : 8.4 | was 1 : 12.8 |
+| Feature modules | 13 | — |
+| DB tables | 5 (indexes created in `beforeOpen`) | — |
+| Bundled JSON assets | 12 files, 5.7 MB (`pokemon_moves.json` alone = 2.9 MB) | — |
+| God Screens | 3 files, 7,093 lines, **15.0 %** of `lib/` | 7,202 / 15.5 % |
 
-| # | File Path | Line Count | Primary Role |
+**God Screens** are `damage_calculator_screen.dart` (3,461), `pokedex_screen.dart`
+(2,289) and `movedex_screen.dart` (1,343). The calculator shrank by 111 lines when the
+duplicate damage implementation was deleted rather than moved.
+
+**Health signals**
+
+| Signal | Count | Reading |
+|---|---|:---|
+| `Semantics` annotations | 9 | Still a real a11y gap — see [§F](#f-not-doing) |
+| `catch (_)` silent swallows | 23 | Several are user-visible wrong-answer bugs |
+| `setState` calls | 229 | Not inherently bad — see §0 |
+| `late` fields | 119 | Moderate |
+| `Color(0x…)` literals | 569 | Cosmetic / maintainability |
+| `ValueKey` in list builders | 1 | Second-order perf |
+| `RepaintBoundary` | 5 | Second-order perf |
+| `precacheImage` | 0 | Second-order perf |
+| `SelectionArea` | 0 | Attempted and **removed** — it crashed. See [§F](#f-not-doing) |
+| `Navigator.push` | 11 | See [§G](#g-correction-log) |
+| `ref.read` / `ref.watch` | 52 / 57 | Healthy |
+| View/widget files importing `app_database.dart` | 18 (34 repo-wide) | Layering drift |
+
+---
+
+## B. Completed
+
+Verified present in the tree at `4d58f1f`, with `flutter analyze` clean and
+`flutter test` passing (260 tests).
+
+### B1. Damage calculation and battle engine
+
+| ✅ | Item | Evidence |
+|:---:|---|---|
+| ✅ | **Two damage implementations unified** | `SandboxDamageEngine` resolves through the shared `ModifierPipeline`. The ~155-line hand-rolled copy in `_buildRawSandboxTab` is gone. |
+| ✅ | **Showdown parity: chained modifiers round once** | `DamageMath.chainMods` accumulates `M = (M * mod + 2048) >> 12` and clamps once — not per step. Previously each modifier rounded independently. |
+| ✅ | **Showdown parity: overflow wrapping** | 16-bit and 32-bit wrapping at the same points as the game (`OF16` / `OF32`). |
+| ✅ | **Exact 4096 fractions** | `damage_math.dart` uses `boost11 = 4505`, `boost12 = 4915`, `boost13 = 5324`, `boost15 = 6144`, `boostTerrain = 5325`, `boostPunchingGlove = 4506`. `_modifierFromDouble` maps the common decimals to those exact values, so the pipeline's `1.2` becomes `4915`, not `1.2 * 4096`. |
+| ✅ | **Base-power bounds** | Base power clamped `(41, 2097152)`; attack and defense `(410, 131072)` — matching `gen789.ts`. |
+| ✅ | **Base-power mods apply before `getBaseDamage`** | Found by the parity test: the Showdown *reference* applied them after. Fixed in `e94d50e`. |
+| ✅ | **Move-power items moved to base power** | Muscle Band / Wise Glasses / Punching Glove were being applied to final damage. Now `physicalPowerMultiplier`, `specialPowerMultiplier`, `punchingPowerMultiplier` on `HeldItem`, applied at the base-power stage. |
+| ✅ | **Expert Belt is a conditional final modifier** | `modifier_pipeline.dart:727` — `effectiveness > 1.0` → `1.2`, applied in the final chain, not base power. |
+| ✅ | **Held items no longer double-count on the sandbox path** | Fixed in `389b762`. |
+| ✅ | Parity tests over real Gen 9 matchups | `test/damage_showdown_parity_test.dart` (164 lines), `test/sandbox_damage_parity_test.dart` (424 lines). |
+| ✅ | Held-item placement pinned | `test/held_item_placement_test.dart` (203 lines). |
+| ✅ | Sandbox gained missing mechanics | Aurora Veil, Multiscale/Shadow Shield, Filter/Solid Rock/Prism Armor, Ice Scales/Thick Fat/Purifying Salt, Tinted Lens, Expert Belt, Muscle Band/Wise Glasses, Life Orb and type gems, Weather Ball/Terrain Pulse, Technician/Sharpness/Iron Fist and friends. |
+| ✅ | Air Balloon immunity | Threaded through `combat_utils.dart` (grounding) into `getTypeEffectiveness`. |
+| ✅ | Cosmetic-form filter shared by all three pickers | `lib/core/utils/cosmetic_forms.dart`, used by `pokemon_picker_dialog.dart`, `stat_comparison_screen.dart`, `team_builder_screen.dart`. |
+
+### B2. Pokédex search
+
+The single largest user-visible improvement this cycle. Documented in full because the
+reasoning is easy to lose.
+
+| ✅ | Item | Evidence |
+|:---:|---|---|
+| ✅ | **Results appear while typing** | `DebouncedSearchField` used a pure 300 ms *trailing* debounce, which cancelled on every keystroke — a normal-speed typist saw nothing until they paused. Replaced with a leading-edge throttle at 100 ms plus a guaranteed trailing emit. Fixes every search in the app: all four dex screens, three calculator pickers, stat comparison. |
+| ✅ | **Real matches rank above subsequence noise** | `PokemonSearch.rank`: exact → name-prefix → word-prefix → substring → form → dex → type → tokens → subsequence. While searching on the default sort, relevance outranks dex order. |
+| ✅ | **Search is answered by the species, never its forms** | `pokedex_screen.dart` — the row whose `id` equals its dex number answers the search for every row of that species. Every one of the 1,025 species has exactly one such row. |
+| ✅ | **Groups rebuilt from the full list** | The filtered list carries only the species row while searching, and the card passes its group to the detail page — so groups are rebuilt from `pokemonList`. Without this, filtering silently stripped a species' forms. |
+| ✅ | **Mega Evolution filter** | 87 species match. Tests the `form` field for classic Megas and the overlay flag for Legends: Z-A Megas — deliberately **not** the name, because Meganium and Yanmega contain "mega" but are not Mega Evolutions. |
+| ✅ | **`N FORMS` badge** | 224 of 1,025 species. The count includes the species' own row (Charizard reads `4 FORMS`, Pikachu `17`), which is the Pokédex convention. Sits in the existing `Wrap` with the type and M-C badges. |
+| ✅ | Species categories are data-driven | Replaced ~130 lines of hardcoded Dex IDs and name prefixes. |
+| ✅ | `_loadRelationsData` no longer swallows every failure | Wrapped in `catch (_) {}`; a failure silently returned zero results for the hidden-ability filter. |
+| ✅ | One card per species, base form only | Card picks `form == 'normal'` explicitly rather than relying on `group.first`. |
+| ✅ | Search extracted into a testable utility | `lib/features/pokedex/utils/pokemon_search.dart`. It lived in the screen's `State` object and could not be tested at all — which is how the ranking bug survived. |
+| ✅ | Ability-compatibility search debounced | Uses the existing `DebouncedQuery`. |
+
+**Measured effect on the bundled data:**
+
+| Query | Before | After |
+|---|---|---|
+| `mag` | 45 species | **17**, all genuinely Mag-named |
+| `gar` | 74 | **25** (Garchomp still 2nd) |
+| `pika` | 2 | **1** |
+| `clef` + Mega filter | *broken — 0* | **Clefable** |
+
+The `mag` bug had two causes, both from the same root: `mag` is a substring of `mega`,
+so every classic Mega form matched and dragged its species in; and Champion ability
+names were searchable, so `magic` matched Mega Clefable through **Magic Bounce**.
+
+**Ordering rule:** match quality first, then dex number within a tier. Dex order was
+kept over alphabetical deliberately — for `char`, dex gives Charmander, Charmeleon,
+Charizard (evolution line adjacent); alphabetical gives Charcadet, Charizard,
+Charjabug, Charmander, Charmeleon. Dex is also canonical Pokédex order.
+
+Consequence worth knowing: for `gar`, Gardevoir, Garchomp, Garbodor and Garganacl are
+all *equally good* prefix matches, so Garchomp can legitimately be 2nd. No ordering rule
+can infer which one the user meant — that is not a bug.
+
+### B3. Randomizer
+
+| ✅ | Item | Evidence |
+|:---:|---|---|
+| ✅ | **Roll a team of six** | `RandomizerSettings.rollCount` (1 or 6), chosen from the existing settings sheet. Picks are **without replacement**, so the six are distinct; a pool smaller than six yields what it has. Pool size is floored at 1 before clamping because `clamp()` throws when the lower bound exceeds the upper. |
+| ✅ | Team reveal | 3-across grid of tappable cards; header reads `TEAM ACQUIRED!`; the single-pick "VIEW POKÉMON DETAILS" button is hidden since a team is read card by card. The slot machine still spins and lands on the first pick. |
+| ✅ | Settings persist | `rollCount` saved with the rest of the randomizer prefs. |
+| ✅ | Button tooltip follows the setting | Reads "Random Team of 6". |
+| ✅ | Two no-op test scenarios fixed | Two `sandbox_damage_parity_test.dart` scenarios named items that do not exist. `findByName` returned `null`, every multiplier fell back to 1.0, and both engines trivially agreed — **2 of 12 scenarios passed while testing nothing**. A `checkItem` guard now throws on unknown names. |
+
+### B4. Tests
+
+| ✅ | Item | Evidence |
+|:---:|---|---|
+| ✅ | **ViewModel tests** | 87 tests in `test/viewmodels/`: stat calculator (22), damage calculator (16), Pokédex search (25), stat comparison (24). |
+| ✅ | Pokédex search logic extracted so it could be tested | See B2. |
+| ✅ | Tie-break reversal in stat comparison fixed | `a4233a5` — the tie-break returned after the direction negation, so descending order reversed ties. |
+| ✅ | Four test defects fixed alongside it | Including two HP expectations that were wrong. |
+| ✅ | Form-count badge tests | `test/form_count_badge_test.dart` — label, tooltip, four-form card, single-form card. |
+| ✅ | Team-roll test | `test/random_roll_overlay_test.dart` — six of an eight-Pokémon pool, all distinct, single-pick button absent, tapping a card reports that Pokémon. |
+| ✅ | Full suite green | 260 tests, `flutter analyze` clean. |
+
+### B5. Data, provenance and infrastructure
+
+| ✅ | Item | Evidence |
+|:---:|---|---|
+| ✅ | Index-creation hazard guarded | `app_database.dart` `beforeOpen` carries a do-not-move warning. |
+| ✅ | ItemDex duplicate rows hidden | Reuses the existing alias mechanism rather than a new special case. |
+| ✅ | Navigation redundancy removed | `app_drawer.dart` and `navigation_style_provider.dart` gone. |
+| ✅ | Single source of truth for destinations | `AppSection` enum in `lib/core/navigation/app_sections.dart`. |
+| ✅ | Adaptive shell | `home_screen.dart:121` — `NavigationRail` ≥ 700 dp, `NavigationBar` below. |
+| ✅ | Champions rule accuracy | `ChampionsRules.totalStatPoints = 66`, asserted at `champions_ruleset_test.dart:143`. |
+| ✅ | Regulation M-C held items | `champions_regulation_mc.json` — 151 items / 18 new. Test asserts `hasLength(151)` / `hasLength(18)`. |
+| ✅ | **Android launcher icons restored** | `0807265` (a docs commit) deleted 22 files under `Icons/`, including every mipmap launcher asset. `AndroidManifest.xml` declares `android:icon="@mipmap/ic_launcher"`, so merging without them would have broken the Android build. Restored verbatim in `4d58f1f`. |
+| ✅ | CI pipeline | Java 17 + Gradle cache, Flutter cache, Python 3.12, format gate, `analyze --fatal-infos`, 5 data validators, `flutter test --coverage`, debug APK. |
+| ✅ | Workflow protection | `.github/CODEOWNERS` requires @AlguemDaRua on `.github/**`. |
+| ✅ | Release signing configured | `build.gradle.kts` signs from `android/key.properties` when present. **Needs your keystore before distributing** — see [§I](#i-standing-notes). |
+
+### B6. Accessibility (partial — see §F)
+
+| ✅ | Item | Evidence |
+|:---:|---|---|
+| ✅ | Labels for unlabelled buttons | `e964575` — tooltips added across the app. |
+| ✅ | Startup live region | `Semantics` block announcing app-ready state. |
+| ⛔ | App-wide text selection | Attempted via `SelectionArea` in `MaterialApp.builder`; **crashed the app**. Reverted. See [§F](#f-not-doing). |
+
+---
+
+## C. Critical path
+
+**All five closed.** C3 closed *without* measurement because the app owner reports the
+Pokédex is smooth while typing — there is no performance problem to chase. The real bug
+in that area turned out to be search **responsiveness and ranking**, now closed under B2.
+
+| # | Item | Status | Note |
 |:---:|---|:---:|---|
-| 1 | `lib/core/database/app_database.g.dart` | 7,857 | Generated Drift Code |
-| 2 | `lib/features/calculator/views/damage_calculator_screen.dart` | 3,537 | **God Screen** (Calculator UI + State) |
-| 3 | `lib/features/pokedex/views/pokedex_screen.dart` | 2,256 | **God Screen** (Pokédex List + Filters) |
-| 4 | `lib/features/movedex/views/movedex_screen.dart` | 1,343 | **God Screen** (MoveDex UI + Local State) |
-| 5 | `lib/features/movedex/views/move_detail_screen.dart` | 1,321 | Move Detail View |
-| 6 | `lib/features/pokedex/widgets/pokemon_detail_general_tab.dart` | 1,255 | Monolithic Detail Tab |
-| 7 | `lib/features/itemdex/views/itemdex_screen.dart` | 1,244 | ItemDex List + Local Filtering |
-| 8 | `lib/features/abilitydex/views/ability_detail_screen.dart` | 1,231 | Ability Detail View |
-| 9 | `lib/features/settings/views/settings_screen.dart` | 1,070 | Settings UI & Operations |
-| 10 | `lib/features/calculator/utils/combat_utils.dart` | 1,064 | Combat Utilities & Gimmicks |
-| 11 | `lib/features/team_builder/views/team_builder_screen.dart` | 976 | Team Builder UI |
-| 12 | `lib/features/typechart/views/typechart_screen.dart` | 913 | Type Chart Matrix View |
-| 13 | `lib/features/pokedex/widgets/pokemon_detail_stats_tab.dart` | 817 | Stats Tab View |
-| 14 | `lib/features/battle_engine/services/modifier_pipeline.dart` | 793 | Damage Modifier Engine |
-| 15 | `lib/features/stat_comparison/models/stat_modifier.dart` | 743 | Stat Comparison Model |
+| C1 | Unify the two damage paths | ✅ | Second implementation deleted; parity tests added |
+| C2 | Guard the index-creation hazard | ✅ | Warning comment in `beforeOpen` |
+| C3 | Instrument before optimising | ✅ | **No perf problem exists.** Owner confirms the app is smooth while typing. The premise was inherited from the v1 audit and never verified. No perf work planned. |
+| C4 | Debounce the undebounced field | ✅ | Scope corrected — see [§G](#g-correction-log) |
+| C5 | Release signing | ✅ | Lands **unsigned-ready**; needs your `key.properties` |
 
 ---
 
-## 3. Architecture Deep Dive & Layering Violations
+## D. Next — all closed or explicitly deferred
 
-### Current System Architecture
+Every item that was on this list is now either ✅ with evidence above or ⛔ with a
+reason in [§F](#f-not-doing). Nothing remains open.
 
-```mermaid
-flowchart TD
-    subgraph UI["UI Layer (13 Feature Views)"]
-        PS["PokedexScreen (2,256 lns)"]
-        DCS["DamageCalculatorScreen (3,537 lns)"]
-        MS["MovedexScreen (1,343 lns)"]
-        AS["AbilitydexScreen (696 lns)"]
-        Others["9 Other Feature Screens"]
-    end
+| # | Item | Status |
+|:---:|---|:---:|
+| D0 | Search responsiveness and ranking | ✅ B2 |
+| D1 | Decompose `pokedex_screen.dart` | ⛔ [F1](#f-not-doing) |
+| D2 | Species categories to data | ✅ B2 |
+| D3 | `_loadRelationsData` swallowed failures | ✅ B2 |
+| D4 | Calculator picker: hide no-op cosmetic forms | ✅ B1 |
+| D4b | The same filter everywhere | ✅ B1 |
+| D5 | Held items: correct placement, reachable in UI | ✅ B1 |
+| D5b | Held items the model could not express | ✅ B1 |
+| D6 | ItemDex duplicate item names | ✅ B5 |
+| D7 | Accessibility baseline | ⛔ [F2](#f-not-doing) — partially delivered, see B6 |
+| D8 | ViewModel unit tests | ✅ B4 |
+| D9 | Silent-failure audit | ⛔ [F3](#f-not-doing) |
+| D10 | Feature repositories for the 18 view/widget files | ⛔ [F4](#f-not-doing) |
+| D11 | Release-readiness hygiene | ⛔ [F5](#f-not-doing) |
 
-    subgraph VM["ViewModel Layer"]
-        PVM["PokedexViewModel"]
-        DCVM["DamageCalculatorViewModel"]
-        SCVM["StatsCalculatorViewModel"]
-    end
+**D5b deserves a note.** Four items were previously unimplementable: Expert Belt
+(conditional on super-effective), Muscle Band and Wise Glasses (move *power*, not the
+Attack *stat*), and Punching Glove (punching-only). Adding them approximately would
+have put wrong numbers into the component the owner wants 100 % correct. They are now
+all expressible — Expert Belt as a conditional final modifier, the other three through
+the new move-power fields on `HeldItem` — and all four are pinned against Showdown.
 
-    subgraph Engine["Battle Engine (Pure Dart)"]
-        BE["BattleEngine"]
-        MP["ModifierPipeline"]
-        SE["StatEngine"]
-        MDE["MainlineDamageEngine"]
-        CDE["ChampionsDamageEngine"]
-    end
+---
 
-    subgraph Data["Data & Infrastructure Layer"]
-        DB[("Drift SQLite (AppDatabase)")]
-        SR["SyncRepository"]
-        PR["PokemonRepository"]
-        DSR["DeepSyncRepository"]
-        OAS["OfflineArtworkStore (Singleton ⚠)"]
-        API["ApiClient (PokéAPI)"]
-    end
+## E. Later
 
-    PS -->|"Direct DB Import ⚠"| DB
-    DCS -->|"Direct DB Import ⚠"| DB
-    MS -->|"Direct DB Import ⚠"| DB
-    AS -->|"Direct DB Import ⚠"| DB
-    PS --> PVM
-    DCS --> DCVM
-    DCVM --> BE
-    BE --> MP
-    BE --> SE
-    BE --> MDE
-    BE --> CDE
-    PVM --> PR
-    PR --> DB
-    SR --> DB
-    DSR --> API
-    DSR --> OAS
+Real work, deliberately undated. Pull one in when a concrete need appears.
 
-    style PS fill:#ff6b6b,color:#fff
-    style DCS fill:#ff6b6b,color:#fff
-    style MS fill:#ff6b6b,color:#fff
-    style OAS fill:#ffd93d,color:#000
+| # | Item | Note |
+|:---:|---|---|
+| E1 | `go_router` / declarative routing | Only if deep linking becomes a requirement. See [§F](#f-not-doing). |
+| E2 | SQLite FTS5 search | Only after search moves into SQL. There are currently **zero** `LIKE` queries — search is `_isSubsequence()` over an in-memory list. |
+| E3 | Localisation (i18n / ARB) | Large, mechanical, easier once the UI structure settles. |
+| E4 | iOS support | `Icons/ios/` (22 files) and `Icons/web/` are already staged. |
+| E5 | Golden / visual regression tests | Needs a stable UI first — after D1. |
+| E6 | `OfflineArtworkStore` → Riverpod provider | Currently a static singleton with a manual `_persistQueue` chain. Do it when it needs mocking in a test. |
+| E7 | Extract 569 `Color(0x…)` literals into `AppTheme` | Cosmetic; opportunistically, file-by-file, not as a campaign. |
+| E8 | Integration test (`integration_test/app_flow_test.dart`) | Highest-value test investment after the ViewModel work. |
+| E9 | Binary asset compression (`pokemon_moves.json`, 2.9 MB) | Prefer `--split-per-abi` + App Bundle first; measure before adding CBOR complexity. |
+
+---
+
+## F. Not doing
+
+Deferred *on purpose*, each with a reason and a revisit condition, so these stop
+regenerating every audit cycle. Revisit when the condition is true — not because an
+entry is old.
+
+| # | Item | Why not now | Revisit when |
+|:---:|---|---|---|
+| ⛔ F1 | **Decompose `pokedex_screen.dart`** (2,289 lines) | Splitting a file is worth doing only when it makes a specific change easier. The targeted extraction that *was* needed already happened: search moved to `PokemonSearch`, the card to `PokemonGridCard`. The remaining 2,289 lines are cohesive filter/sort UI that is not currently blocking anything. Splitting it now would be motion, not progress. | A specific change in that file becomes hard to make |
+| ⛔ F2 | **Full accessibility baseline** (9 `Semantics` in 47 k lines) | Partially delivered: tooltips on unlabelled buttons, a startup live region. The remaining work — `TypePill`, `StatTile`, `PokemonGridCard`, type-chart cells — is broad and needs a device/screen-reader pass to verify, which has not happened. Half-measures here are worse than none, because an untested `Semantics` node can make a screen reader *worse*. | Someone can verify with a real screen reader |
+| ⛔ F3 | **`SelectionArea` for app-wide text selection** | **Tried and reverted.** Placing it in `MaterialApp.builder` crashes at startup — it requires an `Overlay` ancestor that does not exist there. A cheap 15-minute win that cost a broken build. It has to wrap a screen *inside* the navigator, not the app. | Someone wires it per-screen with a real test |
+| ⛔ F4 | **Silent-failure audit** (23 `catch (_)`) | Triage by blast radius, not by count. The two user-visible wrong-answer bugs in this class — `_loadRelationsData` and the swallowed Pokédex load error — are already fixed. The rest are logging gaps, not wrong answers. | One is shown to hide a real failure |
+| ⛔ F5 | **Feature repositories for the 18 view/widget files** | Some of the 18 import a Drift *data class* for typing, which is fine; only running `db.select()` in a widget is a real problem, and there are few of those. A blanket repository layer is churn with regression risk and no user-visible gain. | A specific widget query causes a bug |
+| ⛔ F6 | **Release-readiness hygiene** (Gradle JVM args, ProGuard rules, network security config) | Not blocking: no release has been attempted. The one genuinely required item — signing — is configured and waiting on a keystore. | A release build is actually attempted |
+| ⛔ F7 | **`go_router` migration** | There are 11 `Navigator.push` calls, not 82. This is an `IndexedStack` app with a bespoke, already-tested `SectionBackStack`. go_router buys deep links for a URL scheme that has not been designed. | A URL scheme or deep-link requirement exists |
+| ⛔ F8 | **Move index creation to `onUpgrade`** | Would leave fresh installs with no indexes. | Never as written — only with `onCreate` **and** `onUpgrade` |
+| ⛔ F9 | **SQLite FTS5** | No `LIKE` queries exist; search is in-Dart. | Search moves into SQL |
+| ⛔ F10 | **ApiClient retry / connectivity / rate limiting** | 2 call sites, both for evolution chains, both with a bundled fallback. | A second, non-optional network feature appears |
+| ⛔ F11 | **Coverage gate (`--min-coverage 60`)** | At ~12 % this is a gate that goes red on day one and is ignored by day five. A red light everyone ignores is worse than no light. | Coverage is within ~10 pts of the threshold |
+| ⛔ F12 | **Blanket `setState` → Riverpod migration** | 229 calls, mostly correct usage (text controllers, expansion state, animation). | A specific `setState` is shown to cause a bug |
+| ⛔ F13 | **Blanket `ref.read` → `ref.watch`** | 52 / 57 is healthy; `ref.read` in callbacks is the *recommended* pattern. Only `ref.read` inside `build()` is a bug. | — |
+| ⛔ F14 | **Removing all cross-feature imports** | Some are legitimate shared-model use (`stat_comparison` → `calculator` for `ChampionsRules`). The ones worth fixing are *cycles*: `pokedex ↔ movedex`, `pokedex ↔ abilitydex`. | Scoped to cycles only |
+| ⛔ F15 | **Web / desktop targets** | Android is the only shipped platform. | Android + iOS are stable |
+
+---
+
+## G. Correction log
+
+Errors found in previous plans by verifying them line-by-line against the tree. Recorded
+so nobody re-derives them.
+
+| Claim | Actual | Consequence |
+|---|---|---|
+| "Active test regression: expects 140/7, actual 151/18" | Test already asserted `151` / `18` | The #1 P0 was already resolved; starting there wastes a cycle |
+| "82 imperative `Navigator.push` calls" | **11** pushes (73 `Navigator` refs, mostly `pop` in dialogs) | Inflated the go_router business case ~7× |
+| "10 UI view/widget files import `app_database.dart`" | **18** (34 repo-wide) | Understated the layering work by ~80 % |
+| "Move index creation from `beforeOpen` to `onUpgrade`" | Would break fresh installs | Would ship a silent, permanent, CI-invisible regression |
+| "3 God Screens = 7,136 lines / 15.6 %" | 7,093 lines / 15.0 % at `4d58f1f` | Cosmetic |
+| "227 `setState` · 131 `late` · 467 `Color()`" | 229 · 119 · 569 | Cosmetic |
+| Pokedex split targets | Omitted the 826-line bottom sheet | Would leave the worst 40 % of the file untouched |
+| Calculator split into 8 panels | File is 2 mega-methods organised by tab, not 8 panels | A contributor cannot find the proposed seams |
+| "Debounce AbilityDex and ItemDex" | `DebouncedSearchField` already existed; the Pokédex (largest list) was excluded | Wrong priority; infrastructure existed |
+| `battle_ruleset.dart` under `battle_engine` | Lives in `features/calculator/models/` | Minor path error |
+| — | **Two divergent damage implementations in one screen** | Missed entirely; became C1 |
+| **v2:** "Pokédex/MoveDex/AbilityDex/ItemDex search is not debounced" | All four already debounced at 300 ms | Wrong target. Came from inferring behaviour via a direct grep and missing an indirect call |
+| **v2:** "Swap the four raw `TextField`s for `DebouncedSearchField`" | There were no raw search `TextField`s | Task was already complete |
+| **v1:** "Synchronous main-thread filtering… 900+ items filtered on every character typed", cold-start, energy/frame budgets — the whole §6 performance audit | Owner confirms **nothing feels laggy**. No measurement ever backed it | An entire audit section was fabricated from code-reading. **Lesson: any performance claim in this file must cite a measurement or be labelled a hypothesis** |
+| **v1:** `DebouncedSearchField` at 300 ms | A trailing debounce that long never fires while a normal-speed typist types | Caused the exact bug the owner reported |
+| **2026-10-06:** two `sandbox_damage_parity_test.dart` scenarios named items that do not exist | `findByName` returned `null`, all multipliers fell back to 1.0, both engines trivially agreed | **2 of 12 scenarios passed while testing nothing.** A `checkItem` guard now throws |
+| **2026-10-06:** the Showdown reference applied base-power mods *after* `getBaseDamage` | The games apply them before | Found only because the parity test was written; fixed in `e94d50e` |
+| **2026-10-06:** `SelectionArea` in `MaterialApp.builder` is "a cheap whole-app a11y win" | It crashes the app — no `Overlay` ancestor | Passing `flutter analyze` and `flutter test` does **not** prove a widget-tree change works. Now F3 |
+
+**The last row is the important one.** Three times this cycle, code that analysed clean
+and passed the existing tests was wrong when run: the Jolly/Adamant NatureDex case, the
+HP expectations in the stats test, and the `SelectionArea` crash. Static analysis and
+unit tests verify *logic*; they do not verify that a widget is wired into the tree
+correctly, and they do not verify that an expectation matches the game.
+
+---
+
+## H. Measurement appendix
+
+Re-run from the repository root to re-derive [§A](#a-measurement-basis).
+
+```bash
+# Size
+find lib -name "*.dart" | wc -l                     # files
+find lib -name "*.dart" -exec cat {} + | wc -l      # lines
+find lib -name "*.g.dart" -exec cat {} + | wc -l    # generated lines
+find lib -name "*.dart" -exec wc -l {} + | sort -rn | head -15
+
+# Tests
+find test -name "*.dart" | wc -l
+find test -name "*.dart" -exec cat {} + | wc -l
+grep -rhoE '^\s*(test|testWidgets)\(' test --include=*.dart | wc -l
+
+# Health signals (escape the parens — an unescaped "(" opens a group and silently matches nothing)
+grep -rEo 'Semantics\('    lib --include=*.dart | wc -l
+grep -rEo 'setState\('     lib --include=*.dart | wc -l
+grep -rEo 'SelectionArea'  lib --include=*.dart | wc -l
+grep -rEo 'Color\(0x[0-9A-Fa-f]{8}\)' lib --include=*.dart | wc -l
+grep -rEo 'catch[[:space:]]*\(_[[:space:]]*\)' lib --include=*.dart | wc -l
+grep -rEow 'late'          lib --include=*.dart | wc -l
+
+# The number that was 7x wrong
+grep -rEo "Navigator\.push[A-Za-z]*\(" lib --include=*.dart | wc -l   # pushes
+grep -rEo "Navigator\.[a-zA-Z]+"       lib --include=*.dart | wc -l   # all refs
+
+# Layering
+grep -rln "app_database.dart" lib/features --include=*.dart | grep -E "/(views|widgets)/" | wc -l
+grep -rEo "ref\.(read|watch)\(" lib --include=*.dart | sort | uniq -c
+
+# Cross-feature import pairs (cycles are the ones that matter)
+for f in $(find lib/features -name "*.dart" ! -name "*.g.dart"); do
+  feat=$(echo "$f" | cut -d/ -f3)
+  grep -oE "package:libredex/features/[a-z_]+/" "$f" \
+    | sed 's|package:libredex/features/||;s|/||' | sort -u \
+    | while read -r t; do [ "$t" != "$feat" ] && echo "$feat -> $t"; done
+done | sort | uniq -c | sort -rn
+
+# Data assets
+ls -la assets/data | tail -n +2 | awk '{s+=$5} END {print s/1048576 " MB"}'
+python3 -c "import json;d=json.load(open('assets/data/champions_regulation_mc.json'));print(len(d['itemIds']),len(d['newItemIds']))"
+
+# Pokédex shape (the invariants the search fix depends on)
+python3 -c "
+import json
+rows=json.load(open('assets/data/pokemon.json'))
+rows = rows if isinstance(rows,list) else list(rows.values())
+ov=json.load(open('assets/data/forms_extra.json'))['pokemon']
+merged=rows+ov
+g={}
+for p in merged: g.setdefault(p.get('nationalDexNumber') or p['id'],[]).append(p)
+print('species:', len(g))
+print('species with >1 form:', sum(1 for v in g.values() if len(v)>1))
+print('species lacking an id==dex row:', sum(1 for v in g.values() if not any(p['id']==(p.get('nationalDexNumber') or p['id']) for p in v)))
+"
 ```
 
-### Architectural Findings & Bottlenecks
-
-1. **`battle_engine` Layering Gold**: `lib/features/battle_engine` is pure Dart with zero Flutter dependencies. It uses clean immutable state (`BattleState`, `PokemonState`, `FieldState`) and explicit pipeline services (`ModifierPipeline`, `StatEngine`).
-2. **Cross-Feature Import Violations**:
-   - `battle_engine` imports from `calculator`, `pokedex`, and `stat_comparison` (12 imports).
-   - `calculator` imports from `battle_engine` and `pokedex` (8 imports).
-   - `abilitydex` imports from `pokedex` (3 imports).
-   - *Fix*: Move all shared models (e.g., `BattleRuleset`, `StatModifier`) into `lib/core/models/`.
-3. **Direct DB Imports in UI Layer**: 10 UI files directly import `app_database.dart`.
-   - *Fix*: Introduce proper feature repositories (`AbilityRepository`, `MoveRepository`, `ItemRepository`, `StatComparisonRepository`) to encapsulate database queries.
-
 ---
 
-## 4. The "God Screens" Decomposition Plan
-
-### 4.1 `damage_calculator_screen.dart` (3,537 lines) → 8 Target Files
-
-Split the massive single file into dedicated, maintainable components:
-
-```
-lib/features/calculator/
-├── views/
-│   ├── damage_calculator_screen.dart   (~300 lns — main scaffold & tabs)
-│   ├── attacker_panel.dart             (~450 lns — attacker selection & EVs/IVs)
-│   ├── defender_panel.dart             (~450 lns — defender selection & EVs/IVs)
-│   ├── result_summary_panel.dart       (~350 lns — damage rolls & KO chance)
-│   ├── field_conditions_panel.dart     (~250 lns — weather, terrain, screens)
-│   └── stat_point_editor.dart          (~300 lns — Champions 66 SP sliders)
-└── widgets/
-    ├── calculator_helpers.dart         (existing, retain)
-    └── ev_slider_group.dart            (~200 lns — extracted EV/IV slider control)
-```
-
-### 4.2 `pokedex_screen.dart` (2,256 lines) → 5 Target Files
-
-```
-lib/features/pokedex/
-├── viewmodels/
-│   └── pokedex_filter_controller.dart  (~350 lns — handles all 20+ filter states)
-├── views/
-│   └── pokedex_screen.dart             (~400 lns — search bar & grid scaffold)
-└── widgets/
-    ├── pokedex_filter_chips.dart       (~250 lns — active filter summary & pills)
-    ├── pokedex_sort_controls.dart      (~150 lns — sort dropdown & order toggles)
-    └── pokemon_grid_card.dart          (existing, retain)
-```
-
-### 4.3 `movedex_screen.dart` & `abilitydex_screen.dart`
-
-- Extract UI state from `StatefulWidget` into `MoveFilterController` and `AbilityFilterController` Riverpod notifiers.
-- Offload filtering from `setState` to SQL queries in Drift.
-
----
-
-## 5. State Management Audit & Consistency Strategy
-
-### State Management Landscape
-- **Riverpod Codegen (`@riverpod`)**: 10 providers (Database, Theme, Navigation, Calculator)
-- **Manual Riverpod (`Provider` / `Notifier`)**: 25 providers (Sync, Repositories, Favorites)
-- **`setState` Calls**: **227 instances** across 13 features
-
-### Issues & Remediation Plan
-
-1. **Convert Singleton `OfflineArtworkStore` to Riverpod**:
-   - `OfflineArtworkStore.instance` is accessed statically across `PokemonSprite` and `ItemArtworkIcon`.
-   - *Fix*: Wrap it in `@Riverpod(keepAlive: true)` to allow mocking in unit/widget tests.
-2. **Eliminate Cold-Start Theme Flash**:
-   - `theme_provider.dart` and `navigation_provider.dart` synchronously initialize to defaults before `SharedPreferences` finishes reading.
-   - *Fix*: Async pre-load `SharedPreferences` in `main()` before calling `runApp()`.
-3. **Refactor UI `ref.read` in Build Methods**:
-   - 53 calls to `ref.read` vs 54 calls to `ref.watch`. Audit and replace any `ref.read` calls inside `Widget build()` with `ref.watch` to ensure reactive rebuilding.
-
----
-
-## 6. Performance & Energy Efficiency Audit
-
-1. **Missing Widget Keys**: Only 1 `ValueKey` and 1 `GlobalKey` exist in `lib/`. `ListView.builder` items in Dex screens lack keys, causing Flutter to rebuild entire lists rather than reordering elements during sort/filter changes.
-2. **Missing `AutomaticKeepAliveClientMixin`**: Tab switching in `PokemonDetailScreen` forces tab children to rebuild from scratch on every swipe.
-3. **Synchronous Main-Thread Filtering**: `AbilityDex` and `ItemDex` filter 900+ items inside `setState` on every character typed without input debouncing.
-4. **Repaint Boundaries**: Only 5 `RepaintBoundary` instances exist. Heavy visual components (Type Chart matrix, Damage Calculator results card) rebuild parent contexts unnecessarily.
-5. **Image Precaching**: Zero `precacheImage` calls exist. Grid taps experience visual delay when opening high-res Pokémon artwork.
-
----
-
-## 7. Database Schema & Data Pipeline Analysis
-
-### Schema Design (`lib/core/database/app_database.dart`)
-- **Schema Version**: 5 (with migrations handling v1→v5).
-- **Tables**: `PokemonTable`, `MoveTable`, `AbilityTable`, `PokemonMovesTable`, `PokemonAbilitiesTable`.
-- **Indexes**: 17 custom SQL indexes.
-
-### Database Improvements
-1. **Move Index Creation to `onUpgrade`**: 17 `CREATE INDEX IF NOT EXISTS` statements currently execute inside `beforeOpen` on every single app cold start. Move them to `onUpgrade`.
-2. **FTS5 Full-Text Search**: Implement SQLite FTS5 virtual tables for Pokémon and move names to eliminate costly `LIKE '%query%'` linear scans.
-3. **Strongly-Typed Stream Returns**: `watchPokemonAbilities` and `watchPokemonMoves` currently return `Stream<List<Map<String, dynamic>>>`. Refactor to return typed data wrappers (`PokemonAbilityWithDetails`, `PokemonMoveWithDetails`).
-
----
-
-## 8. Network Layer & Offline-First Resiliency
-
-1. **`ApiClient` Enhancement**: Expand the 22-line `ApiClient` Dio wrapper to include retry policies (`dio_smart_retry`), network connectivity pre-checks (`connectivity_plus`), and rate limiting.
-2. **Offline Artwork Store Concurrency Protection**: `OfflineArtworkStore` uses a manual `_persistQueue` future chain for JSON manifest writes. Add explicit mutex locking during batched concurrent image downloads to prevent manifest corruption.
-
----
-
-## 9. Comprehensive Testing Gap Analysis & Active Test Regression
-
-### 9.1 Active Test Regression (Root Cause Identified)
-
-The test suite currently fails with:
-```
-Failing tests:
-  test/champions_regulation_test.dart: M-C move, ability and item pools retain the researched deltas
-  Expected: an object with length of <140>
-    Actual: has length of <151>
-```
-
-**Root Cause**: Commit `217f7a6` updated `champions_regulation_mc.json` to include 11 held items (Rocky Helmet, Air Balloon, Red Card, Binding Band, Eject Button, Normal Gem, Terrain Extender, Electric/Psychic/Misty/Grassy Seeds) expanding the item catalog from 140 → 151 items and new items from 7 → 18. However, lines 91–92 of `test/champions_regulation_test.dart` were not updated:
-```dart
-// test/champions_regulation_test.dart:91-92
-expect(catalog.itemIds, hasLength(140));   // Needs update: 151
-expect(catalog.newItemIds, hasLength(7));  // Needs update: 18
-```
-Fixing these two expectations restores a 100% clean test run.
-
-### 9.2 Test Coverage Metrics & Roadmap
-- **Engine Math Coverage**: ~90% (exclusively in `battle_engine_test.dart`, `damage_math_test.dart`, `showdown_parity_test.dart`)
-- **UI & ViewModel Coverage**: <15%
-- **Integration Tests**: 0 tests (no `integration_test/` folder)
-
-**Action Plan**:
-1. Fix `champions_regulation_test.dart` to unblock CI.
-2. Write unit tests for `DamageCalculatorViewModel`, `PokedexViewModel`, `StatsCalculatorViewModel`, and `StatComparisonViewModel`.
-3. Replace shallow smoke tests with interactive widget tests for all 13 feature screens.
-4. Create `integration_test/app_flow_test.dart` to simulate key user flows: launching → searching Pokémon → changing filters → opening detail view → adding to team builder → calculating damage.
-
----
-
-## 10. CI/CD Pipeline, Security & Build Configuration
-
-### 10.1 GitHub Actions Workflow (`.github/workflows/ci.yml`)
-The current CI pipeline executes:
-- Java 17 setup with Gradle caching
-- Flutter stable setup with aggressive caching
-- Python 3.12 setup for offline data validation
-- `dart format --output=none --set-exit-if-changed .`
-- `flutter analyze --fatal-infos`
-- 5 data asset validation scripts in `tools/`
-- `flutter test --coverage`
-- Debug APK build smoke test
-
-### 10.2 Workflow Security Hardening (`.github/CODEOWNERS`)
-PR #12 added `.github/CODEOWNERS` requiring manual review from `@AlguemDaRua` on any changes to `.github/` and `.github/workflows/`, preventing unauthorized modifications or test bypasses.
-
----
-
-## 11. Data Pipeline & Generation Tooling (`tools/`)
-
-The repository contains 20 Python and Dart scripts in `tools/`:
-- **`audit_libredex_data.py`**: Audits 1,351 Pokémon, 937 moves, 367 abilities, 2,223 items, and 135k junction rows.
-- **`validate_champions_data.py`**: Validates 49 overlay forms, 7 extra abilities, and Champions legality.
-- **`validate_forms_catalog.py`**: Audits custom forms catalog consistency.
-- **`validate_learnsets.py`**: Validates learnset and junction pairings.
-- **`validate_move_properties.py`**: Verifies move metadata consistency.
-
-**Improvement Recommendation**: Add a single master runner script `python3 tools/validate_all.py` so contributors can run all data audits with one command before committing.
-
----
-
-## 12. Accessibility (a11y) Audit & Action Plan
-
-> [!CAUTION]
-> **Only 7 `Semantics` annotations exist in 45,721 lines of code.**
-
-### Critical Accessibility Fixes Required
-1. **Type Badges ([type_pill.dart](file:///home/thedragon/StudioProjects/LibreDex/lib/core/widgets/type_pill.dart))**: Wrap in `Semantics(label: 'Type: $typeName', button: false)`.
-2. **Stat Bars ([stat_tile.dart](file:///home/thedragon/StudioProjects/LibreDex/lib/core/widgets/stat_tile.dart))**: Wrap in `Semantics(label: '$statName: $value', value: '$value out of 255')`.
-3. **Pokémon Grid Cards ([pokemon_grid_card.dart](file:///home/thedragon/StudioProjects/LibreDex/lib/features/pokedex/widgets/pokemon_grid_card.dart))**: Add `Semantics(label: '$name, National Dex #$dexNum, Types: $types')`.
-4. **Type Chart Matrix**: Add screen reader matrix cell reader (`Semantics(label: '$attacker attacking $defender: $multiplier multiplier')`).
-5. **Global Text Selection**: Wrap `MaterialApp.builder` in a `SelectionArea` to allow copying stats and descriptions.
-6. **Touch Target Dimensions**: Audit all filter chips, buttons, and switches to ensure a minimum touch target size of **48×48dp**.
-
----
-
-## 13. Security, Build & Android Configuration
-
-1. **Release Keystore Signing**: `android/app/build.gradle.kts:36` defaults release builds to `signingConfigs.debug`. Create a production release signing configuration block.
-2. **R8 / ProGuard Keep Rules**: Add `proguard-rules.pro` with explicit rules for Drift, SQLite3 native binaries, and Dio.
-3. **Gradle JVM Memory Tuning**: Reduce `org.gradle.jvmargs=-Xmx8G -XX:MaxMetaspaceSize=4G` in `android/gradle.properties` to `-Xmx4G -XX:MaxMetaspaceSize=1G` to prevent OOM errors on developer machines and CI runners.
-4. **Network Security Config**: Add `network_security_config.xml` restricting cleartext traffic and specifying HTTPS requirements.
-
----
-
-## 14. Error Handling & Silent Failure Audit
-
-> [!WARNING]
-> **24 `catch (_)` blocks** swallow exceptions without logging or user notification.
-
-### Action Plan
-1. **Replace Silent Catch Blocks**: Update all 24 `catch (_)` locations in `offline_artwork_store.dart`, `damage_calculator_screen.dart`, `champions_catalog.dart`, and `champions_regulation.dart` to `catch (e, stack)` and log via standard logger.
-2. **Global Error Boundary**: Add `FlutterError.onError` handler and custom `ErrorWidget.builder` in `main.dart` to capture uncaught UI exceptions gracefully.
-
----
-
-## 15. UI/UX Polish, Design Tokens & Magic Numbers
-
-1. **Extract 467 Hardcoded `Color(0x...)` Literals**: Define unified semantic color tokens in `AppTheme` (e.g., `AppTheme.surfaceBorder(isDark)`, `AppTheme.secondaryText(isDark)`).
-2. **Eliminate 229 Magic Numbers**: Replace raw padding/margin numbers (`12`, `16`, `20`, `32`) with `AppSpacing` constants (`AppSpacing.md`, `AppSpacing.lg`).
-3. **UI State Persistence**: Persist search queries, active filter chips, shiny toggle state, and list scroll offsets across section switches.
-4. **Empty State Components**: Add illustrated empty state cards with "Clear All Filters" actions across all Dex screens.
-
----
-
-## 16. Store Metadata, Distribution & Legal Compliance
-
-1. **Fastlane Metadata (`fastlane/metadata/android/en-US/`)**: Ensure title, short description, and full description reflect offline capabilities and current game updates (Champions, Legends: Z-A).
-2. **Legal & Third-Party Attribution (`NOTICE.md`)**: Attribution is well-structured covering PokéAPI (BSD-3), PokeAPI Sprites CC0, and Pokémon trademarks. Keep this file maintained when adding third-party sources.
-
----
-
-## 17. Code Hygiene, Lints & Static Analysis
-
-1. **Strict Lint Rules**: Update `analysis_options.yaml` to enforce:
-   - `avoid_print: true`
-   - `prefer_single_quotes: true`
-   - `prefer_const_constructors: true`
-   - `prefer_final_locals: true`
-   - `always_declare_return_types: true`
-2. **Audit 131 `late` Variables**: Replace non-essential `late` declarations with nullable fields or constructor initialization to eliminate `LateInitializationError` risks.
-
----
-
-## 18. Multi-Platform & Scalability Strategy
-
-1. **Declarative Routing (`go_router`)**: Replace 82 imperative `Navigator.push` calls with `go_router` routes to enable deep linking, route guards, and web URL support.
-2. **Platform Expansion**: Add target support for **iOS** (`ios/`), **Web** (`web/`), and **Desktop** (`windows/`, `macos/`, `linux/`).
-3. **Localization (i18n)**: Introduce `flutter_localizations` and `l10n.yaml` to extract hardcoded string literals into ARB files.
-
----
-
-## 19. Green Software & Sustainability (Eco-Path)
-
-1. **Network Energy Efficiency**: Check device connectivity before initiating network calls to avoid battery drain during timeouts.
-2. **Asset Payload Optimization**: Compress `pokemon_moves.json` (2.9MB) using binary encoding (CBOR / MessagePack).
-3. **Binary Size Optimization**: Enable `--split-per-abi` and App Bundle distribution (`flutter build appbundle`).
-
----
-
-## 20. Master 40-Item Prioritized Execution Checklist
-
-### 🔴 Phase 1: Critical Core Refactoring & CI Fix (Items 1–8)
-
-| # | Task Description | Target Files | Effort |
-|:---:|---|---|:---:|
-| 1 | **Fix Test Regression**: Update item expectations (140→151, 7→18) | `test/champions_regulation_test.dart` | 5m |
-| 2 | **Decompose `DamageCalculatorScreen`** (3,537 lines) into 8 modular panels | `damage_calculator_screen.dart` + 7 new files | 8h |
-| 3 | **Decompose `PokedexScreen`** (2,256 lines) into ViewModel + 3 widgets | `pokedex_screen.dart` + 4 new files | 4h |
-| 4 | **Decompose `MovedexScreen` & `AbilitydexScreen`** | `movedex_screen.dart`, `abilitydex_screen.dart` | 4h |
-| 5 | **Add Repositories for UI Layer**: Remove direct DB imports from 10 view files | `abilitydex`, `movedex`, `itemdex`, `stat_comparison` | 5h |
-| 6 | **Accessibility Baseline**: Add `Semantics` to `TypePill`, `StatTile`, `PokemonGridCard` | `core/widgets/` | 3h |
-| 7 | **Global Text Selection**: Wrap `MaterialApp.builder` in `SelectionArea` | `main.dart` | 15m |
-| 8 | **Configure Android Release Signing**: Add release keystore config | `android/app/build.gradle.kts` | 30m |
-
-### 🟡 Phase 2: High-Priority Architecture & Quality (Items 9–18)
-
-| # | Task Description | Target Files | Effort |
-|:---:|---|---|:---:|
-| 9 | **Elevate Shared Models**: Move `battle_engine` models to `lib/core/models/` | `battle_engine/`, `calculator/`, `core/` | 3h |
-| 10 | **Convert `OfflineArtworkStore` Singleton**: Wrap in Riverpod provider | `offline_artwork_store.dart`, widgets | 2h |
-| 11 | **Eliminate Cold-Start Theme Flash**: Async pre-load `SharedPreferences` | `main.dart`, `theme_provider.dart` | 1h |
-| 12 | **Fix 24 Silent Catch Swallows**: Replace `catch (_)` with logging | 12 files | 2h |
-| 13 | **Add List Item `ValueKey`s**: Add `ValueKey(id)` across all Dex list builders | 6 files | 30m |
-| 14 | **Add Input Debouncing**: Integrate `DebouncedQuery` into `AbilityDex` and `ItemDex` | `abilitydex_screen.dart`, `itemdex_screen.dart` | 30m |
-| 15 | **Tune Gradle Memory**: Reduce JVM args from 8GB to 4GB | `android/gradle.properties` | 5m |
-| 16 | **ViewModel Unit Tests**: Write tests for `DamageCalculatorViewModel` and `PokedexViewModel` | `test/viewmodels/` | 4h |
-| 17 | **Integration Test**: Create `integration_test/app_flow_test.dart` | `integration_test/` | 3h |
-| 18 | **Extract Theme Color Tokens**: Replace 125 `isDark ? color : color` instances | `app_theme.dart` + UI files | 3h |
-
-### 🟢 Phase 3: Medium-Priority Optimizations (Items 19–29)
-
-| # | Task Description | Target Files | Effort |
-|:---:|---|---|:---:|
-| 19 | **Optimize DB Index Creation**: Move 17 index statements from `beforeOpen` to `onUpgrade` | `app_database.dart` | 30m |
-| 20 | **Typed Database Watch Streams**: Return strongly-typed objects in database streams | `app_database.dart` | 1h |
-| 21 | **Add `RepaintBoundary`**: Wrap Type Chart matrix and calculation summary cards | `typechart_screen.dart`, `calculator/` | 15m |
-| 22 | **Add Image Precaching**: Pre-cache artwork on grid card tap | `pokemon_grid_card.dart` | 15m |
-| 23 | **Enforce Strict Analyzer Lints**: Enable `avoid_print`, `prefer_const_constructors`, etc. | `analysis_options.yaml` | 30m |
-| 24 | **UI State Persistence**: Persist search queries, filters, and scroll positions across tabs | Dex viewmodels | 3h |
-| 25 | **Illustrated Empty States**: Add custom empty state cards with "Clear Filters" action | 5 Dex screens | 2h |
-| 26 | **ApiClient Resilience**: Add retry policy and connectivity checks | `api_client.dart` | 1h |
-| 27 | **ProGuard Keep Rules**: Add `proguard-rules.pro` for SQLite3 and Drift | `android/app/proguard-rules.pro` | 1h |
-| 28 | **Replace Magic Numbers**: Audit and replace raw paddings with `AppSpacing` | 20+ files | 2h |
-| 29 | **Unified Data Audit Script**: Create `tools/validate_all.py` | `tools/` | 30m |
-
-### 🔵 Phase 4: Long-Term Scaling & Multi-Platform (Items 30–40)
-
-| # | Task Description | Target Files | Effort |
-|:---:|---|---|:---:|
-| 30 | **Documentation & ADRs**: Add `CONTRIBUTING.md` and document architecture decisions | `docs/` | 1h |
-| 31 | **iOS Support**: Add iOS project runner and dependencies | `ios/` | 1-2 days |
-| 32 | **Declarative Routing**: Migrate to `go_router` | Entire navigation layer | 1 day |
-| 33 | **Localization (i18n)**: Set up `l10n.yaml` and ARB files | Entire UI layer | 2 days |
-| 34 | **SQLite FTS5 Search**: Add full-text search virtual tables for instant search | `app_database.dart` | 3h |
-| 35 | **Golden Tests**: Add visual snapshot regression tests | `test/goldens/` | 4h |
-| 36 | **Structured Ring-Buffer Logging**: Add local file logging for user bug reports | `lib/core/utils/logger.dart` | 2h |
-| 37 | **Touch Target Audit**: Ensure all touch targets meet 48×48dp minimum | 13 screens | 2h |
-| 38 | **CI Coverage Enforcement**: Add coverage threshold check (`--min-coverage 60`) | `.github/workflows/ci.yml` | 30m |
-| 39 | **Binary Asset Compression**: Compress `pokemon_moves.json` to CBOR | `tools/`, `sync_repository.dart` | 3h |
-| 40 | **Build Obfuscation**: Enable `--split-per-abi` and `--obfuscate` in release pipeline | CI / Fastlane | 1h |
-
----
-
-### Target Architecture Diagram (Post-Rebuild)
-
-```mermaid
-flowchart TD
-    subgraph UI["Clean UI Layer (Views & Modular Components)"]
-        PS["PokedexScreen (~400 lns)"]
-        DCS["DamageCalcScreen (~300 lns)"]
-        MS["MovedexScreen (~300 lns)"]
-        AS["AbilitydexScreen (~300 lns)"]
-        ModPanels["Modular Sub-Panels & Extracted Widgets"]
-    end
-
-    subgraph Router["Routing & Navigation"]
-        GR["go_router (Declarative Routes & Deep Links)"]
-    end
-
-    subgraph VM["ViewModel / Controller Layer (Riverpod)"]
-        PFC["PokedexFilterController"]
-        DCVM["DamageCalculatorViewModel"]
-        MFC["MoveFilterController"]
-        AFC["AbilityFilterController"]
-    end
-
-    subgraph CoreModels["Core Shared Models (lib/core/models/)"]
-        CM["BattleRuleset, StatModifier, AppliedModifier"]
-    end
-
-    subgraph Repos["Feature Repositories"]
-        PR["PokemonRepository"]
-        MR["MoveRepository"]
-        AR["AbilityRepository"]
-        IR["ItemRepository"]
-    end
-
-    subgraph Engine["Battle Engine (Pure Dart)"]
-        BE["BattleEngine"]
-    end
-
-    subgraph Data["Infrastructure & Database Layer"]
-        DB[("Drift SQLite (FTS5 Enabled)")]
-        OASProvider["OfflineArtworkStore (Riverpod Provider)"]
-    end
-
-    UI --> GR
-    GR --> VM
-    VM --> Repos
-    VM --> CM
-    VM --> BE
-    Repos --> DB
-    BE --> CM
-
-    style PS fill:#51cf66,color:#fff
-    style DCS fill:#51cf66,color:#fff
-    style MS fill:#51cf66,color:#fff
-    style AS fill:#51cf66,color:#fff
-    style OASProvider fill:#51cf66,color:#fff
-```
-
-*This master plan forms the authoritative blueprint for turning LibreDex into a production-grade, highly scalable, and bulletproof application.*
+## I. Standing notes
+
+- **The three God Screens are a symptom, not a goal.** Splitting a file is worth doing
+  only when it makes a specific change easier. C1 removed ~111 lines by *deleting*
+  duplicated logic; that is better than moving it.
+- **`Icons/` holds pre-staged platform icons.** `Icons/ios/` (22 files) and `Icons/web/`
+  exist ahead of those platforms. `Icons/android/` holds the Play Store icon. **Do not
+  delete it** — a docs commit already removed it once by accident (`0807265`, restored
+  in `4d58f1f`). `android/app/src/main/res/mipmap-*` is what actually ships.
+- **Two test files are misnamed, not junk.** `widget_test.dart` is a PokedexScreen +
+  `FormFacts` + `CombatUtils` + `GenderRatio` + `SpriteQuality` suite, and
+  `complete_improvement_plan_test.dart` covers move properties, ability tags and
+  Pokémon classification. Both are real coverage behind plan-artifact names; rename
+  them when next touching either file.
+- **The Pokédex `stream → filter → rebuild` path is the app's performance centre of
+  gravity.** Optimisations elsewhere are unlikely to be felt. There is no known
+  performance problem — the app is smooth while typing.
+- **`.metadata` and `.vscode/settings.json` are intentionally tracked.** Flutter
+  documents `.metadata` as version-controlled; the VS Code setting affects Gradle
+  build-configuration prompts.
+- **Before distributing a build:** create `android/key.properties` and a keystore
+  (git-ignored). Signing is configured in `build.gradle.kts` and reads that file;
+  without it the build is unsigned.
+- **`docs/reference.md` replaced eight separate guides** (data pipeline, migrations,
+  Champions, Legends: Z-A, implementation guide, testing, release checklist, index) on
+  2026-10-06. The superseded audit archive that used to be `docs/ARCHIVE.md` was removed
+  at the same time; it remains recoverable from git history.

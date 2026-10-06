@@ -7,7 +7,22 @@ class DebouncedSearchField extends StatefulWidget {
   final ValueChanged<String> onChanged;
   final VoidCallback? onClear;
   final String initialValue;
-  final Duration debounceDuration;
+
+  /// Whether the field takes focus as soon as it is built.
+  final bool autofocus;
+
+  /// Minimum gap between two emissions.
+  ///
+  /// This is a throttle with a guaranteed trailing emit, not a plain trailing
+  /// debounce, because a plain debounce is wrong for search-as-you-type: it
+  /// cancels the pending timer on every keystroke, so a typist whose
+  /// inter-keystroke gap is shorter than the delay never sees the results move
+  /// until they stop. That reads as "I have to type the whole name".
+  ///
+  /// Keep this comfortably below the ~180 ms gap between keystrokes of an
+  /// average typist. Anything near or above that and the list stops tracking
+  /// the query while the user is still typing.
+  final Duration throttleDuration;
 
   const DebouncedSearchField({
     super.key,
@@ -15,7 +30,8 @@ class DebouncedSearchField extends StatefulWidget {
     required this.onChanged,
     this.onClear,
     this.initialValue = '',
-    this.debounceDuration = const Duration(milliseconds: 300),
+    this.autofocus = false,
+    this.throttleDuration = const Duration(milliseconds: 100),
   });
 
   @override
@@ -24,7 +40,8 @@ class DebouncedSearchField extends StatefulWidget {
 
 class _DebouncedSearchFieldState extends State<DebouncedSearchField> {
   late final TextEditingController _controller;
-  Timer? _debounceTimer;
+  Timer? _trailingTimer;
+  DateTime? _lastEmitAt;
   String _lastQuery = '';
 
   @override
@@ -46,29 +63,45 @@ class _DebouncedSearchFieldState extends State<DebouncedSearchField> {
 
   @override
   void dispose() {
-    _debounceTimer?.cancel();
+    _trailingTimer?.cancel();
     _controller.dispose();
     super.dispose();
   }
 
+  void _emit(String val) {
+    _lastEmitAt = DateTime.now();
+    if (val == _lastQuery) return;
+    _lastQuery = val;
+    widget.onChanged(val);
+  }
+
   void _onTextChanged(String val) {
-    _debounceTimer?.cancel();
-    _debounceTimer = Timer(widget.debounceDuration, () {
-      if (!mounted) return;
-      if (val != _lastQuery) {
-        _lastQuery = val;
-        widget.onChanged(val);
-      }
-    });
+    final last = _lastEmitAt;
+    final now = DateTime.now();
+
+    if (last == null || now.difference(last) >= widget.throttleDuration) {
+      // Long enough since the last emission: show results now, so the list
+      // starts narrowing from the very first keystroke.
+      _trailingTimer?.cancel();
+      _emit(val);
+    } else {
+      // Too soon. Coalesce into one trailing emit so fast typing cannot
+      // outrun the throttle and strand the final value.
+      final remaining = widget.throttleDuration - now.difference(last);
+      _trailingTimer?.cancel();
+      _trailingTimer = Timer(remaining, () {
+        if (!mounted) return;
+        _emit(val);
+      });
+    }
     // Trigger setState to show/hide clear icon immediately
     setState(() {});
   }
 
   void _handleClear() {
-    _debounceTimer?.cancel();
+    _trailingTimer?.cancel();
     _controller.clear();
-    _lastQuery = '';
-    widget.onChanged('');
+    _emit('');
     if (widget.onClear != null) {
       widget.onClear!();
     }
@@ -83,6 +116,7 @@ class _DebouncedSearchFieldState extends State<DebouncedSearchField> {
       hint: widget.hintText,
       child: TextField(
         controller: _controller,
+        autofocus: widget.autofocus,
         onChanged: _onTextChanged,
         style: TextStyle(
           color: isDark ? Colors.white : Colors.black87,

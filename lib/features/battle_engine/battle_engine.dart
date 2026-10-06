@@ -10,12 +10,14 @@ export 'models/move_state.dart';
 export 'models/field_state.dart';
 export 'models/battle_state.dart';
 export 'models/damage_result.dart';
+export 'models/sandbox_overrides.dart';
 export 'package:libredex/features/calculator/models/battle_ruleset.dart';
 
 export 'services/stat_engine.dart';
 export 'services/modifier_pipeline.dart';
 export 'services/mainline_damage_engine.dart';
 export 'services/champions_damage_engine.dart';
+export 'services/sandbox_damage_engine.dart';
 
 import 'package:libredex/features/calculator/models/battle_ruleset.dart';
 import 'models/battle_state.dart';

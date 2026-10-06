@@ -11,6 +11,7 @@ import 'package:libredex/core/database/app_database.dart';
 import 'package:libredex/core/theme/app_theme.dart';
 import 'package:libredex/core/theme/app_spacing.dart';
 import 'package:libredex/core/widgets/pokemon_sprite.dart';
+import 'package:libredex/core/utils/cosmetic_forms.dart';
 import 'package:libredex/features/calculator/models/battle_ruleset.dart';
 import 'package:libredex/features/pokedex/viewmodels/pokedex_viewmodel.dart';
 import 'package:libredex/features/pokedex/viewmodels/team_builder_provider.dart';
@@ -568,7 +569,7 @@ class _ActionChip extends StatelessWidget {
 
 // ── Pokémon Picker Dialog ─────────────────────────────────────────────────────
 
-class _PokemonPickerDialog extends StatefulWidget {
+class _PokemonPickerDialog extends ConsumerStatefulWidget {
   final List<Pokemon> pokemonList;
   final ValueChanged<Pokemon> onPicked;
 
@@ -578,17 +579,27 @@ class _PokemonPickerDialog extends StatefulWidget {
   });
 
   @override
-  State<_PokemonPickerDialog> createState() => _PokemonPickerDialogState();
+  ConsumerState<_PokemonPickerDialog> createState() =>
+      _PokemonPickerDialogState();
 }
 
-class _PokemonPickerDialogState extends State<_PokemonPickerDialog> {
+class _PokemonPickerDialogState extends ConsumerState<_PokemonPickerDialog> {
   String _query = '';
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final query = _query.trim().toLowerCase();
+    final abilitiesAsync = ref.watch(pokemonAbilityIdsProvider);
+    // Until the ability junctions arrive we show every form rather than
+    // guessing: hiding a real form is worse than briefly showing a cosmetic
+    // one.
+    final cosmetic = abilitiesAsync.maybeWhen(
+      data: (abilities) => cosmeticFormIds(widget.pokemonList, abilities),
+      orElse: () => const <int>{},
+    );
     final options = widget.pokemonList.where((p) {
+      if (cosmetic.contains(p.id)) return false;
       if (query.isEmpty) return true;
       final dex = p.nationalDexNumber > 0 ? p.nationalDexNumber : p.id;
       return p.name.toLowerCase().contains(query) ||
@@ -618,6 +629,7 @@ class _PokemonPickerDialogState extends State<_PokemonPickerDialog> {
                   ),
                   const Spacer(),
                   IconButton(
+                    tooltip: 'Close',
                     icon: const Icon(Icons.close_rounded, size: 22),
                     onPressed: () => Navigator.pop(context),
                   ),

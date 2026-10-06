@@ -114,17 +114,21 @@ class _StartupScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
-              Text(
-                hasError
-                    ? error!
-                    : 'Preparing the local reference database. Artwork and up-to-date evolution '
-                          'details load online when a connection is available.',
-                style: TextStyle(
-                  fontSize: 13,
-                  height: 1.5,
-                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+              Semantics(
+                liveRegion: hasError,
+                child: Text(
+                  hasError
+                      ? error!
+                      : 'Preparing the local reference database. Artwork and '
+                            'up-to-date evolution details load online when a '
+                            'connection is available.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.5,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
               if (hasError)
@@ -138,8 +142,11 @@ class _StartupScreen extends StatelessWidget {
                   label: const Text('Try again'),
                 )
               else
-                const CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation(AppTheme.pokemonRed),
+                Semantics(
+                  label: 'Preparing the local reference database',
+                  child: const CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation(AppTheme.pokemonRed),
+                  ),
                 ),
             ],
           ),

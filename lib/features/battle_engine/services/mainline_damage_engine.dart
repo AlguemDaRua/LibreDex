@@ -109,6 +109,7 @@ class MainlineDamageEngine {
       effectiveAttack: pipe.effectiveAttack,
       effectiveDefense: pipe.effectiveDefense,
       typeEffectiveness: pipe.typeEffectiveness,
+      priorityBlockReason: pipe.priorityBlockReason,
     );
   }
 

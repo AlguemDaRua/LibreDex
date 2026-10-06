@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/database/app_database.dart';
+import 'package:libredex/core/utils/cosmetic_forms.dart';
 import 'package:libredex/core/widgets/pokemon_sprite.dart';
 import 'package:libredex/features/calculator/viewmodels/damage_calculator_viewmodel.dart';
 import 'package:libredex/features/pokedex/repositories/pokemon_repository.dart';
@@ -41,11 +42,20 @@ class PokemonPickerDialog extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final screenHeight = MediaQuery.of(context).size.height;
+    final abilitiesAsync = ref.watch(pokemonAbilityIdsProvider);
+    // Until the ability junctions arrive we show everything rather than
+    // guessing: hiding a real form would be worse than briefly showing a
+    // cosmetic one.
+    final cosmetic = abilitiesAsync.maybeWhen(
+      data: (abilities) => cosmeticFormIds(pokemonList, abilities),
+      orElse: () => const <int>{},
+    );
     var query = '';
 
     return StatefulBuilder(
       builder: (ctx, setState) {
         final filtered = pokemonList.where((p) {
+          if (cosmetic.contains(p.id)) return false;
           final q = query.toLowerCase();
           return p.name.toLowerCase().contains(q) ||
               p.id.toString().contains(q) ||
@@ -80,6 +90,7 @@ class PokemonPickerDialog extends ConsumerWidget {
                         ),
                       ),
                       IconButton(
+                        tooltip: 'Close',
                         icon: const Icon(Icons.close_rounded, size: 22),
                         onPressed: () => Navigator.pop(ctx),
                         visualDensity: VisualDensity.compact,

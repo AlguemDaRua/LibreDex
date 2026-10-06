@@ -1,4 +1,6 @@
 import 'package:libredex/core/widgets/pokemon_sprite.dart';
+import 'package:libredex/core/utils/cosmetic_forms.dart';
+import 'package:libredex/core/widgets/debounced_search_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/database/app_database.dart';
@@ -135,12 +137,12 @@ class TeamBuilderScreen extends ConsumerWidget {
               children: [
                 IconButton(
                   tooltip: 'Import Showdown Paste',
-                  icon: const Icon(Icons.file_upload_outlined),
+                  icon: const Icon(Icons.file_download_outlined),
                   onPressed: () => _showImportDialog(context, ref, pokemon),
                 ),
                 IconButton(
                   tooltip: 'Export Showdown Text',
-                  icon: const Icon(Icons.file_download_outlined),
+                  icon: const Icon(Icons.file_upload_outlined),
                   onPressed: () {
                     final byId = {for (final p in pokemon) p.id: p};
                     final team = slots
@@ -938,12 +940,21 @@ class _PokemonPickerSheetState extends ConsumerState<_PokemonPickerSheet> {
     final favorites = ref.watch(favoritePokemonProvider);
     final teamSlots = ref.watch(teamBuilderProvider).whereType<int>().toSet();
     final query = _query.trim().toLowerCase();
+    final abilitiesAsync = ref.watch(pokemonAbilityIdsProvider);
+    // Until the ability junctions arrive we show every form rather than
+    // guessing: hiding a real form is worse than briefly showing a cosmetic
+    // one.
+    final cosmetic = abilitiesAsync.maybeWhen(
+      data: (abilities) => cosmeticFormIds(widget.pokemon, abilities),
+      orElse: () => const <int>{},
+    );
     final options =
         widget.pokemon.where((pokemon) {
           final dex = pokemon.nationalDexNumber > 0
               ? pokemon.nationalDexNumber
               : pokemon.id;
           if (teamSlots.contains(pokemon.id)) return false;
+          if (cosmetic.contains(pokemon.id)) return false;
           if (query.isEmpty) return true;
           return pokemon.name.toLowerCase().contains(query) ||
               pokemon.type1.toLowerCase().contains(query) ||
@@ -978,6 +989,7 @@ class _PokemonPickerSheetState extends ConsumerState<_PokemonPickerSheet> {
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   IconButton(
+                    tooltip: 'Close',
                     icon: const Icon(Icons.close_rounded, size: 22),
                     onPressed: () => Navigator.pop(context),
                     visualDensity: VisualDensity.compact,
@@ -987,13 +999,11 @@ class _PokemonPickerSheetState extends ConsumerState<_PokemonPickerSheet> {
             ),
             Padding(
               padding: const EdgeInsets.all(16),
-              child: TextField(
+              child: DebouncedSearchField(
+                hintText: 'Search Pokémon, type, or #',
+                initialValue: _query,
                 autofocus: true,
                 onChanged: (value) => setState(() => _query = value),
-                decoration: const InputDecoration(
-                  hintText: 'Search Pokémon, type, or #',
-                  prefixIcon: Icon(Icons.search_rounded),
-                ),
               ),
             ),
             Flexible(

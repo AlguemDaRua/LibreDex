@@ -48,6 +48,11 @@ app.*.map.json
 # Local Drift/SQLite database artifacts
 *.db
 
+# Android release signing – never commit the keystore or its passwords
+android/key.properties
+**/*.jks
+**/*.keystore
+
 # Raw PokeAPI CSV snapshots used by tools/build_champions_forms_asset.py &
 # tools/apply_pokeapi_csv_junctions.py (re-download instead of committing)
 tools/data/pokeapi-csv/
