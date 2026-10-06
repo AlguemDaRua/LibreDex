@@ -90,6 +90,7 @@ class PokemonPickerDialog extends ConsumerWidget {
                         ),
                       ),
                       IconButton(
+                        tooltip: 'Close',
                         icon: const Icon(Icons.close_rounded, size: 22),
                         onPressed: () => Navigator.pop(ctx),
                         visualDensity: VisualDensity.compact,

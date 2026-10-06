@@ -280,6 +280,7 @@ class _MoveDetailScreenState extends ConsumerState<MoveDetailScreen> {
                                 suffixIcon: _pokemonQuery.isEmpty
                                     ? null
                                     : IconButton(
+                                      tooltip: 'Clear search',
                                         icon: const Icon(Icons.clear),
                                         onPressed: () {
                                           _pokemonSearchController.clear();

@@ -205,6 +205,7 @@ class _RandomRollOverlayState extends State<RandomRollOverlay>
                     ],
                   ),
                   IconButton(
+                    tooltip: 'Close',
                     icon: const Icon(Icons.close_rounded, color: Colors.grey),
                     onPressed: () => Navigator.of(context).pop(),
                   ),

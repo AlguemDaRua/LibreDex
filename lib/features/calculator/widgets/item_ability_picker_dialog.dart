@@ -71,6 +71,7 @@ class _ItemPickerDialogState extends State<ItemPickerDialog> {
                     ),
                   ),
                   IconButton(
+                    tooltip: 'Close',
                     icon: const Icon(Icons.close_rounded, size: 22),
                     onPressed: () => Navigator.pop(context),
                     visualDensity: VisualDensity.compact,

@@ -24,8 +24,12 @@ class LibreDexApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
-      builder: (context, child) =>
-          WavyThemeTransition(child: child ?? const SizedBox.shrink()),
+      // SelectionArea makes every Text in the app selectable and copyable.
+      // Without it a screen reader can read values aloud but the user cannot
+      // copy a stat spread, an ability description or a damage roll.
+      builder: (context, child) => SelectionArea(
+        child: WavyThemeTransition(child: child ?? const SizedBox.shrink()),
+      ),
       home: const StartupGate(),
     );
   }
@@ -114,7 +118,9 @@ class _StartupScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
-              Text(
+              Semantics(
+                liveRegion: hasError,
+                child: Text(
                 hasError
                     ? error!
                     : 'Preparing the local reference database. Artwork and up-to-date evolution '
@@ -125,6 +131,7 @@ class _StartupScreen extends StatelessWidget {
                   color: isDark ? Colors.grey[400] : Colors.grey[600],
                 ),
                 textAlign: TextAlign.center,
+                ),
               ),
               const SizedBox(height: 32),
               if (hasError)
@@ -138,8 +145,11 @@ class _StartupScreen extends StatelessWidget {
                   label: const Text('Try again'),
                 )
               else
-                const CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation(AppTheme.pokemonRed),
+                const Semantics(
+                  label: 'Preparing the local reference database',
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation(AppTheme.pokemonRed),
+                  ),
                 ),
             ],
           ),

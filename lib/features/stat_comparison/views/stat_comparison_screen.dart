@@ -629,6 +629,7 @@ class _PokemonPickerDialogState extends ConsumerState<_PokemonPickerDialog> {
                   ),
                   const Spacer(),
                   IconButton(
+                    tooltip: 'Close',
                     icon: const Icon(Icons.close_rounded, size: 22),
                     onPressed: () => Navigator.pop(context),
                   ),

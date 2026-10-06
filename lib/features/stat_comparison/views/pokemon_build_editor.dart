@@ -190,6 +190,7 @@ class _BuildEditorDialogState extends State<_BuildEditorDialog> {
           ),
         ),
         IconButton(
+          tooltip: 'Close',
           icon: const Icon(Icons.close_rounded, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
@@ -411,6 +412,7 @@ class _BuildEditorDialogState extends State<_BuildEditorDialog> {
           style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800),
         ),
         IconButton(
+          tooltip: 'Decrease stat stage',
           icon: const Icon(Icons.remove, size: 14),
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
@@ -435,6 +437,7 @@ class _BuildEditorDialogState extends State<_BuildEditorDialog> {
           ),
         ),
         IconButton(
+          tooltip: 'Increase stat stage',
           icon: const Icon(Icons.add, size: 14),
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(minWidth: 24, minHeight: 24),

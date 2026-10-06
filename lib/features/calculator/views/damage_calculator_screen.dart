@@ -1712,6 +1712,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                   Row(
                     children: [
                       IconButton(
+                        tooltip: 'Decrease hits taken',
                         icon: const Icon(
                           Icons.remove_circle_outline,
                           color: Colors.purpleAccent,
@@ -1729,6 +1730,7 @@ class _DamageCalculatorScreenState extends ConsumerState<DamageCalculatorScreen>
                         ),
                       ),
                       IconButton(
+                        tooltip: 'Increase hits taken',
                         icon: const Icon(
                           Icons.add_circle_outline,
                           color: Colors.purpleAccent,

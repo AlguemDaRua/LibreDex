@@ -989,6 +989,7 @@ class _PokemonPickerSheetState extends ConsumerState<_PokemonPickerSheet> {
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   IconButton(
+                    tooltip: 'Close',
                     icon: const Icon(Icons.close_rounded, size: 22),
                     onPressed: () => Navigator.pop(context),
                     visualDensity: VisualDensity.compact,
