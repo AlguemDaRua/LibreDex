@@ -18,7 +18,7 @@ LibreDex code
 MIT License. Copyright (c) 2026 Azam Usman.
 
 PokéAPI data and service
-Reference data and Pokédex categories/descriptions are derived from PokéAPI
+Reference data and Pokédex category labels are derived from PokéAPI
 (BSD 3-Clause). Copyright (c) 2013–2023 Paul Hallett and PokéAPI contributors.
 
 Artwork and item images

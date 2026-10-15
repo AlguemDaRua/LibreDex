@@ -40,9 +40,9 @@ Damage-calculation formulas and test expectations were checked against [smogon/d
 
 `assets/data/champions_regulation_mc.json` and the Pokémon Champions learnset data are derived from [pokemon-champions-data](https://github.com/vbbjandrade/pokemon-champions-data) (commit `df262d8f27ba94ce6c0a421c1f83b3e57b11ceb4`, snapshot 1 October 2026), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Changes made by LibreDex are recorded in the repository history.
 
-## Pokédex descriptions
+## Pokédex category labels
 
-The short category labels (for example "Seed Pokémon") and the Pokédex description sentences in `assets/data/pokedex_entries.json` come from PokéAPI, which takes them from the Pokémon games. The description text is copyright Nintendo / Game Freak / The Pokémon Company and is included for reference only.
+The short category labels (for example "Seed Pokémon") in `assets/data/pokedex_entries.json` come from PokéAPI. Pokédex description sentences are not included in the app or its data.
 
 ## Artwork, item images and Pokémon game content
 

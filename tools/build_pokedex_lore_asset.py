@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Build English Pokédex flavor text and genera from PokéAPI.
+"""Build English Pokédex genus labels from PokéAPI.
+
+Flavor text (description sentences) is game text and is intentionally NOT built.
 
 Evolution chains and Pokémon generation/evolution metadata are built offline
 from the pinned CSV extracts by ``tools/build_pokemon_metadata.py``. Keeping
@@ -40,13 +42,6 @@ def english_genus(genera: list[dict]) -> str:
     return ""
 
 
-def english_flavor(entries: list[dict]) -> str:
-    for row in reversed(entries):
-        if row.get("language", {}).get("name") == "en":
-            return clean(row.get("flavor_text") or "")
-    return ""
-
-
 def main() -> int:
     try:
         index = get_json(f"{API}/pokemon-species?limit=20000")
@@ -58,7 +53,6 @@ def main() -> int:
             dex = int(raw["id"])
             entry = {
                 "genus": english_genus(raw.get("genera") or []),
-                "flavor": english_flavor(raw.get("flavor_text_entries") or []),
             }
             return dex, entry
 
