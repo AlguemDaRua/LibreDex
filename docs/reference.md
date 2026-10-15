@@ -588,8 +588,8 @@ validator or test passing does not prove every source claim or every in-game mec
 | `held_item_placement_test.dart` | Held-item placement in the damage formula |
 | `randomizer_settings_test.dart`, `random_roll_overlay_test.dart` | Randomizer settings persistence/criteria; the roll overlay, single and team |
 | `form_count_badge_test.dart` | The `N FORMS` badge and card rendering |
-| `pokemon_detail_render_test.dart`, `section_back_stack_test.dart`, `pokedex_layout_test.dart`, `widget_test.dart` | Detail rendering, navigation back-stack, layout geometry, app widget behaviour |
-| `complete_improvement_plan_test.dart` | MoveDex/AbilityDex/Pokédex metadata checks |
+| `pokemon_detail_render_test.dart`, `section_back_stack_test.dart`, `pokedex_layout_test.dart`, `pokedex_screen_suite_test.dart` | Detail rendering, navigation back-stack, layout geometry, app widget behaviour |
+| `move_ability_metadata_test.dart` | MoveDex/AbilityDex/Pokédex metadata checks |
 | `test/viewmodels/` | 87 tests: stat calculator (22), damage calculator (16), Pokédex search (25), stat comparison (24) |
 
 ```bash
@@ -710,13 +710,10 @@ in `build.gradle.kts` but reads from that file; without it the build is unsigned
 ## 10. Standing notes
 
 - **`Icons/` holds pre-staged platform icons.** `Icons/ios/` (22 files) and `Icons/web/`
-  exist ahead of those platforms. `Icons/android/` is the source for the Play Store icon
-  and is referenced by nothing at build time — `android/app/src/main/res/mipmap-*` is
-  what ships. Do not delete it while iOS is planned.
-- **Two test files are misnamed, not junk.** `widget_test.dart` is actually a
-  PokedexScreen + `FormFacts` + `CombatUtils` + `GenderRatio` + `SpriteQuality` suite,
-  and `complete_improvement_plan_test.dart` covers move properties, ability tags and
-  Pokémon classification. Rename them when next touching either file.
+  exist ahead of those platforms. The Android launcher icons ship from `android/app/src/main/res/mipmap-*`. The 512 px store
+  icon now lives at `fastlane/metadata/android/en-US/images/icon.png` (used by F-Droid).
+  The duplicate `Icons/android/res` tree was removed in the v1 cleanup.
+- **Test file names.** `pokedex_screen_suite_test.dart` and `move_ability_metadata_test.dart` were renamed in the v1 cleanup from their plan-artifact names; their contents are unchanged.
 - **`.metadata` and `.vscode/settings.json` are intentionally tracked.** Flutter
   documents `.metadata` as version-controlled; the VS Code setting affects Gradle
   build-configuration prompts.

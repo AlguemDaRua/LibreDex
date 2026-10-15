@@ -383,14 +383,10 @@ print('species lacking an id==dex row:', sum(1 for v in g.values() if not any(p[
   only when it makes a specific change easier. C1 removed ~111 lines by *deleting*
   duplicated logic; that is better than moving it.
 - **`Icons/` holds pre-staged platform icons.** `Icons/ios/` (22 files) and `Icons/web/`
-  exist ahead of those platforms. `Icons/android/` holds the Play Store icon. **Do not
+  exist ahead of those platforms. The store icon lives in `fastlane/metadata/android/en-US/images/icon.png`. **Do not
   delete it** — a docs commit already removed it once by accident (`0807265`, restored
   in `4d58f1f`). `android/app/src/main/res/mipmap-*` is what actually ships.
-- **Two test files are misnamed, not junk.** `widget_test.dart` is a PokedexScreen +
-  `FormFacts` + `CombatUtils` + `GenderRatio` + `SpriteQuality` suite, and
-  `complete_improvement_plan_test.dart` covers move properties, ability tags and
-  Pokémon classification. Both are real coverage behind plan-artifact names; rename
-  them when next touching either file.
+- **Test file names.** `pokedex_screen_suite_test.dart` and `move_ability_metadata_test.dart` were renamed in the v1 cleanup from their plan-artifact names; their contents are unchanged.
 - **The Pokédex `stream → filter → rebuild` path is the app's performance centre of
   gravity.** Optimisations elsewhere are unlikely to be felt. There is no known
   performance problem — the app is smooth while typing.

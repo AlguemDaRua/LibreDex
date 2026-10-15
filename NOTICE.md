@@ -29,3 +29,7 @@ Source: [PokeAPI license](https://github.com/PokeAPI/pokeapi/blob/master/LICENSE
 LibreDex requests artwork from the [PokeAPI sprites repository](https://github.com/PokeAPI/sprites). That repository's `LICENCE.txt` says that its image contents are copyright The Pokémon Company and distributes the repository under CC0 1.0 to the extent of the repository contributors' rights. Pokémon and Pokémon character names are trademarks of Nintendo.
 
 The MIT license for LibreDex does not convey rights in Pokémon intellectual property. This notice is attribution, not legal advice; a maintainer should obtain legal advice before distributing the app in a jurisdiction or store with additional requirements.
+
+## Champions regulation data
+
+`assets/data/champions_regulation_mc.json` and the Pokémon Champions learnset data are derived from [pokemon-champions-data](https://github.com/vbbjandrade/pokemon-champions-data) (commit `df262d8f27ba94ce6c0a421c1f83b3e57b11ceb4`, snapshot 1 October 2026), which is licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). That project describes its data as drawn from Pokémon Showdown's open-source files. Changes made by LibreDex are noted in the repository history.
