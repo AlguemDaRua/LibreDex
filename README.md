@@ -65,7 +65,7 @@ LibreDex includes full-fledged, multi-game features covering:
 
 ### Requirements
 
-- Flutter SDK compatible with Dart `^3.10.4`
+- Flutter SDK compatible with Dart `^3.12.0` (Flutter `>=3.44.0`, as recorded in `pubspec.lock`)
 - Android SDK for Android builds
 
 ```bash

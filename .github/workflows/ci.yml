@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: ☕ Setup Java
         uses: actions/setup-java@v6
@@ -30,7 +30,7 @@ jobs:
           cache: true # Cache agressivo para acelerar os builds seguintes
 
       - name: 🐍 Setup Python (Para Validação de Dados)
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 
@@ -59,7 +59,7 @@ jobs:
         run: flutter test --coverage
 
       - name: 📈 Upload Coverage Report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always() # Garante que o report suba mesmo se algum teste falhar
         with:
           name: flutter-coverage
