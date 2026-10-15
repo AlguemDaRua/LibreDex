@@ -11,3 +11,9 @@ Pokémon, moves, abilities, learnsets and the supporting reference data are bund
 Privacy
 
 LibreDex has no analytics, ads or account system. It contacts PokéAPI for evolution data and the PokeAPI sprite repository on GitHub for artwork. Favorites, team data and app preferences remain in private app storage on your device.
+
+Credits and legal
+
+LibreDex is an unofficial fan project. It is not affiliated with, endorsed by or sponsored by Nintendo, Game Freak, Creatures or The Pokémon Company. Pokémon and Pokémon character names are trademarks of Nintendo.
+
+Data is derived from PokéAPI (BSD 3-Clause), the Pokémon Champions regulation data (CC BY 4.0) and Pokémon Showdown (MIT). Artwork loaded from the PokeAPI sprite repository is copyright The Pokémon Company. Full credits and open-source licences are in Settings.

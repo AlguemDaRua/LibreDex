@@ -4,6 +4,7 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libredex/core/app_restart.dart';
 import 'package:libredex/core/data/battle_data_manifest.dart';
+import 'package:libredex/core/legal/app_legal.dart';
 import 'package:libredex/core/network/network_preferences.dart';
 import 'package:libredex/core/storage/app_data_resetter.dart';
 import 'package:libredex/core/storage/offline_artwork_store.dart';
@@ -423,7 +424,12 @@ class SettingsScreen extends ConsumerWidget {
                         ? const Color(0xFF222222)
                         : const Color(0xFFE5E7EB),
                   ),
-                  _buildInfoRow('Version', '1.0.0', isDark, primaryColor),
+                  _buildInfoRow(
+                    'Version',
+                    AppLegal.version,
+                    isDark,
+                    primaryColor,
+                  ),
                   Divider(
                     height: 1,
                     color: isDark
@@ -472,11 +478,56 @@ class SettingsScreen extends ConsumerWidget {
                     isDark,
                     primaryColor,
                   ),
+                  Divider(
+                    height: 1,
+                    color: isDark
+                        ? const Color(0xFF222222)
+                        : const Color(0xFFE5E7EB),
+                  ),
+                  InkWell(
+                    onTap: () => _showCredits(context),
+                    child: _buildInfoRow(
+                      'Credits & licences',
+                      'View',
+                      isDark,
+                      primaryColor,
+                    ),
+                  ),
                 ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showCredits(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Credits & licences'),
+        content: SingleChildScrollView(
+          child: Text(
+            '${AppLegal.disclaimer}\n\n${AppLegal.credits}',
+            style: const TextStyle(fontSize: 13, height: 1.4),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => showLicensePage(
+              context: dialogContext,
+              applicationName: 'LibreDex',
+              applicationVersion: AppLegal.version,
+              applicationLegalese: AppLegal.disclaimer,
+            ),
+            child: const Text('Open-source licences'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Close'),
+          ),
+        ],
       ),
     );
   }

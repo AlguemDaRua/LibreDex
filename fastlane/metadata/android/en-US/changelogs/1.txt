@@ -1,0 +1,6 @@
+LibreDex 1.0.0 (first stable release)
+
+- Pokédex with artwork, search, filters, sorting and random rolls.
+- MoveDex, AbilityDex, ItemDex, NatureDex and a type chart.
+- Team builder and damage calculator, including Pokémon Champions Regulation Set M-C rules.
+- Optional offline artwork download; no accounts, ads or analytics.

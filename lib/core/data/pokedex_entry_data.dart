@@ -21,16 +21,16 @@ Map<int, PokedexEntryFacts> _decodeEntries(String raw) {
   });
 }
 
+/// Short category label only (for example "Seed Pokémon").
+///
+/// Pokédex description sentences are game text and are deliberately not
+/// bundled or displayed; see NOTICE.md.
 class PokedexEntryFacts {
   final String genus;
-  final String flavor;
 
-  const PokedexEntryFacts({required this.genus, required this.flavor});
+  const PokedexEntryFacts({required this.genus});
 
   factory PokedexEntryFacts.fromJson(Map<String, dynamic> json) {
-    return PokedexEntryFacts(
-      genus: json['genus'] as String? ?? '',
-      flavor: json['flavor'] as String? ?? '',
-    );
+    return PokedexEntryFacts(genus: json['genus'] as String? ?? '');
   }
 }

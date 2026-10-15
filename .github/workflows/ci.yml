@@ -7,6 +7,9 @@ on:
     branches: [ "main" ]
   workflow_dispatch: # Permite rodar o workflow manualmente no GitHub
 
+permissions:
+  contents: read
+
 jobs:
   build-and-test:
     name: Build, Analyze, and Test
@@ -14,7 +17,7 @@ jobs:
 
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: ☕ Setup Java
         uses: actions/setup-java@v6
@@ -30,7 +33,7 @@ jobs:
           cache: true # Cache agressivo para acelerar os builds seguintes
 
       - name: 🐍 Setup Python (Para Validação de Dados)
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 
@@ -59,7 +62,7 @@ jobs:
         run: flutter test --coverage
 
       - name: 📈 Upload Coverage Report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always() # Garante que o report suba mesmo se algum teste falhar
         with:
           name: flutter-coverage
@@ -69,3 +72,118 @@ jobs:
       - name: 🛠️ Build Android APK (Smoke Test)
         # Tenta compilar um build debug para garantir que nada nativo ou dependências quebraram o app
         run: flutter build apk --debug
+
+  release:
+    name: Build & publish release APK
+    # Só roda em pushes para main, e somente depois que todos os testes passarem.
+    needs: build-and-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Necessário para criar/atualizar tags e releases
+    # Um push novo espera o anterior terminar, para que o release fique com o último commit.
+    concurrency:
+      group: release-main
+      cancel-in-progress: false
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v7
+
+      - name: ☕ Setup Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: 📦 Install Flutter Dependencies
+        run: flutter pub get
+
+      - name: 🏷️ Read version from pubspec.yaml
+        id: version
+        run: |
+          # pubspec: "version: 1.0.0+1" -> name 1.0.0, build number 1
+          RAW=$(grep '^version:' pubspec.yaml | awk '{print $2}')
+          NAME=${RAW%%+*}
+          CODE=${RAW##*+}
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+          echo "tag=v$NAME" >> "$GITHUB_OUTPUT"
+
+      - name: 🔐 Configure release signing (optional)
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ]; then
+            echo "SIGNED=false" >> "$GITHUB_ENV"
+            echo "::warning::No signing secrets set; the APK will be signed with the debug key and published as a pre-release. Add the ANDROID_* secrets to publish a distributable build."
+            exit 0
+          fi
+          KEYSTORE="$RUNNER_TEMP/libredex-release.jks"
+          echo "$KEYSTORE_B64" | base64 --decode > "$KEYSTORE"
+          {
+            echo "storeFile=$KEYSTORE"
+            echo "storePassword=$KEYSTORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEY_PASSWORD"
+          } > android/key.properties
+          echo "SIGNED=true" >> "$GITHUB_ENV"
+
+      - name: 🛠️ Build release APK
+        run: flutter build apk --release
+
+      - name: 📦 Name the APK
+        id: apk
+        env:
+          NAME: ${{ steps.version.outputs.name }}
+          CODE: ${{ steps.version.outputs.code }}
+        run: |
+          SUFFIX=unsigned
+          if [ "$SIGNED" = "true" ]; then SUFFIX=signed; fi
+          FILE="LibreDex-v${NAME}-build${CODE}-${SUFFIX}.apk"
+          cp build/app/outputs/flutter-apk/app-release.apk "$RUNNER_TEMP/$FILE"
+          echo "file=$RUNNER_TEMP/$FILE" >> "$GITHUB_OUTPUT"
+
+      - name: 🚀 Publish or replace the GitHub release
+        # Move a tag v<version> para o commit atual e atualiza o release daquela versão.
+        # Se o APK já existir no release, ele é substituído pelo novo build.
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          APK: ${{ steps.apk.outputs.file }}
+          NAME: ${{ steps.version.outputs.name }}
+          CODE: ${{ steps.version.outputs.code }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -f "$TAG" "$GITHUB_SHA"
+          git push -f origin "refs/tags/$TAG"
+
+          NOTES="Automated build from commit ${GITHUB_SHA:0:7} on main (version ${NAME}, build ${CODE}).
+
+          Install the APK on Android (allow installs from this source when prompted).
+          The app is also available on F-Droid once it is accepted there."
+          PRERELEASE_FLAG=""
+          if [ "$SIGNED" != "true" ]; then
+            PRERELEASE_FLAG="--prerelease"
+            NOTES="$NOTES
+
+          This build is signed with the debug key (no release signing secrets configured). Do not treat it as the official distributable build."
+          fi
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$APK" --clobber
+            gh release edit "$TAG" --notes "$NOTES" $PRERELEASE_FLAG
+          else
+            gh release create "$TAG" "$APK" --target "$GITHUB_SHA" --title "LibreDex $TAG" --notes "$NOTES" $PRERELEASE_FLAG
+          fi

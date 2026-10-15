@@ -61,11 +61,16 @@ LibreDex includes full-fledged, multi-game features covering:
 - **NatureDex Alignments**: Supports both Pokémon Champions' 66 Stat Points / 21 Alignments (Singles & Doubles, Regulation M-C) and Legends: Z-A Effort Level rules.
 - **Damage Calculator**: One shared battle-engine damage result per duel view, data-backed move priority/contact metadata, critical-stage handling, level 50 Champions rules, and a separate raw sandbox formula.
 
+## Download
+
+- **GitHub Releases:** every push to `main` builds a release APK and publishes it under the [Releases](https://github.com/AlguemDaRua/LibreDex/releases) page (tag `v<version>`, for example `v1.0.0`).
+- **F-Droid:** LibreDex is being submitted to [F-Droid](https://f-droid.org/). See [`docs/RELEASING.md`](docs/RELEASING.md) for how releases and the F-Droid recipe are maintained.
+
 ## Run from source
 
 ### Requirements
 
-- Flutter SDK compatible with Dart `^3.10.4`
+- Flutter SDK compatible with Dart `^3.12.0` (Flutter `>=3.44.0`, as recorded in `pubspec.lock`)
 - Android SDK for Android builds
 
 ```bash
@@ -76,7 +81,7 @@ dart run build_runner build --delete-conflicting-outputs
 flutter run
 ```
 
-To build a release APK:
+To build a release APK locally (unsigned unless you create `android/key.properties`, see [`docs/RELEASING.md`](docs/RELEASING.md)):
 
 ```bash
 flutter build apk --release
@@ -88,4 +93,4 @@ The LibreDex source code is available under the [MIT License](LICENSE). That lic
 
 Pokémon and Pokémon character names are trademarks of Nintendo. LibreDex is an unofficial fan project and is not affiliated with, endorsed by or sponsored by Nintendo, Game Freak, Creatures or The Pokémon Company.
 
-See [NOTICE.md](NOTICE.md) for PokéAPI and artwork attribution, including the third-party license notice.
+See [NOTICE.md](NOTICE.md) for every third-party source and its license: PokéAPI (BSD 3-Clause), the Pokémon Champions regulation data (CC BY 4.0), Pokémon Showdown (MIT), smogon/damage-calc (MIT), the artwork source and the Flutter packages. The same credits are in the app under **Settings → Credits & licences**.

@@ -296,7 +296,7 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
         : activePokemon.id;
     final entriesAsync = ref.watch(pokedexEntryDatasetProvider);
     final entry = entriesAsync.asData?.value[dexNumber];
-    if (entry == null || (entry.genus.isEmpty && entry.flavor.isEmpty)) {
+    if (entry == null || entry.genus.isEmpty) {
       return const SizedBox.shrink();
     }
 
@@ -322,16 +322,6 @@ class PokemonDetailGeneralTab extends ConsumerWidget {
                 letterSpacing: 0.3,
               ),
             ),
-          if (entry.genus.isNotEmpty) const SizedBox(height: 8),
-          Text(
-            entry.flavor,
-            style: TextStyle(
-              color: isDark ? Colors.grey[200] : const Color(0xFF1F2937),
-              fontSize: 16,
-              height: 1.45,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
         ],
       ),
     );

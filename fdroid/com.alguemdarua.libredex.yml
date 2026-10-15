@@ -1,0 +1,40 @@
+# F-Droid build recipe for LibreDex — DRAFT, to be submitted to fdroiddata.
+#
+# How to use: see docs/RELEASING.md (section "Submit to F-Droid").
+# This file belongs in fdroiddata at metadata/com.alguemdarua.libredex.yml.
+# F-Droid's build server builds the app from the tag below, signs it with
+# F-Droid's own key, and publishes the result. Run `fdroid lint` and
+# `fdroid build` on it before opening the merge request.
+
+Categories:
+  - Reading
+  - Games
+License: MIT
+AuthorName: Azam Usman
+WebSite: https://github.com/AlguemDaRua/LibreDex
+SourceCode: https://github.com/AlguemDaRua/LibreDex
+IssueTracker: https://github.com/AlguemDaRua/LibreDex/issues
+Changelog: https://github.com/AlguemDaRua/LibreDex/releases
+
+AutoName: LibreDex
+RepoType: git
+Repo: https://github.com/AlguemDaRua/LibreDex.git
+
+Builds:
+  - versionName: 1.0.0
+    versionCode: 1
+    commit: v1.0.0
+    subdir: android/app
+    output: build/app/outputs/flutter-apk/app-release.apk
+    srclibs:
+      - flutter@stable
+    init:
+      - $$flutter$$/bin/flutter config --no-analytics
+    build:
+      - $$flutter$$/bin/flutter pub get
+      - $$flutter$$/bin/flutter build apk --release
+
+AutoUpdateMode: Version v%v
+UpdateCheckMode: Tags
+CurrentVersion: 1.0.0
+CurrentVersionCode: 1
