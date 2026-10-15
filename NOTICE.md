@@ -30,6 +30,32 @@ LibreDex requests artwork from the [PokeAPI sprites repository](https://github.c
 
 The MIT license for LibreDex does not convey rights in Pokémon intellectual property. This notice is attribution, not legal advice; a maintainer should obtain legal advice before distributing the app in a jurisdiction or store with additional requirements.
 
+## Pokémon Showdown and damage-calculation reference
+
+Regulation and mechanics data trace to [Pokémon Showdown](https://github.com/smogon/pokemon-showdown), MIT License, Copyright (c) 2011–2026 Guangcong Luo and other contributors.
+
+Damage-calculation formulas and test expectations were checked against [smogon/damage-calc](https://github.com/smogon/damage-calc), MIT License, Copyright (c) 2013–2025 Honko and other contributors.
+
 ## Champions regulation data
 
-`assets/data/champions_regulation_mc.json` and the Pokémon Champions learnset data are derived from [pokemon-champions-data](https://github.com/vbbjandrade/pokemon-champions-data) (commit `df262d8f27ba94ce6c0a421c1f83b3e57b11ceb4`, snapshot 1 October 2026), which is licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). That project describes its data as drawn from Pokémon Showdown's open-source files. Changes made by LibreDex are noted in the repository history.
+`assets/data/champions_regulation_mc.json` and the Pokémon Champions learnset data are derived from [pokemon-champions-data](https://github.com/vbbjandrade/pokemon-champions-data) (commit `df262d8f27ba94ce6c0a421c1f83b3e57b11ceb4`, snapshot 1 October 2026), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Changes made by LibreDex are recorded in the repository history.
+
+## Pokédex descriptions
+
+The short category labels (for example "Seed Pokémon") and the Pokédex description sentences in `assets/data/pokedex_entries.json` come from PokéAPI, which takes them from the Pokémon games. The description text is copyright Nintendo / Game Freak / The Pokémon Company and is included for reference only.
+
+## Artwork, item images and Pokémon game content
+
+Artwork and item images are not bundled in the app. The app loads them from the PokeAPI sprite repository, and the optional offline library stores copies on the user's device. The sprite repository states that its image contents are copyright The Pokémon Company. Their use here is for reference; LibreDex does not claim any rights in them.
+
+## App icon
+
+The LibreDex icon (`Icons/Icon.png`) is original artwork created for this project. It contains no Pokémon artwork.
+
+## Trademarks
+
+Pokémon and Pokémon character names are trademarks of Nintendo. LibreDex is an unofficial fan project and is not affiliated with, endorsed by or sponsored by Nintendo, Game Freak, Creatures or The Pokémon Company.
+
+## Flutter and Dart packages
+
+Each package is licensed under its own terms. The app's "Credits & licences" screen (Settings → Application Info) lists every package and its license text.

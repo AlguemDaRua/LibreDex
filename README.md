@@ -93,4 +93,4 @@ The LibreDex source code is available under the [MIT License](LICENSE). That lic
 
 Pokémon and Pokémon character names are trademarks of Nintendo. LibreDex is an unofficial fan project and is not affiliated with, endorsed by or sponsored by Nintendo, Game Freak, Creatures or The Pokémon Company.
 
-See [NOTICE.md](NOTICE.md) for PokéAPI and artwork attribution, including the third-party license notice.
+See [NOTICE.md](NOTICE.md) for every third-party source and its license: PokéAPI (BSD 3-Clause), the Pokémon Champions regulation data (CC BY 4.0), Pokémon Showdown (MIT), smogon/damage-calc (MIT), the artwork source and the Flutter packages. The same credits are in the app under **Settings → Credits & licences**.
