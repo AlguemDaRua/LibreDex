@@ -424,7 +424,12 @@ class SettingsScreen extends ConsumerWidget {
                         ? const Color(0xFF222222)
                         : const Color(0xFFE5E7EB),
                   ),
-                  _buildInfoRow('Version', AppLegal.version, isDark, primaryColor),
+                  _buildInfoRow(
+                    'Version',
+                    AppLegal.version,
+                    isDark,
+                    primaryColor,
+                  ),
                   Divider(
                     height: 1,
                     color: isDark
