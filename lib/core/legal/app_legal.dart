@@ -22,8 +22,8 @@ Reference data and Pokédex category labels are derived from PokéAPI
 (BSD 3-Clause). Copyright (c) 2013–2023 Paul Hallett and PokéAPI contributors.
 
 Artwork and item images
-Loaded from the PokeAPI sprites repository. Images are copyright The Pokémon
-Company. Used for reference only; not licensed to LibreDex.
+Loaded from the PokeAPI sprites repository. Images are copyright
+The Pokémon Company. Used for reference only; not licensed to LibreDex.
 
 Pokémon Champions regulation data
 Derived from pokemon-champions-data by the Pokemon Champions Data Contributors,
